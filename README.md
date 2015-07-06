@@ -7,19 +7,24 @@ Once you are done with the tutorials (and that takes about a couple of months to
 The code that is here in this repository has the following features, among many others, already written:
 
 1. CNNs with easy architecture management. 
+    
     Create any architecture you want with just changes of small parameters in the boiler plate. 
 
-2. Dropouts
+2. Dropouts : 
+    
     Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
     from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
 
-3. adaGrad 
+3. adaGrad :
+    
     John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
     for online learning and stochastic optimization. JMLR
 
-4. Polyak Momentum 
+4. Polyak Momentum :
+    
     Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration methods." 
     USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
+
     Adapted from Sutskever, Ilya, et al. "On the importance of initialization and momentum in deep learning." 
     Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
 
