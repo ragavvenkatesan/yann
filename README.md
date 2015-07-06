@@ -8,17 +8,21 @@ The code that is here in this repository has the following features, among many 
 
 1. CNNs with easy architecture management. 
     Create any architecture you want with just changes of small parameters in the boiler plate. 
+
 2. Dropouts
     Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
     from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
+
 3. adaGrad 
     John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
     for online learning and stochastic optimization. JMLR
+
 4. Polyak Momentum 
     Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration methods." 
     USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
     Adapted from Sutskever, Ilya, et al. "On the importance of initialization and momentum in deep learning." 
     Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
+
 5. Data handling capabilities.
     I have also provided a wrapper to skdata's dataset interface (under construction, as of now, I have cifar10, mnist,             caltech101) with boilerplate samples for all of them. 
     
@@ -27,14 +31,21 @@ and many others ....
 Requirements:
 
 Running this code essentially requires:
-1. python 2.x
-2. theano 0.6 + 
-3. numpy 
-4. scipy
-5. skdata
-6. cPickle
-7. opencv (cv2) 
-8. gzip
+    1. python 2.x
+    
+    2. theano 0.6 +     
+    
+    3. numpy 
+    
+    4. scipy
+    
+    5. skdata
+    
+    6. cPickle
+    
+    7. opencv (cv2) 
+    
+    8. gzip
 
 Most of these could be installed by installing anaconda of continuum analytics (http://docs.continuum.io/anaconda/install.html) The code is reasonably well documented. It is not that difficult to find out from the boilerplate what is happening. If you need to understand really well what is happening before you jump into the code, use verbose = True flag in the boiler plate. 
 
