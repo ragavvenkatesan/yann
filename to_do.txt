@@ -1,6 +1,6 @@
 1. Layerwise greedy unsupervised pre-training.
 2. Nesterov Accelerated Gradients:
    Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)." Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
-3. Visualizations for each layers:
+(Done) 3. Visualizations for each layers:   
    i.  Filter weights as images.
    ii. Responses of each filter for a given input image.
