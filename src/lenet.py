@@ -10,6 +10,7 @@ from collections import OrderedDict
 # Math Packages
 import math
 import numpy
+import cv2
 
 # Theano Packages
 import theano
@@ -29,7 +30,8 @@ from cnn import _dropout_from_layer
 from cnn import DropoutHiddenLayer
 from cnn import MLP
 from cnn import LeNetConvPoolLayer
-from cnn import write_filters
+from cnn import visualize
+from cnn import scale_to_unit_interval
 
 # Datahandling packages
 from loaders import load_data_pkl
@@ -60,7 +62,8 @@ def run_cnn(  arch_params,
                     optimization_params ,
                     data_params, 
                     filename_params,
-                    verbose = True  ):
+                    visual_params,
+                    verbose = True, ):
 
     
 
@@ -133,6 +136,10 @@ def run_cnn(  arch_params,
     error_file_name     = filename_params[ "error_file_name" ]
     cost_file_name      = filename_params[ "cost_file_name" ]
     
+    visualize_flag          = visual_params ["visualize_flag" ]
+    visualize_after_epochs  = visual_params ["visualize_after_epochs" ]
+    n_visual_images         = visual_params ["n_visual_images" ] 
+    display_flag            = visual_params ["display_flag" ]
 
 
     # Random seed initialization.
@@ -220,7 +227,7 @@ def run_cnn(  arch_params,
     elif data_params["type"] == 'skdata':
 
         if dataset == 'mnist':
-            print "... lmporting mnist from skdata"
+            print "... importing mnist from skdata"
 
             data = load_skdata_mnist()
             train_set_x, train_set_y, train_set_y1 = data[0]
@@ -247,7 +254,7 @@ def run_cnn(  arch_params,
             multi_load = False
 
         elif dataset == 'cifar10':
-            print "... lmporting cifar 10 from skdata"
+            print "... importing cifar 10 from skdata"
 
             data = load_skdata_cifar10()
             train_set_x, train_set_y, train_set_y1 = data[0]
@@ -302,7 +309,7 @@ def run_cnn(  arch_params,
 
     # Just checking as a way to see if the intended dataset is indeed loaded.
     assert height*width*channels == train_set_x.get_value( borrow = True ).shape[1]
-
+    assert batch_size >= n_visual_images
 
 
 
@@ -343,6 +350,9 @@ def run_cnn(  arch_params,
     first_layer_input = x.reshape((batch_size, channels, height, width))
 
     # Create first convolutional - pooling layers 
+    activity = []       # to record Cnn activities 
+    weights = []
+
     conv_layers=[]
     filt_size = filter_size[0]
     pool_size = pooling_size[0]
@@ -355,6 +365,8 @@ def run_cnn(  arch_params,
                             activation = cnn_activations[0],
                             verbose = verbose
                              ) )
+    activity.append ( conv_layers[-1].output )
+    weights.append ( conv_layers[-1].filter_img)
 
     # Create the rest of the convolutional - pooling layers in a loop
     next_in_1 = ( height - filt_size + 1 ) / pool_size        
@@ -374,6 +386,8 @@ def run_cnn(  arch_params,
                              ) )
         next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
         next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
+        weights.append ( conv_layers[-1].filter_img )
+        activity.append( conv_layers[-1].output )
 
     # Assemble fully connected laters 
     fully_connected_input = conv_layers[-1].output.flatten(2)
@@ -436,6 +450,14 @@ def run_cnn(  arch_params,
     for layer in conv_layers:
         params = params + layer.params
     params = params + MLPlayers.params
+
+    # function to return activations
+    activities = theano.function (
+        inputs = [index],
+        outputs = activity,
+        givens = {
+                x: test_set_x[index * batch_size: (index + 1) * batch_size]
+                 })
 
     # Compute gradients of the model wrt parameters
 
@@ -572,7 +594,29 @@ def run_cnn(  arch_params,
                         )
 
     end_time = time.clock()
+
+    # setting up visualization stuff...
+    shuffle_batch_ind = numpy.arange(batch_size)
+    numpy.random.shuffle(shuffle_batch_ind)
+    visualize_ind = shuffle_batch_ind[0:n_visual_images]
+    main_img_visual = False
+
+    if visualize_flag is True:
+        if not os.path.exists('../visuals'):
+            os.makedirs('../visuals')                
+        if not os.path.exists('../visuals/activities'):
+            os.makedirs('../visuals/activities')
+            for i in xrange(len(nkerns)):
+                os.makedirs('../visuals/activities/layer_'+str(i))
+        if not os.path.exists('../visuals/filters'):
+            os.makedirs('../visuals/filters')
+            for i in xrange(len(nkerns)):
+                os.makedirs('../visuals/filters/layer_'+str(i))
+        if not os.path.exists('../visuals/images'):
+            os.makedirs('../visuals/images')
+
     print "...      -> building complete, took " + str((end_time - start_time)) + " seconds" 
+
 
 
 
@@ -703,6 +747,34 @@ def run_cnn(  arch_params,
 
             best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
         new_leanring_rate = decay_learning_rate()    
+
+        tmp_index = 0 
+        if  epoch_counter % visualize_after_epochs is 0:  
+            if main_img_visual is False:
+                for i in xrange(n_visual_images):
+                    curr_img = numpy.reshape(train_set_x.get_value( borrow = True )[visualize_ind[i]],[height, width, channels] ) * 255
+                    if verbose is True:
+                        cv2.imshow("Image Number " +str(visualize_ind[i]), curr_img)
+                    cv2.imwrite("../visuals/images/image_" + str(visualize_ind[i])+".jpg", curr_img )
+            main_img_visual = True
+
+            activity = activities(0)
+            for l in xrange(len(nkerns)):   #For each layer 
+                loc_ac = '../visuals/activities/layer_' + str(l) + "/epoch_" + str(epoch_counter) +"/"
+                if not os.path.exists(loc_ac):   
+                    os.makedirs(loc_ac)
+                current_activity = activity[l]
+                for i in xrange(n_visual_images):
+                    visualize(current_activity[visualize_ind[i]], loc = loc_ac, filename = 'activity_' + str(i) +'.jpg' , show_img = display_flag)
+            for l in xrange(len(nkerns)):
+                if l == 0:
+                    curr_image = weights[l].reshape((nkerns[l],filter_size[l],filter_size[l]))
+                    visualize(curr_image.eval(), loc = '../visuals/filters/layer_' + str(l) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
+                else:
+                    for i in xrange(nkerns[l-1]): 
+                        curr_image = weights[l].eval()[:,i,:,:]
+                        visualize(curr_image, loc = '../visuals/filters/layer_' + str(l) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
+
     end_time = time.clock()
     print "... training complete, took " + str((end_time - start_time)/ 60.) +" minutes"
 
@@ -852,9 +924,9 @@ if __name__ == '__main__':
     optimization_params = {
                             "mom_start"                         : 0.5,                      # from mom_start to mom_end. After mom_epoch_interval, it stay at mom_end
                             "mom_end"                           : 0.98,
-                            "mom_interval"                      : 50,
-                            "mom_type"                          : 0,                        # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum ( not yet done... something is wrong.. refer code)
-                            "initial_learning_rate"             : 0.01,                      # Learning rate at the start
+                            "mom_interval"                      : 500,
+                            "mom_type"                          : 1,                        # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum ( not yet done... something is wrong.. refer code)
+                            "initial_learning_rate"             : 0.001,                      # Learning rate at the start
                             "learning_rate_at_ada_grad_begin"   : 1,                        # Learning rate once ada_grad starts. Although ada grad can start anywhere, I recommend at the begining.
                             "learning_rate_at_ada_grad_end"     : 0.01,                      # learning rate once ada grad ends and regular SGD begins again. 
                             "learning_rate_decay"               : 0.998, 
@@ -867,54 +939,63 @@ if __name__ == '__main__':
                             }
 
 
-
-    filename_params ={ 
-                        "results_file_name" : "../results/results_mnist_skdata.txt",        # Files that will be saved down on completion Can be used by the parse.m file
-                        "error_file_name"   : "../results/error_mnist_skdata.txt",
-                        "cost_file_name"    : "../results/cost_dropout_skdata.txt"
+    filename_params = { 
+                        "results_file_name" : "../results/cifar.txt",        # Files that will be saved down on completion Can be used by the parse.m file
+                        "error_file_name"   : "../results/cifar.txt",
+                        "cost_file_name"    : "../results/cifar.txt"
                     }        
         
     data_params = {
                    "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "loc"                : 'cifar10',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
                    "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
-                   "batches2train"      : 100,                                      # Number of training batches.
+                   "batches2train"      : 80,                                      # Number of training batches.
                    "batches2test"       : 20,                                       # Number of testing batches.
                    "batches2validate"   : 20,                                       # Number of validation batches
-                   "height"             : 28,                                       # Height of each input image
-                   "width"              : 28,                                       # Width of each input image
-                   "channels"           : 1                                         # Number of channels of each input image 
+                   "height"             : 32,                                       # Height of each input image
+                   "width"              : 32,                                       # Width of each input image
+                   "channels"           : 3                                         # Number of channels of each input image 
                   }
 
     arch_params = {
                        # Decay of Learninig rate after each epoch of SGD
                     "squared_filter_length_limit"       : 15,   
-                    "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
-                    "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
-                    "mlp_activations"                   : [ ReLU, ReLU ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU ],           # Activations for CNN layers Options: ReLU, Sigmoid, Tanh
-                    "dropout"                           : True,                    # Flag for dropout / backprop When using dropout, don't use adagrad.
+                    "n_epochs"                          : 2000,                      # Total Number of epochs to run before completion (no premature completion)
+                    "validate_after_epochs"             : 5,                        # After how many iterations to calculate validation set accuracy ?
+                    "mlp_activations"                   : [ ReLU, ReLU, ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
+                    "cnn_activations"                   : [ ReLU, ReLU, ReLU  ],           # Activations for CNN layers Options: ReLU,       
+                    "dropout"                           : True,                     # Flag for dropout / backprop                    
                     "column_norm"                       : False,
-                    "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.
-                    "nkerns"                            : [ 20 , 50 ],              # Number of feature maps at each CNN layer
+                    "dropout_rates"                     : [ 0.5, 0.5 , 0.5 ],             # Rates of dropout. Use 0 is backprop.
+                    "nkerns"                            : [ 48 , 128 ,128],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
-                    "filter_size"                       : [  5, 5 ],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  2, 2 ],                # Pooling field of each CNN layer
-                    "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
+                    "filter_size"                       : [  7, 5 , 5  ],                # Receptive field of each CNN layer
+                    "pooling_size"                      : [  1, 2 , 2  ],                # Pooling field of each CNN layer
+                    "num_nodes"                         : [  800 , 800  ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
                     "svm_flag"                          : False                     # True makes the last layer a SVM
 
                  }
 
+
+    visual_params = {
+                        "visualize_flag"        : True,
+                        "visualize_after_epochs": 10,
+                        "n_visual_images"       : 30,
+                        "display_flag"          : False
+                    }
+
     run_cnn(
-                    arch_params         = arch_params,
-                    optimization_params = optimization_params,
-                    data_params         = data_params, 
-                    filename_params     = filename_params,
-                    verbose             = False                                                  # True prints in a lot of intermetediate steps, False keeps it to minimum.
+                    arch_params             = arch_params,
+                    optimization_params     = optimization_params,
+                    data_params             = data_params, 
+                    filename_params         = filename_params,
+                    visual_params           = visual_params,
+                    verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
                 )
+
 
 
 

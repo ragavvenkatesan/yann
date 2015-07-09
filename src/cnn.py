@@ -14,6 +14,7 @@ import scipy.io
 import gzip
 import cPickle
 import cv2, cv
+from random import randint
 
 # Theano Packages
 import theano
@@ -40,6 +41,107 @@ def Tanh(x):
     y = T.tanh(x)
     return(y)
     
+def scale_to_unit_interval(ndar, eps=1e-8):
+    """ Scales all values in the ndarray ndar to be between 0 and 1 """
+    ndar = ndar.copy()
+    ndar -= ndar.min()
+    ndar *= 1.0 / (ndar.max() + eps)
+    return ndar
+
+
+def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
+                       scale_rows_to_unit_interval=True,
+                       output_pixel_vals=True):
+    #This code is from theao utilities 
+    assert len(img_shape) == 2
+    assert len(tile_shape) == 2
+    assert len(tile_spacing) == 2
+
+    out_shape = [
+        (ishp + tsp) * tshp - tsp
+        for ishp, tshp, tsp in zip(img_shape, tile_shape, tile_spacing)
+    ]
+
+    if isinstance(X, tuple):
+        assert len(X) == 4
+        # Create an output numpy ndarray to store the image
+        if output_pixel_vals:
+            out_array = numpy.zeros((out_shape[0], out_shape[1], 4),
+                                    dtype='uint8')
+        else:
+            out_array = numpy.zeros((out_shape[0], out_shape[1], 4),
+                                    dtype=X.dtype)
+
+        #colors default to 0, alpha defaults to 1 (opaque)
+        if output_pixel_vals:
+            channel_defaults = [0, 0, 0, 255]
+        else:
+            channel_defaults = [0., 0., 0., 1.]
+
+        for i in xrange(4):
+            if X[i] is None:
+                # if channel is None, fill it with zeros of the correct
+                # dtype
+                dt = out_array.dtype
+                if output_pixel_vals:
+                    dt = 'uint8'
+                out_array[:, :, i] = numpy.zeros(
+                    out_shape,
+                    dtype=dt
+                ) + channel_defaults[i]
+            else:
+                # use a recurrent call to compute the channel and store it
+                # in the output
+                out_array[:, :, i] = tile_raster_images(
+                    X[i], img_shape, tile_shape, tile_spacing,
+                    scale_rows_to_unit_interval, output_pixel_vals)
+        return out_array
+
+    else:
+        # if we are dealing with only one channel
+        H, W = img_shape
+        Hs, Ws = tile_spacing
+
+        # generate a matrix to store the output
+        dt = X.dtype
+        if output_pixel_vals:
+            dt = 'uint8'
+        out_array = numpy.zeros(out_shape, dtype=dt)
+
+        for tile_row in xrange(tile_shape[0]):
+            for tile_col in xrange(tile_shape[1]):
+                if tile_row * tile_shape[1] + tile_col < X.shape[0]:
+                    this_x = X[tile_row * tile_shape[1] + tile_col]
+                    if scale_rows_to_unit_interval:
+                        # if we should scale values to be between 0 and 1
+                        # do this by calling the `scale_to_unit_interval`
+                        # function
+                        this_img = scale_to_unit_interval(
+                            this_x.reshape(img_shape))
+                    else:
+                        this_img = this_x.reshape(img_shape)
+                    # add the slice to the corresponding position in the
+                    # output array
+                    c = 1
+                    if output_pixel_vals:
+                        c = 255
+                    out_array[
+                        tile_row * (H + Hs): tile_row * (H + Hs) + H,
+                        tile_col * (W + Ws): tile_col * (W + Ws) + W
+                    ] = this_img * c
+        return out_array
+
+# takes a numpy array of shape (n_imgs, height, width)
+def visualize(imgs, tile_shape = None, tile_spacing = (2,2), 
+                loc = '../results/', filename = "activities.jpg" , show_img = True ):
+    img_shape = (imgs.shape[1], imgs.shape[2])
+    if tile_shape is None:
+        tile_shape = (numpy.asarray(numpy.ceil(numpy.sqrt(imgs.shape[0])), dtype='int32'), numpy.asarray(imgs.shape[0]/numpy.ceil(numpy.sqrt(imgs.shape[0])), dtype='int32') )
+    flattened_imgs = numpy.reshape(imgs,(imgs.shape[0],numpy.prod(imgs.shape[1:])))
+    filters_as_image = tile_raster_images(X =flattened_imgs, img_shape = img_shape, tile_shape = tile_shape, tile_spacing = (2,2))
+    if show_img is True:
+        cv2.imshow(loc + filename + str(randint(0,9)), filters_as_image)
+    cv2.imwrite(loc + filename, filters_as_image)
 
 # SVM layer from the discussions in this group
 # https://groups.google.com/forum/#!msg/theano-users/on4D16jqRX8/IWGa-Gl07g0J
@@ -350,6 +452,7 @@ class MLP(object):
 
         self.predicts_dropouts = self.layers[-1].y_pred
         self.predicts = self.layers[-1].y_pred
+        self.params = [ param for layer in self.dropout_layers for param in layer.params ]
 
         if svm_flag is True:
             self.probabilities = self.layers[-1].output
@@ -357,10 +460,10 @@ class MLP(object):
             self.probabilities = self.layers[-1].probabilities            
 
         # Grab all the parameters together.
-        self.params = [ param for layer in self.dropout_layers for param in layer.params ]
+        #self.filter_images = T.reshape(self.W, (filter_shape[0], filter_shape[1], numpy.prod(filter_shape[2:])))
 
-
-
+       
+       
 # From theano tutorials
 class LeNetConvPoolLayer(object):
     """Pool Layer of a convolutional network .. taken from the theano tutorials"""
@@ -389,7 +492,7 @@ class LeNetConvPoolLayer(object):
         W_bound = numpy.sqrt(6. / (fan_in + fan_out))
         self.W = theano.shared(
             numpy.asarray(
-                rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
+                rng.uniform(low=-W_bound, high=W_bound, size =filter_shape),
                 dtype=theano.config.floatX
             ),
             borrow=True
@@ -417,12 +520,16 @@ class LeNetConvPoolLayer(object):
         # add the bias term. Since the bias is a vector (1D array), we first
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
         # thus be broadcasted across mini-batches and feature map
-        # width & height
-        self.output = activation(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        # width     & height
 
+        self.output = activation(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
         # store parameters of this layer
         self.params = [self.W, self.b]
-        
+
+        self.img_shape = (filter_shape[2], filter_shape[3])
+        self.tile_shape = (numpy.asarray(numpy.ceil(numpy.sqrt(filter_shape[0]*filter_shape[1])), dtype='int32'), 
+                            numpy.asarray(filter_shape[0]*filter_shape[1]/numpy.ceil(filter_shape[0]*filter_shape[1]), dtype='int32') )
+        self.filter_img = self.W.reshape((filter_shape[0],filter_shape[1],filter_shape[2],filter_shape[3]))
 
     def get_reconstructed_input(self, hidden):
         """ Computes the reconstructed input given the values of the hidden layer """
@@ -431,19 +538,7 @@ class LeNetConvPoolLayer(object):
         stacked_conv_neibs = T.stack(*multiple_conv_out).T
         stretch_unpooling_out = neibs2images(stacked_conv_neibs, self.pl, self.x.shape) 
         return ReLU(stretch_unpooling_out + self.b_prime.dimshuffle('x', 0, 'x', 'x'))
-
-def write_filters ( W, verbose = False ):
-    size = W.shape
-    img = numpy.zeros(size[2])
-    if verbose is True:
-        print "... Saving Filters with shape: " + str(size)
-    for i in xrange( size[0]):
-        for j in xrange ( size[1] ):
-            print " here"
-            pdb.set_trace()
-
-
-
+            
 
 
 
