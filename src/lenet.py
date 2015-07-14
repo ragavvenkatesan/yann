@@ -39,6 +39,17 @@ from loaders import load_data_mat
 from loaders import load_skdata_caltech101
 from loaders import load_skdata_mnist
 from loaders import load_skdata_cifar10
+from loaders import load_skdata_mnist_noise1
+from loaders import load_skdata_mnist_noise2
+from loaders import load_skdata_mnist_noise3
+from loaders import load_skdata_mnist_noise4
+from loaders import load_skdata_mnist_noise5
+from loaders import load_skdata_mnist_noise6
+from loaders import load_skdata_mnist_bg_images
+from loaders import load_skdata_mnist_bg_rand
+from loaders import load_skdata_mnist_rotated
+from loaders import load_skdata_mnist_rotated_bg
+
 
 
 def run_cnn(  arch_params,
@@ -175,10 +186,22 @@ def run_cnn(  arch_params,
     # load skdata ( its a good library that has a lot of datasets)
     elif data_params["type"] == 'skdata':
 
-        if dataset == 'mnist':
-            print "... importing mnist from skdata"
+        if (dataset == 'mnist' or 
+            dataset == 'mnist_noise1' or 
+            dataset == 'mnist_noise2' or
+            dataset == 'mnist_noise3' or
+            dataset == 'mnist_noise4' or
+            dataset == 'mnist_noise5' or
+            dataset == 'mnist_noise6' or
+            dataset == 'mnist_bg_images' or
+            dataset == 'mnist_bg_rand' or
+            dataset == 'mnist_rotated' or
+            dataset == 'mnist_rotated_bg') :
 
-            data = load_skdata_mnist()
+            print "... importing " + dataset + " from skdata"
+
+            func = globals()['load_skdata_' + dataset]
+            data = func()
             train_set_x, train_set_y, train_set_y1 = data[0]
             valid_set_x, valid_set_y, valid_set_y1 = data[1]
             test_set_x, test_set_y, test_set_y1 = data[2]
@@ -821,7 +844,7 @@ def run_cnn(  arch_params,
     # TODO : Write code that can pickle down model parameters along with model information also so that things can be unpickled
     # irrespecive of what the loader is. Ensure that the loader can also create a network based on the loaded data.
 
-   #################
+    #################
     # Boiler PLate  #
     #################
     
@@ -836,7 +859,7 @@ if __name__ == '__main__':
                             "mom_end"                           : 0.98,
                             "mom_interval"                      : 100,
                             "mom_type"                          : 1,                         # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum 
-                            "initial_learning_rate"             : 0.01,                      # Learning rate at the start
+                            "initial_learning_rate"             : 0.001,                      # Learning rate at the start
                             "learning_rate_decay"               : 0.9998, 
                             "l1_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
                             "l2_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
@@ -849,22 +872,22 @@ if __name__ == '__main__':
 
 
     filename_params = { 
-                        "results_file_name" : "../results/results_cifar.txt",        # Files that will be saved down on completion Can be used by the parse.m file
-                        "error_file_name"   : "../results/error_cifar.txt",
-                        "cost_file_name"    : "../results/cost_cifar.txt"
+                        "results_file_name" : "../results/results_mnist.txt",        # Files that will be saved down on completion Can be used by the parse.m file
+                        "error_file_name"   : "../results/error_mnist.txt",
+                        "cost_file_name"    : "../results/cost_mnist.txt"
                     }        
         
     data_params = {
                    "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'cifar10',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
-                   "batch_size"         : 100,                                      # For loading and for Gradient Descent Batch Size
+                   "loc"                : 'mnist_noise4',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
-                   "batches2train"      : 400,                                      # Number of training batches.
-                   "batches2test"       : 100,                                       # Number of testing batches.
-                   "batches2validate"   : 100,                                       # Number of validation batches
-                   "height"             : 32,                                       # Height of each input image
-                   "width"              : 32,                                       # Width of each input image
-                   "channels"           : 3                                         # Number of channels of each input image 
+                   "batches2train"      : 20,                                      # Number of training batches.
+                   "batches2test"       : 4,                                       # Number of testing batches.
+                   "batches2validate"   : 4,                                       # Number of validation batches
+                   "height"             : 28,                                       # Height of each input image
+                   "width"              : 28,                                       # Width of each input image
+                   "channels"           : 1                                         # Number of channels of each input image 
                   }
 
     arch_params = {
@@ -873,14 +896,14 @@ if __name__ == '__main__':
                     "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
                     "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
                     "mlp_activations"                   : [ ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU, ReLU , ReLU],           # Activations for CNN layers Options: ReLU,       
+                    "cnn_activations"                   : [ ReLU, ReLU ],           # Activations for CNN layers Options: ReLU,       
                     "dropout"                           : True,                     # Flag for dropout / backprop                    
                     "column_norm"                       : True,
                     "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.
-                    "nkerns"                            : [ 48 , 128 , 128 , 128 ],               # Number of feature maps at each CNN layer
+                    "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
-                    "filter_size"                       : [  7 , 5 , 5 , 5 ],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  1 , 1 , 2, 2 ],                # Pooling field of each CNN layer
+                    "filter_size"                       : [  5 , 5 ],                # Receptive field of each CNN layer
+                    "pooling_size"                      : [  2 , 2 ],                # Pooling field of each CNN layer
                     "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
@@ -905,7 +928,4 @@ if __name__ == '__main__':
                     verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
                     debug                   = False
                 )
-
-
-
 

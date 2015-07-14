@@ -122,6 +122,254 @@ def load_skdata_mnist ():
 	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
 	return rval
 
+def load_skdata_mnist_noise1():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_Noise1()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+	train_x = data_x[0:10000]
+	train_y = data_y[0:10000]
+
+	test_x = data_x[10000:12000]
+	test_y = data_y[10000:12000]
+
+	valid_x = data_x[12000:]
+	valid_y = data_y[12000:]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[2000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[2000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[10000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+def load_skdata_mnist_noise2():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_Noise2()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+	train_x = data_x[0:10000]
+	train_y = data_y[0:10000]
+
+	test_x = data_x[10000:12000]
+	test_y = data_y[10000:12000]
+
+	valid_x = data_x[12000:]
+	valid_y = data_y[12000:]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[2000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[2000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[10000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+
+def load_skdata_mnist_noise3():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_Noise3()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+	train_x = data_x[0:10000]
+	train_y = data_y[0:10000]
+
+	test_x = data_x[10000:12000]
+	test_y = data_y[10000:12000]
+
+	valid_x = data_x[12000:]
+	valid_y = data_y[12000:]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[2000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[2000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[10000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+
+def load_skdata_mnist_noise4():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_Noise4()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+	train_x = data_x[0:10000]
+	train_y = data_y[0:10000]
+
+	test_x = data_x[10000:12000]
+	test_y = data_y[10000:12000]
+
+	valid_x = data_x[12000:]
+	valid_y = data_y[12000:]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[2000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[2000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[10000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+
+def load_skdata_mnist_noise5():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_Noise5()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+
+	train_x = data_x[0:10000]
+	train_y = data_y[0:10000]
+
+	test_x = data_x[10000:12000]
+	test_y = data_y[10000:12000]
+
+	valid_x = data_x[12000:]
+	valid_y = data_y[12000:]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[2000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[2000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[10000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+def load_skdata_mnist_noise6():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_Noise6()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+
+	train_x = data_x[0:10000]
+	train_y = data_y[0:10000]
+
+	test_x = data_x[10000:12000]
+	test_y = data_y[10000:12000]
+
+	valid_x = data_x[12000:]
+	valid_y = data_y[12000:]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[2000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[2000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[10000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+def load_skdata_mnist_bg_images():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_BackgroundImages()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+
+	train_x = data_x[0:40000]
+	train_y = data_y[0:40000]
+
+	test_x = data_x[50000:]
+	test_y = data_y[50000:]
+
+	valid_x = data_x[40000:50000]
+	valid_y = data_y[40000:50000]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[12000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[10000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[40000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+def load_skdata_mnist_bg_rand():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_BackgroundRandom()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+
+	train_x = data_x[0:40000]
+	train_y = data_y[0:40000]
+
+	test_x = data_x[50000:]
+	test_y = data_y[50000:]
+
+	valid_x = data_x[40000:50000]
+	valid_y = data_y[40000:50000]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[12000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[10000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[40000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+def load_skdata_mnist_rotated():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_Rotated()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+
+	train_x = data_x[0:40000]
+	train_y = data_y[0:40000]
+
+	test_x = data_x[50000:]
+	test_y = data_y[50000:]
+
+	valid_x = data_x[40000:50000]
+	valid_y = data_y[40000:50000]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[12000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[10000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[40000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
+def load_skdata_mnist_rotated_bg():
+	from skdata import larochelle_etal_2007
+	mn = larochelle_etal_2007.MNIST_RotatedBackgroundImages()  
+	mn.fetch(True)
+	meta = mn.build_meta()
+	data_x = mn._inputs
+	data_y = mn._labels 
+
+	train_x = data_x[0:40000]
+	train_y = data_y[0:40000]
+
+	test_x = data_x[50000:]
+	test_y = data_y[50000:]
+
+	valid_x = data_x[40000:50000]
+	valid_y = data_y[40000:50000]
+
+	test_set_x, test_set_y, test_set_y1 = shared_dataset((numpy.reshape(test_x,[12000,784]),test_y))
+	valid_set_x, valid_set_y, valid_set_y1 = shared_dataset((numpy.reshape(valid_x,[10000,784]),valid_y))
+	train_set_x, train_set_y, train_set_y1 = shared_dataset((numpy.reshape(train_x,[40000,784]),train_y))
+
+	rval = [(train_set_x, train_set_y, train_set_y1), (valid_set_x, valid_set_y, valid_set_y1), (test_set_x, test_set_y, test_set_y1)]
+	return rval
+
+
 # for cifar10 of skdata
 def load_skdata_cifar10():
 	from skdata import cifar10
