@@ -2,3 +2,4 @@
 1. Layerwise greedy unsupervised pre-training.
 2. Parse code for visualizing filters .. with GUI options to load choice of epoch. 
 
+
