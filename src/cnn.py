@@ -140,7 +140,7 @@ def visualize(imgs, tile_shape = None, tile_spacing = (2,2),
     flattened_imgs = numpy.reshape(imgs,(imgs.shape[0],numpy.prod(imgs.shape[1:])))
     filters_as_image = tile_raster_images(X =flattened_imgs, img_shape = img_shape, tile_shape = tile_shape, tile_spacing = (2,2))
     if show_img is True:
-        cv2.imshow(loc + filename + str(randint(0,9)), filters_as_image)
+        cv2.imshow(filename + str(randint(0,9)), filters_as_image)
     cv2.imwrite(loc + filename, filters_as_image)
 
 # SVM layer from the discussions in this group
@@ -235,7 +235,7 @@ class LogisticRegression(object):
         else:
             self.W = W
 
-        # initialize the baises b as a vector of n_out 0s
+        # initialize the baises b as a vector of n_out 0s        
         if b is None:
             self.b = theano.shared(
                     value=numpy.zeros((n_out,), dtype=theano.config.floatX),
@@ -254,17 +254,12 @@ class LogisticRegression(object):
         self.params = [self.W, self.b]
         self.probabilities = T.log(self.p_y_given_x)
 
-    def negative_log_likelihood(self, y, regularize_l1 = False, regularize_l2 = False):
+    def negative_log_likelihood(self, y ):
         """Return the mean of the negative log-likelihood of the prediction
         of this model under a given target distribution.
         """
  
-        rval = -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y]) 
-        if regularize_l1 is True: 
-            rval = rval + T.sum(abs(self.params[0]))
-        if regularize_l2 is True:
-            rval = rval + T.sum(self.params[0]**2)
-        return rval
+        return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y]) 
 
     def errors(self, y):
         """Return a float representing the number of errors in the minibatch ;
@@ -297,9 +292,14 @@ class HiddenLayer(object):
         self.activation = activation
 
         if W is None:
-            W_values = numpy.asarray(0.01 * rng.uniform(low=-numpy.sqrt(6. / (n_in + n_out)),
+            W_values = numpy.asarray(rng.uniform(
+                    low=-numpy.sqrt(6. / (n_in + n_out)),
                     high=numpy.sqrt(6. / (n_in + n_out)),
-                size=(n_in, n_out)), dtype=theano.config.floatX)
+                    size=(n_in, n_out)
+                ),dtype=theano.config.floatX)
+
+            if activation == Sigmoid or activation == T.nnet.sigmoid:
+                W_values*=4 
             W = theano.shared(value=W_values, name='W')
         
         if b is None:
@@ -371,6 +371,12 @@ class MLP(object):
         # dropout the input
         next_dropout_layer_input = _dropout_from_layer(rng, input, p=dropout_rates[0])
         layer_counter = 0        
+
+        self.dropout_L1 = theano.shared(0)
+        self.dropout_L2 = theano.shared(0)
+        self.L1 = theano.shared(0)
+        self.L2 = theano.shared(0)
+
         for n_in, n_out in weight_matrix_sizes[:-1]:
             if verbose is True:
                 print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
@@ -382,6 +388,8 @@ class MLP(object):
                     dropout_rate=dropout_rates[layer_counter + 1])
             self.dropout_layers.append(next_dropout_layer)
             next_dropout_layer_input = next_dropout_layer.output
+            self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
+            self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
 
             # Reuse the paramters from the dropout layer here, in a different
             # path through the graph.
@@ -396,6 +404,8 @@ class MLP(object):
             self.layers.append(next_layer)
             next_layer_input = next_layer.output
             #first_layer = False
+            self.L1 = self.L1 + abs(self.layers[-1].W).sum() 
+            self.L2 = self.L2 + abs(self.layers[-1].W**2).sum()
             layer_counter += 1
         
         # Set up the output layer
@@ -421,8 +431,14 @@ class MLP(object):
             self.layers.append(output_layer)
             self.dropout_layers.append(dropout_output_layer)
 
-            self.dropout_negative_log_likelihood = self.dropout_layers[-1].negative_log_likelihood
+            self.dropout_negative_log_likelihood = self.dropout_layers[-1].negative_log_likelihood             
             self.negative_log_likelihood = self.layers[-1].negative_log_likelihood
+
+            self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
+            self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
+
+            self.L1 = self.L1 + abs(self.layers[-1].W).sum() 
+            self.L2 = self.L2 + abs(self.layers[-1].W**2).sum()
 
         else:
             if verbose is True:
@@ -443,7 +459,6 @@ class MLP(object):
             self.dropout_negative_log_likelihood = self.dropout_layers[-1].ova_svm_cost
             self.negative_log_likelihood = self.layers[-1].ova_svm_cost
 
-        
         # Use the negative log likelihood of the logistic regression layer as
         # the objective.
         
@@ -525,7 +540,6 @@ class LeNetConvPoolLayer(object):
         self.output = activation(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
         # store parameters of this layer
         self.params = [self.W, self.b]
-
         self.img_shape = (filter_shape[2], filter_shape[3])
         self.tile_shape = (numpy.asarray(numpy.ceil(numpy.sqrt(filter_shape[0]*filter_shape[1])), dtype='int32'), 
                             numpy.asarray(filter_shape[0]*filter_shape[1]/numpy.ceil(filter_shape[0]*filter_shape[1]), dtype='int32') )

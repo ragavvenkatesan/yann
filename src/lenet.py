@@ -41,50 +41,20 @@ from loaders import load_skdata_mnist
 from loaders import load_skdata_cifar10
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def run_cnn(  arch_params,
                     optimization_params ,
                     data_params, 
                     filename_params,
                     visual_params,
-                    verbose = True, ):
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
+                    verbose = False, 
+                    debug = False):
     
 
     #####################
     # Unpack Variables  #
     #####################
+
+    if debug is True: pdb.set_trace()
 
     results_file_name = filename_params [ "results_file_name" ]                # Files that will be saved down on completion Can be used by the parse.m file
     error_file_name   = filename_params [ "error_file_name" ]
@@ -105,15 +75,14 @@ def run_cnn(  arch_params,
     mom_epoch_interval              = optimization_params [ "mom_interval" ]
     mom_type                        = optimization_params [ "mom_type" ]
     initial_learning_rate           = optimization_params [ "initial_learning_rate" ]              
-    learning_rate_decay             = optimization_params [ "learning_rate_decay" ]  
-    ada_grad_begin                  = optimization_params [ "ada_grad_begin"  ]
-    ada_grad_end                    = optimization_params [ "ada_grad_end"  ]
-    learning_rate_at_ada_grad_begin = optimization_params [ "learning_rate_at_ada_grad_begin" ] 
-    learning_rate_at_ada_grad_end   = optimization_params [ "learning_rate_at_ada_grad_end" ]
+    learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
+    ada_grad                        = optimization_params [ "ada_grad" ]   
     fudge_factor                    = optimization_params [ "fudge_factor" ]
-    regularize_l1                   = optimization_params [ "regularize_l1" ]
-    regularize_l2                   = optimization_params [ "regularize_l2" ]
-    cross_entropy                   = optimization_params [ "cross_entropy"]
+    l1_reg                          = optimization_params [ "l1_reg" ]
+    l2_reg                          = optimization_params [ "l2_reg" ]
+    rms_prop                        = optimization_params [ "rms_prop" ]
+    rms_rho                         = optimization_params [ "rms_rho" ]
+    rms_epsilon                     = optimization_params [ "rms_epsilon" ]
 
     squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
     n_epochs                        = arch_params [ "n_epochs" ]
@@ -145,32 +114,12 @@ def run_cnn(  arch_params,
     # Random seed initialization.
     rng = numpy.random.RandomState(random_seed)  
 
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     #################
     # Data Loading  #
     #################
     print "... loading data"
-
+    if debug is True: pdb.set_trace()
     # load matlab files as dataset.
     if data_params["type"] == 'mat':
         train_data_x, train_data_y, train_data_y1 = load_data_mat(dataset, batch = 1 , type_set = 'train')             
@@ -310,33 +259,18 @@ def run_cnn(  arch_params,
     # Just checking as a way to see if the intended dataset is indeed loaded.
     assert height*width*channels == train_set_x.get_value( borrow = True ).shape[1]
     assert batch_size >= n_visual_images
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if debug is True: pdb.set_trace()
+    if ada_grad is True:
+        assert rms_prop is False
+    elif rms_prop is True:
+        assert ada_grad is False
+        fudge_factor = rms_epsilon
 
     ######################
     # BUILD NETWORK      #
     ######################
+
+    if debug is True: pdb.set_trace()
     print '... building the network'    
     start_time = time.clock()
     # allocate symbolic variables for the data
@@ -348,7 +282,7 @@ def run_cnn(  arch_params,
         y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
 
     first_layer_input = x.reshape((batch_size, channels, height, width))
-
+    if debug is True: pdb.set_trace()
     # Create first convolutional - pooling layers 
     activity = []       # to record Cnn activities 
     weights = []
@@ -371,7 +305,7 @@ def run_cnn(  arch_params,
     # Create the rest of the convolutional - pooling layers in a loop
     next_in_1 = ( height - filt_size + 1 ) / pool_size        
     next_in_2 = ( width - filt_size + 1 ) / pool_size
-
+    if debug is True: pdb.set_trace()
     for layer in xrange(len(nkerns)-1):   
         filt_size = filter_size[layer+1]
         pool_size = pooling_size[layer+1]
@@ -388,7 +322,7 @@ def run_cnn(  arch_params,
         next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
         weights.append ( conv_layers[-1].filter_img )
         activity.append( conv_layers[-1].output )
-
+    if debug is True: pdb.set_trace()
     # Assemble fully connected laters 
     fully_connected_input = conv_layers[-1].output.flatten(2)
     if len(dropout_rates) > 2 :
@@ -402,6 +336,11 @@ def run_cnn(  arch_params,
 
     assert len(layer_sizes) - 1 == len(dropout_rates)           # Just checking.
 
+    """  Dropouts implemented from paper:
+    Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
+    from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
+    """
+    if debug is True: pdb.set_trace()
     MLPlayers = MLP( rng=rng,
                      input=fully_connected_input,
                      layer_sizes=layer_sizes,
@@ -410,16 +349,16 @@ def run_cnn(  arch_params,
                      use_bias=use_bias,
                      svm_flag = svm_flag,
                      verbose = verbose)
-
-    # Build the expresson for the cross entropy function.
+    if debug is True: pdb.set_trace()
+    # Build the expresson for the categorical cross entropy function.
     if svm_flag is False:
-        cost = MLPlayers.negative_log_likelihood(y,regularize_l1 = regularize_l1, regularize_l2 = regularize_l2)
-        dropout_cost = MLPlayers.dropout_negative_log_likelihood(y,regularize_l1 = regularize_l1, regularize_l2 = regularize_l2)
+        cost = MLPlayers.negative_log_likelihood( y )
+        dropout_cost = MLPlayers.dropout_negative_log_likelihood( y )
     else :        
-        cost = MLPlayers.negative_log_likelihood(y1,regularize_l1 = regularize_l1, regularize_l2 = regularize_l2)
-        dropout_cost = MLPlayers.dropout_negative_log_likelihood(y1,regularize_l1 = regularize_l1, regularize_l2 = regularize_l2)
-
-
+        cost = MLPlayers.negative_log_likelihood( y1 )
+        dropout_cost = MLPlayers.dropout_negative_log_likelihood( y1 )
+    if debug is True: pdb.set_trace()
+    # create theano functions for evaluating the graphs
     test_model = theano.function(
             inputs=[index],
             outputs=MLPlayers.errors(y),
@@ -445,124 +384,136 @@ def run_cnn(  arch_params,
         outputs = MLPlayers.probabilities,
         givens={
             x: test_set_x[index * batch_size: (index + 1) * batch_size]})
-
+    if debug is True: pdb.set_trace()
     params = []
     for layer in conv_layers:
         params = params + layer.params
     params = params + MLPlayers.params
-
-    # function to return activations
+    if debug is True: pdb.set_trace()
+    # function to return activations of each image
     activities = theano.function (
         inputs = [index],
         outputs = activity,
         givens = {
-                x: test_set_x[index * batch_size: (index + 1) * batch_size]
+                x: train_set_x[index * batch_size: (index + 1) * batch_size]
                  })
 
-    # Compute gradients of the model wrt parameters
-
-    """  Dropouts implemented from paper:
-    Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
-    from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
-    """
-
-    negative_log_likelihood_output = dropout_cost if dropout else cost
-    
-    if cross_entropy is True:
-        output = T.nnet.binary_crossentropy(negative_log_likelihood_output, y).mean()
-    else:
-        output = negative_log_likelihood_output
+    # Compute cost and gradients of the model wrt parameter
+    output = dropout_cost + l1_reg * MLPlayers.dropout_L1 + l2_reg * MLPlayers.dropout_L2 if dropout else cost + l1_reg * MLPlayers.L1 + l2_reg * MLPlayers.L2
 
     gradients = []
     for param in params: 
-        gradient = T.grad( output , param)
+        gradient = T.grad( output ,param)
         gradients.append ( gradient )
 
-    """ Adagrad implemented from paper:
-    John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
-    for online learning and stochastic optimization. JMLR
-    """
 
     # TO DO: Try implementing Adadelta also. 
-
+    if debug is True: pdb.set_trace()
     # Compute momentum for the current epoch
     epoch = T.scalar()
     mom = ifelse(epoch <= mom_epoch_interval,
         mom_start*(1.0 - epoch/mom_epoch_interval) + mom_end*(epoch/mom_epoch_interval),
         mom_end)
 
+    # learning rate
+    eta = theano.shared(numpy.asarray(initial_learning_rate,dtype=theano.config.floatX))
+    # accumulate gradients for adagrad
+    if debug is True: pdb.set_trace()
     grad_acc = []
     for param in params:
         eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
         grad_acc.append(theano.shared(eps, borrow=True))
-            
-    eta = theano.shared(numpy.asarray(initial_learning_rate,dtype=theano.config.floatX))
 
+    # accumulate velocities for momentum
     velocities = []
     for param in params:
         velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
         velocities.append(velocity)
-
-    # Update the step direction using momentum
+    if debug is True: pdb.set_trace()
+    # create updates for each combination of stuff 
     updates = OrderedDict()
-
     print_flag = False
+    if debug is True: pdb.set_trace()
     for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
 
-        current_acc = acc + T.sqr(gradient)
-        updates[acc] = current_acc
+        if ada_grad is True:
+
+            """ Adagrad implemented from paper:
+            John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
+            for online learning and stochastic optimization. JMLR
+            """
+
+            current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
+            updates[acc] = current_acc          # updates accumulation at timestamp
+
+        elif rms_prop is True:
+
+            """ Tieleman, T. and Hinton, G. (2012):
+            Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
+            Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
+
+            current_acc = rms_rho * acc + (1 - rms_rho) * T.sqr(gradient) 
+            updates[acc] = current_acc
+
+        else:
+            current_acc = 1
+            fudge_factor = 0
 
         if mom_type == 0:               # no momentum
-            updates[velocity] = ifelse( (T.lt(epoch,ada_grad_end) and T.ge(epoch,ada_grad_begin)) , (-1* ( eta / (T.sqrt(current_acc) + fudge_factor ) ) *gradient ), (-1 * eta * gradient ) )
+            updates[velocity] = -(eta / T.sqrt(current_acc + fudge_factor)) * gradient                                            
+            #updates[velocity] = -1*eta*gradient
+                        # perform adagrad velocity update
+                        # this will be just added to parameters.
+        elif mom_type == 1:       # if polyak momentum    
 
-        elif mom_type == 1:       
-            """ Momentum implemented from paper:
+            """ Momentum implemented from paper:  
             Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration methods." 
             USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
 
-            Adapted from Sutskever, Ilya, et al. "On the importance of initialization and momentum in deep learning." 
+            Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization and momentum in deep learning." 
             Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
-            equation (1) and equation (2)
-            """      
-            updates[velocity] = ifelse( (T.lt(epoch,ada_grad_end) and T.ge(epoch,ada_grad_begin)) , (mom * velocity - ( eta / (T.sqrt(current_acc) + fudge_factor ) ) * gradient ) , ( mom * velocity - eta * gradient ) )
+            equation (1) and equation (2)"""   
 
-        elif mom_type == 2:             # Not yet fully functional
-            # """Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)."
-            #  Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
-            #  Adapted from https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/ """
-            # if param.get_value(borrow=True).ndim == 2 and column_norm is True:
-            #     col_norms = T.sqrt(T.sum(T.sqr(param), axis=0))
-            #     desired_norms = T.clip(col_norms, 0, T.sqrt(squared_filter_length_limit))
-            #     scale = desired_norms / (1e-7 + col_norms)
-            #     updates[param] = param * scale
-            # else:            
-            #     updates[param] = param 
-            # x = mom * velocity + updates[param] - param
-            # updates[velocity] = x
-            # updates[param] = mom * x + updates[param]
-            print " Choose something else for momentum. This one is incomplete and still has a lot of trouble."
+            updates[velocity] = mom * velocity - (1.-mom) * ( eta / T.sqrt(current_acc+ fudge_factor))  * gradient                             
+
+        elif mom_type == 2:             # Nestrov accelerated gradient beta stage... 
+
+            """Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)."
+            Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
+            Adapted from https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/ 
+
+            Instead of using past params we use the current params as described in this link
+            https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,"""
+  
+            updates[velocity] = mom * velocity - (1.-mom) * ( eta / T.sqrt(current_acc + fudge_factor))  * gradient                                 
+            updates[param] = mom * updates[velocity] 
+
         else:
             if print_flag is False:
                 print_flag = True
                 print "!! Unrecognized mometum type, switching to no momentum."
-            updates[velocity] = ifelse( (T.lt(epoch,ada_grad_end) and T.ge(epoch,ada_grad_begin)) , (-1* ( eta / (T.sqrt(current_acc) + fudge_factor ) ) *gradient ), (-1 * eta * gradient ) )
+            updates[velocity] = -( eta / T.sqrt(current_acc+ fudge_factor) ) * gradient                                              
+                        
 
-
-
-    for param, velocity in zip(params, velocities):
-        if mom_type != 2:           # for Nesterov's update is done in the loop above only. No need to do it here. 
+        if mom_type != 2:
             stepped_param  = param + updates[velocity]
-            if param.get_value(borrow=True).ndim == 2 and column_norm is True:
+        else:
+            stepped_param = param + updates[velocity] + updates[param]
 
-                """ constrain the norms of the COLUMNs of the weight, according to
-                 https://github.com/BVLC/caffe/issues/109 """
-                col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
-                desired_norms = T.clip(col_norms, 0, T.sqrt(squared_filter_length_limit))
-                scale = desired_norms / (1e-7 + col_norms)
-                updates[param] = stepped_param * scale
-            else:            
-                updates[param] = stepped_param
+        if param.get_value(borrow=True).ndim == 2 and column_norm is True:
 
+            """ constrain the norms of the COLUMNs of the weight, according to
+            https://github.com/BVLC/caffe/issues/109 """
+
+            col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
+            desired_norms = T.clip(col_norms, 0, T.sqrt(squared_filter_length_limit))
+            scale = desired_norms / (1e-7 + col_norms)
+            updates[param] = stepped_param * scale
+
+        else:            
+            updates[param] = stepped_param
+
+    if debug is True: pdb.set_trace()
     if svm_flag is True:
         train_model = theano.function(inputs= [index, epoch],
                 outputs=output,
@@ -599,8 +550,11 @@ def run_cnn(  arch_params,
     shuffle_batch_ind = numpy.arange(batch_size)
     numpy.random.shuffle(shuffle_batch_ind)
     visualize_ind = shuffle_batch_ind[0:n_visual_images]
+    #visualize_ind = range(n_visual_images)
     main_img_visual = False
 
+    if debug is True: pdb.set_trace()
+    # create all directories required for saving results and data.
     if visualize_flag is True:
         if not os.path.exists('../visuals'):
             os.makedirs('../visuals')                
@@ -614,66 +568,43 @@ def run_cnn(  arch_params,
                 os.makedirs('../visuals/filters/layer_'+str(i))
         if not os.path.exists('../visuals/images'):
             os.makedirs('../visuals/images')
+    if not os.path.exists('../results/'):
+        os.makedirs ('../results')
 
     print "...      -> building complete, took " + str((end_time - start_time)) + " seconds" 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     ###############
     # TRAIN MODEL #
     ###############
-
+    if debug is True: pdb.set_trace()
     #pdb.set_trace()
     print "... training"
     start_time = time.clock()
 
-    # early-stopping parameters
-    best_validation_loss = numpy.inf
+    patience = numpy.inf  # look as this many examples regardless
+    patience_increase = 2  # wait this much longer when a new best is
+                           # found
+    improvement_threshold = 0.995  # a relative improvement of this much is
+                                   # considered significant
     this_validation_loss = []
+    best_validation_loss = numpy.inf
     best_iter = 0
     epoch_counter = 0
-    done_looping = False
+    early_termination = False
     cost_saved = []
     best_params = None
+    iteration= 0
 
-    while (epoch_counter < n_epochs) and (not done_looping):
+    while (epoch_counter < n_epochs) and (not early_termination):
         epoch_counter = epoch_counter + 1 
-        #print "+++++++++++++++++++++++++++=================|.|=================++++++++++++++++++++++++++"
-        if epoch_counter == ada_grad_begin:
-            eta.set_value (learning_rate_at_ada_grad_begin)
-        if epoch_counter == ada_grad_end:
-            eta.set_value (learning_rate_at_ada_grad_end)
-
+        if debug is True: pdb.set_trace()
         for batch in xrange (batches2train):
             if verbose is True:
-                if epoch_counter >= ada_grad_begin and epoch_counter < ada_grad_end:                
-                    print "...          -> Epoch: " + str(epoch_counter) + " AdaGrad Batch: " + str(batch+1) + " out of " + str(batches2train) + " batches"
-                else:
-                    print "...          -> Epoch: " + str(epoch_counter) + " BackProp Batch: " + str(batch+1) + " out of " + str(batches2train) + " batches"
+                print "...          -> Epoch: " + str(epoch_counter) + " Batch: " + str(batch+1) + " out of " + str(batches2train) + " batches"
 
             if multi_load is True:
+                iteration= (epoch_conter - 1) * n_train_batches * batches2train + batch
                 # Load data for this batch
                 if verbose is True:
                     print "...          -> loading data for new batch"
@@ -696,14 +627,16 @@ def run_cnn(  arch_params,
                         cost_saved = cost_saved +[cost_ij]
                     
             else:        
+                iteration= (epoch_counter - 1) * n_train_batches + batch
                 cost_ij = train_model(batch, epoch_counter)
                 cost_saved = cost_saved +[cost_ij]
-
+        if debug is True: pdb.set_trace()
         if  epoch_counter % validate_after_epochs is 0:  
             # Load Validation Dataset here.
             validation_losses = 0.      
             if multi_load is True:
                 # Load data for this batch
+                if debug is True: pdb.set_trace()
                 for batch in xrange ( batches2test ):
                     if data_params["type"] == 'mat':
                         valid_data_x, valid_data_y, valid_data_y1 = load_data_mat(dataset, batch = batch + 1 , type_set = 'valid')             
@@ -722,86 +655,75 @@ def run_cnn(  arch_params,
 
                 if verbose is True:
                     if this_validation_loss[-1] < best_validation_loss :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validaiton accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%, learning_rate = " + str(eta.get_value(borrow=True))+  ", momentum = " +str(momentum_value(epoch_counter))  + " -> best thus far " 
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%, learning_rate = " + str(eta.get_value(borrow=True))+  ", momentum = " +str(momentum_value(epoch_counter))  + " -> best thus far " 
                     else :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validaiton accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) +  ", momentum = " +str(momentum_value(epoch_counter)) 
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) +  ", momentum = " +str(momentum_value(epoch_counter)) 
                 else:
                     if this_validation_loss[-1] < best_validation_loss :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validaiton accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "% -> best thus far " 
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "% -> best thus far " 
                     else :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validaiton accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%"
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%"
+                if debug is True: pdb.set_trace()
             else:
 
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
                 this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
                 if verbose is True:
                     if this_validation_loss[-1] < best_validation_loss :                    
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validaiton accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) + ", momentum = " +str(momentum_value(epoch_counter)) + " -> best thus far " 
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) + ", momentum = " +str(momentum_value(epoch_counter)) + " -> best thus far " 
                     else:
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validaiton accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) + ", momentum = " +str(momentum_value(epoch_counter)) 
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) + ", momentum = " +str(momentum_value(epoch_counter)) 
                 else:
                     if this_validation_loss[-1] < best_validation_loss :                    
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validaiton accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "% -> best thus far " 
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "% -> best thus far " 
                     else:
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validaiton accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "% "                        
+                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "% "                        
+
+            #improve patience if loss improvement is good enough
+            if this_validation_loss[-1] < best_validation_loss *  \
+               improvement_threshold:
+                patience = max(patience, iteration* patience_increase)
+                best_iter = iteration
+
 
             best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
         new_leanring_rate = decay_learning_rate()    
 
-        tmp_index = 0 
-        if  epoch_counter % visualize_after_epochs is 0:  
-            if main_img_visual is False:
-                for i in xrange(n_visual_images):
-                    curr_img = numpy.reshape(train_set_x.get_value( borrow = True )[visualize_ind[i]],[height, width, channels] ) * 255
-                    if verbose is True:
-                        cv2.imshow("Image Number " +str(visualize_ind[i]), curr_img)
-                    cv2.imwrite("../visuals/images/image_" + str(visualize_ind[i])+".jpg", curr_img )
-            main_img_visual = True
+        if debug is True: pdb.set_trace()
+        if visualize_flag is True:
+            if  epoch_counter % visualize_after_epochs is 0:  
+                if main_img_visual is False:
+                    for i in xrange(n_visual_images):
+                        curr_img = numpy.asarray(numpy.reshape(train_set_x.get_value( borrow = True )[visualize_ind[i]],[height, width, channels] ) * 255., dtype='uint8' )
+                        if verbose is True:
+                            cv2.imshow("Image Number " +str(i) + "_label_" + str(train_set_y.eval()[visualize_ind[i]]), curr_img)
+                        cv2.imwrite("../visuals/images/image_" + str(i)+ "_label_" + str(train_set_y.eval()[visualize_ind[i]]) + ".jpg", curr_img )
+                main_img_visual = True
 
-            activity = activities(0)
-            for l in xrange(len(nkerns)):   #For each layer 
-                loc_ac = '../visuals/activities/layer_' + str(l) + "/epoch_" + str(epoch_counter) +"/"
-                if not os.path.exists(loc_ac):   
-                    os.makedirs(loc_ac)
-                current_activity = activity[l]
-                for i in xrange(n_visual_images):
-                    visualize(current_activity[visualize_ind[i]], loc = loc_ac, filename = 'activity_' + str(i) +'.jpg' , show_img = display_flag)
-            for l in xrange(len(nkerns)):
-                if l == 0:
-                    curr_image = weights[l].reshape((nkerns[l],filter_size[l],filter_size[l]))
-                    visualize(curr_image.eval(), loc = '../visuals/filters/layer_' + str(l) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
-                else:
-                    for i in xrange(nkerns[l-1]): 
-                        curr_image = weights[l].eval()[:,i,:,:]
-                        visualize(curr_image, loc = '../visuals/filters/layer_' + str(l) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
-
+                activity = activities(0)
+                if debug is True: pdb.set_trace()
+                for m in xrange(len(nkerns)):   #For each layer 
+                    loc_ac = '../visuals/activities/layer_' + str(m) + "/epoch_" + str(epoch_counter) +"/"
+                    if not os.path.exists(loc_ac):   
+                        os.makedirs(loc_ac)
+                    current_activity = activity[m]
+                    for i in xrange(n_visual_images):
+                        visualize(current_activity[visualize_ind[i]], loc = loc_ac, filename = 'activity_' + str(i) + "_label_" + str(train_set_y.eval()[visualize_ind[i]]) +'.jpg' , show_img = display_flag)
+                for m in xrange(len(nkerns)):
+                    if m == 0:
+                        for i in xrange(weights[m].shape.eval()[1]):
+                            curr_image = weights[m].eval() [:,i,:,:]
+                            visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
+                    else:
+                        for i in xrange(nkerns[m-1]): 
+                            curr_image = weights[m].eval()[:,i,:,:]
+                            visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
+            if debug is True: pdb.set_trace()
+        if patience <= iteration:
+                done_looping = True
+                break
     end_time = time.clock()
     print "... training complete, took " + str((end_time - start_time)/ 60.) +" minutes"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -814,7 +736,7 @@ def run_cnn(  arch_params,
     predictions = []
     class_prob = []
     labels = []
-
+    if debug is True: pdb.set_trace()
     if multi_load is False:
 
         labels = test_set_y.eval().tolist()   
@@ -826,6 +748,7 @@ def run_cnn(  arch_params,
         print "...      -> Total test accuracy : " + str(float((batch_size*n_test_batches)-wrong )*100/(batch_size*n_test_batches)) + " % out of " + str(batch_size*n_test_batches) + " samples."
 
     else:
+        if debug is True: pdb.set_trace()
         for batch in xrange(batches2test):
             print ".. Testing batch " + str(batch)
             # Load data for this batch
@@ -844,7 +767,7 @@ def run_cnn(  arch_params,
                 wrong = wrong + int(test_model(mini_batch))   
                 predictions = predictions + prediction(mini_batch).tolist()
                 class_prob = class_prob + nll(mini_batch).tolist()
-         
+        if debug is True: pdb.set_trace()
         print "...      -> Total test accuracy : " + str(float((batch_size*n_test_batches*batches2test)-wrong )*100/(batch_size*n_test_batches*batches2test)) + " % out of " + str(batch_size*n_test_batches*batches2test) + " samples."
 
     end_time = time.clock()
@@ -895,23 +818,10 @@ def run_cnn(  arch_params,
     pdb.set_trace()
 
 
+    # TODO : Write code that can pickle down model parameters along with model information also so that things can be unpickled
+    # irrespecive of what the loader is. Ensure that the loader can also create a network based on the loaded data.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #################
+   #################
     # Boiler PLate  #
     #################
     
@@ -924,35 +834,34 @@ if __name__ == '__main__':
     optimization_params = {
                             "mom_start"                         : 0.5,                      # from mom_start to mom_end. After mom_epoch_interval, it stay at mom_end
                             "mom_end"                           : 0.98,
-                            "mom_interval"                      : 500,
-                            "mom_type"                          : 1,                        # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum ( not yet done... something is wrong.. refer code)
-                            "initial_learning_rate"             : 0.001,                      # Learning rate at the start
-                            "learning_rate_at_ada_grad_begin"   : 1,                        # Learning rate once ada_grad starts. Although ada grad can start anywhere, I recommend at the begining.
-                            "learning_rate_at_ada_grad_end"     : 0.01,                      # learning rate once ada grad ends and regular SGD begins again. 
-                            "learning_rate_decay"               : 0.998, 
-                            "regularize_l1"                     : False,                     # only for the last logistic layer
-                            "regularize_l2"                     : False,                     # only for the last logistic layer 
-                            "cross_entropy"                     : False,                     # use for binary labels only. 
-                            "ada_grad_begin"                    : 0,                        # Which epoch to begin ada grad. Don't use adagrad when using dropout. 
-                            "ada_grad_end"                      : 0,                       # Which epoch to end ada grad
+                            "mom_interval"                      : 100,
+                            "mom_type"                          : 1,                         # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum 
+                            "initial_learning_rate"             : 0.01,                      # Learning rate at the start
+                            "learning_rate_decay"               : 0.9998, 
+                            "l1_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
+                            "l2_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
+                            "ada_grad"                          : False,
+                            "rms_prop"                          : True,
+                            "rms_rho"                           : 0.9,                      # implement rms_prop with this rho
+                            "rms_epsilon"                       : 1e-6,                     # implement rms_prop with this epsilon
                             "fudge_factor"                      : 1e-7,                     # Just to avoid divide by zero, but google even advocates trying '1'                            
                             }
 
 
     filename_params = { 
-                        "results_file_name" : "../results/cifar.txt",        # Files that will be saved down on completion Can be used by the parse.m file
-                        "error_file_name"   : "../results/cifar.txt",
-                        "cost_file_name"    : "../results/cifar.txt"
+                        "results_file_name" : "../results/results_cifar.txt",        # Files that will be saved down on completion Can be used by the parse.m file
+                        "error_file_name"   : "../results/error_cifar.txt",
+                        "cost_file_name"    : "../results/cost_cifar.txt"
                     }        
         
     data_params = {
                    "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
                    "loc"                : 'cifar10',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
-                   "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
+                   "batch_size"         : 100,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
-                   "batches2train"      : 80,                                      # Number of training batches.
-                   "batches2test"       : 20,                                       # Number of testing batches.
-                   "batches2validate"   : 20,                                       # Number of validation batches
+                   "batches2train"      : 400,                                      # Number of training batches.
+                   "batches2test"       : 100,                                       # Number of testing batches.
+                   "batches2validate"   : 100,                                       # Number of validation batches
                    "height"             : 32,                                       # Height of each input image
                    "width"              : 32,                                       # Width of each input image
                    "channels"           : 3                                         # Number of channels of each input image 
@@ -961,18 +870,18 @@ if __name__ == '__main__':
     arch_params = {
                        # Decay of Learninig rate after each epoch of SGD
                     "squared_filter_length_limit"       : 15,   
-                    "n_epochs"                          : 2000,                      # Total Number of epochs to run before completion (no premature completion)
-                    "validate_after_epochs"             : 5,                        # After how many iterations to calculate validation set accuracy ?
-                    "mlp_activations"                   : [ ReLU, ReLU, ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU, ReLU  ],           # Activations for CNN layers Options: ReLU,       
+                    "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
+                    "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
+                    "mlp_activations"                   : [ ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
+                    "cnn_activations"                   : [ ReLU, ReLU, ReLU , ReLU],           # Activations for CNN layers Options: ReLU,       
                     "dropout"                           : True,                     # Flag for dropout / backprop                    
-                    "column_norm"                       : False,
-                    "dropout_rates"                     : [ 0.5, 0.5 , 0.5 ],             # Rates of dropout. Use 0 is backprop.
-                    "nkerns"                            : [ 48 , 128 ,128],               # Number of feature maps at each CNN layer
+                    "column_norm"                       : True,
+                    "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.
+                    "nkerns"                            : [ 48 , 128 , 128 , 128 ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
-                    "filter_size"                       : [  7, 5 , 5  ],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  1, 2 , 2  ],                # Pooling field of each CNN layer
-                    "num_nodes"                         : [  800 , 800  ],                # Number of nodes in each MLP layer
+                    "filter_size"                       : [  7 , 5 , 5 , 5 ],                # Receptive field of each CNN layer
+                    "pooling_size"                      : [  1 , 1 , 2, 2 ],                # Pooling field of each CNN layer
+                    "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
                     "svm_flag"                          : False                     # True makes the last layer a SVM
@@ -982,8 +891,8 @@ if __name__ == '__main__':
 
     visual_params = {
                         "visualize_flag"        : True,
-                        "visualize_after_epochs": 10,
-                        "n_visual_images"       : 30,
+                        "visualize_after_epochs": 1,
+                        "n_visual_images"       : 20,
                         "display_flag"          : False
                     }
 
@@ -994,6 +903,7 @@ if __name__ == '__main__':
                     filename_params         = filename_params,
                     visual_params           = visual_params,
                     verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
+                    debug                   = False
                 )
 
 
