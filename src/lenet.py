@@ -31,7 +31,7 @@ from cnn import DropoutHiddenLayer
 from cnn import MLP
 from cnn import LeNetConvPoolLayer
 from cnn import visualize
-from cnn import scale_to_unit_interval
+from cnn import visualize_color_filters
 
 # Datahandling packages
 from loaders import load_data_pkl
@@ -714,7 +714,8 @@ def run_cnn(  arch_params,
 
         if debug is True: pdb.set_trace()
         if visualize_flag is True:
-            if  epoch_counter % visualize_after_epochs is 0:  
+            if  epoch_counter % visualize_after_epochs is 0: 
+                # saving down images. 
                 if main_img_visual is False:
                     for i in xrange(n_visual_images):
                         curr_img = numpy.asarray(numpy.reshape(train_set_x.get_value( borrow = True )[visualize_ind[i]],[height, width, channels] ) * 255., dtype='uint8' )
@@ -723,6 +724,7 @@ def run_cnn(  arch_params,
                         cv2.imwrite("../visuals/images/image_" + str(i)+ "_label_" + str(train_set_y.eval()[visualize_ind[i]]) + ".jpg", curr_img )
                 main_img_visual = True
 
+                # visualizing activities.
                 activity = activities(0)
                 if debug is True: pdb.set_trace()
                 for m in xrange(len(nkerns)):   #For each layer 
@@ -730,17 +732,29 @@ def run_cnn(  arch_params,
                     if not os.path.exists(loc_ac):   
                         os.makedirs(loc_ac)
                     current_activity = activity[m]
-                    for i in xrange(n_visual_images):
+                    for i in xrange(n_visual_images):  # for each randomly chosen image .. visualize its activity 
                         visualize(current_activity[visualize_ind[i]], loc = loc_ac, filename = 'activity_' + str(i) + "_label_" + str(train_set_y.eval()[visualize_ind[i]]) +'.jpg' , show_img = display_flag)
+
+                # visualizing the filters.
                 for m in xrange(len(nkerns)):
-                    if m == 0:
-                        for i in xrange(weights[m].shape.eval()[1]):
-                            curr_image = weights[m].eval() [:,i,:,:]
-                            visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
+                    if m == 0:              # first layer outpus. 
+                        if channels == 3:    # if the image is color, then first layer looks at color pictures and I can visualize the filters also as color.
+                            curr_image = weights[m].eval()
+                            if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
+                                os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
+                            visualize_color_filters(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_0.jpg' , show_img = display_flag)
+                        else:       # visualize them as grayscale images.
+                            for i in xrange(weights[m].shape.eval()[1]):
+                                curr_image = weights[m].eval() [:,i,:,:]
+                                if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
+                                    os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
+                                visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_' + str(i) + '.jpg' , show_img = display_flag)
                     else:
                         for i in xrange(nkerns[m-1]): 
                             curr_image = weights[m].eval()[:,i,:,:]
-                            visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/', filename = 'epoch_' + str(epoch_counter) + '.jpg' , show_img = display_flag)
+                            if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
+                                os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
+                            visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename =  'kernel_'  + str(i) + '.jpg' , show_img = display_flag)
             if debug is True: pdb.set_trace()
         if patience <= iteration:
                 done_looping = True
@@ -843,8 +857,7 @@ def run_cnn(  arch_params,
 
     # TODO : Write code that can pickle down model parameters along with model information also so that things can be unpickled
     # irrespecive of what the loader is. Ensure that the loader can also create a network based on the loaded data.
-
-    #################
+   #################
     # Boiler PLate  #
     #################
     
@@ -857,9 +870,9 @@ if __name__ == '__main__':
     optimization_params = {
                             "mom_start"                         : 0.5,                      # from mom_start to mom_end. After mom_epoch_interval, it stay at mom_end
                             "mom_end"                           : 0.98,
-                            "mom_interval"                      : 100,
-                            "mom_type"                          : 1,                         # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum 
-                            "initial_learning_rate"             : 0.001,                      # Learning rate at the start
+                            "mom_interval"                      : 500,
+                            "mom_type"                          : 2,                         # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum 
+                            "initial_learning_rate"             : 0.01,                      # Learning rate at the start
                             "learning_rate_decay"               : 0.9998, 
                             "l1_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
                             "l2_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
@@ -879,12 +892,12 @@ if __name__ == '__main__':
         
     data_params = {
                    "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist_noise4',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
-                   "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
+                   "loc"                : 'mnist',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "batch_size"         : 100,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
-                   "batches2train"      : 20,                                      # Number of training batches.
-                   "batches2test"       : 4,                                       # Number of testing batches.
-                   "batches2validate"   : 4,                                       # Number of validation batches
+                   "batches2train"      : 200,                                      # Number of training batches.
+                   "batches2test"       : 20,                                       # Number of testing batches.
+                   "batches2validate"   : 20,                                       # Number of validation batches
                    "height"             : 28,                                       # Height of each input image
                    "width"              : 28,                                       # Width of each input image
                    "channels"           : 1                                         # Number of channels of each input image 
@@ -896,14 +909,14 @@ if __name__ == '__main__':
                     "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
                     "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
                     "mlp_activations"                   : [ ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU ],           # Activations for CNN layers Options: ReLU,       
+                    "cnn_activations"                   : [ ReLU , ReLU],           # Activations for CNN layers Options: ReLU,       
                     "dropout"                           : True,                     # Flag for dropout / backprop                    
                     "column_norm"                       : True,
                     "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.
-                    "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
+                    "nkerns"                            : [ 20 , 50 ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
-                    "filter_size"                       : [  5 , 5 ],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  2 , 2 ],                # Pooling field of each CNN layer
+                    "filter_size"                       : [   5 , 5 ],                # Receptive field of each CNN layer
+                    "pooling_size"                      : [   2, 2 ],                # Pooling field of each CNN layer
                     "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
@@ -928,4 +941,8 @@ if __name__ == '__main__':
                     verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
                     debug                   = False
                 )
+
+
+
+
 

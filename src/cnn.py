@@ -143,6 +143,21 @@ def visualize(imgs, tile_shape = None, tile_spacing = (2,2),
         cv2.imshow(filename + str(randint(0,9)), filters_as_image)
     cv2.imwrite(loc + filename, filters_as_image)
 
+# in case of filters that are color in the first layer, visuailize them as color images. 
+def visualize_color_filters(imgs, tile_shape = None, tile_spacing = (2,2), 
+                loc = '../results/', filename = "activities.jpg" , show_img = True ):
+    img_shape = (imgs.shape[2], imgs.shape[3])
+    if tile_shape is None:
+        tile_shape = (numpy.asarray(numpy.ceil(numpy.sqrt(imgs.shape[0])), dtype='int32'), numpy.asarray(imgs.shape[0]/numpy.ceil(numpy.sqrt(imgs.shape[0])), dtype='int32') )
+    #flattened_imgs = []
+    out_shape = [(ishp + tsp) * tshp - tsp for ishp, tshp, tsp in zip(img_shape, tile_shape, tile_spacing)]
+    filters_as_image = numpy.zeros((out_shape[0],out_shape[1],imgs.shape[1]))
+    for i in xrange(imgs.shape[1]):     # only allow  channel color images .
+        flattened_imgs  = numpy.reshape(imgs[:,i,:,:],(imgs.shape[0],numpy.prod(imgs.shape[2:])))
+        filters_as_image[:,:,i] = tile_raster_images(X =flattened_imgs, img_shape = img_shape, tile_shape = tile_shape, tile_spacing = (2,2))        
+    if show_img is True:
+        cv2.imshow(filename + str(randint(0,9)), filters_as_image)
+    cv2.imwrite(loc + filename, filters_as_image)
 # SVM layer from the discussions in this group
 # https://groups.google.com/forum/#!msg/theano-users/on4D16jqRX8/IWGa-Gl07g0J
 class SVMLayer(object):
