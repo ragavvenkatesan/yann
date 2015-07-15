@@ -29,7 +29,7 @@ The code that is here in this repository has the following features, among many 
     Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
 
 5. Data handling capabilities.
-    I have also provided a wrapper to skdata's dataset interface (under construction, as of now, I have cifar10, mnist,             caltech101) with boilerplate samples for all of them. 
+    I have also provided a wrapper to skdata's dataset interface (under construction, as of now, I have cifar10, mnist, extended mnists , caltech101). 
 6. [new] Data visualization capabilities.
     Visualize the activities of select images ( random ) from the trainset on each layer after select number of epochs of training. Also view filters after select number of epochs. 
     
