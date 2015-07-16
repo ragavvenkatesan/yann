@@ -2,9 +2,9 @@ clc
 clear all
 close all
 %%
-results_file = '../results/results_dropout.txt';
-errors_file = '../results/error_dropout.txt';
-cost_file = '../results/cost_dropout.txt';
+results_file = '../results/results_mnist.txt';
+errors_file = '../results/error_mnist.txt';
+cost_file = '../results/cost_mnist.txt';
 result = load(results_file);
 labels = result(:,2);
 predictions = result(:,3);
