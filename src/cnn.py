@@ -480,18 +480,21 @@ class MLP(object):
         self.dropout_errors = self.dropout_layers[-1].errors
         self.errors = self.layers[-1].errors
 
-        self.predicts_dropouts = self.layers[-1].y_pred
+        self.predicts_dropouts = self.dropout_layers[-1].y_pred
         self.predicts = self.layers[-1].y_pred
+
         self.params = [ param for layer in self.dropout_layers for param in layer.params ]
 
         if svm_flag is True:
             self.probabilities = self.layers[-1].output
+            self.probabilities_dropout = self.dropout_layers[-1].output
         else:
+            self.probabilities_dropout = self.dropout_layers[-1].probabilities            
             self.probabilities = self.layers[-1].probabilities            
 
         # Grab all the parameters together.
         #self.filter_images = T.reshape(self.W, (filter_shape[0], filter_shape[1], numpy.prod(filter_shape[2:])))
-
+        # to do, visualize these weights also like what yan lecunn does in his paper. 
        
        
 # From theano tutorials
