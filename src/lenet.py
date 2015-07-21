@@ -32,6 +32,7 @@ from cnn import MLP
 from cnn import LeNetConvPoolLayer
 from cnn import visualize
 from cnn import visualize_color_filters
+from cnn import save_network
 
 # Datahandling packages
 from loaders import load_data_pkl
@@ -376,7 +377,7 @@ def run_cnn(  arch_params,
                      layer_sizes=layer_sizes,
                      dropout_rates=dropout_rates,
                      activations=mlp_activations,
-                     use_bias=use_bias,
+                     use_bias = use_bias,
                      svm_flag = svm_flag,
                      verbose = verbose)
     if debug is True: pdb.set_trace()
@@ -614,6 +615,8 @@ def run_cnn(  arch_params,
     print "... training"
     start_time = time.clock()
 
+    save_network('somefile.save',  arch_params, data_params )
+    
     patience = numpy.inf  # look as this many examples regardless
     patience_increase = 2  # wait this much longer when a new best is
                            # found

@@ -158,6 +158,8 @@ def visualize_color_filters(imgs, tile_shape = None, tile_spacing = (2,2),
     if show_img is True:
         cv2.imshow(filename + str(randint(0,9)), filters_as_image)
     cv2.imwrite(loc + filename, filters_as_image)
+    
+    
 # SVM layer from the discussions in this group
 # https://groups.google.com/forum/#!msg/theano-users/on4D16jqRX8/IWGa-Gl07g0J
 class SVMLayer(object):
@@ -373,6 +375,7 @@ class MLP(object):
             activations,
             use_bias=True,
             svm_flag = True,
+            params = None,
             verbose = True):
 
 
@@ -391,23 +394,36 @@ class MLP(object):
         self.dropout_L2 = theano.shared(0)
         self.L1 = theano.shared(0)
         self.L2 = theano.shared(0)
-
+        
+        count = 0
         for n_in, n_out in weight_matrix_sizes[:-1]:
             if verbose is True:
                 print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
 
-            next_dropout_layer = DropoutHiddenLayer(rng=rng,
-                    input=next_dropout_layer_input,
-                    activation=activations[layer_counter],
-                    n_in=n_in, n_out=n_out, use_bias=use_bias,
-                    dropout_rate=dropout_rates[layer_counter + 1])
+            if params is None:
+                next_dropout_layer = DropoutHiddenLayer(rng=rng,
+                                                input=next_dropout_layer_input,
+                                                activation=activations[layer_counter],
+                                                n_in=n_in, n_out=n_out, use_bias=use_bias,
+                                                dropout_rate=dropout_rates[layer_counter + 1])
+            else:
+                next_dropout_layer = DropoutHiddenLayer(rng=rng,
+                                        input=next_dropout_layer_input,
+                                        activation=activations[layer_counter],
+                                        n_in=n_in, n_out=n_out, use_bias=use_bias,
+                                        dropout_rate=dropout_rates[layer_counter + 1],
+                                        W = params[count],
+                                        b=  params[count+1])
+
+        
+                                                    
             self.dropout_layers.append(next_dropout_layer)
             next_dropout_layer_input = next_dropout_layer.output
             self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
             self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
 
             # Reuse the paramters from the dropout layer here, in a different
-            # path through the graph.
+            # path through the graph.                        
             next_layer = HiddenLayer(rng=rng,
                     input=next_layer_input,
                     activation=activations[layer_counter],
@@ -423,6 +439,8 @@ class MLP(object):
             self.L2 = self.L2 + abs(self.layers[-1].W**2).sum()
             layer_counter += 1
         
+        
+            count = count + 2 
         # Set up the output layer
         n_in, n_out = weight_matrix_sizes[-1]
         
@@ -432,16 +450,31 @@ class MLP(object):
         if svm_flag is False:
             if verbose is True:
                 print "           -->        Initializing regression layer with " + str(n_out) + " output units"
-            dropout_output_layer = LogisticRegression(
-                input=next_dropout_layer_input,
-                n_in=n_in, n_out=n_out)
-
-            output_layer = LogisticRegression(
-                input=next_layer_input,
-                # scale the weight matrix W with (1-p)
-                W=dropout_output_layer.W * (1 - dropout_rates[-1]),
-                b=dropout_output_layer.b,
-                n_in=n_in, n_out=n_out)
+            if params is not None:
+                dropout_output_layer = LogisticRegression(
+                    input=next_dropout_layer_input,
+                    n_in=n_in, n_out=n_out,
+                    W = params[count], b = params[count+1])
+        
+                output_layer = LogisticRegression(
+                    input=next_layer_input,
+                    # scale the weight matrix W with (1-p)
+                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                    b=dropout_output_layer.b,
+                    n_in=n_in, n_out=n_out)
+            else:
+                dropout_output_layer = LogisticRegression(
+                    input=next_dropout_layer_input,
+                    n_in=n_in, n_out=n_out
+                    )
+        
+                output_layer = LogisticRegression(
+                    input=next_layer_input,
+                    # scale the weight matrix W with (1-p)
+                    n_in=n_in, n_out=n_out,
+                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                    b=dropout_output_layer.b
+                    )
 
             self.layers.append(output_layer)
             self.dropout_layers.append(dropout_output_layer)
@@ -458,15 +491,27 @@ class MLP(object):
         else:
             if verbose is True:
                 print "           -->        Initializing SVM layer with " + str(n_out) + " class predictors"
-            dropout_output_layer = SVMLayer(
-                input=next_dropout_layer_input,
-                n_in=n_in, n_out=n_out)
-
-            output_layer = SVMLayer(input = next_layer_input,
-                                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
-                                    b=dropout_output_layer.b,
-                                    n_in = n_in,
-                                    n_out = n_out)
+            if params is None:
+                dropout_output_layer = SVMLayer(
+                    input=next_dropout_layer_input,
+                    n_in=n_in, n_out=n_out )
+    
+                output_layer = SVMLayer(input = next_layer_input,
+                                        W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                                        b=dropout_output_layer.b,
+                                        n_in = n_in,
+                                        n_out = n_out)
+            else:
+                dropout_output_layer = SVMLayer(
+                    input=next_dropout_layer_input,
+                    n_in=n_in, n_out=n_out, 
+                    W = params[count], b = params[count+1])
+    
+                output_layer = SVMLayer(input = next_layer_input,
+                                        W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                                        b=dropout_output_layer.b,
+                                        n_in = n_in,
+                                        n_out = n_out)
 
             self.layers.append(output_layer)
             self.dropout_layers.append(dropout_output_layer)
@@ -480,28 +525,25 @@ class MLP(object):
         self.dropout_errors = self.dropout_layers[-1].errors
         self.errors = self.layers[-1].errors
 
-        self.predicts_dropouts = self.dropout_layers[-1].y_pred
+        self.predicts_dropouts = self.layers[-1].y_pred
         self.predicts = self.layers[-1].y_pred
-
         self.params = [ param for layer in self.dropout_layers for param in layer.params ]
 
         if svm_flag is True:
             self.probabilities = self.layers[-1].output
-            self.probabilities_dropout = self.dropout_layers[-1].output
         else:
-            self.probabilities_dropout = self.dropout_layers[-1].probabilities            
             self.probabilities = self.layers[-1].probabilities            
 
         # Grab all the parameters together.
         #self.filter_images = T.reshape(self.W, (filter_shape[0], filter_shape[1], numpy.prod(filter_shape[2:])))
-        # to do, visualize these weights also like what yan lecunn does in his paper. 
+
        
        
 # From theano tutorials
 class LeNetConvPoolLayer(object):
     """Pool Layer of a convolutional network .. taken from the theano tutorials"""
 
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize, activation, verbose = True):
+    def __init__(self, rng, input, filter_shape, image_shape, poolsize, activation, W = None, b = None, verbose = True):
        
         assert image_shape[1] == filter_shape[1]
         if verbose is True:
@@ -523,17 +565,23 @@ class LeNetConvPoolLayer(object):
                    numpy.prod(poolsize))
         # initialize weights with random weights
         W_bound = numpy.sqrt(6. / (fan_in + fan_out))
-        self.W = theano.shared(
-            numpy.asarray(
-                rng.uniform(low=-W_bound, high=W_bound, size =filter_shape),
-                dtype=theano.config.floatX
-            ),
-            borrow=True
-        )
+        if W is None:
+            self.W = theano.shared(
+                numpy.asarray(
+                    rng.uniform(low=-W_bound, high=W_bound, size =filter_shape),
+                    dtype=theano.config.floatX
+                ),
+                borrow=True
+            )
 
+        else: 
+            self.W = W 
         # the bias is a 1D tensor -- one bias per output feature map
-        b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True)
+        if b is None:
+            b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+            self.b = theano.shared(value=b_values, borrow=True)
+        else:
+            self.b = b
 
         # convolve input feature maps with filters
         conv_out = conv.conv2d(
@@ -572,5 +620,17 @@ class LeNetConvPoolLayer(object):
         return ReLU(stretch_unpooling_out + self.b_prime.dimshuffle('x', 0, 'x', 'x'))
             
 
-
-
+# function to save down a network so that it can be reloaded at a later time.
+def save_network( filename, params, arch_params, *others):
+    pdb.set_trace()
+    f = file(filename, 'wb')  
+    if len(others) == 0:  
+        for obj in [params, arch_params]:
+            cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        f.close() 
+    else:
+        for obj in [params, arch_params, others]:
+            cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        f.close()     
+        
+    
