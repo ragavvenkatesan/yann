@@ -1,6 +1,5 @@
 
 1. Layerwise greedy unsupervised pre-training. { Probably a dropped option because dropouts perform so well }
 2. Parse code for visualizing filters .. with GUI options to load choice of epoch. 
-3. Just simply load a saved network and run only testing. {Work in progress}. 
 
 

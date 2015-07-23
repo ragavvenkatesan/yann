@@ -26,7 +26,8 @@ The code that is here in this repository has the following features, among many 
 
 * Data visualization capabilities: Visualize the activities of select images (random) from the trainset on each layer after select number of epochs of training. Also view filters after select number of epochs. If the input images are color, the first layer saves down color features. The only way to know if a networks is trained or not is by constantly visualizing the filters. I have provided ways to save down the filters and activations after every ( optionally after how many ever ) epochs and probe into the weights of the networks. 
 
-* [new] Entire network can be saved and reloaded.
+* Entire network can be saved and reloaded.
+* Save down a trained network, load it at a later time and just run testing. This is useful when testing large models or wanting to save down various models and compare at a later time. 
    
 More features will be added as and when I am implementing them. You can check the `to_do.txt` in the repository for expected updates.  I will add more detailed description of the implementation as and when I have time to so. But don't expect it soon.
 
