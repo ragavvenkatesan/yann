@@ -22,9 +22,10 @@ The code that is here in this repository has the following features, among many 
    - Nesterov's Accelerated Gradients [4]
    - rmsProp [5]
    
-* Data handling capabilities: I have provided features to setup data as simple matlab files that can be loaded in python and run in batches for training. Researchers and research students like me ( I am sure you had a lot of trouble with us because of this ) like to setup our data in mat files as matlab is really easy to do those kind of things. Once setup, I have a port that will read the data in batches and run in batches, training testing and validation. Alternatively, I also have options for ‘pkl.gz’ files if you would like to cPickle and / or zip your data. I also have options for an skdata port and I am working on other data handling options as some have asked me for image data and text data next. Also provided a wrapper to [skdata's dataset](https://jaberg.github.io/skdata/) interface (under construction, as of now, I have cifar10, mnist, extended mnists , caltech101). 
+* Data handling capabilities: I have provided features to setup data as simple matlab files that can be loaded in python and run in batches for training. Alternatively, I also have options for ‘pkl.gz’ files if you would like to cPickle and / or zip your data. Also provided a wrapper to [skdata's dataset](https://jaberg.github.io/skdata/) interface (under construction, as of now, I have cifar10, mnist, extended mnists , caltech101). 
 
 * Data visualization capabilities: Visualize the activities of select images (random) from the trainset on each layer after select number of epochs of training. Also view filters after select number of epochs. If the input images are color, the first layer saves down color features. The only way to know if a networks is trained or not is by constantly visualizing the filters. I have provided ways to save down the filters and activations after every ( optionally after how many ever ) epochs and probe into the weights of the networks. 
+
 * [new] Entire network can be saved and reloaded.
    
 More features will be added as and when I am implementing them. You can check the `to_do.txt` in the repository for expected updates.  I will add more detailed description of the implementation as and when I have time to so. But don't expect it soon.
