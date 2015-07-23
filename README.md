@@ -26,21 +26,14 @@ More features will be added as and when I am implementing them. You can check th
 
 Running this code essentially requires:
 
-    1. `python 2.x`
-
-    2. `theano 0.6 +`    
-
-    3. `numpy` 
- 
-    4. `scipy`
-
-    5. `skdata`
-
-    6. `cPickle`
-
-    7. `opencv (cv2)` 
-
-    8. `gzip`
+    1. python 2.x
+    2. theano 0.6 +
+    3. numpy 
+    4. scipy
+    5. skdata
+    6. cPickle
+    7. opencv (cv2)
+    8. gzip
 
 Most of these could be installed by installing [anaconda of continuum analytics](http://docs.continuum.io/anaconda/install.html) The code is reasonably well documented. It is not that difficult to find out from the boilerplate what is happening. If you need to understand really well what is happening before you jump into the code, use `verbose = True` flag in the boiler plate. The code has been tested on exhaustively in both MacOSX and Linux Ubuntu 14.x and 15.x by virtue of constant use. 
 
