@@ -870,8 +870,6 @@ def run_cnn(  arch_params,
     pdb.set_trace()
 
 
-    # TODO : Write code that can pickle down model parameters along with model information also so that things can be unpickled
-    # irrespecive of what the loader is. Ensure that the loader can also create a network based on the loaded data.
     #################
     # Boiler PLate  #
     #################
