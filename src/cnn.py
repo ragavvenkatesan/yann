@@ -475,11 +475,14 @@ class LeNetConvPoolLayer(object):
         )
 
         # downsample each feature map individually, using maxpooling
-        pooled_out = downsample.max_pool_2d(
-            input=conv_out,
-            ds=poolsize,
-            ignore_border=True
-        )
+        if poolsize[1]>0:            
+            pooled_out = downsample.max_pool_2d(
+                input=conv_out,
+                ds=poolsize,
+                ignore_border=True
+            )
+        else:
+             pooled_out = conv_out   
 
         # add the bias term. Since the bias is a vector (1D array), we first
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
