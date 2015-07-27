@@ -58,7 +58,7 @@ This might not be really useful for advanced deep learning researchers. It's qui
 I would recommend my code for quick testing of architecture or ideas for it is much easier to change the architecture or learning techniques and just simply run a proof of concept. I would also recommend my code as a research tool for someone who wants to quickly jump into deep learning without reading a lot of theory. I haven’t tested the industrial viability of my code yet and although it is fairly fast and is easily portable because it is written in python-theano entirely.
 
 ***
-## How to run the code ?
+## How to run the main code (lenet.py) ?
 
 I am not going to explain the details of the code explicitly. If you are in a position to want to change, probably this code is already too easy and obvious for you to understand and make these changes. If there are particular queries, raise an issue and I would love to respond. I would just explain the input parameters that help in running and also what to expect out of the output once ran. 
 
@@ -108,6 +108,12 @@ Parameters related to datasets are defined in `data_params`. They are:
 
 
 Using only these features one must be able to run some sophisticated network designs. 
+
+
+### How to run the test only code (test_saved_net.py) ?
+
+Assuming that you have run the above code once, its fully trained and that you have saved the network down using the utility provided in util.py, you may run the test_saved_net.py on some new (or the same dataset to demonstrate) by supplying the saved file in `load_file_name` variable. Do remember though that the input image sizes have to match as the exact same architecture of the network that was saved will be reconstructed. This is useful to verify stability of learnt network under noise and such by training on a clean dataset and testing on a noisy dataset. 
+
 
 *** 
 
