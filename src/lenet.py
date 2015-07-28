@@ -358,6 +358,9 @@ def run_cnn(  arch_params,
         for i in xrange(len(dropout_rates)-1):
             layer_sizes.append ( num_nodes[i] )
         layer_sizes.append ( outs )
+        
+    elif len(dropout_rates) == 1:
+        layer_size = [ nkerns[-1] * next_in_1 * next_in_2, outs]
     else :
         layer_sizes = [ nkerns[-1] * next_in_1 * next_in_2, num_nodes[0] , outs]
 
@@ -895,21 +898,21 @@ if __name__ == '__main__':
 
 
     filename_params = { 
-                        "results_file_name"     : "../results/results_mnist.txt",        # Files that will be saved down on completion Can be used by the parse.m file
-                        "error_file_name"       : "../results/error_mnist.txt",
-                        "cost_file_name"        : "../results/cost_mnist.txt",
-                        "confusion_file_name"   : "../results/confusion_mnist.txt",
-                        "network_save_name"     : "../results/mnist.pkl.gz "
+                        "results_file_name"     : "../results/results_mnist_rotated_bg.txt",        # Files that will be saved down on completion Can be used by the parse.m file
+                        "error_file_name"       : "../results/error_mnist_rotated_bg.txt",
+                        "cost_file_name"        : "../results/cost_mnist_rotated_bg.txt",
+                        "confusion_file_name"   : "../results/confusion_mnist_rotated_bg.txt",
+                        "network_save_name"     : "../results/mnist_rotated_bg.pkl.gz "
 
                     }        
         
     data_params = {
                    "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "loc"                : 'mnist_rotated_bg',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
                    "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
-                   "batches2train"      : 100,                                      # Number of training batches.
-                   "batches2test"       : 20,                                       # Number of testing batches.
+                   "batches2train"      : 80,                                      # Number of training batches.
+                   "batches2test"       : 24,                                       # Number of testing batches.
                    "batches2validate"   : 20,                                       # Number of validation batches
                    "height"             : 28,                                       # Height of each input image
                    "width"              : 28,                                       # Width of each input image
@@ -922,15 +925,15 @@ if __name__ == '__main__':
                     "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
                     "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
                     "mlp_activations"                   : [ ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU ],           # Activations for CNN layers Options: ReLU,       
+                    "cnn_activations"                   : [ ReLU, ReLU , ReLU],           # Activations for CNN layers Options: ReLU,       
                     "dropout"                           : True,                     # Flag for dropout / backprop                    
                     "column_norm"                       : True,
                     "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.
-                    "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
+                    "nkerns"                            : [ 20 , 50, 50  ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
-                    "filter_size"                       : [  5 , 5 ],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  2 , 2 ],                # Pooling field of each CNN layer
-                    "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
+                    "filter_size"                       : [  5 , 5 , 5 ],                # Receptive field of each CNN layer
+                    "pooling_size"                      : [  1 , 2 , 2 ],                # Pooling field of each CNN layer
+                    "num_nodes"                         : [  450  ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
                     "svm_flag"                          : False                     # True makes the last layer a SVM
