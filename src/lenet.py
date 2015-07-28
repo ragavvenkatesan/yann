@@ -924,8 +924,8 @@ if __name__ == '__main__':
                     "squared_filter_length_limit"       : 15,   
                     "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
                     "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
-                    "mlp_activations"                   : [ ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU , ReLU],           # Activations for CNN layers Options: ReLU,       
+                    "mlp_activations"                   : [ ReLU ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
+                    "cnn_activations"                   : [ ReLU, ReLU ,ReLU],           # Activations for CNN layers Options: ReLU,       
                     "dropout"                           : True,                     # Flag for dropout / backprop                    
                     "column_norm"                       : True,
                     "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.

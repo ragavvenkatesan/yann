@@ -279,55 +279,58 @@ class MLP(object):
         self.L2 = theano.shared(0)
         
         count = 0
-        for n_in, n_out in weight_matrix_sizes[:-1]:
-            if verbose is True:
-                print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
-
-            if params is None:
-                next_dropout_layer = DropoutHiddenLayer(rng=rng,
-                                                input=next_dropout_layer_input,
-                                                activation=activations[layer_counter],
-                                                n_in=n_in, n_out=n_out, use_bias=use_bias,
-                                                dropout_rate=dropout_rates[layer_counter + 1])
-            else:
-                next_dropout_layer = DropoutHiddenLayer(rng=rng,
-                                        input=next_dropout_layer_input,
-                                        activation=activations[layer_counter],
-                                        n_in=n_in, n_out=n_out, use_bias=use_bias,
-                                        dropout_rate=dropout_rates[layer_counter + 1],
-                                        W = params[count],
-                                        b=  params[count+1])
-
-        
-                                                    
-            self.dropout_layers.append(next_dropout_layer)
-            next_dropout_layer_input = next_dropout_layer.output
-            self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
-            self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
-
-            # Reuse the paramters from the dropout layer here, in a different
-            # path through the graph.                        
-            next_layer = HiddenLayer(rng=rng,
-                    input=next_layer_input,
-                    activation=activations[layer_counter],
-                    # scale the weight matrix W with (1-p)
-                    W=next_dropout_layer.W * (1 - dropout_rates[layer_counter]),
-                    b=next_dropout_layer.b,
-                    n_in=n_in, n_out=n_out,
-                    use_bias=use_bias)
-            self.layers.append(next_layer)
-            next_layer_input = next_layer.output
-            #first_layer = False
-            self.L1 = self.L1 + abs(self.layers[-1].W).sum() 
-            self.L2 = self.L2 + abs(self.layers[-1].W**2).sum()
-            layer_counter += 1
-        
-        
-            count = count + 2 
-        # Set up the output layer
-        n_in, n_out = weight_matrix_sizes[-1]
-        
-
+        if dropout_rates > 1:
+            for n_in, n_out in weight_matrix_sizes[:-1]:
+                if verbose is True:
+                    print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
+    
+                if params is None:
+                    next_dropout_layer = DropoutHiddenLayer(rng=rng,
+                                                    input=next_dropout_layer_input,
+                                                    activation=activations[layer_counter],
+                                                    n_in=n_in, n_out=n_out, use_bias=use_bias,
+                                                    dropout_rate=dropout_rates[layer_counter + 1])
+                else:
+                    next_dropout_layer = DropoutHiddenLayer(rng=rng,
+                                            input=next_dropout_layer_input,
+                                            activation=activations[layer_counter],
+                                            n_in=n_in, n_out=n_out, use_bias=use_bias,
+                                            dropout_rate=dropout_rates[layer_counter + 1],
+                                            W = params[count],
+                                            b=  params[count+1])
+    
+            
+                                                        
+                self.dropout_layers.append(next_dropout_layer)
+                next_dropout_layer_input = next_dropout_layer.output
+                self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
+                self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
+    
+                # Reuse the paramters from the dropout layer here, in a different
+                # path through the graph.                        
+                next_layer = HiddenLayer(rng=rng,
+                        input=next_layer_input,
+                        activation=activations[layer_counter],
+                        # scale the weight matrix W with (1-p)
+                        W=next_dropout_layer.W * (1 - dropout_rates[layer_counter]),
+                        b=next_dropout_layer.b,
+                        n_in=n_in, n_out=n_out,
+                        use_bias=use_bias)
+                self.layers.append(next_layer)
+                next_layer_input = next_layer.output
+                #first_layer = False
+                self.L1 = self.L1 + abs(self.layers[-1].W).sum() 
+                self.L2 = self.L2 + abs(self.layers[-1].W**2).sum()
+                layer_counter += 1
+            
+            
+                count = count + 2 
+            # Set up the output layer
+            n_in, n_out = weight_matrix_sizes[-1]
+            
+        else: 
+            next_layer_input = input
+            n_in, n_out = weight_matrix_sizes[-1]
         # Again, reuse paramters in the dropout output.
     
         if svm_flag is False:
