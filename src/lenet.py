@@ -72,6 +72,7 @@ def run_cnn(  arch_params,
     error_file_name     = filename_params [ "error_file_name" ]
     cost_file_name      = filename_params [ "cost_file_name"  ]
     confusion_file_name = filename_params [ "confusion_file_name" ]
+    network_save_name   = filename_params [ "network_save_name" ]
 
     dataset             = data_params [ "loc" ]
     height              = data_params [ "height" ]
@@ -114,10 +115,6 @@ def run_cnn(  arch_params,
     random_seed                     = arch_params [ "random_seed" ]
     svm_flag                        = arch_params [ "svm_flag" ]
 
-    results_file_name   = filename_params[ "results_file_name" ]
-    error_file_name     = filename_params[ "error_file_name" ]
-    cost_file_name      = filename_params[ "cost_file_name" ]
-    
     visualize_flag          = visual_params ["visualize_flag" ]
     visualize_after_epochs  = visual_params ["visualize_after_epochs" ]
     n_visual_images         = visual_params ["n_visual_images" ] 
@@ -860,7 +857,7 @@ def run_cnn(  arch_params,
     f.close()
     
     
-    save_network( 'network.pkl.gz',  params, arch_params, data_params )
+    save_network( network_save_name,  params, arch_params, data_params )
     end_time = time.clock()
     print "Testing complete, took " + str((end_time - start_time)/ 60.) + " minutes"    
     print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100)
@@ -901,7 +898,8 @@ if __name__ == '__main__':
                         "results_file_name"     : "../results/results_mnist.txt",        # Files that will be saved down on completion Can be used by the parse.m file
                         "error_file_name"       : "../results/error_mnist.txt",
                         "cost_file_name"        : "../results/cost_mnist.txt",
-                        "confusion_file_name"   : "../results/confusion_mnist.txt"
+                        "confusion_file_name"   : "../results/confusion_mnist.txt",
+                        "network_save_name"     : "../results/mnist.pkl.gz "
 
                     }        
         
