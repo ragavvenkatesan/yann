@@ -329,13 +329,8 @@ def run_cnn(  arch_params,
         weights.append ( conv_layers[-1].filter_img)
 
         # Create the rest of the convolutional - pooling layers in a loop
-        if pool_size > 0:
-            next_in_1 = ( height - filt_size + 1 ) / pool_size        
-            next_in_2 = ( width - filt_size + 1 ) / pool_size
-        else:
-            next_in_1 = ( height - filt_size + 1 )        
-            next_in_2 = ( width - filt_size + 1 )
-                
+        next_in_1 = ( height - filt_size + 1 ) / pool_size        
+        next_in_2 = ( width - filt_size + 1 ) / pool_size
     
         for layer in xrange(len(nkerns)-1):   
             filt_size = filter_size[layer+1]
@@ -349,13 +344,8 @@ def run_cnn(  arch_params,
                                 activation = cnn_activations[layer+1],
                                 verbose = verbose
                                  ) )
-            if pool_size > 0:
-                next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
-                next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
-            else:
-                next_in_1 = ( next_in_1 - filt_size + 1 )        
-                next_in_2 = ( next_in_2 - filt_size + 1 )
-                
+            next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
+            next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
             weights.append ( conv_layers[-1].filter_img )
             activity.append( conv_layers[-1].output )
 
@@ -364,7 +354,7 @@ def run_cnn(  arch_params,
         fully_connected_input = first_layer_input
     else:
         fully_connected_input = conv_layers[-1].output.flatten(2)
-        
+
     if len(dropout_rates) > 2 :
         layer_sizes =[]
         layer_sizes.append( nkerns[-1] * next_in_1 * next_in_2 )
