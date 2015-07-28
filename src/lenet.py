@@ -945,7 +945,7 @@ if __name__ == '__main__':
                     "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
                     "filter_size"                       : [  5 , 5 ],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  0 , 0 ],                # Pooling field of each CNN layer
+                    "pooling_size"                      : [  1 , 1 ],                # Pooling field of each CNN layer
                     "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
@@ -967,6 +967,6 @@ if __name__ == '__main__':
                     data_params             = data_params, 
                     filename_params         = filename_params,
                     visual_params           = visual_params,
-                    verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
+                    verbose                 = True,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
                 )
 
