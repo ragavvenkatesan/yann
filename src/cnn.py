@@ -262,7 +262,6 @@ class MLP(object):
             verbose = True):
 
 
-
         #rectified_linear_activation = lambda x: T.maximum(0.0, x)
         # Set up all the hidden layers
         weight_matrix_sizes = zip(layer_sizes, layer_sizes[1:])
@@ -284,25 +283,13 @@ class MLP(object):
             if verbose is True:
                 print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
 
-            if params is None:    # If no parameters were sent in at all
-                if verbose is True :
-                    print "                 ...  Using new parameters "
+            if params is None:
                 next_dropout_layer = DropoutHiddenLayer(rng=rng,
                                                 input=next_dropout_layer_input,
                                                 activation=activations[layer_counter],
                                                 n_in=n_in, n_out=n_out, use_bias=use_bias,
                                                 dropout_rate=dropout_rates[layer_counter + 1])
-            elif len(params) <= count  :      # If parameters were sent for others but not for this layer
-                if verbose is True :
-                    print "                 ...  Using new parameters "
-                next_dropout_layer = DropoutHiddenLayer(rng=rng,
-                                                input=next_dropout_layer_input,
-                                                activation=activations[layer_counter],
-                                                n_in=n_in, n_out=n_out, use_bias=use_bias,
-                                                dropout_rate=dropout_rates[layer_counter + 1])
-            else:  # If paramters were sent and this layer indeed also has a paramter   
-                if verbose is True :
-                    print "                 ...  Using old parameters "
+            else:
                 next_dropout_layer = DropoutHiddenLayer(rng=rng,
                                         input=next_dropout_layer_input,
                                         activation=activations[layer_counter],
@@ -319,8 +306,7 @@ class MLP(object):
             self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
 
             # Reuse the paramters from the dropout layer here, in a different
-            # path through the graph.   
-
+            # path through the graph.                        
             next_layer = HiddenLayer(rng=rng,
                     input=next_layer_input,
                     activation=activations[layer_counter],
@@ -334,50 +320,20 @@ class MLP(object):
             #first_layer = False
             self.L1 = self.L1 + abs(self.layers[-1].W).sum() 
             self.L2 = self.L2 + abs(self.layers[-1].W**2).sum()
-            layer_counter = layer_counter + 1  
+            layer_counter += 1
+        
+        
             count = count + 2 
         # Set up the output layer
-
         n_in, n_out = weight_matrix_sizes[-1]
         
 
-        # Again, reuse paramters in the dropout output.    
+        # Again, reuse paramters in the dropout output.
+    
         if svm_flag is False:
             if verbose is True:
                 print "           -->        Initializing regression layer with " + str(n_out) + " output units"
-            if params is None:
-                if verbose is True :
-                    print "                 ...  Using new parameters "
-                dropout_output_layer = LogisticRegression(
-                    input=next_dropout_layer_input,
-                    n_in=n_in, n_out=n_out
-                    )
-        
-                output_layer = LogisticRegression(
-                    input=next_layer_input,
-                    # scale the weight matrix W with (1-p)
-                    n_in=n_in, n_out=n_out,
-                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
-                    b=dropout_output_layer.b
-                    )
-            elif len(params) <= count  :
-                if verbose is True :
-                    print "                 ...  Using new parameters "
-                dropout_output_layer = LogisticRegression(
-                    input=next_dropout_layer_input,
-                    n_in=n_in, n_out=n_out
-                    )
-        
-                output_layer = LogisticRegression(
-                    input=next_layer_input,
-                    # scale the weight matrix W with (1-p)
-                    n_in=n_in, n_out=n_out,
-                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
-                    b=dropout_output_layer.b
-                    )                
-            else:
-                if verbose is True :
-                    print "                 ...  Using old parameters "
+            if params is not None:
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out,
@@ -389,7 +345,19 @@ class MLP(object):
                     W=dropout_output_layer.W * (1 - dropout_rates[-1]),
                     b=dropout_output_layer.b,
                     n_in=n_in, n_out=n_out)
-
+            else:
+                dropout_output_layer = LogisticRegression(
+                    input=next_dropout_layer_input,
+                    n_in=n_in, n_out=n_out
+                    )
+        
+                output_layer = LogisticRegression(
+                    input=next_layer_input,
+                    # scale the weight matrix W with (1-p)
+                    n_in=n_in, n_out=n_out,
+                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                    b=dropout_output_layer.b
+                    )
 
             self.layers.append(output_layer)
             self.dropout_layers.append(dropout_output_layer)
@@ -507,14 +475,11 @@ class LeNetConvPoolLayer(object):
         )
 
         # downsample each feature map individually, using maxpooling
-        if poolsize[1]>0:            
-            pooled_out = downsample.max_pool_2d(
-                input=conv_out,
-                ds=poolsize,
-                ignore_border=True
-            )
-        else:
-             pooled_out = conv_out   
+        pooled_out = downsample.max_pool_2d(
+            input=conv_out,
+            ds=poolsize,
+            ignore_border=True
+        )
 
         # add the bias term. Since the bias is a vector (1D array), we first
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will

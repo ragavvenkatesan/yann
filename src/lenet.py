@@ -72,7 +72,6 @@ def run_cnn(  arch_params,
     error_file_name     = filename_params [ "error_file_name" ]
     cost_file_name      = filename_params [ "cost_file_name"  ]
     confusion_file_name = filename_params [ "confusion_file_name" ]
-    save_network_name   = filename_params [ "save_network_name" ]
 
     dataset             = data_params [ "loc" ]
     height              = data_params [ "height" ]
@@ -330,13 +329,8 @@ def run_cnn(  arch_params,
         weights.append ( conv_layers[-1].filter_img)
 
         # Create the rest of the convolutional - pooling layers in a loop
-        if pool_size > 0:
-            next_in_1 = ( height - filt_size + 1 ) / pool_size        
-            next_in_2 = ( width - filt_size + 1 ) / pool_size
-        else:
-            next_in_1 = ( height - filt_size + 1 )        
-            next_in_2 = ( width - filt_size + 1 )
-                
+        next_in_1 = ( height - filt_size + 1 ) / pool_size        
+        next_in_2 = ( width - filt_size + 1 ) / pool_size
     
         for layer in xrange(len(nkerns)-1):   
             filt_size = filter_size[layer+1]
@@ -350,13 +344,8 @@ def run_cnn(  arch_params,
                                 activation = cnn_activations[layer+1],
                                 verbose = verbose
                                  ) )
-            if pool_size > 0:
-                next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
-                next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
-            else:
-                next_in_1 = ( next_in_1 - filt_size + 1 )        
-                next_in_2 = ( next_in_2 - filt_size + 1 )
-                
+            next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
+            next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
             weights.append ( conv_layers[-1].filter_img )
             activity.append( conv_layers[-1].output )
 
@@ -365,7 +354,7 @@ def run_cnn(  arch_params,
         fully_connected_input = first_layer_input
     else:
         fully_connected_input = conv_layers[-1].output.flatten(2)
-        
+
     if len(dropout_rates) > 2 :
         layer_sizes =[]
         layer_sizes.append( nkerns[-1] * next_in_1 * next_in_2 )
@@ -391,7 +380,6 @@ def run_cnn(  arch_params,
                      svm_flag = svm_flag,
                      verbose = verbose)
 
-    
     # Build the expresson for the categorical cross entropy function.
     if svm_flag is False:
         cost = MLPlayers.negative_log_likelihood( y )
@@ -872,7 +860,7 @@ def run_cnn(  arch_params,
     f.close()
     
     
-    save_network( save_network_name,  params, arch_params, data_params )
+    save_network( 'network.pkl.gz',  params, arch_params, data_params )
     end_time = time.clock()
     print "Testing complete, took " + str((end_time - start_time)/ 60.) + " minutes"    
     print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100)
@@ -880,7 +868,6 @@ def run_cnn(  arch_params,
     print "Done"
 
     pdb.set_trace()
-
 
 
     #################
@@ -914,17 +901,16 @@ if __name__ == '__main__':
                         "results_file_name"     : "../results/results_mnist.txt",        # Files that will be saved down on completion Can be used by the parse.m file
                         "error_file_name"       : "../results/error_mnist.txt",
                         "cost_file_name"        : "../results/cost_mnist.txt",
-                        "confusion_file_name"   : "../results/confusion_mnist.txt",
-                        "save_network_name"     : "../results/mnist_rotated.pkl.gz"
+                        "confusion_file_name"   : "../results/confusion_mnist.txt"
 
                     }        
         
     data_params = {
                    "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist_rotated',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "loc"                : 'mnist',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
                    "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
-                   "batches2train"      : 80,                                      # Number of training batches.
+                   "batches2train"      : 100,                                      # Number of training batches.
                    "batches2test"       : 20,                                       # Number of testing batches.
                    "batches2validate"   : 20,                                       # Number of validation batches
                    "height"             : 28,                                       # Height of each input image
@@ -945,7 +931,7 @@ if __name__ == '__main__':
                     "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
                     "filter_size"                       : [  5 , 5 ],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  1 , 1 ],                # Pooling field of each CNN layer
+                    "pooling_size"                      : [  2 , 2 ],                # Pooling field of each CNN layer
                     "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
@@ -967,6 +953,6 @@ if __name__ == '__main__':
                     data_params             = data_params, 
                     filename_params         = filename_params,
                     visual_params           = visual_params,
-                    verbose                 = True,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
+                    verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
                 )
 
