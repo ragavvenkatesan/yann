@@ -88,7 +88,7 @@ def run (
     #################
     # Load Network  #
     #################            
-    params, arch_params = load_network('network.pkl.gz')                         
+    params, arch_params = load_network(load_file_name)                         
                 
     squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
     n_epochs                        = arch_params [ "n_epochs" ]
