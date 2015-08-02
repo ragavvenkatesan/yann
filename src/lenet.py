@@ -103,6 +103,7 @@ def run_cnn(  arch_params,
     validate_after_epochs           = arch_params [ "validate_after_epochs"  ]
     mlp_activations                 = arch_params [ "mlp_activations"  ] 
     cnn_activations                 = arch_params [ "cnn_activations" ]
+    # fast_conv                       = arch_params [ "fast_conv"  ]
     dropout                         = arch_params [ "dropout"  ]
     column_norm                     = arch_params [ "column_norm"  ]    
     dropout_rates                   = arch_params [ "dropout_rates" ]
@@ -280,7 +281,13 @@ def run_cnn(  arch_params,
     # Just checking as a way to see if the intended dataset is indeed loaded.
     assert height*width*channels == train_set_x.get_value( borrow = True ).shape[1]
     assert batch_size >= n_visual_images
-     
+
+    """"
+    if fast_conv is True and theano.config.device == 'cpu':
+        print '... you cant run fast_conv on a cpu'
+        fast_conv = False
+    """
+
     if ada_grad is True:
         assert rms_prop is False
     elif rms_prop is True:
@@ -320,6 +327,7 @@ def run_cnn(  arch_params,
                                 filter_shape=(nkerns[0], channels , filt_size, filt_size),
                                 poolsize=(pool_size, pool_size),
                                 activation = cnn_activations[0],
+                                #fast_conv = fast_conv,
                                 verbose = verbose
                                  ) )
         activity.append ( conv_layers[-1].output )
@@ -339,6 +347,7 @@ def run_cnn(  arch_params,
                                 filter_shape=(nkerns[layer+1], nkerns[layer], filt_size, filt_size),
                                 poolsize=(pool_size, pool_size),
                                 activation = cnn_activations[layer+1],
+                                #fast_conv = fast_conv,
                                 verbose = verbose
                                  ) )
             next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
@@ -360,7 +369,7 @@ def run_cnn(  arch_params,
         layer_sizes.append ( outs )
         
     elif len(dropout_rates) == 1:
-        layer_size = [ nkerns[-1] * next_in_1 * next_in_2, outs]
+        layer_sizes = [ nkerns[-1] * next_in_1 * next_in_2, outs]
     else :
         layer_sizes = [ nkerns[-1] * next_in_1 * next_in_2, num_nodes[0] , outs]
 
@@ -902,18 +911,18 @@ if __name__ == '__main__':
                         "error_file_name"       : "../results/error_mnist_rotated_bg.txt",
                         "cost_file_name"        : "../results/cost_mnist_rotated_bg.txt",
                         "confusion_file_name"   : "../results/confusion_mnist_rotated_bg.txt",
-                        "network_save_name"     : "../results/mnist_rotated_bg.pkl.gz "
+                        "network_save_name"     : "../results/mnist_rotated_bg1.pkl.gz "
 
                     }        
         
     data_params = {
-                   "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist_rotated_bg',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
-                   "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
+                   "type"               : 'pkl',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
+                   "loc"                : '../dataset/mnist/mnist.pkl.gz',                                          # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "batch_size"         : 512,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
-                   "batches2train"      : 80,                                      # Number of training batches.
-                   "batches2test"       : 24,                                       # Number of testing batches.
-                   "batches2validate"   : 20,                                       # Number of validation batches
+                   "batches2train"      : 97,                                      # Number of training batches.
+                   "batches2test"       : 19,                                       # Number of testing batches.
+                   "batches2validate"   : 19,                                       # Number of validation batches
                    "height"             : 28,                                       # Height of each input image
                    "width"              : 28,                                       # Width of each input image
                    "channels"           : 1                                         # Number of channels of each input image 
@@ -924,16 +933,17 @@ if __name__ == '__main__':
                     "squared_filter_length_limit"       : 15,   
                     "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
                     "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
-                    "mlp_activations"                   : [ ReLU ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU ,ReLU],           # Activations for CNN layers Options: ReLU,       
+                    "mlp_activations"                   : [  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
+                    "cnn_activations"                   : [ ReLU, ReLU ,ReLU],           # Activations for CNN layers Options: ReLU,  
+                    # "fast_conv"                         : True,                 # Use the 3x faster convolutions form pylearn2  # but only works for nkerns being even.   
                     "dropout"                           : True,                     # Flag for dropout / backprop                    
                     "column_norm"                       : True,
-                    "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.
-                    "nkerns"                            : [ 20 , 50, 50  ],               # Number of feature maps at each CNN layer
+                    "dropout_rates"                     : [ 0.5 ],             # Rates of dropout. Use 0 is backprop.
+                    "nkerns"                            : [ 20 , 20, 20  ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
-                    "filter_size"                       : [  5 , 5 , 5 ],                # Receptive field of each CNN layer
+                    "filter_size"                       : [  5 , 5 , 3 ],                # Receptive field of each CNN layer
                     "pooling_size"                      : [  1 , 2 , 2 ],                # Pooling field of each CNN layer
-                    "num_nodes"                         : [  450  ],                # Number of nodes in each MLP layer
+                    "num_nodes"                         : [   ],                # Number of nodes in each MLP layer
                     "use_bias"                          : True,                     # Flag for using bias                   
                     "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
                     "svm_flag"                          : False                     # True makes the last layer a SVM
@@ -942,7 +952,7 @@ if __name__ == '__main__':
 
 
     visual_params = {
-                        "visualize_flag"        : True,
+                        "visualize_flag"        : False,
                         "visualize_after_epochs": 1,
                         "n_visual_images"       : 20,
                         "display_flag"          : False

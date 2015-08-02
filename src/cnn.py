@@ -23,6 +23,12 @@ from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 from theano.ifelse import ifelse
 
+"""
+# For 3X faster Convolutions
+from pylearn2.sandbox.cuda_convnet.filter_acts import FilterActs
+from pylearn2.sandbox.cuda_convnet.pool import MaxPool
+from theano.sandbox.cuda.basic_ops import gpu_contiguous
+"""
 
 ##################################
 ## Various activation functions ##
@@ -429,7 +435,9 @@ class MLP(object):
 class LeNetConvPoolLayer(object):
     """Pool Layer of a convolutional network .. taken from the theano tutorials"""
 
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize, activation, W = None, b = None, verbose = True):
+    def __init__(self, rng, input, filter_shape, image_shape, poolsize, activation, W = None, b = None,
+                        #fast_conv = False,
+                        verbose = True):
        
         assert image_shape[1] == filter_shape[1]
         if verbose is True:
@@ -470,19 +478,42 @@ class LeNetConvPoolLayer(object):
             self.b = b
 
         # convolve input feature maps with filters
+        #if fast_conv is False:
         conv_out = conv.conv2d(
-            input=input,
+            input=self.input,
             filters=self.W,
             filter_shape=filter_shape,
             image_shape=image_shape
-        )
+            )
+
+        """
+        else: 
+            conv_op = FilterActs()
+            input_shuffled = self.input.dimshuffle(1, 2, 3, 0) # bc01 to c01b
+            filters_shuffled = self.W.dimshuffle(1, 2, 3, 0) # bc01 to c01b
+            contiguous_input = gpu_contiguous(input_shuffled)
+            contiguous_filters = gpu_contiguous(filters_shuffled)
+            out_shuffled = conv_op(contiguous_input, contiguous_filters)
+            conv_out = out_shuffled.dimshuffle(3, 0, 1, 2) # c01b to bc01
+            # directly lifted from  http://benanne.github.io/2014/04/03/faster-convolutions-in-theano.html - Thank you. 
+            # I am not sure if the dimshuffle makes the performance update of the conv_op any better. But hey lets give a try,
+            # if not always revert back to using fast_conv = 0. 
+        """
 
         # downsample each feature map individually, using maxpooling
+        #if fast_conv is False:
         pooled_out = downsample.max_pool_2d(
             input=conv_out,
             ds=poolsize,
             ignore_border=True
-        )
+            )
+        """            
+        else:
+            pool_op = MaxPool(ds=poolsize, stride = 1)
+            contiguous_input = gpu_contiguous(out_shuffled)
+            out_shuffled = pool_op(contiguous_input)
+            pooled_out = out_shuffled.dimshuffle(3, 0, 1, 2) # c01b to bc01
+        """
 
         # add the bias term. Since the bias is a vector (1D array), we first
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
