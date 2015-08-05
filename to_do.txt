@@ -4,3 +4,5 @@
 3. Provide support for Caltech 256 (working), PASCAL VOC and ImageNet. 
 
 
+4. Write a proper tutorial on the page. !! 
+
