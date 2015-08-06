@@ -1,4 +1,37 @@
-# The story behind the repository
+
+## Who is this code most useful for ?
+
+I wrote this code essentially for my labmates, those who are interested in starting deep learning to make a fast transition into theano. I reckon that this will be most useful for someone who is starting out to be a grad student getting to start research into deep learning (like me) or to someone who wants to do a try out on some kaggle challenge. Parts of the code are directly lifted from [theano tutorials](http://deeplearning.net/software/theano/tutorial/) or from [Misha Denil's repository](https://github.com/mdenil). 
+
+This might not be really useful for advanced deep learning researchers. It's quite basic. If you are a serious researcher and you either find a bug or you want to just make suggestions please feel free, I will be grateful.  
+
+I would recommend my code for quick testing of architecture or ideas in industry also for it is much easier to change the architecture or learning techniques and just simply run a proof of concept. I would also recommend my code as a research tool for someone who wants to quickly jump into deep learning without reading a lot of theory. I haven’t tested the industrial viability of my code yet and although it is fairly fast and is easily portable because it is written in python-theano entirely.
+
+***
+
+## What is in this repository? 
+
+The code that is here in this repository has the following features, among many others:
+* CNNs with easy architecture management: The code has the ability to change architecture: with just small changes in some input parameters and immediately a whole new network can be created. One variable changes the number of MLP layers, number of nodes in each layer, activation functions and even dropout probabilities. You can also change number of CNN layers, their pooling and stride sizes. Basically any vanilla network that you can draw on a black board can be set up quite simply using a few input parameters. 
+
+* Optimization techniques: This is where things change a lot and for someone who is getting into deep learning fresh without much theoretical machine learning, I am hoping it would be really helpful. With some flags and parameters in the boilerplate of the code, you could switch entire optimization methods, including gradient descent, adaGrad, rmsProp add momentums like Polyak Momentum, Nesterov’s accelerated gradients etc. One switch converts the whole networks into a max-margin formulation from a softmax formulation. I intended this for people in my lab, who wouldn’t now have to spend days reading the theory behind these methods , but just try them first and if they work, then think of reading them.   
+   - Dropouts[1]
+   - adaGrad[2]
+   - Polyak Momentum[3]
+   - Nesterov's Accelerated Gradients [4]
+   - rmsProp [5]
+   
+* Data handling capabilities: I have provided features to setup data as simple matlab files that can be loaded in python and run in batches for training. Alternatively, I also have options for ‘pkl.gz’ files if you would like to cPickle and / or zip your data. Also provided a wrapper to [skdata's dataset](https://jaberg.github.io/skdata/) interface (under construction, as of now, I have cifar10, mnist, extended mnists , caltech101, caltech256). 
+
+* Data visualization capabilities: Visualize the activities of select images (random) from the trainset on each layer after select number of epochs of training. Also view filters after select number of epochs. If the input images are color, the first layer saves down color features. The only way to know if a networks is trained or not is by constantly visualizing the filters. I have provided ways to save down the filters and activations after every ( optionally after how many ever ) epochs and probe into the weights of the networks. 
+
+* Entire network can be saved and reloaded: Save down a trained network, load it at a later time and just run testing. This is useful when testing large models or wanting to save down various models and compare at a later time. 
+   
+More features will be added as and when I am implementing them. You can check the `to_do.txt` in the repository for expected updates.  I will add more detailed description of the implementation as and when I have time to so. But don't expect it soon.
+
+*** 
+
+## The story behind the repository
 
 This project was something I was just building as a mental exercise for myself, just to get into deep learning. Surprisingly, it developed into a good flexible tool that was appreciated by people who I work with in both my lab and in my TA class. I am making it public and hope that it will be useful to try an architecture quickly with various different options or to quickly test out some datasets with some architecture design in mind.
 
@@ -10,34 +43,12 @@ Once you are done with the tutorials (and that takes about a couple of months to
 
 *** 
 
-## What is in this repository? 
-
-The code that is here in this repository has the following features, among many others:
-* CNNs with easy architecture management: The code has the ability to change architecture with just small changes in some input parameters and immediately a whole new network can be created. One variable changes the number of MLP layers, number of nodes in each layer, activation functions and even dropout probabilities. You can also change number of CNN layers, their pooling and stride sizes. Basically any vanilla network that you can draw on a black board can be set up quite simply using a few input parameters. 
-
-* Optimization techniques: This is where things change a lot and for someone who is getting into deep learning fresh without much theoretical machine learning, I am hoping it would be really helpful. With some flags and parameters in the boilerplate of the code, you could switch entire optimization methods, including gradient descent, adaGrad, rmsProp add momentums like Polyak Momentum, Nesterov’s accelerated gradients etc. One switch converts the whole networks into a max-margin formulation from a softmax formulation. I intended this for people in my lab, who wouldn’t now have to spend days reading the theory behind these methods , but just try them first and if they work, then think of reading them.   
-   - Dropouts[1]
-   - adaGrad[2]
-   - Polyak Momentum[3]
-   - Nesterov's Accelerated Gradients [4]
-   - rmsProp [5]
-   
-* Data handling capabilities: I have provided features to setup data as simple matlab files that can be loaded in python and run in batches for training. Alternatively, I also have options for ‘pkl.gz’ files if you would like to cPickle and / or zip your data. Also provided a wrapper to [skdata's dataset](https://jaberg.github.io/skdata/) interface (under construction, as of now, I have cifar10, mnist, extended mnists , caltech101). 
-
-* Data visualization capabilities: Visualize the activities of select images (random) from the trainset on each layer after select number of epochs of training. Also view filters after select number of epochs. If the input images are color, the first layer saves down color features. The only way to know if a networks is trained or not is by constantly visualizing the filters. I have provided ways to save down the filters and activations after every ( optionally after how many ever ) epochs and probe into the weights of the networks. 
-
-* Entire network can be saved and reloaded.
-* Save down a trained network, load it at a later time and just run testing. This is useful when testing large models or wanting to save down various models and compare at a later time. 
-   
-More features will be added as and when I am implementing them. You can check the `to_do.txt` in the repository for expected updates.  I will add more detailed description of the implementation as and when I have time to so. But don't expect it soon.
-
-*** 
 ## System requirements
 
 Running this code essentially requires:
 
     1. python 2.x
-    2. theano 0.6 +
+    2. theano 0.7 +
     3. numpy 
     4. scipy
     5. skdata
@@ -47,17 +58,7 @@ Running this code essentially requires:
 
 Most of these could be installed by installing [anaconda of continuum analytics](http://docs.continuum.io/anaconda/install.html) The code is reasonably well documented. It is not that difficult to find out from the boilerplate what is happening. If you need to understand really well what is happening before you jump into the code, use `verbose = True` flag in the boiler plate. The code has been tested on exhaustively in both MacOSX and Linux Ubuntu 14.x and 15.x by virtue of constant use. 
 
-*** 
 
-## Who is this code most useful for ?
-
-I wrote this code essentially for my labmates, those who are interested in starting deep learning to make a fast transition into theano. I reckon that this will be useful for someone who is starting out to be a grad student getting to start research into deep learning (like me) or to someone who wants to do a try out on some kaggle challenge. Parts of the code are directly lifted from [theano tutorials](http://deeplearning.net/software/theano/tutorial/) or from [Misha Denil's repository](https://github.com/mdenil). 
-
-This might not be really useful for advanced deep learning researchers. It's quite basic. If you are a serious researcher and you either find a bug or you want to just make suggestions please feel free, I will be grateful.  
-
-I would recommend my code for quick testing of architecture or ideas for it is much easier to change the architecture or learning techniques and just simply run a proof of concept. I would also recommend my code as a research tool for someone who wants to quickly jump into deep learning without reading a lot of theory. I haven’t tested the industrial viability of my code yet and although it is fairly fast and is easily portable because it is written in python-theano entirely.
-
-***
 ## How to run the code ?
 
 I am not going to explain the details of the code explicitly. If you are in a position to want to change, probably this code is already too easy and obvious for you to understand and make these changes. If there are particular queries, raise an issue and I would love to respond. I would just explain the input parameters that help in running and also what to expect out of the output once ran. 
