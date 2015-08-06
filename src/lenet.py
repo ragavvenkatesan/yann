@@ -755,25 +755,20 @@ def run_cnn(  arch_params,
 
                 # visualizing the filters.
                 for m in xrange(len(nkerns)):
-                    if m == 0:              # first layer outpus. 
-                        if channels == 3:    # if the image is color, then first layer looks at color pictures and I can visualize the filters also as color.
-                            curr_image = weights[m].eval()
-                            if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
-                                os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
-                            visualize_color_filters(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_0.jpg' , show_img = display_flag)
-                        else:       # visualize them as grayscale images.
-                            for i in xrange(weights[m].shape.eval()[1]):
-                                curr_image = weights[m].eval() [:,i,:,:]
-                                if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
-                                    os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
-                                visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_' + str(i) + '.jpg' , show_img = display_flag)
-                    else:
-                        for i in xrange(nkerns[m]): 
-                            curr_image = weights[m].eval()[:,i,:,:]
-                            if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
-                                os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
-                            visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename =  'kernel_'  + str(i) + '.jpg' , show_img = display_flag)
-             
+
+                    curr_weights = weights[m].eval() 
+                    if curr_weights.shape[1] == 3:    # if the image is color, then first layer looks at color pictures and I can visualize the filters also as color.
+                        curr_image = curr_weights
+                        if not os.path.exists('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
+                            os.makedirs('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
+                        visualize_color_filters(curr_image, loc = 'visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_0.jpg' , show_img = display_flag)
+                    else:       # visualize them as grayscale images.
+                        for i in xrange(curr_weights.shape[1]):
+                            curr_image = curr_weights [:,i,:,:]
+                            if not os.path.exists('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
+                                os.makedirs('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
+                            visualize(curr_image, loc = 'visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_' + str(i) + '.jpg' , show_img = display_flag)
+                 
         if patience <= iteration:
             early_termination = True
             break
