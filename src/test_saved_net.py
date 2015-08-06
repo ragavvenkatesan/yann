@@ -441,8 +441,8 @@ if __name__ == '__main__':
        
 	# if data_params is pickled, these could be just anything it doens't matter.    
     data_params = {
-                   "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "type"               : 'mat',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
+                   "loc"                : '../dataset/nist',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
                    "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
                    "batches2test"       : 20,                                       # Number of testing batches.
