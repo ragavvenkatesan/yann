@@ -14,6 +14,7 @@ import cv2
 
 
 
+
 ##################################
 ## Data Loading Functions        ##
 ##################################
@@ -409,7 +410,7 @@ def load_skdata_caltech101(batch_size, rand_perm, batch = 1, type_set = 'train',
 	cal.fetch()
 	meta = cal._get_meta()
 	img,data_y = cal.img_classification_task()
-	#data_y = data_y -1								# Because classes are labelled in this dataset from 1 - 102, I want 0 - 101.  
+	#data_y = data_y - 1 								# Because classes are labelled in this dataset from 1 - 102, I want 0 - 101.  
 	img = numpy.asarray(img.objs[0])
 	img = img[rand_perm]								# Shuffle so that the ordering of classes is changed, but use the same shuffle so that loading works consistently.
 	data_y = data_y[rand_perm]
