@@ -528,14 +528,5 @@ class LeNetConvPoolLayer(object):
                             numpy.asarray(filter_shape[0]*filter_shape[1]/numpy.ceil(filter_shape[0]*filter_shape[1]), dtype='int32') )
         self.filter_img = self.W.reshape((filter_shape[0],filter_shape[1],filter_shape[2],filter_shape[3]))
 
-    def get_reconstructed_input(self, hidden):
-        """ Computes the reconstructed input given the values of the hidden layer """
-        repeated_conv = conv.conv2d(input = hidden, filters = self.W_prime, border_mode='full')
-        multiple_conv_out = [repeated_conv.flatten()] * numpy.prod(self.poolsize)
-        stacked_conv_neibs = T.stack(*multiple_conv_out).T
-        stretch_unpooling_out = neibs2images(stacked_conv_neibs, self.pl, self.x.shape) 
-        return ReLU(stretch_unpooling_out + self.b_prime.dimshuffle('x', 0, 'x', 'x'))
-            
-
 
     
