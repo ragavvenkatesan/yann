@@ -285,12 +285,12 @@ class MLP(object):
         self.L2 = theano.shared(0)
         
         count = 0
-        if dropout_rates > 1:
+        if len(dropout_rates) > 1:
             for n_in, n_out in weight_matrix_sizes[:-1]:
                 if verbose is True:
                     print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
     
-                if params is None:
+                if params is None or not(len(params) < count + 1):
                     next_dropout_layer = DropoutHiddenLayer(rng=rng,
                                                     input=next_dropout_layer_input,
                                                     activation=activations[layer_counter],
@@ -342,7 +342,7 @@ class MLP(object):
         if svm_flag is False:
             if verbose is True:
                 print "           -->        Initializing regression layer with " + str(n_out) + " output units"
-            if params is not None:
+            if params is not None or not(len(params) < count + 1):
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out,
@@ -383,7 +383,7 @@ class MLP(object):
         else:
             if verbose is True:
                 print "           -->        Initializing SVM layer with " + str(n_out) + " class predictors"
-            if params is None:
+            if params is None or not(len(params) < count + 1):
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out )
