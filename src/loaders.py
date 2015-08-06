@@ -410,13 +410,61 @@ def load_skdata_caltech101(batch_size, rand_perm, batch = 1, type_set = 'train',
 	cal.fetch()
 	meta = cal._get_meta()
 	img,data_y = cal.img_classification_task()
-	data_y = data_y - 1 								# Because classes are labelled in this dataset from 1 - 102, I want 0 - 101.  
+	#data_y = data_y - 1 								# Because classes are labelled in this dataset from 1 - 102, I want 0 - 101.  
 	img = numpy.asarray(img.objs[0])
 	img = img[rand_perm]								# Shuffle so that the ordering of classes is changed, but use the same shuffle so that loading works consistently.
 	data_y = data_y[rand_perm]
 	data_x = numpy.asarray(numpy.zeros((3*batch_size,height*width*3)), dtype = theano.config.floatX )
 	data_y = numpy.asarray(data_y[0:3*batch_size] , dtype = 'int32' )
 	for i in range(batch_size):
+		temp_img = imread(img[3*batch_size*batch + i])
+		temp_img = cv2.normalize(temp_img.astype(theano.config.floatX), None, 0.0, 1.0, cv2.NORM_MINMAX)
+		if temp_img.ndim != 3:
+	    	# This is a temporary solution. I am allocating to all channels the grayscale values... 
+			temp_img = cv2.normalize(temp_img.astype(theano.config.floatX), None, 0.0, 1.0, cv2.NORM_MINMAX)
+			temp_img = cv2.resize(temp_img,(height,width))
+			temp_img1 = numpy.zeros((height,width,3))
+			temp_img1 [:,:,0] = temp_img
+			temp_img1 [:,:,1] = temp_img
+			temp_img1 [:,:,2] = temp_img
+			data_x[i] = numpy.reshape(temp_img1,[1,height*width*3] )
+		else:
+			data_x[i] = numpy.reshape(cv2.resize(temp_img,(height,width)),[1,height*width*3] )
+
+	train_x = data_x[0:batch_size]		
+	train_y = data_y[0:batch_size]
+	test_x = data_x[batch_size:2*batch_size]
+	test_y = data_y[batch_size:2*batch_size]
+	valid_x = data_x[2*batch_size:]
+	valid_y = data_y[2*batch_size:]
+
+	
+	if type_set == 'train':
+		return (train_x,train_y)
+	elif type_set == 'test':
+		return (test_x,test_y)
+	else:
+		return (valid_x,valid_y)
+
+# caltech 256 of skdata 
+def load_skdata_caltech256(batch_size, rand_perm, batch = 1, type_set = 'train', height = 256, width = 256 ):
+	import skdata
+	from skdata import caltech
+	from scipy.misc import imread
+	cal = caltech.Caltech256()
+	cal.fetch()
+	meta = cal._get_meta()
+	img,data_y = cal.img_classification_task()
+	pdb.set_trace()
+	#data_y = data_y -1							# Because classes are labelled in this dataset from 1 - 102, I want 0 - 101.  
+	img = numpy.asarray(img.objs[0])
+	img = img[rand_perm]		
+	#pdb.set_trace()						# Shuffle so that the ordering of classes is changed, but use the same shuffle so that loading works consistently.
+	data_y = data_y[rand_perm]
+	data_x = numpy.asarray(numpy.zeros((3*batch_size, height*width*3)), dtype = theano.config.floatX )
+	data_y = numpy.asarray(data_y[0:3*batch_size] , dtype = 'int32' )
+	for i in range(batch_size):
+		#pdb.set_trace()
 		temp_img = imread(img[3*batch_size*batch + i])
 		temp_img = cv2.normalize(temp_img.astype(theano.config.floatX), None, 0.0, 1.0, cv2.NORM_MINMAX)
 		if temp_img.ndim != 3:

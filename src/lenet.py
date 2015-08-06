@@ -38,6 +38,7 @@ from util import save_network
 from loaders import load_data_pkl
 from loaders import load_data_mat
 from loaders import load_skdata_caltech101
+from loaders import load_skdata_caltech256
 from loaders import load_skdata_mnist
 from loaders import load_skdata_cifar10
 from loaders import load_skdata_mnist_noise1
@@ -278,6 +279,44 @@ def run_cnn(  arch_params,
 
             multi_load = True
 
+        elif dataset == 'caltech256':
+            print "... importing caltech 256 from skdata"
+
+                # shuffle the data
+            total_images_in_dataset = 30607 
+            rand_perm = numpy.random.permutation(total_images_in_dataset)  # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
+
+            n_train_images = total_images_in_dataset / 3
+            n_test_images = total_images_in_dataset / 3
+            n_valid_images = total_images_in_dataset / 3 
+
+            n_train_batches_all = n_train_images / batch_size 
+            n_test_batches_all = n_test_images / batch_size 
+            n_valid_batches_all = n_valid_images / batch_size
+
+            if (n_train_batches_all < batches2train) or (n_test_batches_all < batches2test) or (n_valid_batches_all < batches2validate):        # You can't have so many batches.
+                print "...  !! Dataset doens't have so many batches. "
+                raise AssertionError()
+
+            train_data_x, train_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'train' , height = height, width = width)             
+            test_data_x, test_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'test' , height = height, width = width)      # Load dataset for first epoch.
+            valid_data_x, valid_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'valid' , height = height, width = width)    # Load dataset for first epoch.
+
+            train_set_x = theano.shared(train_data_x, borrow=True)
+            train_set_y = theano.shared(train_data_y, borrow=True)
+            
+            test_set_x = theano.shared(test_data_x, borrow=True)
+            test_set_y = theano.shared(test_data_y, borrow=True) 
+          
+            valid_set_x = theano.shared(valid_data_x, borrow=True)
+            valid_set_y = theano.shared(valid_data_y, borrow=True)
+
+            # compute number of minibatches for training, validation and testing
+            n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
+            n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
+            n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
+
+            multi_load = True
     # Just checking as a way to see if the intended dataset is indeed loaded.
     assert height*width*channels == train_set_x.get_value( borrow = True ).shape[1]
     assert batch_size >= n_visual_images
@@ -656,6 +695,8 @@ def run_cnn(  arch_params,
                 elif data_params["type"] == 'skdata':                   
                     if dataset == 'caltech101':
                         train_data_x, train_data_y  = load_skdata_caltech101(batch_size = load_batches, batch = batch + 1 , type_set = 'train', rand_perm = rand_perm, height = height, width = width )
+                    elif dataset == 'caltech256':                  
+                        train_data_x, train_data_y  = load_skdata_caltech256(batch_size = load_batches, batch = batch + 1 , type_set = 'train', rand_perm = rand_perm, height = height, width = width )
 
                         # Do not use svm_flag for caltech 101                        
                 train_set_x.set_value(train_data_x ,borrow = True)
@@ -663,9 +704,9 @@ def run_cnn(  arch_params,
 
                 for minibatch_index in xrange(n_train_batches):
                     if verbose is True:
-                        print "...                  ->    Mini Batch: " + str(minibatch_index + 1) + " out of "    + str(n_train_batches)                                                             
-                        cost_ij = train_model( minibatch_index, epoch_counter) 
-                        cost_saved = cost_saved +[cost_ij]
+                        print "...                  ->    Mini Batch: " + str(minibatch_index + 1) + " out of "    + str(n_train_batches)
+					cost_ij = train_model( minibatch_index, epoch_counter)
+					cost_saved = cost_saved +[cost_ij]
                     
             else:        
                 iteration= (epoch_counter - 1) * n_train_batches + batch
@@ -686,6 +727,8 @@ def run_cnn(  arch_params,
                         if dataset == 'caltech101':
           
                             valid_data_x, valid_data_y = load_skdata_caltech101(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
+                        elif dataset == 'caltech256':
+                            valid_data_x, valid_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
                             # Do not use svm_flag for caltech 101                    
                     valid_set_x.set_value(valid_data_x,borrow = True)
                     valid_set_y.set_value(valid_data_y,borrow = True)
@@ -815,7 +858,8 @@ def run_cnn(  arch_params,
                 if dataset == 'caltech101':
   
                     test_data_x, test_data_y = load_skdata_caltech101(batch_size = load_batches, batch = batch +  1 , type_set = 'test', rand_perm = rand_perm, height = height, width = width )
-
+                elif dataset == 'caltech256':
+                    test_data_x, test_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch +  1 , type_set = 'test', rand_perm = rand_perm, height = height, width = width )
             test_set_x.set_value(test_data_x,borrow = True)
             test_set_y.set_value(test_data_y,borrow = True)
 
