@@ -285,6 +285,9 @@ def run (
         for i in xrange(len(dropout_rates)-1):
             layer_sizes.append ( num_nodes[i] )
         layer_sizes.append ( outs )
+        
+    elif len(dropout_rates) == 1:
+        layer_sizes = [ nkerns[-1] * next_in_1 * next_in_2, outs]
     else :
         layer_sizes = [ nkerns[-1] * next_in_1 * next_in_2, num_nodes[0] , outs]
 
