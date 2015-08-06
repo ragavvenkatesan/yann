@@ -768,7 +768,7 @@ def run_cnn(  arch_params,
                                     os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
                                 visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_' + str(i) + '.jpg' , show_img = display_flag)
                     else:
-                        for i in xrange(nkerns[m-1]): 
+                        for i in xrange(nkerns[m]): 
                             curr_image = weights[m].eval()[:,i,:,:]
                             if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
                                 os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
