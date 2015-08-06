@@ -15,6 +15,8 @@ import cv2
 # Theano Packages
 import theano
 import theano.tensor as T
+from theano.tensor.signal import downsample
+from theano.tensor.nnet import conv
 from theano.ifelse import ifelse
 
 # CNN code packages
@@ -28,8 +30,6 @@ from cnn import _dropout_from_layer
 from cnn import DropoutHiddenLayer
 from cnn import MLP
 from cnn import LeNetConvPoolLayer
-
-
 from util import visualize
 from util import visualize_color_filters
 from util import save_network
@@ -38,6 +38,7 @@ from util import save_network
 from loaders import load_data_pkl
 from loaders import load_data_mat
 from loaders import load_skdata_caltech101
+from loaders import load_skdata_caltech256
 from loaders import load_skdata_mnist
 from loaders import load_skdata_cifar10
 from loaders import load_skdata_mnist_noise1
@@ -59,14 +60,14 @@ def run_cnn(  arch_params,
                     filename_params,
                     visual_params,
                     verbose = False, 
-                    ):
+                    debug = False):
     
 
     #####################
     # Unpack Variables  #
     #####################
 
-
+    if debug is True: pdb.set_trace()
 
     results_file_name   = filename_params [ "results_file_name" ]                # Files that will be saved down on completion Can be used by the parse.m file
     error_file_name     = filename_params [ "error_file_name" ]
@@ -132,6 +133,7 @@ def run_cnn(  arch_params,
     # Data Loading  #
     #################
     print "... loading data"
+    if debug is True: pdb.set_trace()
     # load matlab files as dataset.
     if data_params["type"] == 'mat':
         train_data_x, train_data_y, train_data_y1 = load_data_mat(dataset, batch = 1 , type_set = 'train')             
@@ -280,10 +282,50 @@ def run_cnn(  arch_params,
 
             multi_load = True
 
+        elif dataset == 'caltech256':
+            print "... importing caltech 256 from skdata"
+
+                # shuffle the data
+            total_images_in_dataset = 30607 
+            rand_perm = numpy.random.permutation(total_images_in_dataset)  # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
+
+            n_train_images = total_images_in_dataset / 3
+            n_test_images = total_images_in_dataset / 3
+            n_valid_images = total_images_in_dataset / 3 
+
+            n_train_batches_all = n_train_images / batch_size 
+            n_test_batches_all = n_test_images / batch_size 
+            n_valid_batches_all = n_valid_images / batch_size
+
+            if (n_train_batches_all < batches2train) or (n_test_batches_all < batches2test) or (n_valid_batches_all < batches2validate):        # You can't have so many batches.
+                print "...  !! Dataset doens't have so many batches. "
+                raise AssertionError()
+
+            train_data_x, train_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'train' , height = height, width = width)             
+            test_data_x, test_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'test' , height = height, width = width)      # Load dataset for first epoch.
+            valid_data_x, valid_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'valid' , height = height, width = width)    # Load dataset for first epoch.
+
+            train_set_x = theano.shared(train_data_x, borrow=True)
+            train_set_y = theano.shared(train_data_y, borrow=True)
+            
+            test_set_x = theano.shared(test_data_x, borrow=True)
+            test_set_y = theano.shared(test_data_y, borrow=True) 
+          
+            valid_set_x = theano.shared(valid_data_x, borrow=True)
+            valid_set_y = theano.shared(valid_data_y, borrow=True)
+
+            # compute number of minibatches for training, validation and testing
+            n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
+            n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
+            n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
+
+            multi_load = True
+
     # Just checking as a way to see if the intended dataset is indeed loaded.
+    #pdb.set_trace()
     assert height*width*channels == train_set_x.get_value( borrow = True ).shape[1]
     assert batch_size >= n_visual_images
-     
+    if debug is True: pdb.set_trace()
     if ada_grad is True:
         assert rms_prop is False
     elif rms_prop is True:
@@ -294,7 +336,7 @@ def run_cnn(  arch_params,
     # BUILD NETWORK      #
     ######################
 
-
+    if debug is True: pdb.set_trace()
     print '... building the network'    
     start_time = time.clock()
     # allocate symbolic variables for the data
@@ -306,7 +348,7 @@ def run_cnn(  arch_params,
         y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
 
     first_layer_input = x.reshape((batch_size, channels, height, width))
-
+    if debug is True: pdb.set_trace()
     # Create first convolutional - pooling layers 
     activity = []       # to record Cnn activities 
     weights = []
@@ -329,14 +371,9 @@ def run_cnn(  arch_params,
         weights.append ( conv_layers[-1].filter_img)
 
         # Create the rest of the convolutional - pooling layers in a loop
-        if pool_size > 0:
-            next_in_1 = ( height - filt_size + 1 ) / pool_size        
-            next_in_2 = ( width - filt_size + 1 ) / pool_size
-        else:
-            next_in_1 = ( height - filt_size + 1 )        
-            next_in_2 = ( width - filt_size + 1 )
-                
-    
+        next_in_1 = ( height - filt_size + 1 ) / pool_size        
+        next_in_2 = ( width - filt_size + 1 ) / pool_size
+        if debug is True: pdb.set_trace()
         for layer in xrange(len(nkerns)-1):   
             filt_size = filter_size[layer+1]
             pool_size = pooling_size[layer+1]
@@ -349,22 +386,17 @@ def run_cnn(  arch_params,
                                 activation = cnn_activations[layer+1],
                                 verbose = verbose
                                  ) )
-            if pool_size > 0:
-                next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
-                next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
-            else:
-                next_in_1 = ( next_in_1 - filt_size + 1 )        
-                next_in_2 = ( next_in_2 - filt_size + 1 )
-                
+            next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
+            next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
             weights.append ( conv_layers[-1].filter_img )
             activity.append( conv_layers[-1].output )
-
+    if debug is True: pdb.set_trace()
     # Assemble fully connected laters
     if nkerns == []:
         fully_connected_input = first_layer_input
     else:
         fully_connected_input = conv_layers[-1].output.flatten(2)
-        
+
     if len(dropout_rates) > 2 :
         layer_sizes =[]
         layer_sizes.append( nkerns[-1] * next_in_1 * next_in_2 )
@@ -380,16 +412,16 @@ def run_cnn(  arch_params,
     Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
     from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
     """
-
+    if debug is True: pdb.set_trace()
     MLPlayers = MLP( rng=rng,
                      input=fully_connected_input,
                      layer_sizes=layer_sizes,
                      dropout_rates=dropout_rates,
                      activations=mlp_activations,
-                     use_bias = use_bias,
+                     use_bias=use_bias,
                      svm_flag = svm_flag,
                      verbose = verbose)
-
+    if debug is True: pdb.set_trace()
     # Build the expresson for the categorical cross entropy function.
     if svm_flag is False:
         cost = MLPlayers.negative_log_likelihood( y )
@@ -397,7 +429,7 @@ def run_cnn(  arch_params,
     else :        
         cost = MLPlayers.negative_log_likelihood( y1 )
         dropout_cost = MLPlayers.dropout_negative_log_likelihood( y1 )
-
+    if debug is True: pdb.set_trace()
     # create theano functions for evaluating the graphs
     test_model = theano.function(
             inputs=[index],
@@ -425,7 +457,7 @@ def run_cnn(  arch_params,
         givens={
             x: test_set_x[index * batch_size: (index + 1) * batch_size]})
 
-
+    if debug is True: pdb.set_trace()
 
     # function to return activations of each image
     activities = theano.function (
@@ -449,7 +481,7 @@ def run_cnn(  arch_params,
         gradients.append ( gradient )
 
     # TO DO: Try implementing Adadelta also. 
-     
+    if debug is True: pdb.set_trace()
     # Compute momentum for the current epoch
     epoch = T.scalar()
     mom = ifelse(epoch <= mom_epoch_interval,
@@ -459,7 +491,7 @@ def run_cnn(  arch_params,
     # learning rate
     eta = theano.shared(numpy.asarray(initial_learning_rate,dtype=theano.config.floatX))
     # accumulate gradients for adagrad
-     
+    if debug is True: pdb.set_trace()
     grad_acc = []
     for param in params:
         eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
@@ -470,12 +502,12 @@ def run_cnn(  arch_params,
     for param in params:
         velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
         velocities.append(velocity)
-     
+    if debug is True: pdb.set_trace()
 
     # create updates for each combination of stuff 
     updates = OrderedDict()
     print_flag = False
-     
+    if debug is True: pdb.set_trace()
     for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
 
         if ada_grad is True:
@@ -555,7 +587,7 @@ def run_cnn(  arch_params,
         else:            
             updates[param] = stepped_param
 
-     
+    if debug is True: pdb.set_trace()
     if svm_flag is True:
         train_model = theano.function(inputs= [index, epoch],
                 outputs=output,
@@ -595,7 +627,7 @@ def run_cnn(  arch_params,
     #visualize_ind = range(n_visual_images)
     main_img_visual = True
 
-     
+    if debug is True: pdb.set_trace()
     # create all directories required for saving results and data.
     if visualize_flag is True:
         if not os.path.exists('../visuals'):
@@ -619,7 +651,7 @@ def run_cnn(  arch_params,
     ###############
     # TRAIN MODEL #
     ###############
-     
+    if debug is True: pdb.set_trace()
     #pdb.set_trace()
     print "... training"
     start_time = time.clock()
@@ -640,7 +672,7 @@ def run_cnn(  arch_params,
 
     while (epoch_counter < n_epochs) and (not early_termination):
         epoch_counter = epoch_counter + 1 
-         
+        if debug is True: pdb.set_trace()
         for batch in xrange (batches2train):
             if verbose is True:
                 print "...          -> Epoch: " + str(epoch_counter) + " Batch: " + str(batch+1) + " out of " + str(batches2train) + " batches"
@@ -657,6 +689,8 @@ def run_cnn(  arch_params,
                 elif data_params["type"] == 'skdata':                   
                     if dataset == 'caltech101':
                         train_data_x, train_data_y  = load_skdata_caltech101(batch_size = load_batches, batch = batch + 1 , type_set = 'train', rand_perm = rand_perm, height = height, width = width )
+                    elif dataset == 'caltech256':                  
+                        train_data_x, train_data_y  = load_skdata_caltech256(batch_size = load_batches, batch = batch + 1 , type_set = 'train', rand_perm = rand_perm, height = height, width = width )
 
                         # Do not use svm_flag for caltech 101                        
                 train_set_x.set_value(train_data_x ,borrow = True)
@@ -665,28 +699,29 @@ def run_cnn(  arch_params,
                 for minibatch_index in xrange(n_train_batches):
                     if verbose is True:
                         print "...                  ->    Mini Batch: " + str(minibatch_index + 1) + " out of "    + str(n_train_batches)                                                             
-                        cost_ij = train_model( minibatch_index, epoch_counter) 
-                        cost_saved = cost_saved +[cost_ij]
+                    cost_ij = train_model( minibatch_index, epoch_counter)
+                    cost_saved = cost_saved +[cost_ij]
                     
             else:        
                 iteration= (epoch_counter - 1) * n_train_batches + batch
                 cost_ij = train_model(batch, epoch_counter)
                 cost_saved = cost_saved +[cost_ij]
-         
+        if debug is True: pdb.set_trace()
         if  epoch_counter % validate_after_epochs is 0:  
             # Load Validation Dataset here.
             validation_losses = 0.      
             if multi_load is True:
                 # Load data for this batch
-                 
+                if debug is True: pdb.set_trace()
                 for batch in xrange ( batches2test ):
                     if data_params["type"] == 'mat':
                         valid_data_x, valid_data_y, valid_data_y1 = load_data_mat(dataset, batch = batch + 1 , type_set = 'valid')             
 
                     elif data_params["type"] == 'skdata':                   
                         if dataset == 'caltech101':
-          
                             valid_data_x, valid_data_y = load_skdata_caltech101(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
+                        elif dataset == 'caltech256':
+                            valid_data_x, valid_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
                             # Do not use svm_flag for caltech 101                    
                     valid_set_x.set_value(valid_data_x,borrow = True)
                     valid_set_y.set_value(valid_data_y,borrow = True)
@@ -705,7 +740,7 @@ def run_cnn(  arch_params,
                         print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "% -> best thus far " 
                     else :
                         print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%"
-                 
+                if debug is True: pdb.set_trace()
             else:
 
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
@@ -731,7 +766,7 @@ def run_cnn(  arch_params,
             best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
         new_leanring_rate = decay_learning_rate()    
 
-         
+        if debug is True: pdb.set_trace()
         if visualize_flag is True:
             if  epoch_counter % visualize_after_epochs is 0: 
                 # saving down images. 
@@ -745,7 +780,7 @@ def run_cnn(  arch_params,
 
                 # visualizing activities.
                 activity = activities(0)
-                 
+                if debug is True: pdb.set_trace()
                 for m in xrange(len(nkerns)):   #For each layer 
                     loc_ac = '../visuals/activities/layer_' + str(m) + "/epoch_" + str(epoch_counter) +"/"
                     if not os.path.exists(loc_ac):   
@@ -774,11 +809,10 @@ def run_cnn(  arch_params,
                             if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
                                 os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
                             visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename =  'kernel_'  + str(i) + '.jpg' , show_img = display_flag)
-             
+            if debug is True: pdb.set_trace()
         if patience <= iteration:
             early_termination = True
             break
-        save_network( 'network.pkl.gz',  params, arch_params, data_params )    
     end_time = time.clock()
     print "... training complete, took " + str((end_time - start_time)/ 60.) +" minutes"
 
@@ -793,7 +827,7 @@ def run_cnn(  arch_params,
     predictions = []
     class_prob = []
     labels = []
-     
+    if debug is True: pdb.set_trace()
     if multi_load is False:
 
         labels = test_set_y.eval().tolist()   
@@ -805,7 +839,7 @@ def run_cnn(  arch_params,
         print "...      -> Total test accuracy : " + str(float((batch_size*n_test_batches)-wrong )*100/(batch_size*n_test_batches)) + " % out of " + str(batch_size*n_test_batches) + " samples."
 
     else:
-         
+        if debug is True: pdb.set_trace()
         for batch in xrange(batches2test):
             print ".. Testing batch " + str(batch)
             # Load data for this batch
@@ -814,9 +848,9 @@ def run_cnn(  arch_params,
 
             elif data_params["type"] == 'skdata':                   
                 if dataset == 'caltech101':
-  
                     test_data_x, test_data_y = load_skdata_caltech101(batch_size = load_batches, batch = batch +  1 , type_set = 'test', rand_perm = rand_perm, height = height, width = width )
-
+                elif dataset == 'caltech256':
+                    test_data_x, test_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch +  1 , type_set = 'test', rand_perm = rand_perm, height = height, width = width )
             test_set_x.set_value(test_data_x,borrow = True)
             test_set_y.set_value(test_data_y,borrow = True)
 
@@ -825,7 +859,7 @@ def run_cnn(  arch_params,
                 wrong = wrong + int(test_model(mini_batch))   
                 predictions = predictions + prediction(mini_batch).tolist()
                 class_prob = class_prob + nll(mini_batch).tolist()
-         
+        if debug is True: pdb.set_trace()
         print "...      -> Total test accuracy : " + str(float((batch_size*n_test_batches*batches2test)-wrong )*100/(batch_size*n_test_batches*batches2test)) + " % out of " + str(batch_size*n_test_batches*batches2test) + " samples."
 
     end_time = time.clock()
@@ -868,9 +902,6 @@ def run_cnn(  arch_params,
     f.write(confusion)
 
     f.close()
-    
-    
-    save_network( 'network.pkl.gz',  params, arch_params, data_params )
     end_time = time.clock()
     print "Testing complete, took " + str((end_time - start_time)/ 60.) + " minutes"    
     print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100)
@@ -880,6 +911,8 @@ def run_cnn(  arch_params,
     pdb.set_trace()
 
 
+    # TODO : Write code that can pickle down model parameters along with model information also so that things can be unpickled
+    # irrespecive of what the loader is. Ensure that the loader can also create a network based on the loaded data.
     #################
     # Boiler PLate  #
     #################
@@ -917,21 +950,21 @@ if __name__ == '__main__':
         
     data_params = {
                    "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "loc"                : 'caltech256',                             # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
                    "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
-                   "load_batches"       : -1, 
-                   "batches2train"      : 100,                                      # Number of training batches.
-                   "batches2test"       : 20,                                       # Number of testing batches.
-                   "batches2validate"   : 20,                                       # Number of validation batches
+                   "load_batches"       : 1, 
+                   "batches2train"      : 1,                                      # Number of training batches.
+                   "batches2test"       : 1,                                       # Number of testing batches.
+                   "batches2validate"   : 1,                                       # Number of validation batches
                    "height"             : 28,                                       # Height of each input image
                    "width"              : 28,                                       # Width of each input image
-                   "channels"           : 1                                         # Number of channels of each input image 
+                   "channels"           : 3                                         # Number of channels of each input image 
                   }
 
     arch_params = {
                        # Decay of Learninig rate after each epoch of SGD
                     "squared_filter_length_limit"       : 15,   
-                    "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
+                    "n_epochs"                          : 1,                      # Total Number of epochs to run before completion (no premature completion)
                     "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
                     "mlp_activations"                   : [ ReLU  ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
                     "cnn_activations"                   : [ ReLU, ReLU ],           # Activations for CNN layers Options: ReLU,       
@@ -939,7 +972,7 @@ if __name__ == '__main__':
                     "column_norm"                       : True,
                     "dropout_rates"                     : [ 0.5, 0.5 ],             # Rates of dropout. Use 0 is backprop.
                     "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
-                    "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
+                    "outs"                              : 257,                       # Number of output nodes ( must equal number of classes)
                     "filter_size"                       : [  5 , 5 ],                # Receptive field of each CNN layer
                     "pooling_size"                      : [  2 , 2 ],                # Pooling field of each CNN layer
                     "num_nodes"                         : [  500  ],                # Number of nodes in each MLP layer
@@ -964,5 +997,6 @@ if __name__ == '__main__':
                     filename_params         = filename_params,
                     visual_params           = visual_params,
                     verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
+                    debug                   = False
                 )
 
