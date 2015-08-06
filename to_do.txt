@@ -1,8 +1,7 @@
 
-1. Layerwise greedy unsupervised pre-training. { Probably an abandoned option because dropouts perform so well }
-2. Parse code for visualizing filters possibly in matlab similar to the other thing .. with GUI options to load choice of epoch. 
-3. Provide support for Caltech 256 (working), PASCAL VOC and ImageNet. 
+** Parse code for visualizing filters possibly in matlab similar to the other thing .. with GUI options to load choice of epoch. 
 
+** Provide support for PASCAL VOC and ImageNet. 
 
-4. Write a proper tutorial on the page. !! 
+** Write a proper tutorial on the page. !! 
 

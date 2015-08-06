@@ -707,8 +707,8 @@ def run_cnn(  arch_params,
                 for minibatch_index in xrange(n_train_batches):
                     if verbose is True:
                         print "...                  ->    Mini Batch: " + str(minibatch_index + 1) + " out of "    + str(n_train_batches)
-                    cost_ij = train_model( minibatch_index, epoch_counter)
-                    cost_saved = cost_saved +[cost_ij]
+					cost_ij = train_model( minibatch_index, epoch_counter)
+					cost_saved = cost_saved +[cost_ij]
                     
             else:        
                 iteration= (epoch_counter - 1) * n_train_batches + batch
@@ -817,7 +817,6 @@ def run_cnn(  arch_params,
         if patience <= iteration:
             early_termination = True
             break
-        save_network( 'network.pkl.gz',  params, arch_params, data_params )    
     end_time = time.clock()
     print "... training complete, took " + str((end_time - start_time)/ 60.) +" minutes"
 
