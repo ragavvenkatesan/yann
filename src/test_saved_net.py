@@ -1,5 +1,15 @@
 #!/usr/bin/python
+""" 
 
+One could argue that this function has no purpose. I could just pickle and unpickle all the classes instead
+of creating networks. I wrote this in this fasion for two reasons:
+
+	1. I tend to think of this process in this way, save down a network and just recreate the network again
+	   in a different brain. For me this analogy seems to work in this fasion. 
+   	2. Unpickle and re-creating a network like this is an easy way to do experiments similar to the one that Bengio published
+   	   in NIPS 2014. " How transferable are features in deep neural networks ? "
+   	   """
+   	   
 # General Packages
 import os
 import sys
