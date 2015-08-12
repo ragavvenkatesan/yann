@@ -1,19 +1,6 @@
 #!/usr/bin/python
 
-# General Packages
-import os
-import sys
-import time
 import numpy
-import pdb
-from collections import OrderedDict
-
-# Math Packages
-import math
-import scipy.io
-import gzip
-import cPickle
-import cv2, cv
 from random import randint
 
 # Theano Packages
@@ -30,9 +17,6 @@ from pylearn2.sandbox.cuda_convnet.pool import MaxPool
 from theano.sandbox.cuda.basic_ops import gpu_contiguous
 """
 
-##################################
-## Various activation functions ##
-##################################
 
 #### rectified linear unit
 def ReLU(x):
@@ -46,8 +30,10 @@ def Sigmoid(x):
 def Tanh(x):
     y = T.tanh(x)
     return(y)
-    
-
+#### softmax
+def Softmax(x): 
+    return T.nnet.softmax(x)
+   
             
 # SVM layer from the discussions in this group
 # https://groups.google.com/forum/#!msg/theano-users/on4D16jqRX8/IWGa-Gl07g0J
@@ -108,30 +94,9 @@ class SVMLayer(object):
 
 # Modified From https://github.com/mdenil/dropout/blob/master/mlp.py
 class LogisticRegression(object):
-    """Multi-class Logistic Regression Class
-
-    The logistic regression is fully described by a weight matrix :math:`W`
-    and bias vector :math:`b`. Classification is done by projecting data
-    points onto a set of hyperplanes, the distance to which is used to
-    determine a class membership probability.
-    """
+   
 
     def __init__(self, input, n_in, n_out, W=None, b=None ):
-        """ Initialize the parameters of the logistic regression
-
-        :type input: theano.tensor.TensorType
-        :param input: symbolic variable that describes the input of the
-                      architecture (one minibatch)
-
-        :type n_in: int
-        :param n_in: number of input units, the dimension of the space in
-                     which the datapoints lie
-
-        :type n_out: int
-        :param n_out: number of output units, the dimension of the space in
-                      which the labels lie
-
-        """
 
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         if W is None:
@@ -161,10 +126,7 @@ class LogisticRegression(object):
         self.probabilities = T.log(self.p_y_given_x)
 
     def negative_log_likelihood(self, y ):
-        """Return the mean of the negative log-likelihood of the prediction
-        of this model under a given target distribution.
-        """
- 
+      
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y]) 
         
     def categorical_cross_entropy( self, y ):
@@ -174,22 +136,12 @@ class LogisticRegression(object):
         return T.mean(T.nnet.binary_crossentropy(self.p_y_given_x,y))
         
     def errors(self, y):
-        """Return a float representing the number of errors in the minibatch ;
-        zero one loss over the size of the minibatch
-
-        :type y: theano.tensor.TensorType
-        :param y: corresponds to a vector that gives for each example the
-                  correct label
-        """
-
-        # check if y has same dimension of y_pred
+      
         if y.ndim != self.y_pred.ndim:
             raise TypeError('y should have the same shape as self.y_pred',
                 ('y', target.type, 'y_pred', self.y_pred.type))
         # check if y is of the correct datatype
         if y.dtype.startswith('int'):
-            # the T.neq operator returns a vector of 0s and 1s, where 1
-            # represents a mistake in prediction
             return T.sum(T.neq(self.y_pred, y))      # L1 norm of the error. 
         else:
             raise NotImplementedError()
@@ -234,10 +186,10 @@ class HiddenLayer(object):
         else:
             self.params = [self.W]
 
-
+# dropout thanks to misha denil 
+# https://github.com/mdenil/dropout
 def _dropout_from_layer(rng, layer, p):
-    """p is the probablity of dropping a unit
-    """
+
     srng = theano.tensor.shared_randomstreams.RandomStreams(
             rng.randint(999999))
     # p=1-p because 1's indicate keep and p is prob of dropping
@@ -258,10 +210,7 @@ class DropoutHiddenLayer(HiddenLayer):
 
 
 class MLP(object):
-    """A multilayer perceptron with all the trappings required to do dropout
-    training.
 
-    """
     def __init__(self,
             rng,
             input,
@@ -274,14 +223,11 @@ class MLP(object):
             verbose = True):
 
 
-        #rectified_linear_activation = lambda x: T.maximum(0.0, x)
-        # Set up all the hidden layers
         weight_matrix_sizes = zip(layer_sizes, layer_sizes[1:])
         self.layers = []
         self.dropout_layers = []
         next_layer_input = input
-        #first_layer = True
-        # dropout the input
+        
         next_dropout_layer_input = _dropout_from_layer(rng, input, p=dropout_rates[0])
         layer_counter = 0        
 
@@ -294,7 +240,7 @@ class MLP(object):
         if len(dropout_rates) > 1:
             for n_in, n_out in weight_matrix_sizes[:-1]:
                 if verbose is True:
-                    print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
+                    print "           -->        initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
 
                 if len(params) < count + 1:
                     next_dropout_layer = DropoutHiddenLayer(rng=rng,
@@ -347,7 +293,7 @@ class MLP(object):
     
         if svm_flag is False:
             if verbose is True:
-                print "           -->        Initializing regression layer with " + str(n_out) + " output units"
+                print "           -->        initializing regression layer with " + str(n_out) + " output units and " + str(n_in) + " input units"
             if not len(params) < count + 1:
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input,
@@ -394,7 +340,7 @@ class MLP(object):
 
         else:
             if verbose is True:
-                print "           -->        Initializing SVM layer with " + str(n_out) + " class predictors"
+                print "           -->        iunitializing max-margin layer with " + str(n_out) + " class predictors and " + str(n_in) + " input units."
             if len(params) < count + 1:
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
@@ -438,13 +384,9 @@ class MLP(object):
         else:
             self.probabilities = self.layers[-1].probabilities            
 
-        # Grab all the parameters together.
-        #self.filter_images = T.reshape(self.W, (filter_shape[0], filter_shape[1], numpy.prod(filter_shape[2:])))
-
-       
        
 # From theano tutorials
-class LeNetConvPoolLayer(object):
+class ConvPoolLayer(object):
     """Pool Layer of a convolutional network .. taken from the theano tutorials"""
 
     def __init__(self, rng, input, filter_shape, image_shape, poolsize, activation, W = None, b = None,
@@ -453,11 +395,11 @@ class LeNetConvPoolLayer(object):
        
         assert image_shape[1] == filter_shape[1]
         if verbose is True:
-            print "           -->        Initializing Convolutional Layer with " + str(filter_shape[0])  + " kernels"
-            print "                                  ....... Kernel size [" + str(filter_shape[2]) + " X " + str(filter_shape[3]) +"]"
-            print "                                  ....... Pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + "]"
-            print "                                  ....... Input size ["  + str(image_shape[2]) + " " + str(image_shape[3]) + "]"
-            #print "                                  ....... Input number of feature maps is " +str(image_shape[1]) 
+            print "           -->        initializing convolutional layer with " + str(filter_shape[0])  + " kernels"
+            print "                                  ....... kernel size [" + str(filter_shape[2]) + " X " + str(filter_shape[3]) +"]"
+            print "                                  ....... pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + "]"
+            print "                                  ....... input size ["  + str(image_shape[2]) + " " + str(image_shape[3]) + "]"
+            print "                                  ....... input number of feature maps is " +str(image_shape[1]) 
          
         self.input = input
 
@@ -539,6 +481,3 @@ class LeNetConvPoolLayer(object):
         self.tile_shape = (numpy.asarray(numpy.ceil(numpy.sqrt(filter_shape[0]*filter_shape[1])), dtype='int32'), 
                             numpy.asarray(filter_shape[0]*filter_shape[1]/numpy.ceil(filter_shape[0]*filter_shape[1]), dtype='int32') )
         self.filter_img = self.W.reshape((filter_shape[0],filter_shape[1],filter_shape[2],filter_shape[3]))
-
-
-    

@@ -1,16 +1,9 @@
 #!/usr/bin/python
 
 # General Packages
-import os
-import sys
-import time
 import numpy
-import pdb
-from collections import OrderedDict
 
 # Math Packages
-import math
-import scipy.io
 import gzip
 import cPickle
 import cv2, cv
@@ -19,9 +12,6 @@ from random import randint
 # Theano Packages
 import theano
 import theano.tensor as T
-from theano.tensor.signal import downsample
-from theano.tensor.nnet import conv
-from theano.ifelse import ifelse
 
 
 ## Visualizing utilities for CNN. 
@@ -143,7 +133,8 @@ def visualize_color_filters(imgs, tile_shape = None, tile_spacing = (2,2),
         cv2.imshow(filename + str(randint(0,9)), filters_as_image)
     cv2.imwrite(loc + filename, filters_as_image)
     
-    
+"""    
+This part of the code is probably obsolete. I think I can save the network by pickling the network class itself.
 ## Pickling utilities to pickle down and sterilize the entire network.
 # function to save down a network so that it can be reloaded at a later time.
 def save_network( filename, params, arch_params, *others):          # for others use only data_params or optimization_params
@@ -173,3 +164,4 @@ def load_network(filename, data_params = False, optimization_params = False):
         optimization_params = cPickle.load(f)
         rval = rval + (optimization_params,)
     return rval 
+"""

@@ -4,20 +4,11 @@
 import os
 import sys
 import numpy
-import pdb
 import scipy.io
 import gzip
 import cPickle
 import theano
 import cv2
-
-
-
-
-
-##################################
-## Data Loading Functions        ##
-##################################
 
 # From the Theano Tutorials
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
