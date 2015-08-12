@@ -65,6 +65,7 @@ The first set of parameters is `optimization_params`. This contains packaged, th
 * `l1_reg` and `l2_reg` are weight coefficients for L1 and L2 norms for all MLP and Regression layers.
 * `ada_grad` is a flag that turns ON or OFF adagrad[2]. Similarly the `rms_prop` flag does the same for rms propagation[5].
 * `fudge_factor` is a small number added to denominators to avoid division by `0`.
+* `objective` `0` will be negative log liekelihood, `1` will be cross-entropy. 
 
 ### Files:
 Files are defined in `filname_params`. 
