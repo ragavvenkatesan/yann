@@ -166,7 +166,13 @@ class LogisticRegression(object):
         """
  
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y]) 
+        
+    def categorical_cross_entropy( self, y ):
+        return T.mean(T.nnet.categorical_crossentropy(self.p_y_given_x,y))
 
+    def binary_cross_entropy ( self, y ):
+        return T.mean(T.nnet.binary_crossentropy(self.p_y_given_x,y))
+        
     def errors(self, y):
         """Return a float representing the number of errors in the minibatch ;
         zero one loss over the size of the minibatch
@@ -264,7 +270,7 @@ class MLP(object):
             activations,
             use_bias=True,
             svm_flag = True,
-            params = None,
+            params = [],
             verbose = True):
 
 
@@ -289,8 +295,8 @@ class MLP(object):
             for n_in, n_out in weight_matrix_sizes[:-1]:
                 if verbose is True:
                     print "           -->        Initializing MLP Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
-    
-                if params is None or not(len(params) < count + 1):
+
+                if len(params) < count + 1:
                     next_dropout_layer = DropoutHiddenLayer(rng=rng,
                                                     input=next_dropout_layer_input,
                                                     activation=activations[layer_counter],
@@ -342,7 +348,7 @@ class MLP(object):
         if svm_flag is False:
             if verbose is True:
                 print "           -->        Initializing regression layer with " + str(n_out) + " output units"
-            if params is not None or not(len(params) < count + 1):
+            if not len(params) < count + 1:
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out,
@@ -373,7 +379,13 @@ class MLP(object):
 
             self.dropout_negative_log_likelihood = self.dropout_layers[-1].negative_log_likelihood             
             self.negative_log_likelihood = self.layers[-1].negative_log_likelihood
+            
+            self.dropout_cross_entropy = self.dropout_layers[-1].categorical_cross_entropy
+            self.cross_entropy = self.layers[-1].categorical_cross_entropy
 
+            self.dropout_binary_entropy = self.dropout_layers[-1].binary_cross_entropy
+            self.binary_entropy = self.layers[-1].binary_cross_entropy
+            
             self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
             self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
 
@@ -383,7 +395,7 @@ class MLP(object):
         else:
             if verbose is True:
                 print "           -->        Initializing SVM layer with " + str(n_out) + " class predictors"
-            if params is None or not(len(params) < count + 1):
+            if len(params) < count + 1:
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out )
@@ -408,8 +420,8 @@ class MLP(object):
             self.layers.append(output_layer)
             self.dropout_layers.append(dropout_output_layer)
 
-            self.dropout_negative_log_likelihood = self.dropout_layers[-1].ova_svm_cost
-            self.negative_log_likelihood = self.layers[-1].ova_svm_cost
+            self.hinge_loss = self.dropout_layers[-1].ova_svm_cost
+            self.hinge_loss = self.layers[-1].ova_svm_cost
 
         # Use the negative log likelihood of the logistic regression layer as
         # the objective.
@@ -422,7 +434,7 @@ class MLP(object):
         self.params = [ param for layer in self.dropout_layers for param in layer.params ]
 
         if svm_flag is True:
-            self.probabilities = self.layers[-1].output
+            self.probabilities = self.layers[-1].output  
         else:
             self.probabilities = self.layers[-1].probabilities            
 

@@ -489,7 +489,3 @@ def load_skdata_caltech256(batch_size, rand_perm, batch = 1, type_set = 'train',
 	else:
 		return (valid_x,valid_y)
 
-
-
-
-

@@ -100,6 +100,7 @@ def run_cnn(  arch_params,
     rms_prop                        = optimization_params [ "rms_prop" ]
     rms_rho                         = optimization_params [ "rms_rho" ]
     rms_epsilon                     = optimization_params [ "rms_epsilon" ]
+    objective                       = optimization_params [ "objective" ]  
 
     squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
     n_epochs                        = arch_params [ "n_epochs" ]
@@ -420,7 +421,6 @@ def run_cnn(  arch_params,
     Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
     from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
     """
-
     MLPlayers = MLP( rng=rng,
                      input=fully_connected_input,
                      layer_sizes=layer_sizes,
@@ -428,15 +428,29 @@ def run_cnn(  arch_params,
                      activations=mlp_activations,
                      use_bias = use_bias,
                      svm_flag = svm_flag,
+                     params = [],
                      verbose = verbose)
 
     # Build the expresson for the categorical cross entropy function.
     if svm_flag is False:
-        cost = MLPlayers.negative_log_likelihood( y )
-        dropout_cost = MLPlayers.dropout_negative_log_likelihood( y )
+        if objective == 0:
+            cost = MLPlayers.negative_log_likelihood( y )
+            dropout_cost = MLPlayers.dropout_negative_log_likelihood( y )
+        elif objective == 1:
+            if len(numpy.unique(train_set_y.eval())) > 2:
+                cost = MLPlayers.cross_entropy ( y )
+                dropout_cost = MLPlayers.dropout_cross_entropy ( y )
+            else:
+                cost = MLPlayers.binary_entropy ( y )
+                dropout_cost = MLPlayers.dropout_binary_entropy ( y )
+        else:
+            print "!! Objective is not understood, switching to cross entropy"
+            cost = MLPlayers.cross_entropy ( y )
+            dropout_cost = MLPlayers.dropout_cross_entropy ( y )
+
     else :        
-        cost = MLPlayers.negative_log_likelihood( y1 )
-        dropout_cost = MLPlayers.dropout_negative_log_likelihood( y1 )
+        cost = MLPlayers.hinge_loss( y1 )
+        dropout_cost = MLPlayers.hinge_loss( y1 )
 
     # create theano functions for evaluating the graphs
     test_model = theano.function(
@@ -483,6 +497,10 @@ def run_cnn(  arch_params,
 
     output = dropout_cost + l1_reg * MLPlayers.dropout_L1 + l2_reg * MLPlayers.dropout_L2 if dropout else cost + l1_reg * MLPlayers.L1 + l2_reg * MLPlayers.L2
 
+    ######################
+    # BUILD Optimizer    #
+    ######################
+    
     gradients = []
     for param in params: 
         gradient = T.grad( output ,param)
@@ -702,13 +720,15 @@ def run_cnn(  arch_params,
 
                         # Do not use svm_flag for caltech 101                        
                 train_set_x.set_value(train_data_x ,borrow = True)
-                train_set_y.set_value(train_data_y ,borrow = True)
-
+                train_set_y.set_value(train_data_y ,borrow = True)                
+                if svm_flag is True:
+                    train_set_y1.set_value(train_data_y1, borrow = True)
+                    
                 for minibatch_index in xrange(n_train_batches):
                     if verbose is True:
                         print "...                  ->    Mini Batch: " + str(minibatch_index + 1) + " out of "    + str(n_train_batches)
-					cost_ij = train_model( minibatch_index, epoch_counter)
-					cost_saved = cost_saved +[cost_ij]
+                    cost_ij = train_model( minibatch_index, epoch_counter)
+                    cost_saved = cost_saved +[cost_ij]
                     
             else:        
                 iteration= (epoch_counter - 1) * n_train_batches + batch
@@ -731,9 +751,12 @@ def run_cnn(  arch_params,
                             valid_data_x, valid_data_y = load_skdata_caltech101(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
                         elif dataset == 'caltech256':
                             valid_data_x, valid_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
-                            # Do not use svm_flag for caltech 101                    
+                            # Do not use svm_flag for caltech 101  
+                                              
                     valid_set_x.set_value(valid_data_x,borrow = True)
                     valid_set_y.set_value(valid_data_y,borrow = True)
+                    if svm_flag is True:
+                        valid_set_y1.set_value(valid_data_y1, borrow = True)
 
                     validation_losses = validation_losses + numpy.sum([[validate_model(i) for i in xrange(n_valid_batches)]])
 
@@ -858,6 +881,8 @@ def run_cnn(  arch_params,
                     test_data_x, test_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch +  1 , type_set = 'test', rand_perm = rand_perm, height = height, width = width )
             test_set_x.set_value(test_data_x,borrow = True)
             test_set_y.set_value(test_data_y,borrow = True)
+            if svm_flag is True :
+                test_set_y1.set_value ( test_data_y1, borrow = True )
 
             labels = labels + test_set_y.eval().tolist() 
             for mini_batch in xrange(n_test_batches):
@@ -936,13 +961,14 @@ if __name__ == '__main__':
                             "mom_type"                          : 1,                         # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum 
                             "initial_learning_rate"             : 0.01,                      # Learning rate at the start
                             "learning_rate_decay"               : 0.98, 
-                            "l1_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
-                            "l2_reg"                            : 0.0001,                     # regularization coeff for the last logistic layer and MLP layers
+                            "l1_reg"                            : 0.001,                     # regularization coeff for the last logistic layer and MLP layers
+                            "l2_reg"                            : 0.001,                     # regularization coeff for the last logistic layer and MLP layers
                             "ada_grad"                          : False,
                             "rms_prop"                          : True,
                             "rms_rho"                           : 0.9,                      # implement rms_prop with this rho
                             "rms_epsilon"                       : 1e-6,                     # implement rms_prop with this epsilon
-                            "fudge_factor"                      : 1e-7,                     # Just to avoid divide by zero, but google even advocates trying '1'                            
+                            "fudge_factor"                      : 1e-7,                     # Just to avoid divide by zero, but google even advocates trying '1'
+                            "objective"                         : 1,                        # objective = 0 is negative log likelihood, objective = 2 is categorical cross entropy                                                       
                             }
 
 
@@ -956,8 +982,8 @@ if __name__ == '__main__':
                     }        
         
     data_params = {
-                   "type"               : 'pkl',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist.pkl.gz',                                          # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
+                   "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
+                   "loc"                : 'mnist',                                          # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
                    "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
                    "load_batches"       : -1, 
                    "batches2train"      : 100,                                      # Number of training batches.
@@ -978,7 +1004,7 @@ if __name__ == '__main__':
                     # "fast_conv"                         : True,                 # Use the 3x faster convolutions form pylearn2  # but only works for nkerns being even.   
                     "dropout"                           : True,                     # Flag for dropout / backprop                    
                     "column_norm"                       : True,
-                    "dropout_rates"                     : [ 0.5 ],             # Rates of dropout. Use 0 is backprop.
+                    "dropout_rates"                     : [ 0.5 , 0.5],             # Rates of dropout. Use 0 is backprop.
                     "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
                     "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
                     "filter_size"                       : [  5 , 5],                # Receptive field of each CNN layer
