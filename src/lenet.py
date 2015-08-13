@@ -2,13 +2,9 @@
 
 # General Packages
 import os
-import sys
-import time
-import pdb
 from collections import OrderedDict
 
 # Math Packages
-import math
 import numpy
 import cv2
 
@@ -18,21 +14,9 @@ import theano.tensor as T
 from theano.ifelse import ifelse
 
 # CNN code packages
-from cnn import ReLU
-from cnn import Sigmoid
-from cnn import Tanh
-from cnn import SVMLayer
-from cnn import LogisticRegression
-from cnn import HiddenLayer
-from cnn import _dropout_from_layer
-from cnn import DropoutHiddenLayer
-from cnn import MLP
-from cnn import LeNetConvPoolLayer
-
-
-from util import visualize
-from util import visualize_color_filters
-from util import save_network
+import cnn
+import util
+import pdb   # delete before commit 
 
 # Datahandling packages
 from loaders import load_data_pkl
@@ -53,983 +37,899 @@ from loaders import load_skdata_mnist_rotated
 from loaders import load_skdata_mnist_rotated_bg
 
 
+class network(object):
 
-def run_cnn(  arch_params,
-                    optimization_params ,
-                    data_params, 
-                    filename_params,
-                    visual_params,
-                    verbose = False, 
-                    ):
+    def __init__(  self, data_params, 
+                         random_seed,
+                         filename_params, 
+                         verbose = False, 
+                        ):
+
+        self.results_file_name   = filename_params [ "results_file_name" ]                
+        # Files that will be saved down on completion Can be used by the parse.m file
+        self.error_file_name     = filename_params [ "error_file_name" ]
+        self.cost_file_name      = filename_params [ "cost_file_name"  ]
+        self.confusion_file_name = filename_params [ "confusion_file_name" ]
+        self.network_save_name   = filename_params [ "network_save_name" ]
     
-
-    #####################
-    # Unpack Variables  #
-    #####################
-
-
-
-    results_file_name   = filename_params [ "results_file_name" ]                # Files that will be saved down on completion Can be used by the parse.m file
-    error_file_name     = filename_params [ "error_file_name" ]
-    cost_file_name      = filename_params [ "cost_file_name"  ]
-    confusion_file_name = filename_params [ "confusion_file_name" ]
-    network_save_name   = filename_params [ "network_save_name" ]
-
-    dataset             = data_params [ "loc" ]
-    height              = data_params [ "height" ]
-    width               = data_params [ "width" ]
-    batch_size          = data_params [ "batch_size" ]    
-    load_batches        = data_params [ "load_batches"  ] * batch_size
-    if load_batches < batch_size and (dataset == "caltech101" or dataset == "caltech256"):
-        AssertionError("load_batches is improper for this dataset "+ dataset)
-    batches2train       = data_params [ "batches2train" ]
-    batches2test        = data_params [ "batches2test" ]
-    batches2validate    = data_params [ "batches2validate" ] 
-    channels            = data_params [ "channels" ]
-
-    mom_start                       = optimization_params [ "mom_start" ]
-    mom_end                         = optimization_params [ "mom_end" ]
-    mom_epoch_interval              = optimization_params [ "mom_interval" ]
-    mom_type                        = optimization_params [ "mom_type" ]
-    initial_learning_rate           = optimization_params [ "initial_learning_rate" ]              
-    learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
-    ada_grad                        = optimization_params [ "ada_grad" ]   
-    fudge_factor                    = optimization_params [ "fudge_factor" ]
-    l1_reg                          = optimization_params [ "l1_reg" ]
-    l2_reg                          = optimization_params [ "l2_reg" ]
-    rms_prop                        = optimization_params [ "rms_prop" ]
-    rms_rho                         = optimization_params [ "rms_rho" ]
-    rms_epsilon                     = optimization_params [ "rms_epsilon" ]
-    objective                       = optimization_params [ "objective" ]  
-
-    squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
-    n_epochs                        = arch_params [ "n_epochs" ]
-    validate_after_epochs           = arch_params [ "validate_after_epochs"  ]
-    mlp_activations                 = arch_params [ "mlp_activations"  ] 
-    cnn_activations                 = arch_params [ "cnn_activations" ]
-    # fast_conv                       = arch_params [ "fast_conv"  ]
-    dropout                         = arch_params [ "dropout"  ]
-    column_norm                     = arch_params [ "column_norm"  ]    
-    dropout_rates                   = arch_params [ "dropout_rates" ]
-    nkerns                          = arch_params [ "nkerns"  ]
-    outs                            = arch_params [ "outs" ]
-    filter_size                     = arch_params [ "filter_size" ]
-    pooling_size                    = arch_params [ "pooling_size" ]
-    num_nodes                       = arch_params [ "num_nodes" ]
-    use_bias                        = arch_params [ "use_bias" ]
-    random_seed                     = arch_params [ "random_seed" ]
-    svm_flag                        = arch_params [ "svm_flag" ]
-
-    visualize_flag          = visual_params ["visualize_flag" ]
-    visualize_after_epochs  = visual_params ["visualize_after_epochs" ]
-    n_visual_images         = visual_params ["n_visual_images" ] 
-    display_flag            = visual_params ["display_flag" ]
-
-
-    # Random seed initialization.
-    rng = numpy.random.RandomState(random_seed)  
-
-
-    #################
-    # Data Loading  #
-    #################
-    print "... loading data"
-    # load matlab files as dataset.
-    if data_params["type"] == 'mat':
-        train_data_x, train_data_y, train_data_y1 = load_data_mat(dataset, batch = 1 , type_set = 'train')             
-        test_data_x, test_data_y, valid_data_y1 = load_data_mat(dataset, batch = 1 , type_set = 'test')      # Load dataset for first epoch.
-        valid_data_x, valid_data_y, test_data_y1 = load_data_mat(dataset, batch = 1 , type_set = 'valid')    # Load dataset for first epoch.
-
-        train_set_x = theano.shared(numpy.asarray(train_data_x, dtype=theano.config.floatX), borrow=True)
-        train_set_y = theano.shared(numpy.asarray(train_data_y, dtype='int32'), borrow=True)
-        train_set_y1 = theano.shared(numpy.asarray(train_data_y1, dtype=theano.config.floatX), borrow=True)
-
-        test_set_x = theano.shared(numpy.asarray(test_data_x, dtype=theano.config.floatX), borrow=True)
-        test_set_y = theano.shared(numpy.asarray(test_data_y, dtype='int32'), borrow=True) 
-        test_set_y1 = theano.shared(numpy.asarray(test_data_y1, dtype=theano.config.floatX), borrow=True)
-
-        valid_set_x = theano.shared(numpy.asarray(valid_data_x, dtype=theano.config.floatX), borrow=True)
-        valid_set_y = theano.shared(numpy.asarray(valid_data_y, dtype='int32'), borrow=True)
-        valid_set_y1 = theano.shared(numpy.asarray(valid_data_y1, dtype=theano.config.floatX), borrow=True)
-
-        # compute number of minibatches for training, validation and testing
-        n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-        n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-        n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
-
-        multi_load = True
-
-    # load pkl data as is shown in theano tutorials
-    elif data_params["type"] == 'pkl':   
-
-        data = load_data_pkl(dataset)
-        train_set_x, train_set_y, train_set_y1 = data[0]
-        valid_set_x, valid_set_y, valid_set_y1 = data[1]
-        test_set_x, test_set_y, test_set_y1 = data[2]
-
-         # compute number of minibatches for training, validation and testing
-        n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-        n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-        n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
-
-        n_train_images = train_set_x.get_value(borrow=True).shape[0]
-        n_test_images = test_set_x.get_value(borrow=True).shape[0]
-        n_valid_images = valid_set_x.get_value(borrow=True).shape[0]
-
-        n_train_batches_all = n_train_images / batch_size 
-        n_test_batches_all = n_test_images / batch_size 
-        n_valid_batches_all = n_valid_images / batch_size
-
-        if (n_train_batches_all < batches2train) or (n_test_batches_all < batches2test) or (n_valid_batches_all < batches2validate):        # You can't have so many batches.
-            print "...  !! Dataset doens't have so many batches. "
-            raise AssertionError()
-
-        multi_load = False
-
-    # load skdata ( its a good library that has a lot of datasets)
-    elif data_params["type"] == 'skdata':
-
-        if (dataset == 'mnist' or 
-            dataset == 'mnist_noise1' or 
-            dataset == 'mnist_noise2' or
-            dataset == 'mnist_noise3' or
-            dataset == 'mnist_noise4' or
-            dataset == 'mnist_noise5' or
-            dataset == 'mnist_noise6' or
-            dataset == 'mnist_bg_images' or
-            dataset == 'mnist_bg_rand' or
-            dataset == 'mnist_rotated' or
-            dataset == 'mnist_rotated_bg') :
-
-            print "... importing " + dataset + " from skdata"
-
-            func = globals()['load_skdata_' + dataset]
-            data = func()
-            train_set_x, train_set_y, train_set_y1 = data[0]
-            valid_set_x, valid_set_y, valid_set_y1 = data[1]
-            test_set_x, test_set_y, test_set_y1 = data[2]
-
-            # compute number of minibatches for training, validation and testing
-            n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
-
-            n_train_images = train_set_x.get_value(borrow=True).shape[0]
-            n_test_images = test_set_x.get_value(borrow=True).shape[0]
-            n_valid_images = valid_set_x.get_value(borrow=True).shape[0]
-
-            n_train_batches_all = n_train_images / batch_size 
-            n_test_batches_all = n_test_images / batch_size 
-            n_valid_batches_all = n_valid_images / batch_size
-
-            if (n_train_batches_all < batches2train) or (n_test_batches_all < batches2test) or (n_valid_batches_all < batches2validate):        # You can't have so many batches.
-                print "...  !! Dataset doens't have so many batches. "
-                raise AssertionError()
-
-            multi_load = False
-
-        elif dataset == 'cifar10':
-            print "... importing cifar 10 from skdata"
-
-            data = load_skdata_cifar10()
-            train_set_x, train_set_y, train_set_y1 = data[0]
-            valid_set_x, valid_set_y, valid_set_y1 = data[1]
-            test_set_x, test_set_y, test_set_y1 = data[2]
-
-            # compute number of minibatches for training, validation and testing
-            n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
-
-            multi_load = False
-
-        elif dataset == 'caltech101':
-            print "... importing caltech 101 from skdata"
-
-                # shuffle the data
-            total_images_in_dataset = 9144 
-            rand_perm = numpy.random.permutation(total_images_in_dataset)  # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
-
-            n_train_images = total_images_in_dataset / 3
-            n_test_images = total_images_in_dataset / 3
-            n_valid_images = total_images_in_dataset / 3 
-
-            n_train_batches_all = n_train_images / batch_size 
-            n_test_batches_all = n_test_images / batch_size 
-            n_valid_batches_all = n_valid_images / batch_size
-
-            if (n_train_batches_all < batches2train) or (n_test_batches_all < batches2test) or (n_valid_batches_all < batches2validate):        # You can't have so many batches.
-                print "...  !! Dataset doens't have so many batches. "
-                raise AssertionError()
-
-            train_data_x, train_data_y  = load_skdata_caltech101(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'train' , height = height, width = width)             
-            test_data_x, test_data_y  = load_skdata_caltech101(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'test' , height = height, width = width)      # Load dataset for first epoch.
-            valid_data_x, valid_data_y  = load_skdata_caltech101(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'valid' , height = height, width = width)    # Load dataset for first epoch.
-
-            train_set_x = theano.shared(train_data_x, borrow=True)
-            train_set_y = theano.shared(train_data_y, borrow=True)
-            
-            test_set_x = theano.shared(test_data_x, borrow=True)
-            test_set_y = theano.shared(test_data_y, borrow=True) 
-          
-            valid_set_x = theano.shared(valid_data_x, borrow=True)
-            valid_set_y = theano.shared(valid_data_y, borrow=True)
-
-            # compute number of minibatches for training, validation and testing
-            n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
-
-            multi_load = True
-
-        elif dataset == 'caltech256':
-            print "... importing caltech 256 from skdata"
-
-                # shuffle the data
-            total_images_in_dataset = 30607 
-            rand_perm = numpy.random.permutation(total_images_in_dataset)  # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
-
-            n_train_images = total_images_in_dataset / 3
-            n_test_images = total_images_in_dataset / 3
-            n_valid_images = total_images_in_dataset / 3 
-
-            n_train_batches_all = n_train_images / batch_size 
-            n_test_batches_all = n_test_images / batch_size 
-            n_valid_batches_all = n_valid_images / batch_size
-
-            if (n_train_batches_all < batches2train) or (n_test_batches_all < batches2test) or (n_valid_batches_all < batches2validate):        # You can't have so many batches.
-                print "...  !! Dataset doens't have so many batches. "
-                raise AssertionError()
-
-            train_data_x, train_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'train' , height = height, width = width)             
-            test_data_x, test_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'test' , height = height, width = width)      # Load dataset for first epoch.
-            valid_data_x, valid_data_y  = load_skdata_caltech256(batch_size = load_batches, rand_perm = rand_perm, batch = 1 , type_set = 'valid' , height = height, width = width)    # Load dataset for first epoch.
-
-            train_set_x = theano.shared(train_data_x, borrow=True)
-            train_set_y = theano.shared(train_data_y, borrow=True)
-            
-            test_set_x = theano.shared(test_data_x, borrow=True)
-            test_set_y = theano.shared(test_data_y, borrow=True) 
-          
-            valid_set_x = theano.shared(valid_data_x, borrow=True)
-            valid_set_y = theano.shared(valid_data_y, borrow=True)
-
-            # compute number of minibatches for training, validation and testing
-            n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-            n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
-
-            multi_load = True
-    # Just checking as a way to see if the intended dataset is indeed loaded.
-    assert height*width*channels == train_set_x.get_value( borrow = True ).shape[1]
-    assert batch_size >= n_visual_images
-
-    """"
-    if fast_conv is True and theano.config.device == 'cpu':
-        print '... you cant run fast_conv on a cpu'
-        fast_conv = False
-    """
-
-    if ada_grad is True:
-        assert rms_prop is False
-    elif rms_prop is True:
-        assert ada_grad is False
-        fudge_factor = rms_epsilon
-
-    ######################
-    # BUILD NETWORK      #
-    ######################
-
-
-    print '... building the network'    
-    start_time = time.clock()
-    # allocate symbolic variables for the data
-    index = T.lscalar()         # index to a [mini]batch
-    x = T.matrix('x')           # the data is presented as rasterized images
-    y = T.ivector('y')          # the labels are presented as 1D vector of [int] 
-
-    if svm_flag is True:
-        y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
-
-    first_layer_input = x.reshape((batch_size, channels, height, width))
-
-    # Create first convolutional - pooling layers 
-    activity = []       # to record Cnn activities 
-    weights = []
-
-    conv_layers=[]
-    filt_size = filter_size[0]
-    pool_size = pooling_size[0]
-
-    if not nkerns == []: 
-        conv_layers.append ( LeNetConvPoolLayer(
-                                rng,
-                                input = first_layer_input,
-                                image_shape=(batch_size, channels , height, width),
-                                filter_shape=(nkerns[0], channels , filt_size, filt_size),
-                                poolsize=(pool_size, pool_size),
-                                activation = cnn_activations[0],
-                                #fast_conv = fast_conv,
-                                verbose = verbose
-                                 ) )
-        activity.append ( conv_layers[-1].output )
-        weights.append ( conv_layers[-1].filter_img)
-
-        # Create the rest of the convolutional - pooling layers in a loop
-        next_in_1 = ( height - filt_size + 1 ) / pool_size        
-        next_in_2 = ( width - filt_size + 1 ) / pool_size
-    
-        for layer in xrange(len(nkerns)-1):   
-            filt_size = filter_size[layer+1]
-            pool_size = pooling_size[layer+1]
-            conv_layers.append ( LeNetConvPoolLayer(
-                                rng,
-                                input=conv_layers[layer].output,        
-                                image_shape=(batch_size, nkerns[layer], next_in_1, next_in_2),
-                                filter_shape=(nkerns[layer+1], nkerns[layer], filt_size, filt_size),
-                                poolsize=(pool_size, pool_size),
-                                activation = cnn_activations[layer+1],
-                                #fast_conv = fast_conv,
-                                verbose = verbose
-                                 ) )
-            next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
-            next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
-            weights.append ( conv_layers[-1].filter_img )
-            activity.append( conv_layers[-1].output )
-
-    # Assemble fully connected laters
-    if nkerns == []:
-        fully_connected_input = first_layer_input
-    else:
-        fully_connected_input = conv_layers[-1].output.flatten(2)
-
-    if len(dropout_rates) > 2 :
-        layer_sizes =[]
-        layer_sizes.append( nkerns[-1] * next_in_1 * next_in_2 )
-        for i in xrange(len(dropout_rates)-1):
-            layer_sizes.append ( num_nodes[i] )
-        layer_sizes.append ( outs )
+        self.dataset             = data_params [ "loc" ]
+        self.data_type           = data_params [ "type" ]
+        self.height              = data_params [ "height" ]
+        self.width               = data_params [ "width" ]
+        self.batch_size          = data_params [ "batch_size" ]    
+        self.load_batches        = data_params [ "load_batches"  ] * self.batch_size
+        if self.load_batches < self.batch_size and (self.dataset == "caltech101" or self.dataset == "caltech256"):
+            AssertionError("load_batches is improper for this self.dataset " + self.dataset)
+        self.batches2train       = data_params [ "batches2train" ]
+        self.batches2test        = data_params [ "batches2test" ]
+        self.batches2validate    = data_params [ "batches2validate" ] 
+        self.channels            = data_params [ "channels" ]
         
-    elif len(dropout_rates) == 1:
-        layer_sizes = [ nkerns[-1] * next_in_1 * next_in_2, outs]
-    else :
-        layer_sizes = [ nkerns[-1] * next_in_1 * next_in_2, num_nodes[0] , outs]
+        self.rng = numpy.random.RandomState(random_seed)  
+        self. main_img_visual = True 
+        
+    # Load initial data          
+    def init_data(self):
+        print "... loading data"
+        # load matlab files as self.dataset.
+        if self.data_type == 'mat':
+            train_data_x, train_data_y, train_data_y1 = load_data_mat(self.dataset, batch = 1 , type_set = 'train')             
+            test_data_x, test_data_y, valid_data_y1 = load_data_mat(self.dataset, batch = 1 , type_set = 'test')      
+            # Load self.dataset for first epoch.
+            valid_data_x, valid_data_y, test_data_y1 = load_data_mat(self.dataset, batch = 1 , type_set = 'valid')   
+            # Load self.dataset for first epoch.
+    
+            self.train_set_x = theano.shared(numpy.asarray(train_data_x, dtype=theano.config.floatX), borrow=True)
+            self.train_set_y = theano.shared(numpy.asarray(train_data_y, dtype='int32'), borrow=True)
+            self.train_set_y1 = theano.shared(numpy.asarray(train_data_y1, dtype=theano.config.floatX), borrow=True)
+    
+            self.test_set_x = theano.shared(numpy.asarray(test_data_x, dtype=theano.config.floatX), borrow=True)
+            self.test_set_y = theano.shared(numpy.asarray(test_data_y, dtype='int32'), borrow=True) 
+            self.test_set_y1 = theano.shared(numpy.asarray(test_data_y1, dtype=theano.config.floatX), borrow=True)
+    
+            self.valid_set_x = theano.shared(numpy.asarray(valid_data_x, dtype=theano.config.floatX), borrow=True)
+            self.valid_set_y = theano.shared(numpy.asarray(valid_data_y, dtype='int32'), borrow=True)
+            self.valid_set_y1 = theano.shared(numpy.asarray(valid_data_y1, dtype=theano.config.floatX), borrow=True)
+    
+            # compute number of minibatches for training, validation and testing
+            self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
+            self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
+            self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
+    
+            self.multi_load = True
+    
+        # load pkl data as is shown in theano tutorials
+        elif self.data_type == 'pkl':   
+    
+            data = load_data_pkl(self.dataset)
+            self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
+            self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
+            self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
+    
+             # compute number of minibatches for training, validation and testing
+            self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
+            self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
+            self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
+    
+            n_train_images = self.train_set_x.get_value(borrow=True).shape[0]
+            n_test_images = self.test_set_x.get_value(borrow=True).shape[0]
+            n_valid_images = self.valid_set_x.get_value(borrow=True).shape[0]
+    
+            n_train_batches_all = n_train_images / self.batch_size 
+            n_test_batches_all = n_test_images / self.batch_size 
+            n_valid_batches_all = n_valid_images / self.batch_size
+    
+            if ( (n_train_batches_all < self.batches2train) or 
+                    (n_test_batches_all < self.batches2test) or 
+                      (n_valid_batches_all < self.batches2validate) ):   
+                # You can't have so many batches.
+                print "...  !! self.dataset doens't have so many batches. "
+                raise AssertionError()
+    
+            self.multi_load = False
+    
+        # load skdata ( its a good library that has a lot of self.datasets)
+        elif self.data_type == 'skdata':
+    
+            if (self.dataset == 'mnist' or 
+                self.dataset == 'mnist_noise1' or 
+                self.dataset == 'mnist_noise2' or
+                self.dataset == 'mnist_noise3' or
+                self.dataset == 'mnist_noise4' or
+                self.dataset == 'mnist_noise5' or
+                self.dataset == 'mnist_noise6' or
+                self.dataset == 'mnist_bg_images' or
+                self.dataset == 'mnist_bg_rand' or
+                self.dataset == 'mnist_rotated' or
+                self.dataset == 'mnist_rotated_bg') :
+    
+                print "... importing " + self.dataset + " from skdata"
+    
+                func = globals()['load_skdata_' + self.dataset]
+                data = func()
+                self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
+                self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
+                self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
+    
+                # compute number of minibatches for training, validation and testing
+                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
+    
+                n_train_images = self.train_set_x.get_value(borrow=True).shape[0]
+                n_test_images = self.test_set_x.get_value(borrow=True).shape[0]
+                n_valid_images = self.valid_set_x.get_value(borrow=True).shape[0]
+    
+                n_train_batches_all = n_train_images / self.batch_size 
+                n_test_batches_all = n_test_images / self.batch_size 
+                n_valid_batches_all = n_valid_images / self.batch_size
+    
+                if ( (n_train_batches_all < self.batches2train) or 
+                       (n_test_batches_all < self.batches2test) or 
+                         (n_valid_batches_all < self.batches2validate) ): 
+                    # You can't have so many batches.
+                    print "...  !! self.dataset doens't have so many batches. "
+                    raise AssertionError()
+    
+                self.multi_load = False
+    
+            elif self.dataset == 'cifar10':
+                print "... importing cifar 10 from skdata"
+    
+                data = load_skdata_cifar10()
+                self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
+                self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
+                self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
+    
+                # compute number of minibatches for training, validation and testing
+                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
+    
+                self.multi_load = False
+    
+            elif self.dataset == 'caltech101':
+                print "... importing caltech 101 from skdata"
+    
+                # shuffle the data
+                total_images_in_dataset = 9144 
+                self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
+                # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
+    
+                n_train_images = total_images_in_dataset / 3
+                n_test_images = total_images_in_dataset / 3
+                n_valid_images = total_images_in_dataset / 3 
+    
+                n_train_batches_all = n_train_images / self.batch_size 
+                n_test_batches_all = n_test_images / self.batch_size 
+                n_valid_batches_all = n_valid_images / self.batch_size
+    
+                if ( (n_train_batches_all < self.batches2train) or 
+                        (n_test_batches_all < self.batches2test) or 
+                        (n_valid_batches_all < self.batches2validate) ): 
+                    # You can't have so many batches.
+                    print "...  !! self.dataset doens't have so many batches. "
+                    raise AssertionError()
+    
+                train_data_x, train_data_y  = load_skdata_caltech101(
+                                                 batch_size = self.load_batches, 
+                                                  rand_perm = rand_perm, 
+                                                  batch = 1 , 
+                                                  type_set = 'train' ,
+                                                  height = self.height,
+                                                  width = self.width)             
+                test_data_x, test_data_y  = load_skdata_caltech101(
+                                                 batch_size = self.load_batches,
+                                                 rand_perm = rand_perm, batch = 1 ,
+                                                 type_set = 'test' , 
+                                                 height = self.height,
+                                                 width = self.width)      
+                valid_data_x, valid_data_y  = load_skdata_caltech101(
+                                                 batch_size = self.load_batches, 
+                                                 rand_perm = rand_perm, batch = 1 , 
+                                                 type_set = 'valid' , 
+                                                 height = self.height, 
+                                                 width = self.width)
 
-    assert len(layer_sizes) - 1 == len(dropout_rates)           # Just checking.
+    
+                self.train_set_x = theano.shared(train_data_x, borrow=True)
+                self.train_set_y = theano.shared(train_data_y, borrow=True)
+                
+                self.test_set_x = theano.shared(test_data_x, borrow=True)
+                self.test_set_y = theano.shared(test_data_y, borrow=True) 
+              
+                self.valid_set_x = theano.shared(valid_data_x, borrow=True)
+                self.valid_set_y = theano.shared(valid_data_y, borrow=True)
+    
+                # compute number of minibatches for training, validation and testing
+                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
+    
+                self.multi_load = True
+    
+            elif self.dataset == 'caltech256':
+                print "... importing caltech 256 from skdata"
+    
+                    # shuffle the data
+                total_images_in_dataset = 30607 
+                self.rand_perm = numpy.random.permutation(total_images_in_dataset)  # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
+    
+                n_train_images = total_images_in_dataset / 3
+                n_test_images = total_images_in_dataset / 3
+                n_valid_images = total_images_in_dataset / 3 
+    
+                n_train_batches_all = n_train_images / self.batch_size 
+                n_test_batches_all = n_test_images / self.batch_size 
+                n_valid_batches_all = n_valid_images / self.batch_size
+    
+                if ( (n_train_batches_all < self.batches2train) or 
+                     (n_test_batches_all < self.batches2test) or  
+                     (n_valid_batches_all < self.batches2validate) ):        # You can't have so many batches.
+                    print "...  !! self.dataset doens't have so many batches. "
+                    raise AssertionError()
+    
+                
+                train_data_x, train_data_y  = load_skdata_caltech256(
+                                                 batch_size = self.load_batches, 
+                                                  rand_perm = rand_perm, 
+                                                  batch = 1 , 
+                                                  type_set = 'train' ,
+                                                  height = self.height,
+                                                  width = self.width)             
+                test_data_x, test_data_y  = load_skdata_caltech256(
+                                                 batch_size = self.load_batches,
+                                                 rand_perm = rand_perm, batch = 1 ,
+                                                 type_set = 'test' , 
+                                                 height = self.height,
+                                                 width = self.width)      
+                valid_data_x, valid_data_y  = load_skdata_caltech256(
+                                                 batch_size = self.load_batches, 
+                                                 rand_perm = rand_perm, batch = 1 , 
+                                                 type_set = 'valid' , 
+                                                 height = self.height, 
+                                                 width = self.width)
 
-    """  Dropouts implemented from paper:
-    Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
-    from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
-    """
-    MLPlayers = MLP( rng=rng,
-                     input=fully_connected_input,
-                     layer_sizes=layer_sizes,
-                     dropout_rates=dropout_rates,
-                     activations=mlp_activations,
-                     use_bias = use_bias,
-                     svm_flag = svm_flag,
-                     params = [],
-                     verbose = verbose)
-
-    # Build the expresson for the categorical cross entropy function.
-    if svm_flag is False:
-        if objective == 0:
-            cost = MLPlayers.negative_log_likelihood( y )
-            dropout_cost = MLPlayers.dropout_negative_log_likelihood( y )
-        elif objective == 1:
-            if len(numpy.unique(train_set_y.eval())) > 2:
+                self.train_set_x = theano.shared(train_data_x, borrow=True)
+                self.train_set_y = theano.shared(train_data_y, borrow=True)
+                
+                self.test_set_x = theano.shared(test_data_x, borrow=True)
+                self.test_set_y = theano.shared(test_data_y, borrow=True) 
+              
+                self.valid_set_x = theano.shared(valid_data_x, borrow=True)
+                self.valid_set_y = theano.shared(valid_data_y, borrow=True)
+    
+                # compute number of minibatches for training, validation and testing
+                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
+                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
+    
+                self.multi_load = True
+    
+        assert ( self.height * self.width * self.channels == 
+                self.train_set_x.get_value( borrow = True ).shape[1] )
+    # Class initialization complete.
+    
+    # define the optimzer function 
+    def build_network (self, arch_params, optimization_params ,verbose = True):    
+    
+        self.mom_start                       = optimization_params [ "mom_start" ]
+        self.mom_end                         = optimization_params [ "mom_end" ]
+        self.mom_epoch_interval              = optimization_params [ "mom_interval" ]
+        self.mom_type                        = optimization_params [ "mom_type" ]
+        self.initial_learning_rate           = optimization_params [ "initial_learning_rate" ]              
+        self.learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
+        self.ada_grad                        = optimization_params [ "ada_grad" ]   
+        self.fudge_factor                    = optimization_params [ "fudge_factor" ]
+        self.l1_reg                          = optimization_params [ "l1_reg" ]
+        self.l2_reg                          = optimization_params [ "l2_reg" ]
+        self.rms_prop                        = optimization_params [ "rms_prop" ]
+        self.rms_rho                         = optimization_params [ "rms_rho" ]
+        self.rms_epsilon                     = optimization_params [ "rms_epsilon" ]
+        self.objective                       = optimization_params [ "objective" ]        
+    
+        self.squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
+        self.mlp_activations                 = arch_params [ "mlp_activations"  ] 
+        self.cnn_activations                 = arch_params [ "cnn_activations" ]
+        self.dropout                         = arch_params [ "dropout"  ]
+        self.column_norm                     = arch_params [ "column_norm"  ]    
+        self.dropout_rates                   = arch_params [ "dropout_rates" ]
+        self.nkerns                          = arch_params [ "nkerns"  ]
+        self.outs                            = arch_params [ "outs" ]
+        self.filter_size                     = arch_params [ "filter_size" ]
+        self.pooling_size                    = arch_params [ "pooling_size" ]
+        self.num_nodes                       = arch_params [ "num_nodes" ]
+        self.use_bias                        = arch_params [ "use_bias" ]
+        random_seed                          = arch_params [ "random_seed" ]
+        self.svm_flag                        = arch_params [ "svm_flag" ]
+        
+        if self.ada_grad is True:
+            assert self.rms_prop is False
+        elif self.rms_prop is True:
+            assert self.ada_grad is False
+            self.fudge_factor = self.rms_epsilon
+  
+        print '... building the network'    
+        
+        # allocate symbolic variables for the data
+        index = T.lscalar('index')  # index to a [mini]batch
+        x = T.matrix('x')           # the data is presented as rasterized images
+        y = T.ivector('y')          # the labels are presented as 1D vector of [int] 
+    
+        if self.svm_flag is True:
+            self.y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
+    
+        first_layer_input = x.reshape((self.batch_size, self.channels, self.height, self.width))
+    
+        # Create first convolutional - pooling layers 
+        activity = []       # to record Cnn activities 
+        self.weights = []
+    
+        conv_layers=[]
+        filt_size = self.filter_size[0]
+        pool_size = self.pooling_size[0]
+    
+        if not self.nkerns == []: 
+            conv_layers.append ( 
+                            cnn.ConvPoolLayer(
+                                    rng = self.rng,
+                                    input = first_layer_input,
+                                    image_shape=(self.batch_size, self.channels , self.height, self.width),
+                                    filter_shape=(self.nkerns[0], self.channels , filt_size, filt_size),
+                                    poolsize=(pool_size, pool_size),
+                                    activation = self.cnn_activations[0],
+                                    verbose = verbose
+                                     ) )
+            activity.append ( conv_layers[-1].output )
+            self.weights.append ( conv_layers[-1].filter_img)
+    
+            # Create the rest of the convolutional - pooling layers in a loop
+            next_in_1 = ( self.height - filt_size + 1 ) / pool_size        
+            next_in_2 = ( self.width - filt_size + 1 ) / pool_size
+        
+            for layer in xrange(len(self.nkerns)-1):   
+                filt_size = self.filter_size[layer+1]
+                pool_size = self.pooling_size[layer+1]
+                conv_layers.append ( 
+                                cnn.ConvPoolLayer(
+                                    rng = self.rng,
+                                    input = conv_layers[layer].output,        
+                                    image_shape=(self.batch_size, self.nkerns[layer], next_in_1, next_in_2),
+                                    filter_shape=(self.nkerns[layer+1], self.nkerns[layer], filt_size, filt_size),
+                                    poolsize=(pool_size, pool_size),
+                                    activation = self.cnn_activations[layer+1],
+                                    verbose = verbose
+                                     ) )
+                next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
+                next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
+                self.weights.append ( conv_layers[-1].filter_img )
+                activity.append( conv_layers[-1].output )
+    
+        # Assemble fully connected laters
+        if self.nkerns == []:
+            fully_connected_input = first_layer_input
+        else:
+            fully_connected_input = conv_layers[-1].output.flatten(2)
+    
+        if len(self.dropout_rates) > 2 :
+            layer_sizes =[]
+            layer_sizes.append( self.nkerns[-1] * next_in_1 * next_in_2 )
+            for i in xrange(len(self.dropout_rates)-1):
+                layer_sizes.append ( self.num_nodes[i] )
+            layer_sizes.append ( self.outs )
+            
+        elif len(self.dropout_rates) == 1:
+            layer_sizes = [ self.nkerns[-1] * next_in_1 * next_in_2, self.outs]
+        else :
+            layer_sizes = [ self.nkerns[-1] * next_in_1 * next_in_2, self.num_nodes[0] , self.outs]
+    
+        assert len(layer_sizes) - 1 == len(self.dropout_rates)           # Just checking.
+    
+        """  Dropouts implemented from paper:
+        Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
+        from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
+        """
+        MLPlayers = cnn.MLP( rng = self.rng,
+                         input = fully_connected_input,
+                         layer_sizes = layer_sizes,
+                         dropout_rates = self.dropout_rates,
+                         activations = self.mlp_activations,
+                         use_bias = self.use_bias,
+                         svm_flag = self.svm_flag,
+                         params = [],
+                         verbose = verbose)
+    
+        # create theano functions for evaluating the graphs
+        self.test_model = theano.function(
+                inputs = [index],
+                outputs = MLPlayers.errors(y),
+                givens={
+                    x: self.test_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                    y: self.test_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
+    
+        self.validate_model = theano.function(
+                inputs = [index],
+                outputs = MLPlayers.errors(y),
+                givens={
+                    x: self.valid_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                    y: self.valid_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
+    
+        self.prediction = theano.function(
+            inputs = [index],
+            outputs = MLPlayers.predicts,
+            givens={
+                    x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
+    
+        self.nll = theano.function(
+            inputs = [index],
+            outputs = MLPlayers.probabilities,
+            givens={
+                x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
+    
+        # function to return activations of each image
+        self.activities = theano.function (
+            inputs = [index],
+            outputs = activity,
+            givens = {
+                    x: self.train_set_x[index * self.batch_size: (index + 1) * self.batch_size]
+                     })
+    
+        # Compute cost and gradients of the model wrt parameter
+        params = []
+        for layer in conv_layers:
+            params = params + layer.params
+        params = params + MLPlayers.params
+    
+        # Build the expresson for the categorical cross entropy function.
+        if self.svm_flag is False:
+            if self.objective == 0:
+                cost = MLPlayers.negative_log_likelihood( y )
+                dropout_cost = MLPlayers.dropout_negative_log_likelihood( y )
+            elif self.objective == 1:
+                if len(numpy.unique(self.train_set_y.eval())) > 2:
+                    cost = MLPlayers.cross_entropy ( y )
+                    dropout_cost = MLPlayers.dropout_cross_entropy ( y )
+                else:
+                    cost = MLPlayers.binary_entropy ( y )
+                    dropout_cost = MLPlayers.dropout_binary_entropy ( y )
+            else:
+                print "!! Objective is not understood, switching to cross entropy"
                 cost = MLPlayers.cross_entropy ( y )
                 dropout_cost = MLPlayers.dropout_cross_entropy ( y )
-            else:
-                cost = MLPlayers.binary_entropy ( y )
-                dropout_cost = MLPlayers.dropout_binary_entropy ( y )
-        else:
-            print "!! Objective is not understood, switching to cross entropy"
-            cost = MLPlayers.cross_entropy ( y )
-            dropout_cost = MLPlayers.dropout_cross_entropy ( y )
-
-    else :        
-        cost = MLPlayers.hinge_loss( y1 )
-        dropout_cost = MLPlayers.hinge_loss( y1 )
-
-    # create theano functions for evaluating the graphs
-    test_model = theano.function(
-            inputs=[index],
-            outputs=MLPlayers.errors(y),
-            givens={
-                x: test_set_x[index * batch_size:(index + 1) * batch_size],
-                y: test_set_y[index * batch_size:(index + 1) * batch_size]})
-
-    validate_model = theano.function(
-            inputs=[index],
-            outputs=MLPlayers.errors(y),
-            givens={
-                x: valid_set_x[index * batch_size:(index + 1) * batch_size],
-                y: valid_set_y[index * batch_size:(index + 1) * batch_size]})
-
-    prediction = theano.function(
-        inputs = [index],
-        outputs = MLPlayers.predicts,
-        givens={
-                x: test_set_x[index * batch_size: (index + 1) * batch_size]})
-
-    nll = theano.function(
-        inputs = [index],
-        outputs = MLPlayers.probabilities,
-        givens={
-            x: test_set_x[index * batch_size: (index + 1) * batch_size]})
-
-
-
-    # function to return activations of each image
-    activities = theano.function (
-        inputs = [index],
-        outputs = activity,
-        givens = {
-                x: train_set_x[index * batch_size: (index + 1) * batch_size]
-                 })
-
-    # Compute cost and gradients of the model wrt parameter
-    params = []
-    for layer in conv_layers:
-        params = params + layer.params
-    params = params + MLPlayers.params
-
-    output = dropout_cost + l1_reg * MLPlayers.dropout_L1 + l2_reg * MLPlayers.dropout_L2 if dropout else cost + l1_reg * MLPlayers.L1 + l2_reg * MLPlayers.L2
-
-    ######################
-    # BUILD Optimizer    #
-    ######################
     
-    gradients = []
-    for param in params: 
-        gradient = T.grad( output ,param)
-        gradients.append ( gradient )
-
-    # TO DO: Try implementing Adadelta also. 
-     
-    # Compute momentum for the current epoch
-    epoch = T.scalar()
-    mom = ifelse(epoch <= mom_epoch_interval,
-        mom_start*(1.0 - epoch/mom_epoch_interval) + mom_end*(epoch/mom_epoch_interval),
-        mom_end)
-
-    # learning rate
-    eta = theano.shared(numpy.asarray(initial_learning_rate,dtype=theano.config.floatX))
-    # accumulate gradients for adagrad
-     
-    grad_acc = []
-    for param in params:
-        eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
-        grad_acc.append(theano.shared(eps, borrow=True))
-
-    # accumulate velocities for momentum
-    velocities = []
-    for param in params:
-        velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
-        velocities.append(velocity)
-     
-
-    # create updates for each combination of stuff 
-    updates = OrderedDict()
-    print_flag = False
-     
-    for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
-
-        if ada_grad is True:
-
-            """ Adagrad implemented from paper:
-            John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
-            for online learning and stochastic optimization. JMLR
-            """
-
-            current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
-            updates[acc] = current_acc          # updates accumulation at timestamp
-
-        elif rms_prop is True:
-
-            """ Tieleman, T. and Hinton, G. (2012):
-            Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
-            Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
-
-            current_acc = rms_rho * acc + (1 - rms_rho) * T.sqr(gradient) 
-            updates[acc] = current_acc
-
-        else:
-            current_acc = 1
-            fudge_factor = 0
-
-        if mom_type == 0:               # no momentum
-            updates[velocity] = -(eta / T.sqrt(current_acc + fudge_factor)) * gradient                                            
-            #updates[velocity] = -1*eta*gradient
-                        # perform adagrad velocity update
-                        # this will be just added to parameters.
-        elif mom_type == 1:       # if polyak momentum    
-
-            """ Momentum implemented from paper:  
-            Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration methods." 
-            USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
-
-            Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization and momentum in deep learning." 
-            Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
-            equation (1) and equation (2)"""   
-
-            updates[velocity] = mom * velocity - (1.-mom) * ( eta / T.sqrt(current_acc+ fudge_factor))  * gradient                             
-
-        elif mom_type == 2:             # Nestrov accelerated gradient beta stage... 
-
-            """Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)."
-            Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
-            Adapted from https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/ 
-
-            Instead of using past params we use the current params as described in this link
-            https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,"""
-  
-            updates[velocity] = mom * velocity - (1.-mom) * ( eta / T.sqrt(current_acc + fudge_factor))  * gradient                                 
-            updates[param] = mom * updates[velocity] 
-
-        else:
-            if print_flag is False:
-                print_flag = True
-                print "!! Unrecognized mometum type, switching to no momentum."
-            updates[velocity] = -( eta / T.sqrt(current_acc+ fudge_factor) ) * gradient                                              
-                        
-
-        if mom_type != 2:
-            stepped_param  = param + updates[velocity]
-        else:
-            stepped_param = param + updates[velocity] + updates[param]
-
-        if param.get_value(borrow=True).ndim == 2 and column_norm is True:
-
-            """ constrain the norms of the COLUMNs of the weight, according to
-            https://github.com/BVLC/caffe/issues/109 """
-
-            col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
-            desired_norms = T.clip(col_norms, 0, T.sqrt(squared_filter_length_limit))
-            scale = desired_norms / (1e-7 + col_norms)
-            updates[param] = stepped_param * scale
-
-        else:            
-            updates[param] = stepped_param
-
-     
-    if svm_flag is True:
-        train_model = theano.function(inputs= [index, epoch],
-                outputs=output,
-                updates=updates,
-                givens={
-                    x: train_set_x[index * batch_size:(index + 1) * batch_size],
-                    y1: train_set_y1[index * batch_size:(index + 1) * batch_size]},
-                on_unused_input='ignore'                    
-                    )
-    else:
-        train_model = theano.function(inputs= [index, epoch],
-                outputs=output,
-                updates=updates,
-                givens={
-                    x: train_set_x[index * batch_size:(index + 1) * batch_size],
-                    y: train_set_y[index * batch_size:(index + 1) * batch_size]},
-                on_unused_input='ignore'                    
-                    )
-
-    decay_learning_rate = theano.function(
-           inputs=[], 
-           outputs=eta,                                               # Just updates the learning rates. 
-           updates={eta: eta * learning_rate_decay}
-            )
-
-    momentum_value = theano.function ( 
-                        inputs =[epoch],
-                        outputs = mom,
-                        )
-
-    end_time = time.clock()
-
-    # setting up visualization stuff...
-    shuffle_batch_ind = numpy.arange(batch_size)
-    numpy.random.shuffle(shuffle_batch_ind)
-    visualize_ind = shuffle_batch_ind[0:n_visual_images]
-    #visualize_ind = range(n_visual_images)
-    main_img_visual = True
-
-     
-    # create all directories required for saving results and data.
-    if visualize_flag is True:
-        if not os.path.exists('../visuals'):
-            os.makedirs('../visuals')                
-        if not os.path.exists('../visuals/activities'):
-            os.makedirs('../visuals/activities')
-            for i in xrange(len(nkerns)):
-                os.makedirs('../visuals/activities/layer_'+str(i))
-        if not os.path.exists('../visuals/filters'):
-            os.makedirs('../visuals/filters')
-            for i in xrange(len(nkerns)):
-                os.makedirs('../visuals/filters/layer_'+str(i))
-        if not os.path.exists('../visuals/images'):
-            os.makedirs('../visuals/images')
-    if not os.path.exists('../results/'):
-        os.makedirs ('../results')
-
-    print "...      -> building complete, took " + str((end_time - start_time)) + " seconds" 
-
-
-    ###############
-    # TRAIN MODEL #
-    ###############
-     
-    #pdb.set_trace()
-    print "... training"
-    start_time = time.clock()
-
-    patience = numpy.inf  # look as this many examples regardless
-    patience_increase = 2  # wait this much longer when a new best is
-                           # found
-    improvement_threshold = 0.995  # a relative improvement of this much is
-                                   # considered significant
-    this_validation_loss = []
-    best_validation_loss = numpy.inf
-    best_iter = 0
-    epoch_counter = 0
-    early_termination = False
-    cost_saved = []
-    best_params = None
-    iteration= 0
-
-    while (epoch_counter < n_epochs) and (not early_termination):
-        epoch_counter = epoch_counter + 1 
-         
-        for batch in xrange (batches2train):
-            if verbose is True:
-                print "...          -> Epoch: " + str(epoch_counter) + " Batch: " + str(batch+1) + " out of " + str(batches2train) + " batches"
-
-            if multi_load is True:
-                iteration= (epoch_counter - 1) * n_train_batches * batches2train + batch
-                # Load data for this batch
-                if verbose is True:
-                    print "...          -> loading data for new batch"
-
-                if data_params["type"] == 'mat':
-                    train_data_x, train_data_y, train_data_y1 = load_data_mat(dataset, batch = batch + 1 , type_set = 'train')             
-
-                elif data_params["type"] == 'skdata':                   
-                    if dataset == 'caltech101':
-                        train_data_x, train_data_y  = load_skdata_caltech101(batch_size = load_batches, batch = batch + 1 , type_set = 'train', rand_perm = rand_perm, height = height, width = width )
-                    elif dataset == 'caltech256':                  
-                        train_data_x, train_data_y  = load_skdata_caltech256(batch_size = load_batches, batch = batch + 1 , type_set = 'train', rand_perm = rand_perm, height = height, width = width )
-
-                        # Do not use svm_flag for caltech 101                        
-                train_set_x.set_value(train_data_x ,borrow = True)
-                train_set_y.set_value(train_data_y ,borrow = True)                
-                if svm_flag is True:
-                    train_set_y1.set_value(train_data_y1, borrow = True)
-                    
-                for minibatch_index in xrange(n_train_batches):
-                    if verbose is True:
-                        print "...                  ->    Mini Batch: " + str(minibatch_index + 1) + " out of "    + str(n_train_batches)
-                    cost_ij = train_model( minibatch_index, epoch_counter)
-                    cost_saved = cost_saved +[cost_ij]
-                    
-            else:        
-                iteration= (epoch_counter - 1) * n_train_batches + batch
-                cost_ij = train_model(batch, epoch_counter)
-                cost_saved = cost_saved +[cost_ij]
-         
-        if  epoch_counter % validate_after_epochs is 0:  
-            # Load Validation Dataset here.
-            validation_losses = 0.      
-            if multi_load is True:
-                # Load data for this batch
-                 
-                for batch in xrange ( batches2test ):
-                    if data_params["type"] == 'mat':
-                        valid_data_x, valid_data_y, valid_data_y1 = load_data_mat(dataset, batch = batch + 1 , type_set = 'valid')             
-
-                    elif data_params["type"] == 'skdata':                   
-                        if dataset == 'caltech101':
-          
-                            valid_data_x, valid_data_y = load_skdata_caltech101(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
-                        elif dataset == 'caltech256':
-                            valid_data_x, valid_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch + 1 , type_set = 'valid' , rand_perm = rand_perm, height = height, width = width )
-                            # Do not use svm_flag for caltech 101  
-                                              
-                    valid_set_x.set_value(valid_data_x,borrow = True)
-                    valid_set_y.set_value(valid_data_y,borrow = True)
-                    if svm_flag is True:
-                        valid_set_y1.set_value(valid_data_y1, borrow = True)
-
-                    validation_losses = validation_losses + numpy.sum([[validate_model(i) for i in xrange(n_valid_batches)]])
-
-                this_validation_loss = this_validation_loss + [validation_losses]
-
-                if verbose is True:
-                    if this_validation_loss[-1] < best_validation_loss :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%, learning_rate = " + str(eta.get_value(borrow=True))+  ", momentum = " +str(momentum_value(epoch_counter))  + " -> best thus far " 
-                    else :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) +  ", momentum = " +str(momentum_value(epoch_counter)) 
-                else:
-                    if this_validation_loss[-1] < best_validation_loss :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "% -> best thus far " 
-                    else :
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(numpy.mean(cost_saved[-1*n_train_batches:])) +",  validation accuracy :" + str(float( batch_size * n_valid_batches * batches2validate - this_validation_loss[-1])*100/(batch_size*n_valid_batches*batches2validate)) + "%"
-                 
-            else:
-
-                validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
-                this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
-                if verbose is True:
-                    if this_validation_loss[-1] < best_validation_loss :                    
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) + ", momentum = " +str(momentum_value(epoch_counter)) + " -> best thus far " 
-                    else:
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "%, learning_rate = " + str(eta.get_value(borrow=True)) + ", momentum = " +str(momentum_value(epoch_counter)) 
-                else:
-                    if this_validation_loss[-1] < best_validation_loss :                    
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "% -> best thus far " 
-                    else:
-                        print "...      -> epoch " + str(epoch_counter) + ", cost: " + str(cost_saved[-1]) +",  validation accuracy :" + str(float(batch_size*n_valid_batches - this_validation_loss[-1])*100/(batch_size*n_valid_batches)) + "% "                        
-
-            #improve patience if loss improvement is good enough
-            if this_validation_loss[-1] < best_validation_loss *  \
-               improvement_threshold:
-                patience = max(patience, iteration* patience_increase)
-                best_iter = iteration
-
-
-            best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
-        new_leanring_rate = decay_learning_rate()    
-
-         
-        if visualize_flag is True:
-            if  epoch_counter % visualize_after_epochs is 0: 
-                # saving down images. 
-                if main_img_visual is False:
-                    for i in xrange(n_visual_images):
-                        curr_img = numpy.asarray(numpy.reshape(train_set_x.get_value( borrow = True )[visualize_ind[i]],[height, width, channels] ) * 255., dtype='uint8' )
-                        if verbose is True:
-                            cv2.imshow("Image Number " +str(i) + "_label_" + str(train_set_y.eval()[visualize_ind[i]]), curr_img)
-                        cv2.imwrite("../visuals/images/image_" + str(i)+ "_label_" + str(train_set_y.eval()[visualize_ind[i]]) + ".jpg", curr_img )
-                main_img_visual = True
-
-                # visualizing activities.
-                activity = activities(0)
-                 
-                for m in xrange(len(nkerns)):   #For each layer 
-                    loc_ac = '../visuals/activities/layer_' + str(m) + "/epoch_" + str(epoch_counter) +"/"
-                    if not os.path.exists(loc_ac):   
-                        os.makedirs(loc_ac)
-                    current_activity = activity[m]
-                    for i in xrange(n_visual_images):  # for each randomly chosen image .. visualize its activity 
-                        visualize(current_activity[visualize_ind[i]], loc = loc_ac, filename = 'activity_' + str(i) + "_label_" + str(train_set_y.eval()[visualize_ind[i]]) +'.jpg' , show_img = display_flag)
-
-                # visualizing the filters.
-                for m in xrange(len(nkerns)):
-
-                    curr_weights = weights[m].eval() 
-                    if curr_weights.shape[1] == 3:    # if the image is color, then first layer looks at color pictures and I can visualize the filters also as color.
-                        curr_image = curr_weights
-                        if not os.path.exists('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
-                            os.makedirs('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
-                        visualize_color_filters(curr_image, loc = 'visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_0.jpg' , show_img = display_flag)
-                    else:       # visualize them as grayscale images.
-                        for i in xrange(curr_weights.shape[1]):
-                            curr_image = curr_weights [:,i,:,:]
-                            if not os.path.exists('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter)):
-                                os.makedirs('visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
-                            visualize(curr_image, loc = 'visuals/filters/layer_' + str(m) + '/' + 'epoch_' + str(epoch_counter) + '/' , filename = 'kernel_' + str(i) + '.jpg' , show_img = display_flag)
-
-        if patience <= iteration:
-            early_termination = True
-            break
-    end_time = time.clock()
-    print "... training complete, took " + str((end_time - start_time)/ 60.) +" minutes"
-
-
-
-    ###############
-    # TEST MODEL  #
-    ###############
-    start_time = time.clock()
-    print "... testing"
-    wrong = 0
-    predictions = []
-    class_prob = []
-    labels = []
-     
-    if multi_load is False:
-
-        labels = test_set_y.eval().tolist()   
-        for mini_batch in xrange(batches2test):
-            #print ".. Testing batch " + str(mini_batch)
-            wrong = wrong + int(test_model(mini_batch))                        
-            predictions = predictions + prediction(mini_batch).tolist()
-            class_prob = class_prob + nll(mini_batch).tolist()
-        print "...      -> Total test accuracy : " + str(float((batch_size*n_test_batches)-wrong )*100/(batch_size*n_test_batches)) + " % out of " + str(batch_size*n_test_batches) + " samples."
-
-    else:
-         
-        for batch in xrange(batches2test):
-            print ".. Testing batch " + str(batch)
-            # Load data for this batch
-            if data_params["type"] == 'mat':
-                test_data_x, test_data_y, test_data_y1 = load_data_mat(dataset, batch = batch + 1 , type_set = 'test')             
-
-            elif data_params["type"] == 'skdata':                   
-                if dataset == 'caltech101':
-  
-                    test_data_x, test_data_y = load_skdata_caltech101(batch_size = load_batches, batch = batch +  1 , type_set = 'test', rand_perm = rand_perm, height = height, width = width )
-                elif dataset == 'caltech256':
-                    test_data_x, test_data_y = load_skdata_caltech256(batch_size = load_batches, batch = batch +  1 , type_set = 'test', rand_perm = rand_perm, height = height, width = width )
-            test_set_x.set_value(test_data_x,borrow = True)
-            test_set_y.set_value(test_data_y,borrow = True)
-            if svm_flag is True :
-                test_set_y1.set_value ( test_data_y1, borrow = True )
-
-            labels = labels + test_set_y.eval().tolist() 
-            for mini_batch in xrange(n_test_batches):
-                wrong = wrong + int(test_model(mini_batch))   
-                predictions = predictions + prediction(mini_batch).tolist()
-                class_prob = class_prob + nll(mini_batch).tolist()
-         
-        print "...      -> Total test accuracy : " + str(float((batch_size*n_test_batches*batches2test)-wrong )*100/(batch_size*n_test_batches*batches2test)) + " % out of " + str(batch_size*n_test_batches*batches2test) + " samples."
-
-    end_time = time.clock()
-
-    correct = 0
-    confusion = numpy.zeros((outs,outs), dtype = int)
-    for index in xrange(len(predictions)):
-        if labels[index] is predictions[index]:
-            correct = correct + 1
-        confusion[int(predictions[index]),int(labels[index])] = confusion[int(predictions[index]),int(labels[index])] + 1
-
-
-    # Save down data 
-    f = open(results_file_name, 'w')
-    for i in xrange(len(predictions)):
-        f.write(str(i))
-        f.write("\t")
-        f.write(str(labels[i]))
-        f.write("\t")
-        f.write(str(predictions[i]))
-        f.write("\t")
-        for j in xrange(outs):
-            f.write(str(class_prob[i][j]))
-            f.write("\t")
-        f.write('\n')
-
-    f = open(error_file_name,'w')
-    for i in xrange(len(this_validation_loss)):
-        f.write(str(this_validation_loss[i]))
-        f.write("\n")
-    f.close()
-
-    f = open(cost_file_name,'w')
-    for i in xrange(len(cost_saved)):
-        f.write(str(cost_saved[i]))
-        f.write("\n")
-    f.close()
-
-    f = open(confusion_file_name, 'w')
-    f.write(confusion)
-
-    f.close()
+        else :        
+            cost = MLPlayers.hinge_loss( y1 )
+            dropout_cost = MLPlayers.hinge_loss( y1 )
+            
+            
+        output = ( dropout_cost + self.l1_reg * MLPlayers.dropout_L1 + self.l2_reg *
+                             MLPlayers.dropout_L2 )if self.dropout else ( cost + self.l1_reg 
+                             * MLPlayers.L1 + self.l2_reg * MLPlayers.L2)
     
-    
-    save_network( network_save_name,  params, arch_params, data_params )
-    end_time = time.clock()
-    print "Testing complete, took " + str((end_time - start_time)/ 60.) + " minutes"    
-    print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100)
-    print confusion
-    print "Done"
-
-    pdb.set_trace()
-
-
-    #################
-    # Boiler PLate  #
-    #################
-    
-## Boiler Plate ## 
-if __name__ == '__main__':
-    
-    import sys
-
-                                                                                            # for epoch in [0, mom_epoch_interval] the momentum increases linearly
-    optimization_params = {
-                            "mom_start"                         : 0.5,                      # from mom_start to mom_end. After mom_epoch_interval, it stay at mom_end
-                            "mom_end"                           : 0.98,
-                            "mom_interval"                      : 100,
-                            "mom_type"                          : 1,                         # if mom_type = 1 , classical momentum if mom_type = 0, no momentum, if mom_type = 2 Nesterov's accelerated gradient momentum 
-                            "initial_learning_rate"             : 0.01,                      # Learning rate at the start
-                            "learning_rate_decay"               : 0.98, 
-                            "l1_reg"                            : 0.001,                     # regularization coeff for the last logistic layer and MLP layers
-                            "l2_reg"                            : 0.001,                     # regularization coeff for the last logistic layer and MLP layers
-                            "ada_grad"                          : False,
-                            "rms_prop"                          : True,
-                            "rms_rho"                           : 0.9,                      # implement rms_prop with this rho
-                            "rms_epsilon"                       : 1e-6,                     # implement rms_prop with this epsilon
-                            "fudge_factor"                      : 1e-7,                     # Just to avoid divide by zero, but google even advocates trying '1'
-                            "objective"                         : 1,                        # objective = 0 is negative log likelihood, objective = 2 is categorical cross entropy                                                       
-                            }
-
-
-    filename_params = { 
-                        "results_file_name"     : "../results/results_mnist_rotated_bg.txt",        # Files that will be saved down on completion Can be used by the parse.m file
-                        "error_file_name"       : "../results/error_mnist_rotated_bg.txt",
-                        "cost_file_name"        : "../results/cost_mnist_rotated_bg.txt",
-                        "confusion_file_name"   : "../results/confusion_mnist_rotated_bg.txt",
-                        "network_save_name"     : "../results/mnist_rotated_bg1.pkl.gz "
-
-                    }        
+        gradients = []
         
-    data_params = {
-                   "type"               : 'skdata',                                    # Options: 'pkl', 'skdata' , 'mat' for loading pkl files, mat files for skdata files.
-                   "loc"                : 'mnist',                                          # location for mat or pkl files, which data for skdata files. Skdata will be downloaded and used from '~/.skdata/'
-                   "batch_size"         : 500,                                      # For loading and for Gradient Descent Batch Size
-                   "load_batches"       : -1, 
-                   "batches2train"      : 100,                                      # Number of training batches.
-                   "batches2test"       : 20,                                       # Number of testing batches.
-                   "batches2validate"   : 20,                                       # Number of validation batches
-                   "height"             : 28,                                       # Height of each input image
-                   "width"              : 28,                                       # Width of each input image
-                   "channels"           : 1                                         # Number of channels of each input image 
-                  }
-
-    arch_params = {
-                       # Decay of Learninig rate after each epoch of SGD
-                    "squared_filter_length_limit"       : 15,   
-                    "n_epochs"                          : 200,                      # Total Number of epochs to run before completion (no premature completion)
-                    "validate_after_epochs"             : 1,                        # After how many iterations to calculate validation set accuracy ?
-                    "mlp_activations"                   : [ ReLU ],           # Activations of MLP layers Options: ReLU, Sigmoid, Tanh
-                    "cnn_activations"                   : [ ReLU, ReLU],           # Activations for CNN layers Options: ReLU,  
-                    # "fast_conv"                         : True,                 # Use the 3x faster convolutions form pylearn2  # but only works for nkerns being even.   
-                    "dropout"                           : True,                     # Flag for dropout / backprop                    
-                    "column_norm"                       : True,
-                    "dropout_rates"                     : [ 0.5 , 0.5],             # Rates of dropout. Use 0 is backprop.
-                    "nkerns"                            : [ 20 , 50  ],               # Number of feature maps at each CNN layer
-                    "outs"                              : 10,                       # Number of output nodes ( must equal number of classes)
-                    "filter_size"                       : [  5 , 5],                # Receptive field of each CNN layer
-                    "pooling_size"                      : [  2 , 2 ],                # Pooling field of each CNN layer
-                    "num_nodes"                         : [  500 ],                # Number of nodes in each MLP layer
-                    "use_bias"                          : True,                     # Flag for using bias                   
-                    "random_seed"                       : 23455,                    # Use same seed for reproduction of results.
-                    "svm_flag"                          : False                     # True makes the last layer a SVM
-
-                 }
-
-
-    visual_params = {
-                        "visualize_flag"        : False,
-                        "visualize_after_epochs": 1,
-                        "n_visual_images"       : 20,
-                        "display_flag"          : False
-                    }
-
-    run_cnn(
-                    arch_params             = arch_params,
-                    optimization_params     = optimization_params,
-                    data_params             = data_params, 
-                    filename_params         = filename_params,
-                    visual_params           = visual_params,
-                    verbose                 = False,                                                # True prints in a lot of intermetediate steps, False keeps it to minimum.
+        for param in params: 
+            gradient = T.grad( output ,param)
+            gradients.append ( gradient )
+    
+        # TO DO: Try implementing Adadelta also. 
+         
+        # Compute momentum for the current epoch
+        epoch = T.scalar()
+        mom = ifelse(epoch <= self.mom_epoch_interval,
+            self.mom_start*(1.0 - epoch/self.mom_epoch_interval) + self.mom_end*(epoch/self.mom_epoch_interval),
+            self.mom_end)
+    
+        # learning rate
+        self.eta = theano.shared(numpy.asarray(self.initial_learning_rate,dtype=theano.config.floatX))
+        # accumulate gradients for adagrad
+         
+        grad_acc = []
+        for param in params:
+            eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
+            grad_acc.append(theano.shared(eps, borrow=True))
+    
+        # accumulate velocities for momentum
+        velocities = []
+        for param in params:
+            velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
+            velocities.append(velocity)
+         
+    
+        # create updates for each combination of stuff 
+        updates = OrderedDict()
+        print_flag = False
+         
+        for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
+    
+            if self.ada_grad is True:
+    
+                """ Adagrad implemented from paper:
+                John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
+                for online learning and stochastic optimization. JMLR
+                """
+    
+                current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
+                updates[acc] = current_acc          # updates accumulation at timestamp
+    
+            elif self.rms_prop is True:
+    
+                """ Tieleman, T. and Hinton, G. (2012):
+                Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
+                Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
+    
+                current_acc = self.rms_rho * acc + (1 - self.rms_rho) * T.sqr(gradient) 
+                updates[acc] = current_acc
+    
+            else:
+                current_acc = 1
+                self.fudge_factor = 0
+    
+            if self.mom_type == 0:               # no momentum
+                updates[velocity] = -(self.eta / T.sqrt(current_acc + self.fudge_factor)) * gradient                                            
+               
+            elif self.mom_type == 1:       # if polyak momentum    
+    
+                """ Momentum implemented from paper:  
+                Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration methods." 
+                USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
+    
+                Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization and momentum in deep learning." 
+                Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
+                equation (1) and equation (2)"""   
+    
+                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc+ self.fudge_factor))  * gradient                             
+    
+            elif mom_type == 2:             # Nestrov accelerated gradient 
+    
+                """Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)."
+                Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
+                Adapted from https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/ 
+    
+                Instead of using past params we use the current params as described in this link
+                https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,"""
+      
+                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc + self.fudge_factor))  * gradient                                 
+                updates[param] = mom * updates[velocity] 
+    
+            else:
+                if print_flag is False:
+                    print_flag = True
+                    print "!! Unrecognized mometum type, switching to no momentum."
+                updates[velocity] = -( self.eta / T.sqrt(current_acc+ self.fudge_factor) ) * gradient                                              
+                            
+    
+            if self.mom_type != 2:
+                stepped_param  = param + updates[velocity]
+            else:
+                stepped_param = param + updates[velocity] + updates[param]
+    
+            if param.get_value(borrow=True).ndim == 2 and self.column_norm is True:
+    
+                """ constrain the norms of the COLUMNs of the weight, according to
+                https://github.com/BVLC/caffe/issues/109 """
+    
+                col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
+                desired_norms = T.clip(col_norms, 0, T.sqrt(self.squared_filter_length_limit))
+                scale = desired_norms / (1e-7 + col_norms)
+                updates[param] = stepped_param * scale
+    
+            else:            
+                updates[param] = stepped_param
+    
+         
+        if self.svm_flag is True:
+            self.train_model = theano.function(
+                    inputs= [index, epoch],
+                    outputs = output,
+                    updates = updates,
+                    givens={
+                        x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                        y1: self.train_set_y1[index * self.batch_size:(index + 1) * self.batch_size]},
+                    on_unused_input = 'ignore'                    
+                        )
+        else:
+            self.train_model = theano.function(
+                    inputs = [index, epoch],
+                    outputs = output,
+                    updates = updates,
+                    givens={
+                        x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                        y: self.train_set_y[index * self.batch_size:(index + 1) * self.batch_size]},
+                    on_unused_input='ignore'                    
+                        )
+    
+        self.decay_learning_rate = theano.function(
+               inputs=[],          # Just updates the learning rates. 
+               updates={self.eta: self.eta * self.learning_rate_decay}
                 )
+    
+        self.momentum_value = theano.function ( 
+                            inputs =[epoch],
+                            outputs = mom,
+                            )
+                            
+    # this is only for self.multi_load = True type of datasets.. 
+    # All datasets are not multi_load enabled. This needs to change ??                         
+    def reset_data (self, batch, type_set, verbose = True):
+        if verbose is True:
+            print "...          -> loading data for new batch"
+        if self.data_type == 'mat':
+            train_data_x, train_data_y, train_data_y1 = load_data_mat(self.dataset, batch, type_set)             
 
+        elif data_params["type"] == 'skdata':                   
+            if self.dataset == 'caltech101':
+                train_data_x, train_data_y  = load_skdata_caltech101(
+                                                batch_size = self.load_batches, 
+                                                batch = batch, 
+                                                type_set = type_set, 
+                                                rand_perm = self.rand_perm, 
+                                                height = self.height, 
+                                                width = self.width )
+            elif self.dataset == 'caltech256':                  
+                train_data_x, train_data_y  = load_skdata_caltech256(
+                                                batch_size = self.load_batches, 
+                                                batch = batch, 
+                                                type_set = type_set, 
+                                                rand_perm = self.rand_perm, 
+                                                height = self.height, 
+                                                width = self.width )
+        # Do not use svm_flag for caltech 101                        
+        self.train_set_x.set_value(train_data_x ,borrow = True)
+        self.train_set_y.set_value(train_data_y ,borrow = True)                
+        if self.svm_flag is True:
+            self.train_set_y1.set_value(train_data_y1, borrow = True)
+        
+    def print_net (self, epoch, display_flag = True ):
+        # saving down true images. 
+        if self.main_img_visual is False:
+            for i in xrange( self.n_visual_images):
+                curr_img = numpy.asarray(numpy.reshape(self.train_set_x.get_value( borrow = True )
+                    [self.visualize_ind[i]],[self.height, self.width, self.channels] ) * 255., dtype='uint8' )
+                if self.display_flag is True:
+                    cv2.imshow("Image Number " +str(i) + 
+                         "_label_" + str(self.train_set_y.eval()[self.visualize_ind[i]]),
+                         curr_img)
+                cv2.imwrite("../visuals/images/image_" 
+                    + str(i)+ "_label_" + str(self.train_set_y.eval()
+                    [self.visualize_ind[i]]) + ".jpg", curr_img )
+        self.main_img_visual = True
+
+        # visualizing activities.
+        activity = self.activities(0)         
+        for m in xrange(len(self.nkerns)):   #For each layer 
+            loc_ac = '../visuals/activities/layer_' + str(m) + "/epoch_" + str(epoch) +"/"
+            if not os.path.exists(loc_ac):   
+                os.makedirs(loc_ac)
+            current_activity = activity[m]
+            for i in xrange(self.n_visual_images):  # for each randomly chosen image .. visualize its activity 
+                util.visualize(current_activity[self.visualize_ind[i]], 
+                    loc = loc_ac, filename = 'activity_' + str(i) + 
+                    "_label_" + str(self.train_set_y.eval()[self.visualize_ind[i]]) +'.jpg' ,
+                    show_img = display_flag)
+
+        # visualizing the filters.
+        for m in xrange(len(self.nkerns)):
+            curr_weights = self.weights[m].eval() 
+            if curr_weights.shape[1] == 3:    
+            # if the image is color, then first layer looks at color pictures and 
+            # I can visualize the filters also as color.
+                curr_image = curr_weights
+                if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
+                    os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
+                util.visualize_color_filters(curr_image, loc = '../visuals/filters/layer_' + str(m) + 
+                       '/' + 'epoch_' + str(epoch) + '/' , filename = 'kernel_0.jpg' , 
+                       show_img = self.display_flag)
+            else:       # visualize them as grayscale images.
+                for i in xrange(curr_weights.shape[1]):
+                    curr_image = curr_weights [:,i,:,:]
+                    if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
+                        os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))
+                    util.visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' 
+                        + 'epoch_' + str(epoch) + '/' , filename = 'kernel_' + 
+                        str(i) + '.jpg' , show_img = self.display_flag)
+    
+    
+    
+    def create_dirs( self, visual_params ):  
+        
+        self.visualize_flag          = visual_params ["visualize_flag" ]
+        self.visualize_after_epochs  = visual_params ["visualize_after_epochs" ]
+        self.n_visual_images         = visual_params ["n_visual_images" ] 
+        self.display_flag            = visual_params ["display_flag" ]
+        self.shuffle_batch_ind = numpy.arange(self.batch_size)
+        numpy.random.shuffle(self.shuffle_batch_ind)
+        self.visualize_ind = self.shuffle_batch_ind[0:self.n_visual_images] 
+        # create all directories required for saving results and data.
+        if self.visualize_flag is True:
+            if not os.path.exists('../visuals'):
+                os.makedirs('../visuals')                
+            if not os.path.exists('../visuals/activities'):
+                os.makedirs('../visuals/activities')
+                for i in xrange(len(self.nkerns)):
+                    os.makedirs('../visuals/activities/layer_'+str(i))
+            if not os.path.exists('../visuals/filters'):
+                os.makedirs('../visuals/filters')
+                for i in xrange(len(self.nkerns)):
+                    os.makedirs('../visuals/filters/layer_'+str(i))
+            if not os.path.exists('../visuals/images'):
+                os.makedirs('../visuals/images')
+        if not os.path.exists('../results/'):
+            os.makedirs ('../results')
+        
+        assert self.batch_size >= self.n_visual_images
+        
+        
+    # TRAIN 
+    def train(self, n_epochs, validate_after_epochs, verbose = True):
+        
+        # setting up visualization stuff...
+        self.main_img_visual = True
+        patience = 10000  
+        patience_increase = 2  
+        improvement_threshold = 0.995  
+        this_validation_loss = []
+        best_validation_loss = numpy.inf
+        best_iter = 0
+        epoch_counter = 0
+        early_termination = False
+        cost_saved = []
+        iteration= 0
+    
+        while (epoch_counter < n_epochs) and (not early_termination):
+            epoch_counter = epoch_counter + 1 
+             
+            for batch in xrange (self.batches2train):
+                if verbose is True:
+                    print "...          -> epoch: " + str(epoch_counter) + " batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"
+    
+                if self.multi_load is True:
+                    iteration= (epoch_counter - 1) * self.n_train_batches * self.batches2train + batch
+                    # Load data for this batch
+                    self.reset_data ( batch = batch + 1, type_set = 'train' ,verbose = verbose)
+                    for minibatch_index in xrange(self.n_train_batches):
+                        if verbose is True:
+                            print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
+                        pdb.set_trace()
+                        cost_ij = self.train_model( minibatch_index, epoch_counter)
+                        cost_saved = cost_saved + [cost_ij]
+                        
+                else:        
+                    iteration= (epoch_counter - 1) * self.n_train_batches + batch
+                    cost_ij = self.train_model(batch, epoch_counter)
+                    cost_saved = cost_saved +[cost_ij]
+             
+            if  epoch_counter % validate_after_epochs == 0:  
+                validation_losses = 0.   
+                if self.multi_load is True:   
+                    for batch in xrange ( self.batches2validate ):
+                        self.reset_data ( batch = batch + 1, type_set = 'valid' ,verbose = verbose)
+                        validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
+                        this_validation_loss = this_validation_loss + [validation_losses]
+    
+                    if verbose is True:
+
+                        print ("...      -> epoch " + str(epoch_counter) + 
+                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
+                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
+                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
+                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
+                                         ", momentum = " +str(self.momentum_value(epoch_counter))  +
+                                         " -> best thus far " if this_validation_loss[-1] < best_validation_loss else " ")
+                    else:
+                       
+                        print ("...      -> epoch " + str(epoch_counter) + 
+                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
+                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
+                                                                /(self.batch_size*self.n_valid_batches*self.batches2validate)) + 
+                                         "% -> best thus far " if this_validation_loss[-1] < best_validation_loss else "% ")      
+                else: # if not multi_load
+    
+                    validation_losses = [self.validate_model(i) for i in xrange(self.n_valid_batches)]
+                    this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
+                    if verbose is True:
+                                            
+                        print ("...      -> epoch " + str(epoch_counter) + 
+                              ", cost: " + str(cost_saved[-1]) +
+                              ",  validation accuracy :" + str(float(self.batch_size*self.n_valid_batches - this_validation_loss[-1])*100
+                                                           /(self.batch_size*self.n_valid_batches)) + 
+                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
+                              ", momentum = " +str(self.momentum_value(epoch_counter)) +
+                              " -> best thus far " if this_validation_loss[-1] < best_validation_loss else " " )                      
+                    else:
+                                
+                        print ("...      -> epoch " + str(epoch_counter) + 
+                              ", cost: " + str(cost_saved[-1]) +
+                              ",  validation accuracy :" + str(float(self.batch_size*self.n_valid_batches - this_validation_loss[-1])*100
+                                                           /(self.batch_size*self.n_valid_batches)) + 
+                              "% -> best thus far " if this_validation_loss[-1] < best_validation_loss else " ")  
+                       
+                # improve patience if loss improvement is good enough
+                if this_validation_loss[-1] < best_validation_loss *  \
+                   improvement_threshold:
+                    patience = max(patience, iteration* patience_increase)
+                    best_iter = iteration
+
+                best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
+            self.decay_learning_rate()    
+    
+    
+            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:
+                self.print_net (epoch = epoch_counter, display_flag = self.display_flag)   
+                
+            if patience <= iteration:
+                early_termination = True
+                break
+                
+        # Save down training stuff
+        f = open(self.error_file_name,'w')
+        for i in xrange(len(this_validation_loss)):
+            f.write(str(this_validation_loss[i]))
+            f.write("\n")
+        f.close()
+    
+        f = open(self.cost_file_name,'w')
+        for i in xrange(len(cost_saved)):
+            f.write(str(cost_saved[i]))
+            f.write("\n")
+        f.close()
+    
+    def test(self, verbose = True):
+        print "... testing"
+        wrong = 0
+        predictions = []
+        class_prob = []
+        labels = []
+         
+        if self.multi_load is False:
+    
+            labels = self.test_set_y.eval().tolist()   
+            for mini_batch in xrange(self.batches2test):
+                #print ".. Testing batch " + str(mini_batch)
+                wrong = wrong + int(self.test_model(mini_batch))                        
+                predictions = predictions + self.prediction(mini_batch).tolist()
+                class_prob = class_prob + self.nll(mini_batch).tolist()
+            print ("...      -> total test accuracy : " + str(float((self.batch_size*self.n_test_batches)-wrong )*100
+                                                         /(self.batch_size*self.n_test_batches)) + 
+                         " % out of " + str(self.batch_size*self.n_test_batches) + " samples.")
+                         
+        else:             
+            for batch in xrange(self.batches2test):
+                if verbose is True:
+                    print "..       --> testing batch " + str(batch)
+                # Load data for this batch
+                self.reset_data ( batch = batch + 1, type_set = 'test' ,verbose = verbose)
+                labels = labels + self.test_set_y.eval().tolist() 
+                for mini_batch in xrange(self.n_test_batches):
+                    wrong = wrong + int(self.test_model(mini_batch))   
+                    predictions = predictions + self.prediction(mini_batch).tolist()
+                    class_prob = class_prob + self.nll(mini_batch).tolist()
+             
+            print ("...      -> total test accuracy : " + str(float((self.batch_size*self.n_test_batches*self.batches2test)-wrong )*100/
+                                                         (self.batch_size*self.n_test_batches*self.batches2test)) + 
+                         " % out of " + str(self.batch_size*self.n_test_batches*self.batches2test) + " samples.")
+    
+        correct = 0
+        confusion = numpy.zeros((self.outs,self.outs), dtype = int)
+        for index in xrange(len(predictions)):
+            if labels[index] == predictions[index]:
+                correct = correct + 1
+            confusion[int(predictions[index]),int(labels[index])] = confusion[int(predictions[index]),int(labels[index])] + 1
+    
+        # Save down data 
+        f = open(self.results_file_name, 'w')
+        for i in xrange(len(predictions)):
+            f.write(str(i))
+            f.write("\t")
+            f.write(str(labels[i]))
+            f.write("\t")
+            f.write(str(predictions[i]))
+            f.write("\t")
+            for j in xrange(self.outs):
+                f.write(str(class_prob[i][j]))
+                f.write("\t")
+            f.write('\n')
+        f.close() 
+
+        numpy.savetxt(self.confusion_file_name, confusion, newline="\n")
+        print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100)
