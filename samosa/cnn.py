@@ -237,12 +237,11 @@ class MLP(object):
         self.L2 = theano.shared(0)
         
         count = 0
-        if dropout_rates > 1:
+        if len(dropout_rates) > 1:
             for n_in, n_out in weight_matrix_sizes[:-1]:
                 if verbose is True:
                     print "           -->        initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
 
-    
                 if len(params) < count + 1:
                     next_dropout_layer = DropoutHiddenLayer(rng=rng,
                                                     input=next_dropout_layer_input,
@@ -341,9 +340,7 @@ class MLP(object):
 
         else:
             if verbose is True:
-
                 print "           -->        iunitializing max-margin layer with " + str(n_out) + " class predictors and " + str(n_in) + " input units."
-
             if len(params) < count + 1:
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
@@ -389,7 +386,7 @@ class MLP(object):
 
        
 # From theano tutorials
-class ConvPoolLayer(object):
+class Conv2DPoolLayer(object):
     """Pool Layer of a convolutional network .. taken from the theano tutorials"""
 
     def __init__(self, rng, input, filter_shape, image_shape, poolsize, activation, W = None, b = None,
