@@ -243,7 +243,7 @@ class MLP(object):
                     print "           -->        initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in)
 
     
-                if params is None:
+                if len(params) < count + 1:
                     next_dropout_layer = DropoutHiddenLayer(rng=rng,
                                                     input=next_dropout_layer_input,
                                                     activation=activations[layer_counter],
