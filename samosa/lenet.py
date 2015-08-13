@@ -3,6 +3,7 @@
 # General Packages
 import os
 from collections import OrderedDict
+import cPickle, gzip
 
 # Math Packages
 import numpy
@@ -16,31 +17,11 @@ from theano.ifelse import ifelse
 # CNN code packages
 import cnn
 import util
-import pdb   # delete before commit 
-
-# Datahandling packages
-from loaders import load_data_pkl
-from loaders import load_data_mat
-from loaders import load_skdata_caltech101
-from loaders import load_skdata_caltech256
-from loaders import load_skdata_mnist
-from loaders import load_skdata_cifar10
-from loaders import load_skdata_mnist_noise1
-from loaders import load_skdata_mnist_noise2
-from loaders import load_skdata_mnist_noise3
-from loaders import load_skdata_mnist_noise4
-from loaders import load_skdata_mnist_noise5
-from loaders import load_skdata_mnist_noise6
-from loaders import load_skdata_mnist_bg_images
-from loaders import load_skdata_mnist_bg_rand
-from loaders import load_skdata_mnist_rotated
-from loaders import load_skdata_mnist_rotated_bg
-
+import loaders
 
 class network(object):
 
-    def __init__(  self, data_params, 
-                         random_seed,
+    def __init__(  self, random_seed,
                          filename_params, 
                          verbose = False, 
                         ):
@@ -51,7 +32,21 @@ class network(object):
         self.cost_file_name      = filename_params [ "cost_file_name"  ]
         self.confusion_file_name = filename_params [ "confusion_file_name" ]
         self.network_save_name   = filename_params [ "network_save_name" ]
-    
+        
+        self.rng = numpy.random.RandomState(random_seed)  
+        self. main_img_visual = True 
+       
+    def save_network( self ):          # for others use only data_params or optimization_params
+
+        f = gzip.open(self.network_save_name, 'wb')
+        for obj in [self.params, self.arch, self.data_struct, self.optim_params]:
+            cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
+        f.close()   
+                
+    # Load initial data          
+    def init_data(self, data_params):
+        
+        self.data_struct         = data_params # This command makes it possible to save down
         self.dataset             = data_params [ "loc" ]
         self.data_type           = data_params [ "type" ]
         self.height              = data_params [ "height" ]
@@ -65,18 +60,14 @@ class network(object):
         self.batches2validate    = data_params [ "batches2validate" ] 
         self.channels            = data_params [ "channels" ]
         
-        self.rng = numpy.random.RandomState(random_seed)  
-        self. main_img_visual = True 
         
-    # Load initial data          
-    def init_data(self):
         print "... loading data"
         # load matlab files as self.dataset.
         if self.data_type == 'mat':
-            train_data_x, train_data_y, train_data_y1 = load_data_mat(self.dataset, batch = 1 , type_set = 'train')             
-            test_data_x, test_data_y, valid_data_y1 = load_data_mat(self.dataset, batch = 1 , type_set = 'test')      
+            train_data_x, train_data_y, train_data_y1 = loaders.load_data_mat(self.dataset, batch = 1 , type_set = 'train')             
+            test_data_x, test_data_y, valid_data_y1 = loaders.load_data_mat(self.dataset, batch = 1 , type_set = 'test')      
             # Load self.dataset for first epoch.
-            valid_data_x, valid_data_y, test_data_y1 = load_data_mat(self.dataset, batch = 1 , type_set = 'valid')   
+            valid_data_x, valid_data_y, test_data_y1 = loaders.load_data_mat(self.dataset, batch = 1 , type_set = 'valid')   
             # Load self.dataset for first epoch.
     
             self.train_set_x = theano.shared(numpy.asarray(train_data_x, dtype=theano.config.floatX), borrow=True)
@@ -101,7 +92,7 @@ class network(object):
         # load pkl data as is shown in theano tutorials
         elif self.data_type == 'pkl':   
     
-            data = load_data_pkl(self.dataset)
+            data = loaders.load_data_pkl(self.dataset)
             self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
             self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
             self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
@@ -144,9 +135,8 @@ class network(object):
                 self.dataset == 'mnist_rotated_bg') :
     
                 print "... importing " + self.dataset + " from skdata"
-    
-                func = globals()['load_skdata_' + self.dataset]
-                data = func()
+                data = getattr(loaders, 'load_skdata_' + self.dataset)()                
+
                 self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
                 self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
                 self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
@@ -176,7 +166,7 @@ class network(object):
             elif self.dataset == 'cifar10':
                 print "... importing cifar 10 from skdata"
     
-                data = load_skdata_cifar10()
+                data = loaders.load_skdata_cifar10()
                 self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
                 self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
                 self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
@@ -211,20 +201,20 @@ class network(object):
                     print "...  !! self.dataset doens't have so many batches. "
                     raise AssertionError()
     
-                train_data_x, train_data_y  = load_skdata_caltech101(
+                train_data_x, train_data_y  = loaders.load_skdata_caltech101(
                                                  batch_size = self.load_batches, 
                                                   rand_perm = rand_perm, 
                                                   batch = 1 , 
                                                   type_set = 'train' ,
                                                   height = self.height,
                                                   width = self.width)             
-                test_data_x, test_data_y  = load_skdata_caltech101(
+                test_data_x, test_data_y  = loaders.load_skdata_caltech101(
                                                  batch_size = self.load_batches,
                                                  rand_perm = rand_perm, batch = 1 ,
                                                  type_set = 'test' , 
                                                  height = self.height,
                                                  width = self.width)      
-                valid_data_x, valid_data_y  = load_skdata_caltech101(
+                valid_data_x, valid_data_y  = loaders.load_skdata_caltech101(
                                                  batch_size = self.load_batches, 
                                                  rand_perm = rand_perm, batch = 1 , 
                                                  type_set = 'valid' , 
@@ -270,20 +260,20 @@ class network(object):
                     raise AssertionError()
     
                 
-                train_data_x, train_data_y  = load_skdata_caltech256(
+                train_data_x, train_data_y = loaders.load_skdata_caltech256(
                                                  batch_size = self.load_batches, 
                                                   rand_perm = rand_perm, 
                                                   batch = 1 , 
                                                   type_set = 'train' ,
                                                   height = self.height,
                                                   width = self.width)             
-                test_data_x, test_data_y  = load_skdata_caltech256(
+                test_data_x, test_data_y  = loaders.load_skdata_caltech256(
                                                  batch_size = self.load_batches,
                                                  rand_perm = rand_perm, batch = 1 ,
                                                  type_set = 'test' , 
                                                  height = self.height,
                                                  width = self.width)      
-                valid_data_x, valid_data_y  = load_skdata_caltech256(
+                valid_data_x, valid_data_y  = loaders.load_skdata_caltech256(
                                                  batch_size = self.load_batches, 
                                                  rand_perm = rand_perm, batch = 1 , 
                                                  type_set = 'valid' , 
@@ -311,8 +301,9 @@ class network(object):
     # Class initialization complete.
     
     # define the optimzer function 
-    def build_network (self, arch_params, optimization_params ,verbose = True):    
+    def build_network (self, arch_params, optimization_params , init_params = None, verbose = True):    
     
+        self.optim_params                    = optimization_params
         self.mom_start                       = optimization_params [ "mom_start" ]
         self.mom_end                         = optimization_params [ "mom_end" ]
         self.mom_epoch_interval              = optimization_params [ "mom_interval" ]
@@ -328,6 +319,7 @@ class network(object):
         self.rms_epsilon                     = optimization_params [ "rms_epsilon" ]
         self.objective                       = optimization_params [ "objective" ]        
     
+        self.arch                            = arch_params
         self.squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
         self.mlp_activations                 = arch_params [ "mlp_activations"  ] 
         self.cnn_activations                 = arch_params [ "cnn_activations" ]
@@ -341,70 +333,87 @@ class network(object):
         self.num_nodes                       = arch_params [ "num_nodes" ]
         self.use_bias                        = arch_params [ "use_bias" ]
         random_seed                          = arch_params [ "random_seed" ]
-        self.svm_flag                        = arch_params [ "svm_flag" ]
-        
+        self.svm_flag                        = arch_params [ "svm_flag" ]       
+                    
         if self.ada_grad is True:
             assert self.rms_prop is False
         elif self.rms_prop is True:
             assert self.ada_grad is False
             self.fudge_factor = self.rms_epsilon
-  
+       
         print '... building the network'    
         
         # allocate symbolic variables for the data
         index = T.lscalar('index')  # index to a [mini]batch
         x = T.matrix('x')           # the data is presented as rasterized images
         y = T.ivector('y')          # the labels are presented as 1D vector of [int] 
-    
+            
         if self.svm_flag is True:
             self.y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
-    
+     
         first_layer_input = x.reshape((self.batch_size, self.channels, self.height, self.width))
     
         # Create first convolutional - pooling layers 
         activity = []       # to record Cnn activities 
         self.weights = []
     
-        conv_layers=[]
-        filt_size = self.filter_size[0]
-        pool_size = self.pooling_size[0]
+        conv_layers=[]         
+
+        filt_size_1 = self.filter_size[0][0]
+        filt_size_2 = self.filter_size[0][1]
+        
+        pool_size_1 = self.pooling_size[0][0]
+        pool_size_2 = self.pooling_size[0][1]
     
+        param_counter = 0 
         if not self.nkerns == []: 
             conv_layers.append ( 
-                            cnn.ConvPoolLayer(
+                            cnn.Conv2DPoolLayer(
                                     rng = self.rng,
                                     input = first_layer_input,
                                     image_shape=(self.batch_size, self.channels , self.height, self.width),
-                                    filter_shape=(self.nkerns[0], self.channels , filt_size, filt_size),
-                                    poolsize=(pool_size, pool_size),
+                                    filter_shape=(self.nkerns[0], self.channels , filt_size_1, filt_size_2),
+                                    poolsize=(pool_size_1, pool_size_2),
                                     activation = self.cnn_activations[0],
+                                    W = None if init_params is None else init_params[param_counter],
+                                    b = None if init_params is None else init_params[param_counter + 1] ,                                   
                                     verbose = verbose
                                      ) )
             activity.append ( conv_layers[-1].output )
             self.weights.append ( conv_layers[-1].filter_img)
     
             # Create the rest of the convolutional - pooling layers in a loop
-            next_in_1 = ( self.height - filt_size + 1 ) / pool_size        
-            next_in_2 = ( self.width - filt_size + 1 ) / pool_size
-        
+            next_in_1 = ( self.height - filt_size_1 + 1 ) / pool_size_1        
+            next_in_2 = ( self.width - filt_size_2 + 1 ) / pool_size_2
+            
+            param_counter = param_counter + 2 
+            
             for layer in xrange(len(self.nkerns)-1):   
-                filt_size = self.filter_size[layer+1]
-                pool_size = self.pooling_size[layer+1]
+                
+                filt_size_1 = self.filter_size[layer+1][0]
+                filt_size_2 = self.filter_size[layer+1][1]
+                pool_size_1 = self.pooling_size[layer+1][0]
+                pool_size_2 = self.pooling_size[layer+1][1]
+                
                 conv_layers.append ( 
-                                cnn.ConvPoolLayer(
+                                cnn.Conv2DPoolLayer(
                                     rng = self.rng,
                                     input = conv_layers[layer].output,        
                                     image_shape=(self.batch_size, self.nkerns[layer], next_in_1, next_in_2),
-                                    filter_shape=(self.nkerns[layer+1], self.nkerns[layer], filt_size, filt_size),
-                                    poolsize=(pool_size, pool_size),
+                                    filter_shape=(self.nkerns[layer+1], self.nkerns[layer], filt_size_1, filt_size_2),
+                                    poolsize=(pool_size_1, pool_size_2),
                                     activation = self.cnn_activations[layer+1],
+                                    W = None if init_params is None else init_params[param_counter    ] ,
+                                    b = None if init_params is None else init_params[param_counter + 1] ,                                   
                                     verbose = verbose
                                      ) )
-                next_in_1 = ( next_in_1 - filt_size + 1 ) / pool_size        
-                next_in_2 = ( next_in_2 - filt_size + 1 ) / pool_size
+                next_in_1 = ( next_in_1 - filt_size_1 + 1 ) / pool_size_1        
+                next_in_2 = ( next_in_2 - filt_size_2 + 1 ) / pool_size_2
                 self.weights.append ( conv_layers[-1].filter_img )
                 activity.append( conv_layers[-1].output )
-    
+                
+                param_counter = param_counter + 2 
+                
         # Assemble fully connected laters
         if self.nkerns == []:
             fully_connected_input = first_layer_input
@@ -436,7 +445,7 @@ class network(object):
                          activations = self.mlp_activations,
                          use_bias = self.use_bias,
                          svm_flag = self.svm_flag,
-                         params = [],
+                         params = [] if init_params is None else init_params[param_counter:],
                          verbose = verbose)
     
         # create theano functions for evaluating the graphs
@@ -475,11 +484,18 @@ class network(object):
                      })
     
         # Compute cost and gradients of the model wrt parameter
-        params = []
+        self.params = []
         for layer in conv_layers:
-            params = params + layer.params
-        params = params + MLPlayers.params
-    
+            self.params = self.params + layer.params
+        self.params = self.params + MLPlayers.params
+      
+        """
+        if init_params is not None:
+            assert ( len(self.params) == len(init_params))         
+            for i in xrange(len(self.params)): 
+                self.params[i].set_value(init_params[i].get_value (borrow = True )) 
+        """ 
+        
         # Build the expresson for the categorical cross entropy function.
         if self.svm_flag is False:
             if self.objective == 0:
@@ -508,7 +524,7 @@ class network(object):
     
         gradients = []
         
-        for param in params: 
+        for param in self.params: 
             gradient = T.grad( output ,param)
             gradients.append ( gradient )
     
@@ -525,13 +541,13 @@ class network(object):
         # accumulate gradients for adagrad
          
         grad_acc = []
-        for param in params:
+        for param in self.params:
             eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
             grad_acc.append(theano.shared(eps, borrow=True))
     
         # accumulate velocities for momentum
         velocities = []
-        for param in params:
+        for param in self.params:
             velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
             velocities.append(velocity)
          
@@ -540,7 +556,7 @@ class network(object):
         updates = OrderedDict()
         print_flag = False
          
-        for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
+        for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, self.params):        
     
             if self.ada_grad is True:
     
@@ -730,7 +746,7 @@ class network(object):
                         str(i) + '.jpg' , show_img = self.display_flag)
     
     
-    
+    # ToDo: should make a results root dir and put in results there ... like root +'/visuals/' 
     def create_dirs( self, visual_params ):  
         
         self.visualize_flag          = visual_params ["visualize_flag" ]
@@ -762,8 +778,7 @@ class network(object):
         
     # TRAIN 
     def train(self, n_epochs, validate_after_epochs, verbose = True):
-        
-        # setting up visualization stuff...
+        print "... training"        
         self.main_img_visual = True
         patience = 10000  
         patience_increase = 2  
@@ -825,14 +840,14 @@ class network(object):
                                          "% -> best thus far " if this_validation_loss[-1] < best_validation_loss else "% ")      
                 else: # if not multi_load
     
-                    validation_losses = [self.validate_model(i) for i in xrange(self.n_valid_batches)]
+                    validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
                     this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
                     if verbose is True:
                                             
                         print ("...      -> epoch " + str(epoch_counter) + 
                               ", cost: " + str(cost_saved[-1]) +
-                              ",  validation accuracy :" + str(float(self.batch_size*self.n_valid_batches - this_validation_loss[-1])*100
-                                                           /(self.batch_size*self.n_valid_batches)) + 
+                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
+                                                           /(self.batch_size*self.batches2validate)) + 
                               "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
                               ", momentum = " +str(self.momentum_value(epoch_counter)) +
                               " -> best thus far " if this_validation_loss[-1] < best_validation_loss else " " )                      
@@ -840,8 +855,8 @@ class network(object):
                                 
                         print ("...      -> epoch " + str(epoch_counter) + 
                               ", cost: " + str(cost_saved[-1]) +
-                              ",  validation accuracy :" + str(float(self.batch_size*self.n_valid_batches - this_validation_loss[-1])*100
-                                                           /(self.batch_size*self.n_valid_batches)) + 
+                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
+                                                           /(self.batch_size*self.batches2validate)) + 
                               "% -> best thus far " if this_validation_loss[-1] < best_validation_loss else " ")  
                        
                 # improve patience if loss improvement is good enough
@@ -881,19 +896,18 @@ class network(object):
         class_prob = []
         labels = []
          
-        if self.multi_load is False:
-    
+        if self.multi_load is False:   
             labels = self.test_set_y.eval().tolist()   
             for mini_batch in xrange(self.batches2test):
                 #print ".. Testing batch " + str(mini_batch)
                 wrong = wrong + int(self.test_model(mini_batch))                        
                 predictions = predictions + self.prediction(mini_batch).tolist()
                 class_prob = class_prob + self.nll(mini_batch).tolist()
-            print ("...      -> total test accuracy : " + str(float((self.batch_size*self.n_test_batches)-wrong )*100
-                                                         /(self.batch_size*self.n_test_batches)) + 
-                         " % out of " + str(self.batch_size*self.n_test_batches) + " samples.")
+            print ("...      -> total test accuracy : " + str(float((self.batch_size*self.batches2test)-wrong )*100
+                                                         /(self.batch_size*self.batches2test)) + 
+                         " % out of " + str(self.batch_size*self.batches2test) + " samples.")
                          
-        else:             
+        else:           
             for batch in xrange(self.batches2test):
                 if verbose is True:
                     print "..       --> testing batch " + str(batch)
@@ -909,7 +923,7 @@ class network(object):
                                                          (self.batch_size*self.n_test_batches*self.batches2test)) + 
                          " % out of " + str(self.batch_size*self.n_test_batches*self.batches2test) + " samples.")
     
-        correct = 0
+        correct = 0 
         confusion = numpy.zeros((self.outs,self.outs), dtype = int)
         for index in xrange(len(predictions)):
             if labels[index] == predictions[index]:
@@ -932,4 +946,4 @@ class network(object):
         f.close() 
 
         numpy.savetxt(self.confusion_file_name, confusion, newline="\n")
-        print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100)
+        print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100) + "%"

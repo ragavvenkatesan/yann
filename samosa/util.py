@@ -133,22 +133,9 @@ def visualize_color_filters(imgs, tile_shape = None, tile_spacing = (2,2),
         cv2.imshow(filename + str(randint(0,9)), filters_as_image)
     cv2.imwrite(loc + filename, filters_as_image)
     
-"""    
-This part of the code is probably obsolete. I think I can save the network by pickling the network class itself.
+    
+
 ## Pickling utilities to pickle down and sterilize the entire network.
-# function to save down a network so that it can be reloaded at a later time.
-def save_network( filename, params, arch_params, *others):          # for others use only data_params or optimization_params
-
-    f = gzip.open(filename, 'wb')
-    if len(others) == 0:  
-        for obj in [params, arch_params]:
-            cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
-        f.close() 
-    else:
-        for obj in [params, arch_params, others]:
-            cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
-        f.close()     
-
 # function to load saved down data previously. Assumes that the first two elements are definitely params and arch_params.
 def load_network(filename, data_params = False, optimization_params = False):
     
@@ -164,4 +151,3 @@ def load_network(filename, data_params = False, optimization_params = False):
         optimization_params = cPickle.load(f)
         rval = rval + (optimization_params,)
     return rval 
-"""

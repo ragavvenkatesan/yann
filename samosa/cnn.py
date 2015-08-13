@@ -386,7 +386,7 @@ class MLP(object):
 
        
 # From theano tutorials
-class ConvPoolLayer(object):
+class Conv2DPoolLayer(object):
     """Pool Layer of a convolutional network .. taken from the theano tutorials"""
 
     def __init__(self, rng, input, filter_shape, image_shape, poolsize, activation, W = None, b = None,
