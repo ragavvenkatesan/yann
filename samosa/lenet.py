@@ -8,6 +8,8 @@ import cPickle, gzip
 # Math Packages
 import numpy
 import cv2
+import time
+from math import floor
 
 # Theano Packages
 import theano
@@ -44,7 +46,7 @@ class network(object):
         f.close()   
                 
     # Load initial data          
-    def init_data(self, data_params):
+    def init_data(self, data_params, outs):
         
         self.data_struct         = data_params # This command makes it possible to save down
         self.dataset             = data_params [ "loc" ]
@@ -62,14 +64,13 @@ class network(object):
         
         
         print "... loading data"
+        start_time = time.clock()
         # load matlab files as self.dataset.
         if self.data_type == 'mat':
-            train_data_x, train_data_y, train_data_y1 = loaders.load_data_mat(self.dataset, batch = 1 , type_set = 'train')             
-            test_data_x, test_data_y, valid_data_y1 = loaders.load_data_mat(self.dataset, batch = 1 , type_set = 'test')      
-            # Load self.dataset for first epoch.
-            valid_data_x, valid_data_y, test_data_y1 = loaders.load_data_mat(self.dataset, batch = 1 , type_set = 'valid')   
-            # Load self.dataset for first epoch.
-    
+            train_data_x, train_data_y, train_data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = 1 , type_set = 'train' , n_classes = outs)             
+            test_data_x, test_data_y, valid_data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = 1 , type_set = 'test' , n_classes = outs)      
+            valid_data_x, valid_data_y, test_data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = 1 , type_set = 'valid' , n_classes = outs)   
+
             self.train_set_x = theano.shared(numpy.asarray(train_data_x, dtype=theano.config.floatX), borrow=True)
             self.train_set_y = theano.shared(numpy.asarray(train_data_y, dtype='int32'), borrow=True)
             self.train_set_y1 = theano.shared(numpy.asarray(train_data_y1, dtype=theano.config.floatX), borrow=True)
@@ -203,20 +204,22 @@ class network(object):
     
                 train_data_x, train_data_y  = loaders.load_skdata_caltech101(
                                                  batch_size = self.load_batches, 
-                                                  rand_perm = rand_perm, 
+                                                  rand_perm = self.rand_perm, 
                                                   batch = 1 , 
                                                   type_set = 'train' ,
                                                   height = self.height,
                                                   width = self.width)             
                 test_data_x, test_data_y  = loaders.load_skdata_caltech101(
                                                  batch_size = self.load_batches,
-                                                 rand_perm = rand_perm, batch = 1 ,
+                                                 rand_perm = self.rand_perm,
+                                                 batch = 1 ,
                                                  type_set = 'test' , 
                                                  height = self.height,
                                                  width = self.width)      
                 valid_data_x, valid_data_y  = loaders.load_skdata_caltech101(
                                                  batch_size = self.load_batches, 
-                                                 rand_perm = rand_perm, batch = 1 , 
+                                                 rand_perm = self.rand_perm,
+                                                 batch = 1 , 
                                                  type_set = 'valid' , 
                                                  height = self.height, 
                                                  width = self.width)
@@ -262,20 +265,22 @@ class network(object):
                 
                 train_data_x, train_data_y = loaders.load_skdata_caltech256(
                                                  batch_size = self.load_batches, 
-                                                  rand_perm = rand_perm, 
+                                                  rand_perm = self.rand_perm, 
                                                   batch = 1 , 
                                                   type_set = 'train' ,
                                                   height = self.height,
                                                   width = self.width)             
                 test_data_x, test_data_y  = loaders.load_skdata_caltech256(
                                                  batch_size = self.load_batches,
-                                                 rand_perm = rand_perm, batch = 1 ,
+                                                 rand_perm = self.rand_perm,
+                                                 batch = 1 ,
                                                  type_set = 'test' , 
                                                  height = self.height,
                                                  width = self.width)      
                 valid_data_x, valid_data_y  = loaders.load_skdata_caltech256(
                                                  batch_size = self.load_batches, 
-                                                 rand_perm = rand_perm, batch = 1 , 
+                                                 rand_perm = self.rand_perm,
+                                                 batch = 1 , 
                                                  type_set = 'valid' , 
                                                  height = self.height, 
                                                  width = self.width)
@@ -298,8 +303,11 @@ class network(object):
     
         assert ( self.height * self.width * self.channels == 
                 self.train_set_x.get_value( borrow = True ).shape[1] )
+        end_time = time.clock()
+        print "...         time taken is " +str(end_time - start_time) + " seconds"
+        
     # Class initialization complete.
-    
+        
     # define the optimzer function 
     def build_network (self, arch_params, optimization_params , init_params = None, verbose = True):    
     
@@ -323,17 +331,21 @@ class network(object):
         self.squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
         self.mlp_activations                 = arch_params [ "mlp_activations"  ] 
         self.cnn_activations                 = arch_params [ "cnn_activations" ]
-        self.dropout                         = arch_params [ "dropout"  ]
+        self.cnn_dropout                     = arch_params [ "cnn_dropout"  ]
+        self.mlp_dropout                     = arch_params [ "mlp_dropout"  ]
         self.column_norm                     = arch_params [ "column_norm"  ]    
-        self.dropout_rates                   = arch_params [ "dropout_rates" ]
+        self.mlp_dropout_rates               = arch_params [ "mlp_dropout_rates" ]
+        self.cnn_dropout_rates               = arch_params [ "cnn_dropout_rates" ]
         self.nkerns                          = arch_params [ "nkerns"  ]
         self.outs                            = arch_params [ "outs" ]
         self.filter_size                     = arch_params [ "filter_size" ]
         self.pooling_size                    = arch_params [ "pooling_size" ]
         self.num_nodes                       = arch_params [ "num_nodes" ]
-        self.use_bias                        = arch_params [ "use_bias" ]
         random_seed                          = arch_params [ "random_seed" ]
-        self.svm_flag                        = arch_params [ "svm_flag" ]       
+        self.svm_flag                        = arch_params [ "svm_flag" ]   
+        self.max_out                         = arch_params [ "max_out" ] 
+        self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
+        self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
                     
         if self.ada_grad is True:
             assert self.rms_prop is False
@@ -343,13 +355,15 @@ class network(object):
        
         print '... building the network'    
         
+        
+        start_time = time.clock()
         # allocate symbolic variables for the data
         index = T.lscalar('index')  # index to a [mini]batch
         x = T.matrix('x')           # the data is presented as rasterized images
         y = T.ivector('y')          # the labels are presented as 1D vector of [int] 
             
         if self.svm_flag is True:
-            self.y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
+            y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
      
         first_layer_input = x.reshape((self.batch_size, self.channels, self.height, self.width))
     
@@ -357,82 +371,208 @@ class network(object):
         activity = []       # to record Cnn activities 
         self.weights = []
     
-        conv_layers=[]         
-
-        filt_size_1 = self.filter_size[0][0]
-        filt_size_2 = self.filter_size[0][1]
+        conv_layers = []         
+        dropout_conv_layers = [] 
         
-        pool_size_1 = self.pooling_size[0][0]
-        pool_size_2 = self.pooling_size[0][1]
-    
+        if not self.nkerns == []:
+            filt_size = self.filter_size[0]
+            pool_size = self.pooling_size[0]
+        if self.max_out > 0:     
+            max_out_size = self.cnn_maxout[0]
+        else: 
+            max_out_size = 1
+
+        next_in = [ self.height, self.width, self.channels]
+        stack_size = 1 
         param_counter = 0 
-        if not self.nkerns == []: 
-            conv_layers.append ( 
-                            cnn.Conv2DPoolLayer(
-                                    rng = self.rng,
-                                    input = first_layer_input,
-                                    image_shape=(self.batch_size, self.channels , self.height, self.width),
-                                    filter_shape=(self.nkerns[0], self.channels , filt_size_1, filt_size_2),
-                                    poolsize=(pool_size_1, pool_size_2),
-                                    activation = self.cnn_activations[0],
-                                    W = None if init_params is None else init_params[param_counter],
-                                    b = None if init_params is None else init_params[param_counter + 1] ,                                   
-                                    verbose = verbose
-                                     ) )
+        
+        if not self.nkerns == []:     
+            if len(filt_size) == 2:        
+                dropout_conv_layers.append ( 
+                                cnn.DropoutConv2DPoolLayer(
+                                        rng = self.rng,
+                                        input = first_layer_input,
+                                        image_shape=(self.batch_size, self.channels , self.height, self.width),
+                                        filter_shape=(self.nkerns[0], self.channels , filt_size[0], filt_size[1]),
+                                        poolsize = pool_size,
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,
+                                        activation = self.cnn_activations[0],
+                                        W = None if init_params is None else init_params[param_counter],
+                                        b = None if init_params is None else init_params[param_counter + 1], 
+                                        p = self.cnn_dropout_rates[0]                                      
+                                         ) ) 
+                conv_layers.append ( 
+                                cnn.Conv2DPoolLayer(
+                                        rng = self.rng,
+                                        input = first_layer_input,
+                                        image_shape=(self.batch_size, self.channels , self.height, self.width),
+                                        filter_shape=(self.nkerns[0], self.channels , filt_size[0], filt_size[1]),
+                                        poolsize = pool_size,
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,
+                                        activation = self.cnn_activations[0],
+                                        W = dropout_conv_layers[-1].params[0] ,
+                                        b = dropout_conv_layers[-1].params[1],                                                                                                                                               
+                                        verbose = verbose
+                                         ) )  
+                next_in[0] = int(floor(( self.height - filt_size [0] + 1 ))) / (pool_size[0] )       
+                next_in[1] = int(floor(( self.width - filt_size[1] + 1 ))) / (pool_size[1] )    
+                next_in[2] = self.nkerns[0]  / max_out_size                                                                                                                 
+            elif len(filt_size) == 3:
+                dropout_conv_layers.append ( 
+                                cnn.DropoutConv3DPoolLayer(
+                                        rng = self.rng,
+                                        input = first_layer_input,
+                                        image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
+                                        filter_shape=(self.nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
+                                        poolsize=pool_size,                                        
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,
+                                        activation = self.cnn_activations[0],
+                                        W = None if init_params is None else init_params[param_counter],
+                                        b = None if init_params is None else init_params[param_counter + 1],    
+                                        p = self.cnn_dropout_rates[0]                             
+                                         ) )
+                conv_layers.append ( 
+                                cnn.Conv3DPoolLayer(
+                                        rng = self.rng,
+                                        input = first_layer_input,
+                                        image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
+                                        filter_shape=(self.nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
+                                        poolsize=pool_size,
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,                                        
+                                        activation = self.cnn_activations[0],
+                                        W = dropout_conv_layers[-1].params[0] ,
+                                        b = dropout_conv_layers[-1].params[1],                                                                                                                                               
+                                        verbose = verbose
+                                         ) )
+                                                                                  
+                next_in[0] = int(floor( ( self.height - filt_size [1] + 1 ))) / (pool_size[1] * max_out_size[1])      
+                next_in[1] = int(floor(( self.width - filt_size[2] + 1 ))) / (pool_size[2] * max_out_size[1])
+                next_in[2] = int(floor(self.nkerns[0] * (self.channels - filt_size[0] + 1))) / (pool_size[0] * max_out_size[0])
+
+                   
+            else:
+                print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
+                sys.exit()
             activity.append ( conv_layers[-1].output )
             self.weights.append ( conv_layers[-1].filter_img)
     
+    
             # Create the rest of the convolutional - pooling layers in a loop
-            next_in_1 = ( self.height - filt_size_1 + 1 ) / pool_size_1        
-            next_in_2 = ( self.width - filt_size_2 + 1 ) / pool_size_2
-            
             param_counter = param_counter + 2 
-            
             for layer in xrange(len(self.nkerns)-1):   
                 
-                filt_size_1 = self.filter_size[layer+1][0]
-                filt_size_2 = self.filter_size[layer+1][1]
-                pool_size_1 = self.pooling_size[layer+1][0]
-                pool_size_2 = self.pooling_size[layer+1][1]
-                
-                conv_layers.append ( 
-                                cnn.Conv2DPoolLayer(
-                                    rng = self.rng,
-                                    input = conv_layers[layer].output,        
-                                    image_shape=(self.batch_size, self.nkerns[layer], next_in_1, next_in_2),
-                                    filter_shape=(self.nkerns[layer+1], self.nkerns[layer], filt_size_1, filt_size_2),
-                                    poolsize=(pool_size_1, pool_size_2),
-                                    activation = self.cnn_activations[layer+1],
-                                    W = None if init_params is None else init_params[param_counter    ] ,
-                                    b = None if init_params is None else init_params[param_counter + 1] ,                                   
-                                    verbose = verbose
-                                     ) )
-                next_in_1 = ( next_in_1 - filt_size_1 + 1 ) / pool_size_1        
-                next_in_2 = ( next_in_2 - filt_size_2 + 1 ) / pool_size_2
+                filt_size = self.filter_size[layer+1]
+                pool_size = self.pooling_size[layer+1]
+                if self.max_out > 0:
+                    max_out_size = self.cnn_maxout[layer+1]
+                else:
+                    max_out_size = 1 
+
+                if len(filt_size) == 2:
+                    
+                    dropout_conv_layers.append ( 
+                                    cnn.DropoutConv2DPoolLayer(
+                                        rng = self.rng,
+                                        input = conv_layers[layer].output,        
+                                        image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
+                                        filter_shape=(self.nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
+                                        poolsize=pool_size,
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,
+                                        activation = self.cnn_activations[layer+1],
+                                        W = None if init_params is None else init_params[param_counter    ] ,
+                                        b = None if init_params is None else init_params[param_counter + 1] ,  
+                                        p = self.cnn_dropout_rates[layer+1]                                                                                                        
+                                         ) )
+                                                 
+                    conv_layers.append ( 
+                                    cnn.Conv2DPoolLayer(
+                                        rng = self.rng,
+                                        input = conv_layers[layer].output,        
+                                        image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
+                                        filter_shape=(self.nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
+                                        poolsize=pool_size,
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,
+                                        activation = self.cnn_activations[layer+1],
+                                        W = dropout_conv_layers[-1].params[0] ,
+                                        b = dropout_conv_layers[-1].params[1],                                                                                                                                               
+                                        verbose = verbose
+                                         ) )                                                       
+                                          
+                    next_in[0] = int(floor(( next_in[0] - filt_size[0] + 1 ))) / (pool_size[0])      
+                    next_in[1] = int(floor(( next_in[1]- filt_size[1] + 1 ))) / (pool_size[1])
+                    next_in[2] = self.nkerns[layer+1] / max_out_size
+                    
+                elif len(filt_size) == 3:
+                    dropout_conv_layers.append ( 
+                                    cnn.DropoutConv3DPoolLayer(
+                                        rng = self.rng,
+                                        input = conv_layers[layer].output,        
+                                        image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
+                                        filter_shape=(self.nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
+                                        poolsize=pool_size,
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,
+                                        activation = self.cnn_activations[layer+1],
+                                        W = None if init_params is None else init_params[param_counter    ] ,
+                                        b = None if init_params is None else init_params[param_counter + 1] ,  
+                                        p = self.cnn_dropout_rates[layer+1]                                                                                                       
+                                         ) )                                                                                             
+                    conv_layers.append ( 
+                                    cnn.Conv3DPoolLayer(
+                                        rng = self.rng,
+                                        input = conv_layers[layer].output,        
+                                        image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
+                                        filter_shape=(self.nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
+                                        poolsize=pool_size,
+                                        max_out = self.max_out,
+                                        maxout_size = max_out_size,
+                                        activation = self.cnn_activations[layer+1],
+                                        W = dropout_conv_layers[-1].params[0] ,
+                                        b = dropout_conv_layers[-1].params[1] ,  
+                                        verbose = verbose
+                                         ) )             
+                    next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * max_out_size[1])    
+                    next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] * max_out_size [2])
+                    next_in[2] = int(floor(self.nkerns[layer+1] * ( next_in[2] - filt_size[0] + 1))) / (pool_size[0] * max_out_size[0])    
+                                              
+                else:
+                    print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
+                    sys.exit()
                 self.weights.append ( conv_layers[-1].filter_img )
                 activity.append( conv_layers[-1].output )
                 
-                param_counter = param_counter + 2 
+                param_counter = param_counter + 2      
                 
         # Assemble fully connected laters
         if self.nkerns == []:
-            fully_connected_input = first_layer_input
+            fully_connected_input = first_layer_input.flatten(2)
         else:
-            fully_connected_input = conv_layers[-1].output.flatten(2)
+            if self.cnn_dropout is False:  # Choose either the dropout path or the without dropout path ... .
+                fully_connected_input = conv_layers[-1].output.flatten(2)
+            else:
+                fully_connected_input = dropout_conv_layers[-1].output.flatten(2)                
     
-        if len(self.dropout_rates) > 2 :
-            layer_sizes =[]
-            layer_sizes.append( self.nkerns[-1] * next_in_1 * next_in_2 )
-            for i in xrange(len(self.dropout_rates)-1):
+        if len(self.mlp_dropout_rates) > 2 :
+            layer_sizes =[]                        
+            layer_sizes.append( next_in[0] * next_in[1] * next_in[2] )
+            
+            for i in xrange(len(self.mlp_dropout_rates)-1):
                 layer_sizes.append ( self.num_nodes[i] )
             layer_sizes.append ( self.outs )
             
-        elif len(self.dropout_rates) == 1:
-            layer_sizes = [ self.nkerns[-1] * next_in_1 * next_in_2, self.outs]
+        elif len(self.mlp_dropout_rates) == 1:
+            
+            layer_sizes = [ next_in[0] * next_in[1] * next_in[2], self.outs]
         else :
-            layer_sizes = [ self.nkerns[-1] * next_in_1 * next_in_2, self.num_nodes[0] , self.outs]
+            layer_sizes = [ next_in[0] * next_in[1] * next_in[2], self.num_nodes[0] , self.outs]
     
-        assert len(layer_sizes) - 1 == len(self.dropout_rates)           # Just checking.
+        assert len(layer_sizes) - 1 == len(self.mlp_dropout_rates)           # Just checking.
     
         """  Dropouts implemented from paper:
         Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
@@ -441,14 +581,19 @@ class network(object):
         MLPlayers = cnn.MLP( rng = self.rng,
                          input = fully_connected_input,
                          layer_sizes = layer_sizes,
-                         dropout_rates = self.dropout_rates,
+                         dropout_rates = self.mlp_dropout_rates,
+                         maxout_rates = self.mlp_maxout,
+                         max_out = self.max_out, 
                          activations = self.mlp_activations,
-                         use_bias = self.use_bias,
+                         use_bias = True,
                          svm_flag = self.svm_flag,
                          params = [] if init_params is None else init_params[param_counter:],
                          verbose = verbose)
     
-        # create theano functions for evaluating the graphs
+        # create theano functions for evaluating the graph
+        # I don't like the idea of having test model only hooked to the test_set_x variable.
+        # I would probably have liked to have only one data variable.. but theano tutorials is using 
+        # this style, so wth, so will I. 
         self.test_model = theano.function(
                 inputs = [index],
                 outputs = MLPlayers.errors(y),
@@ -476,12 +621,13 @@ class network(object):
                 x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
     
         # function to return activations of each image
-        self.activities = theano.function (
-            inputs = [index],
-            outputs = activity,
-            givens = {
-                    x: self.train_set_x[index * self.batch_size: (index + 1) * self.batch_size]
-                     })
+        if not self.nkerns == [] :
+            self.activities = theano.function (
+                inputs = [index],
+                outputs = activity,
+                givens = {
+                        x: self.train_set_x[index * self.batch_size: (index + 1) * self.batch_size]
+                        })
     
         # Compute cost and gradients of the model wrt parameter
         self.params = []
@@ -519,7 +665,7 @@ class network(object):
             
             
         output = ( dropout_cost + self.l1_reg * MLPlayers.dropout_L1 + self.l2_reg *
-                             MLPlayers.dropout_L2 )if self.dropout else ( cost + self.l1_reg 
+                             MLPlayers.dropout_L2 )if self.mlp_dropout else ( cost + self.l1_reg 
                              * MLPlayers.L1 + self.l2_reg * MLPlayers.L2)
     
         gradients = []
@@ -596,7 +742,7 @@ class network(object):
     
                 updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc+ self.fudge_factor))  * gradient                             
     
-            elif mom_type == 2:             # Nestrov accelerated gradient 
+            elif self.mom_type == 2:             # Nestrov accelerated gradient 
     
                 """Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)."
                 Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
@@ -664,18 +810,19 @@ class network(object):
                             inputs =[epoch],
                             outputs = mom,
                             )
-                            
+        end_time = time.clock()
+        print "...         time taken is " +str(end_time - start_time) + " seconds"
+      
+                     
     # this is only for self.multi_load = True type of datasets.. 
     # All datasets are not multi_load enabled. This needs to change ??                         
     def reset_data (self, batch, type_set, verbose = True):
-        if verbose is True:
-            print "...          -> loading data for new batch"
         if self.data_type == 'mat':
-            train_data_x, train_data_y, train_data_y1 = load_data_mat(self.dataset, batch, type_set)             
+            data_x, data_y, data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = batch, type_set = type_set, n_classes = self.outs)             
 
-        elif data_params["type"] == 'skdata':                   
+        elif self.data_type == 'skdata':                   
             if self.dataset == 'caltech101':
-                train_data_x, train_data_y  = load_skdata_caltech101(
+                data_x, data_y  = loaders.load_skdata_caltech101(
                                                 batch_size = self.load_batches, 
                                                 batch = batch, 
                                                 type_set = type_set, 
@@ -683,18 +830,31 @@ class network(object):
                                                 height = self.height, 
                                                 width = self.width )
             elif self.dataset == 'caltech256':                  
-                train_data_x, train_data_y  = load_skdata_caltech256(
+                data_x, data_y  = loaders.load_skdata_caltech256(
                                                 batch_size = self.load_batches, 
                                                 batch = batch, 
                                                 type_set = type_set, 
                                                 rand_perm = self.rand_perm, 
                                                 height = self.height, 
                                                 width = self.width )
-        # Do not use svm_flag for caltech 101                        
-        self.train_set_x.set_value(train_data_x ,borrow = True)
-        self.train_set_y.set_value(train_data_y ,borrow = True)                
-        if self.svm_flag is True:
-            self.train_set_y1.set_value(train_data_y1, borrow = True)
+        # Do not use svm_flag for caltech 101   
+        
+        # If we had used only one datavariable instead of three... this wouldn't have been needed. 
+        if type_set == 'train':                             
+            self.train_set_x.set_value(data_x ,borrow = True)
+            self.train_set_y.set_value(data_y ,borrow = True)                
+            if self.svm_flag is True:
+                self.train_set_y1.set_value(data_y1, borrow = True)
+        elif type_set == 'test':
+            self.test_set_x.set_value(data_x ,borrow = True)
+            self.test_set_y.set_value(data_y ,borrow = True)                
+            if self.svm_flag is True:
+                self.test_set_y1.set_value(data_y1, borrow = True)
+        else:
+            self.valid_set_x.set_value(data_x ,borrow = True)
+            self.valid_set_y.set_value(data_y ,borrow = True)                
+            if self.svm_flag is True:
+                self.valid_set_y1.set_value(data_y1, borrow = True)
         
     def print_net (self, epoch, display_flag = True ):
         # saving down true images. 
@@ -726,16 +886,23 @@ class network(object):
 
         # visualizing the filters.
         for m in xrange(len(self.nkerns)):
-            curr_weights = self.weights[m].eval() 
-            if curr_weights.shape[1] == 3:    
+            curr_weights = numpy.squeeze(self.weights[m].eval()) 
+            if curr_weights.shape[1] == 3 and len(curr_weights.shape) == 4 and self.color_filter is True:    
             # if the image is color, then first layer looks at color pictures and 
             # I can visualize the filters also as color.
                 curr_image = curr_weights
                 if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
-                    os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch_counter))
+                    os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))
                 util.visualize_color_filters(curr_image, loc = '../visuals/filters/layer_' + str(m) + 
                        '/' + 'epoch_' + str(epoch) + '/' , filename = 'kernel_0.jpg' , 
                        show_img = self.display_flag)
+            elif len(curr_weights.shape) == 3:
+                    if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
+                        os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))
+                    util.visualize(curr_weights, loc = '../visuals/filters/layer_' + str(m) + '/' 
+                        + 'epoch_' + str(epoch) + '/' , filename = 'kernel_' + 
+                        str(i) + '.jpg' , show_img = self.display_flag)
+    
             else:       # visualize them as grayscale images.
                 for i in xrange(curr_weights.shape[1]):
                     curr_image = curr_weights [:,i,:,:]
@@ -753,6 +920,7 @@ class network(object):
         self.visualize_after_epochs  = visual_params ["visualize_after_epochs" ]
         self.n_visual_images         = visual_params ["n_visual_images" ] 
         self.display_flag            = visual_params ["display_flag" ]
+        self.color_filter            = visual_params ["color_filter" ]
         self.shuffle_batch_ind = numpy.arange(self.batch_size)
         numpy.random.shuffle(self.shuffle_batch_ind)
         self.visualize_ind = self.shuffle_batch_ind[0:self.n_visual_images] 
@@ -779,8 +947,8 @@ class network(object):
     # TRAIN 
     def train(self, n_epochs, validate_after_epochs, verbose = True):
         print "... training"        
-        self.main_img_visual = True
-        patience = 10000  
+        self.main_img_visual = False
+        patience = numpy.inf 
         patience_increase = 2  
         improvement_threshold = 0.995  
         this_validation_loss = []
@@ -790,10 +958,11 @@ class network(object):
         early_termination = False
         cost_saved = []
         iteration= 0
-    
+        start_time_main = time.clock()
         while (epoch_counter < n_epochs) and (not early_termination):
             epoch_counter = epoch_counter + 1 
              
+            start_time = time.clock() 
             for batch in xrange (self.batches2train):
                 if verbose is True:
                     print "...          -> epoch: " + str(epoch_counter) + " batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"
@@ -805,7 +974,6 @@ class network(object):
                     for minibatch_index in xrange(self.n_train_batches):
                         if verbose is True:
                             print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
-                        pdb.set_trace()
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
                         cost_saved = cost_saved + [cost_ij]
                         
@@ -830,14 +998,22 @@ class network(object):
                                                                  /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
                                          "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
                                          ", momentum = " +str(self.momentum_value(epoch_counter))  +
-                                         " -> best thus far " if this_validation_loss[-1] < best_validation_loss else " ")
+                                         " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
+                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
+                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
+                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
+                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
+                                         ", momentum = " +str(self.momentum_value(epoch_counter)))
                     else:
                        
                         print ("...      -> epoch " + str(epoch_counter) + 
                                          ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + 
-                                         "% -> best thus far " if this_validation_loss[-1] < best_validation_loss else "% ")      
+                                         "% -> best thus far ") if this_validation_loss[-1] < best_validation_loss else  ("...      -> epoch " + str(epoch_counter) + 
+                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
+                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
+                                                                /(self.batch_size*self.n_valid_batches*self.batches2validate)) + "% ")      
                 else: # if not multi_load
     
                     validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
@@ -850,14 +1026,23 @@ class network(object):
                                                            /(self.batch_size*self.batches2validate)) + 
                               "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
                               ", momentum = " +str(self.momentum_value(epoch_counter)) +
-                              " -> best thus far " if this_validation_loss[-1] < best_validation_loss else " " )                      
+                              " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
+                              ", cost: " + str(cost_saved[-1]) +
+                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
+                                                           /(self.batch_size*self.batches2validate)) + 
+                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
+                              ", momentum = " +str(self.momentum_value(epoch_counter)) )
                     else:
                                 
                         print ("...      -> epoch " + str(epoch_counter) + 
                               ", cost: " + str(cost_saved[-1]) +
                               ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
                                                            /(self.batch_size*self.batches2validate)) + 
-                              "% -> best thus far " if this_validation_loss[-1] < best_validation_loss else " ")  
+                              "% -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
+                              ", cost: " + str(cost_saved[-1]) +
+                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
+                                                           /(self.batch_size*self.batches2validate)) + 
+                              "% ") 
                        
                 # improve patience if loss improvement is good enough
                 if this_validation_loss[-1] < best_validation_loss *  \
@@ -871,11 +1056,17 @@ class network(object):
     
             if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)   
-                
+            
+            end_time = time.clock()
+            print "...           time taken for this epoch is " +str((end_time - start_time)) + " seconds"
+            
             if patience <= iteration:
                 early_termination = True
                 break
-                
+         
+        end_time_main = time.clock()
+        print "... time taken for the entire training is " +str((end_time_main - start_time_main)/60) + " minutes"
+                    
         # Save down training stuff
         f = open(self.error_file_name,'w')
         for i in xrange(len(this_validation_loss)):
@@ -891,6 +1082,7 @@ class network(object):
     
     def test(self, verbose = True):
         print "... testing"
+        start_time = time.clock()
         wrong = 0
         predictions = []
         class_prob = []
@@ -946,4 +1138,10 @@ class network(object):
         f.close() 
 
         numpy.savetxt(self.confusion_file_name, confusion, newline="\n")
-        print "Confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100) + "%"
+        print "confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100) + "%"
+        end_time = time.clock()
+        print "...         time taken is " +str(end_time - start_time) + " seconds"
+            
+        if self.visualize_flag is True:    
+            print "... saving down the final model's visualizations" 
+            self.print_net (epoch = 'final' , display_flag = self.display_flag)     

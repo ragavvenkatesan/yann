@@ -74,7 +74,7 @@ def load_data_pkl(dataset):
 	return rval
 
 # for loading matlab based data.
-def load_data_mat(dataset = '../dataset/waldo/' ,batch = 1, type_set = 'train', load_z = False):
+def load_data_mat(n_classes, dataset = '../dataset/waldo/' ,batch = 1, type_set = 'train', load_z = False):
 
 	# Use this code if the data was created in matlab in the right format and needed to be loaded
 	# print "... Loading " + type_set + " batch number " + str(batch)
@@ -84,7 +84,6 @@ def load_data_mat(dataset = '../dataset/waldo/' ,batch = 1, type_set = 'train', 
 	data_y = numpy.array(numpy.squeeze(mat['y']), dtype = 'int32')
 	if load_z is True:
 	    data_z = numpy.array(numpy.squeeze(mat['z']), dtype=theano.config.floatX )
-	n_classes = len(numpy.unique(data_y))  # dangerous?
 	y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
 	y1[numpy.arange(data_y.shape[0]), data_y] = 1
 	if load_z is False:
