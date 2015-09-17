@@ -227,7 +227,7 @@ class LogisticRegression(object):
     
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out,
-                 activation , max_out, maxout_size, W=None, b=None,
+                 activation , max_out, maxout_size, W=None, b=None, batch_norm = False, alpha=None,
                  use_bias=False):
 
         self.input = input
@@ -248,14 +248,27 @@ class HiddenLayer(object):
             b_values = numpy.zeros((n_out,), dtype=theano.config.floatX)
             b = theano.shared(value=b_values, name='b')
 
+        if alpha is None:
+            alpha_values = numpy.ones((n_out,), dtype = theano.config.floatX)
+            alpha = theano.shared(value = alpha_values, name = 'alpha')
+            
         self.W = W
         self.b = b
-
-        if use_bias:
-            lin_output = T.dot(input, self.W) + self.b
-        else:
-            lin_output = T.dot(input, self.W)
-
+        self.alpha = alpha 
+        
+        lin_output = T.dot(input, self.W)
+        
+        if batch_norm is True:
+            std = lin_output.std( 0 )
+            mean = lin_output.mean( 0 )
+            std += 0.001 # To avoid divide by zero like fudge_factor
+        
+            self.lin_output = lin_output - mean 
+            lin_output = lin_output * ( self.alpha / std ) + self.b 
+            
+        if batch_norm is False and use_bias is True:
+            lin_output = lin_output  + self.b
+                
         self.output = (lin_output if activation is None else activation(lin_output))
 
         if max_out == 1:  # Do maxout network.
@@ -296,11 +309,14 @@ class HiddenLayer(object):
             self.output = maxout_out
             
         # parameters of the model
-        if use_bias:
-            self.params = [self.W, self.b]
+        if batch_norm is True:
+            self.params = [self.W, self.b, self.alpha]
         else:
-            self.params = [self.W]
-
+            if use_bias:
+                self.params = [self.W, self.b]
+            else:
+                self.params = [self.W]
+                
 # dropout thanks to misha denil 
 # https://github.com/mdenil/dropout
 def _dropout_from_layer(rng, layer, p):
@@ -316,9 +332,9 @@ def _dropout_from_layer(rng, layer, p):
 
 class DropoutHiddenLayer(HiddenLayer):
     def __init__(self, rng, input, n_in, n_out,
-                 activation, dropout_rate, use_bias, max_out, maxout_size, W=None, b=None,):
+                 activation, dropout_rate, use_bias, max_out, maxout_size, W=None, b=None, batch_norm = False, alpha=None):
         super(DropoutHiddenLayer, self).__init__(
-                rng=rng, input=input, n_in=n_in, n_out=n_out, W=W, b=b, max_out = max_out, maxout_size = maxout_size,
+                rng=rng, input=input, n_in=n_in, n_out=n_out, W=W, b=b, batch_norm = batch_norm, alpha = alpha, max_out = max_out, maxout_size = maxout_size,
                 activation=activation, use_bias=use_bias)
 
         self.output = _dropout_from_layer(rng, self.output, p=dropout_rate)      
@@ -335,6 +351,7 @@ class MLP(object):
             use_bias=True,
             max_out=False,
             svm_flag = True,
+            batch_norm = False, 
             params = [],
             verbose = True):
 
@@ -370,6 +387,7 @@ class MLP(object):
                                                     n_in=n_in / prev_maxout_size, n_out = n_out,
                                                     use_bias=use_bias, 
                                                     max_out = max_out,
+                                                    batch_norm = batch_norm,
                                                     dropout_rate=dropout_rates[layer_counter + 1],
                                                     maxout_size = maxout_rates[layer_counter]
                                                     )
@@ -380,17 +398,19 @@ class MLP(object):
                                             n_in=n_in / prev_maxout_size , n_out = n_out,
                                             use_bias=use_bias,
                                             max_out = max_out,
+                                            batch_norm = batch_norm,
                                             dropout_rate=dropout_rates[layer_counter + 1],
                                             maxout_size = maxout_rates[layer_counter],
                                             W = params[count],
-                                            b = params[count+1])
+                                            b = params[count+1],
+                                            alpha = params[count+1] if batch_norm is True else None)
     
             
                                                         
                 self.dropout_layers.append(next_dropout_layer)
                 next_dropout_layer_input = self.dropout_layers[-1].output
-                self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
-                self.dropout_L2 = self.dropout_L2 + (self.dropout_layers[-1].W**2).sum()
+                self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum()  + abs(self.dropout_layers[-1].alpha**2).sum()
+                self.dropout_L2 = self.dropout_L2 + (self.dropout_layers[-1].W**2).sum()  + abs(self.dropout_layers[-1].alpha**2).sum()
     
                 # Reuse the paramters from the dropout layer here, in a different
                 # path through the graph.                        
@@ -400,20 +420,24 @@ class MLP(object):
                         # scale the weight matrix W with (1-p)
                         W=next_dropout_layer.W * (1 - dropout_rates[layer_counter]),
                         b=next_dropout_layer.b,
+                        alpha =next_dropout_layer.alpha,
                         max_out = max_out,
+                        batch_norm = batch_norm,
                         maxout_size = maxout_rates[ layer_counter ],
                         n_in = n_in / prev_maxout_size, n_out=n_out,
                         use_bias=use_bias)
                 self.layers.append(next_layer)
                 next_layer_input = self.layers[-1].output
                 #first_layer = False
-                self.L1 = self.L1 + abs(self.layers[-1].W).sum() 
-                self.L2 = self.L2 + (self.layers[-1].W**2).sum()
+                self.L1 = self.L1 + abs(self.layers[-1].W).sum()  + abs(self.layers[-1].alpha).sum()
+                self.L2 = self.L2 + (self.layers[-1].W**2).sum()   + abs(self.layers[-1].alpha**2).sum()
                 if max_out > 0:
                     prev_maxout_size = maxout_rates [ layer_counter ]
                 layer_counter += 1
                 
                 count = count + 2 
+                if batch_norm is True:
+                    count = count + 1 
             # Set up the output layer
             n_in, n_out = weight_matrix_sizes[-1] 
             n_in = n_in / prev_maxout_size 
@@ -525,13 +549,14 @@ class Conv2DPoolLayer(object):
                          filter_shape,
                           image_shape,
                            poolsize,
-                           max_out,
-                           maxout_size,
-                            activation,
-                             W = None,
-                              b = None,
-                               p = 0.5 ,
-                        #fast_conv = False,
+                            max_out,
+                             maxout_size,
+                              activation,
+                               W = None,
+                                b = None,
+                                 alpha = None,
+                                  batch_norm = False,
+                                   p = 0.5 ,
                         verbose = True):
                             
         batchsize  = image_shape[0]
@@ -583,7 +608,14 @@ class Conv2DPoolLayer(object):
             self.b = theano.shared(value=b_values, borrow=True)
         else:
             self.b = b
-                   
+        
+                 
+        if alpha is None:
+            alpha_values = numpy.ones((filter_shape[0]), dtype=theano.config.floatX)
+            self.alpha = theano.shared(value=alpha_values, borrow = True)
+        else:
+            self.alpha = alpha   
+             
         # convolve input feature maps with filters
         
         #if fast_conv is False:
@@ -594,21 +626,6 @@ class Conv2DPoolLayer(object):
             image_shape=image_shape
             )
 
-
-        """
-        else: 
-            conv_op = FilterActs()
-            input_shuffled = self.input.dimshuffle(1, 2, 3, 0) # bc01 to c01b
-            filters_shuffled = self.W.dimshuffle(1, 2, 3, 0) # bc01 to c01b
-            contiguous_input = gpu_contiguous(input_shuffled)
-            contiguous_filters = gpu_contiguous(filters_shuffled)
-            out_shuffled = conv_op(contiguous_input, contiguous_filters)
-            conv_out = out_shuffled.dimshuffle(3, 0, 1, 2) # c01b to bc01
-            # directly lifted from  http://benanne.github.io/2014/04/03/faster-convolutions-in-theano.html - Thank you. 
-            # I am not sure if the dimshuffle makes the performance update of the conv_op any better. But hey lets give a try,
-            # if not always revert back to using fast_conv = 0. 
-        """
-
         # downsample each feature map individually, using maxpooling
         #if fast_conv is False:
 
@@ -617,23 +634,10 @@ class Conv2DPoolLayer(object):
             ds=poolsize,
             ignore_border=True
             )
-        """            
-        else:
-            pool_op = MaxPool(ds=poolsize, stride = 1)
-            contiguous_input = gpu_contiguous(out_shuffled)
-            out_shuffled = pool_op(contiguous_input)
-            pool_out = out_shuffled.dimshuffle(3, 0, 1, 2) # c01b to bc01
-        """
 
-        # add the bias term. Since the bias is a vector (1D array), we first
-        # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
-        # thus be broadcasted across mini-batches and feature map
-        # width     & height
-        
         #self.co = conv_out
         #self.po = pool_out
        
-        
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
         # During debugging while in pdb inside a terminal from the lenet module's train function code, use functions such as :
         #    co = theano.function ( inputs = [index], outputs = conv_layers[0].co, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
@@ -642,9 +646,27 @@ class Conv2DPoolLayer(object):
         #    op = theano.function ( inputs = [index], outputs = conv_layers[0].output, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})                        
        
         #To debug the layers....
+        if batch_norm is True:
+            mean = pool_out.mean( (0,2,3), keepdims = True )
+            std = pool_out.std( (0,2,3), keepdims = True )
+            
+            std += 0.001 # To avoid divide by zero like fudge_factor
         
+            self.pool_out = pool_out - mean
+            self.output = activation(pool_out * ( self.alpha.dimshuffle('x', 0, 'x', 'x') / std ) + self.b.dimshuffle('x', 0, 'x', 'x'))
+        else:
+            self.output = activation(pool_out + self.b.dimshuffle('x', 0, 'x', 'x'))              
 
-        self.output = activation(pool_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+       
+        """ 
+            max_out =1 Ian Goodfellow et al. " Maxout Networks " on arXiv. (jmlr)
+            
+            max_out =2, max_out = 3, Yu, Dingjun, et al. "Mixed Pooling for Convolutional Neural Networks." Rough Sets and Knowledge 
+            Technology. Springer International Publishing, 2014. 364-375.
+
+            Same is also implemeted in the MLP layers also.
+            
+        """
             
         if max_out == 1:  # Do maxout network.
             maxout_out = None        
@@ -700,6 +722,8 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                                 activation,
                                  W = None,
                                   b = None,
+                                  alpha = None,
+                                  batch_norm = False,
                                  verbose = True,  
                                   p = 0.5):
         super(DropoutConv2DPoolLayer, self).__init__(
@@ -713,6 +737,8 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                        activation = activation,
                         W = W, 
                         b = b,
+                        alpha = alpha,
+                        batch_norm = batch_norm,
                         verbose = False)
                         
         self.output = _dropout_from_layer(rng, self.output, p=p)          
@@ -791,6 +817,7 @@ class Conv3DPoolLayer(object):
                 )
 
   
+        
         self.output = activation(pool_out.reshape (output_size)
                             + self.b.dimshuffle('x', 0, 'x', 'x'))
         
@@ -815,6 +842,8 @@ class Conv3DPoolLayer(object):
             max_out =2, max_out = 3, Yu, Dingjun, et al. "Mixed Pooling for Convolutional Neural Networks." Rough Sets and Knowledge 
             Technology. Springer International Publishing, 2014. 364-375.
 
+            Same is also implemeted in the MLP layers also.
+            
         """
         if max_out == 1:  # Do maxout network.
             maxout_out = None                                                       

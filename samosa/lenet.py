@@ -333,7 +333,7 @@ class network(object):
         self.cnn_activations                 = arch_params [ "cnn_activations" ]
         self.cnn_dropout                     = arch_params [ "cnn_dropout"  ]
         self.mlp_dropout                     = arch_params [ "mlp_dropout"  ]
-        self.column_norm                     = arch_params [ "column_norm"  ]    
+        self.batch_norm                      = arch_params [ "batch_norm"  ]    
         self.mlp_dropout_rates               = arch_params [ "mlp_dropout_rates" ]
         self.cnn_dropout_rates               = arch_params [ "cnn_dropout_rates" ]
         self.nkerns                          = arch_params [ "nkerns"  ]
@@ -400,6 +400,8 @@ class network(object):
                                         activation = self.cnn_activations[0],
                                         W = None if init_params is None else init_params[param_counter],
                                         b = None if init_params is None else init_params[param_counter + 1], 
+                                        batch_norm = self.batch_norm,
+                                        alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[0]                                      
                                          ) ) 
                 conv_layers.append ( 
@@ -413,7 +415,9 @@ class network(object):
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[0],
                                         W = dropout_conv_layers[-1].params[0] ,
-                                        b = dropout_conv_layers[-1].params[1],                                                                                                                                               
+                                        b = dropout_conv_layers[-1].params[1],
+                                        batch_norm = self.batch_norm,
+                                        alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
                                          ) )  
                 next_in[0] = int(floor(( self.height - filt_size [0] + 1 ))) / (pool_size[0] )       
@@ -431,7 +435,9 @@ class network(object):
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[0],
                                         W = None if init_params is None else init_params[param_counter],
-                                        b = None if init_params is None else init_params[param_counter + 1],    
+                                        b = None if init_params is None else init_params[param_counter + 1],
+                                        batch_norm = self.batch_norm,
+                                        alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[0]                             
                                          ) )
                 conv_layers.append ( 
@@ -445,7 +451,9 @@ class network(object):
                                         maxout_size = max_out_size,                                        
                                         activation = self.cnn_activations[0],
                                         W = dropout_conv_layers[-1].params[0] ,
-                                        b = dropout_conv_layers[-1].params[1],                                                                                                                                               
+                                        b = dropout_conv_layers[-1].params[1],
+                                        batch_norm = self.batch_norm,
+                                        alpha = dropout_conv_layers[-1].alpha, 
                                         verbose = verbose
                                          ) )
                                                                                   
@@ -462,7 +470,9 @@ class network(object):
     
     
             # Create the rest of the convolutional - pooling layers in a loop
-            param_counter = param_counter + 2 
+            param_counter = param_counter + 2      
+            if self.batch_norm is True:
+                param_counter = param_counter + 1
             for layer in xrange(len(self.nkerns)-1):   
                 
                 filt_size = self.filter_size[layer+1]
@@ -485,7 +495,9 @@ class network(object):
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
                                         W = None if init_params is None else init_params[param_counter    ] ,
-                                        b = None if init_params is None else init_params[param_counter + 1] ,  
+                                        b = None if init_params is None else init_params[param_counter + 1] ,
+                                        batch_norm = self.batch_norm,
+                                        alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[layer+1]                                                                                                        
                                          ) )
                                                  
@@ -500,7 +512,9 @@ class network(object):
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
                                         W = dropout_conv_layers[-1].params[0] ,
-                                        b = dropout_conv_layers[-1].params[1],                                                                                                                                               
+                                        b = dropout_conv_layers[-1].params[1],
+                                        batch_norm = self.batch_norm, 
+                                        alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
                                          ) )                                                       
                                           
@@ -520,7 +534,9 @@ class network(object):
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
                                         W = None if init_params is None else init_params[param_counter    ] ,
-                                        b = None if init_params is None else init_params[param_counter + 1] ,  
+                                        b = None if init_params is None else init_params[param_counter + 1] ,
+                                        batch_norm = self.batch_norm,  
+                                        alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[layer+1]                                                                                                       
                                          ) )                                                                                             
                     conv_layers.append ( 
@@ -534,7 +550,9 @@ class network(object):
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
                                         W = dropout_conv_layers[-1].params[0] ,
-                                        b = dropout_conv_layers[-1].params[1] ,  
+                                        b = dropout_conv_layers[-1].params[1] ,
+                                        batch_norm = self.batch_norm,
+                                        alpha = dropout_con_layers[-1].alpha,
                                         verbose = verbose
                                          ) )             
                     next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * max_out_size[1])    
@@ -546,9 +564,11 @@ class network(object):
                     sys.exit()
                 self.weights.append ( conv_layers[-1].filter_img )
                 activity.append( conv_layers[-1].output )
-                
+
                 param_counter = param_counter + 2      
-                
+                if self.batch_norm is True:
+                    param_counter = param_counter + 1
+                    
         # Assemble fully connected laters
         if self.nkerns == []:
             fully_connected_input = first_layer_input.flatten(2)
@@ -587,6 +607,7 @@ class network(object):
                          activations = self.mlp_activations,
                          use_bias = True,
                          svm_flag = self.svm_flag,
+                         batch_norm = self.batch_norm, 
                          params = [] if init_params is None else init_params[param_counter:],
                          verbose = verbose)
     
@@ -633,14 +654,10 @@ class network(object):
         self.params = []
         for layer in conv_layers:
             self.params = self.params + layer.params
+            if self.batch_norm is True:
+                self.params.append(layer.alpha)
         self.params = self.params + MLPlayers.params
-      
-        """
-        if init_params is not None:
-            assert ( len(self.params) == len(init_params))         
-            for i in xrange(len(self.params)): 
-                self.params[i].set_value(init_params[i].get_value (borrow = True )) 
-        """ 
+       
         
         # Build the expresson for the categorical cross entropy function.
         if self.svm_flag is False:
@@ -668,14 +685,12 @@ class network(object):
                              MLPlayers.dropout_L2 )if self.mlp_dropout else ( cost + self.l1_reg 
                              * MLPlayers.L1 + self.l2_reg * MLPlayers.L2)
     
-        gradients = []
-        
+        gradients = []      
         for param in self.params: 
             gradient = T.grad( output ,param)
             gradients.append ( gradient )
     
         # TO DO: Try implementing Adadelta also. 
-         
         # Compute momentum for the current epoch
         epoch = T.scalar()
         mom = ifelse(epoch <= self.mom_epoch_interval,
@@ -765,8 +780,8 @@ class network(object):
                 stepped_param  = param + updates[velocity]
             else:
                 stepped_param = param + updates[velocity] + updates[param]
-    
-            if param.get_value(borrow=True).ndim == 2 and self.column_norm is True:
+            column_norm = True #This I don't fully understand if its needed after BN is implemented.
+            if param.get_value(borrow=True).ndim == 2 and column_norm is True:
     
                 """ constrain the norms of the COLUMNs of the weight, according to
                 https://github.com/BVLC/caffe/issues/109 """
@@ -890,6 +905,8 @@ class network(object):
             if curr_weights.shape[1] == 3 and len(curr_weights.shape) == 4 and self.color_filter is True:    
             # if the image is color, then first layer looks at color pictures and 
             # I can visualize the filters also as color.
+                import pdb
+                pdb.set_trace()
                 curr_image = curr_weights
                 if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
                     os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))

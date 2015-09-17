@@ -58,8 +58,8 @@ if __name__ == '__main__':
                             "mom_type"                          : 1,                         
                             "initial_learning_rate"             : 0.01,                     
                             "learning_rate_decay"               : 0.998, 
-                            "l1_reg"                            : 0.000,                     
-                            "l2_reg"                            : 0.000,                    
+                            "l1_reg"                            : 0.0,                     
+                            "l2_reg"                            : 0.0,                    
                             "ada_grad"                          : False,
                             "rms_prop"                          : True,
                             "rms_rho"                           : 0.9,                      
@@ -93,20 +93,20 @@ if __name__ == '__main__':
                     
                     "squared_filter_length_limit"       : 15,   
                     "mlp_activations"                   : [ ReLU, Softmax ],
-                    "cnn_dropout"                       : False,
+                    "cnn_dropout"                       : True,
                     "mlp_dropout"                       : True,
-                    "mlp_dropout_rates"                 : [ 0.5 , 0.5],
+                    "mlp_dropout_rates"                 : [ 0.2 , 0.5],
                     "num_nodes"                         : [ 1200 ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
                     "cnn_activations"                   : [ ReLU, ReLU, ReLU ],             
-                    "column_norm"                       : True,
+                    "batch_norm"                        : True,
                     "nkerns"                            : [ 48, 64, 128 ],              
                     "filter_size"                       : [ (5, 5), (5 ,5), (3, 3)],
                     "pooling_size"                      : [ (1, 1), (2, 2), (2, 2)],                                   
                     "cnn_maxout"                        : [ 2, 2, 2],
                     "mlp_maxout"                        : [ 2 ],
-                    "cnn_dropout_rates"                 : [ 0.2, 0.5, 0.5],
+                    "cnn_dropout_rates"                 : [ 0.1, 0.2, 0.2],
                     "random_seed"                       : 23455, 
                     "max_out"                           : 1
 
@@ -115,9 +115,9 @@ if __name__ == '__main__':
     visual_params = {
                         "visualize_flag"        : True,
                         "visualize_after_epochs": 1,
-                        "n_visual_images"       : 50,
+                        "n_visual_images"       : 20,
                         "display_flag"          : False,
-                        "color_filter"          : False          
+                        "color_filter"          : True         
                     }                                             
 
     run_cnn(
