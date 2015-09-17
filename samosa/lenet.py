@@ -578,21 +578,21 @@ class network(object):
             else:
                 fully_connected_input = dropout_conv_layers[-1].output.flatten(2)                
     
-        if len(self.mlp_dropout_rates) > 2 :
+        if len(self.num_nodes) > 1 :
             layer_sizes =[]                        
             layer_sizes.append( next_in[0] * next_in[1] * next_in[2] )
             
-            for i in xrange(len(self.mlp_dropout_rates)-1):
+            for i in xrange(len(self.num_nodes)):
                 layer_sizes.append ( self.num_nodes[i] )
             layer_sizes.append ( self.outs )
             
-        elif len(self.mlp_dropout_rates) == 1:
+        elif self.num_nodes == [] :
             
             layer_sizes = [ next_in[0] * next_in[1] * next_in[2], self.outs]
-        else :
+        elif len(self.num_nodes) ==  1:
             layer_sizes = [ next_in[0] * next_in[1] * next_in[2], self.num_nodes[0] , self.outs]
-    
-        assert len(layer_sizes) - 1 == len(self.mlp_dropout_rates)           # Just checking.
+     
+        assert len(layer_sizes) - 2 == len(self.num_nodes)           # Just checking.
     
         """  Dropouts implemented from paper:
         Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
@@ -905,8 +905,8 @@ class network(object):
             if curr_weights.shape[1] == 3 and len(curr_weights.shape) == 4 and self.color_filter is True:    
             # if the image is color, then first layer looks at color pictures and 
             # I can visualize the filters also as color.
-                import pdb
-                pdb.set_trace()
+                # import pdb
+                # pdb.set_trace()
                 curr_image = curr_weights
                 if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
                     os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))

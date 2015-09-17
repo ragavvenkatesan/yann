@@ -235,7 +235,7 @@ class HiddenLayer(object):
 
         self.input = input
         self.activation = activation
-
+        srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
         if W is None:
             W_values = numpy.asarray(rng.uniform(
                     low=-numpy.sqrt(6. / (n_in + n_out)),
@@ -295,14 +295,15 @@ class HiddenLayer(object):
             self.output = maxout_out    
             
         elif max_out == 3: # Do mixout network.
-        
+            maxout_out = None
             maxout_mean = None
             maxout_max  = None 
             for i in xrange(maxout_size):                                            
-                temp = output[:,i::maxout_size]                                   
+                temp = self.output[:,i::maxout_size]                                   
                 if maxout_mean is None:                                              
                     maxout_mean = temp
                     maxout_max = temp
+                    maxout_out = temp
                 else:                                                               
                     maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
                     maxout_max = T.maximum(maxout_out, temp) 
@@ -324,8 +325,8 @@ class HiddenLayer(object):
 # https://github.com/mdenil/dropout
 def _dropout_from_layer(rng, layer, p):
 
-    srng = theano.tensor.shared_randomstreams.RandomStreams(
-            rng.randint(999999))
+    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+
     # p=1-p because 1's indicate keep and p is prob of dropping
     mask = srng.binomial(n=1, p=1-p, size=layer.shape)
     # The cast is important because
@@ -358,7 +359,6 @@ class MLP(object):
             params = [],
             verbose = True):
 
-
         weight_matrix_sizes = zip(layer_sizes, layer_sizes[1:])
         self.layers = []
         self.dropout_layers = []
@@ -376,9 +376,9 @@ class MLP(object):
         
         count = 0
         if len(layer_sizes) > 2:
-            if max_out > 0: 
-                curr_maxout_size = maxout_rates[0]
             for n_in, n_out in weight_matrix_sizes[:-1]:
+                if max_out > 0: 
+                    curr_maxout_size = maxout_rates[layer_counter]
                 if verbose is True and max_out > 0:
                     print "           -->        initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in / prev_maxout_size) + " after maxout this output becomes " + str(n_out / curr_maxout_size)
                 elif verbose is True and max_out == 0:
@@ -435,7 +435,7 @@ class MLP(object):
                 self.L1 = self.L1 + abs(self.layers[-1].W).sum()  + abs(self.layers[-1].alpha).sum()
                 self.L2 = self.L2 + (self.layers[-1].W**2).sum()   + abs(self.layers[-1].alpha**2).sum()
                 if max_out > 0:
-                    prev_maxout_size = maxout_rates [ layer_counter ]
+                    prev_maxout_size = maxout_rates [ layer_counter ]                   
                 layer_counter += 1
                 
                 count = count + 2 
@@ -571,7 +571,7 @@ class Conv2DPoolLayer(object):
         next_width = int(floor((width - filter_shape[3] + 1))) / poolsize[1] 
         kern_shape = int(floor(filter_shape[0]/maxout_size))       
         output_size = ( batchsize, kern_shape, next_height , next_width )
-        
+        srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
         if verbose is True:
             print "           -->        initializing 2D convolutional layer with " + str(filter_shape[0])  + " kernels"
             print "                                  ....... kernel size [" + str(filter_shape[2]) + " X " + str(filter_shape[3]) +"]"
@@ -692,14 +692,15 @@ class Conv2DPoolLayer(object):
             self.output = maxout_out    
             
         elif max_out == 3: # Do mixout network.
-        
+            maxout_out = None
             maxout_mean = None
             maxout_max  = None 
             for i in xrange(maxout_size):                                            
-                temp = output[:,i::maxout_size,:,:]                                   
+                temp = self.output[:,i::maxout_size,:,:]                                   
                 if maxout_mean is None:                                              
                     maxout_mean = temp
                     maxout_max = temp
+                    maxout_out = temp
                 else:                                                               
                     maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
                     maxout_max = T.maximum(maxout_out, temp) 

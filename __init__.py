@@ -54,12 +54,12 @@ if __name__ == '__main__':
     optimization_params = {
                             "mom_start"                         : 0.5,                      
                             "mom_end"                           : 0.99,
-                            "mom_interval"                      : 500,
+                            "mom_interval"                      : 200,
                             "mom_type"                          : 1,                         
                             "initial_learning_rate"             : 0.01,                     
                             "learning_rate_decay"               : 0.998, 
-                            "l1_reg"                            : 0.0,                     
-                            "l2_reg"                            : 0.0,                    
+                            "l1_reg"                            : 0.000,                     
+                            "l2_reg"                            : 0.000,                    
                             "ada_grad"                          : False,
                             "rms_prop"                          : True,
                             "rms_rho"                           : 0.9,                      
@@ -78,15 +78,15 @@ if __name__ == '__main__':
         
     data_params = {
                    "type"               : 'skdata',                                   
-                   "loc"                : 'cifar10',                                          
-                   "batch_size"         : 100,                                     
+                   "loc"                : 'mnist',                                          
+                   "batch_size"         : 500,                                     
                    "load_batches"       : -1, 
-                   "batches2train"      : 400,                                      
-                   "batches2test"       : 100,                                      
-                   "batches2validate"   : 100,                                        
-                   "height"             : 32,                                       
-                   "width"              : 32,                                       
-                   "channels"           : 3                                        
+                   "batches2train"      : 100,                                      
+                   "batches2test"       : 20,                                      
+                   "batches2validate"   : 20,                                        
+                   "height"             : 28,                                       
+                   "width"              : 28,                                       
+                   "channels"           : 1                                        
                   }
 
     arch_params = {
@@ -95,29 +95,29 @@ if __name__ == '__main__':
                     "mlp_activations"                   : [ Identity, Softmax ],
                     "cnn_dropout"                       : True,
                     "mlp_dropout"                       : True,
-                    "mlp_dropout_rates"                 : [ 0.2 , 0.5],
-                    "num_nodes"                         : [ 1200 ],                                     
+                    "mlp_dropout_rates"                 : [ 0.2, 0.5, ],
+                    "num_nodes"                         : [ 1200  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
                     "cnn_activations"                   : [ Identity, Identity, Identity ],             
                     "batch_norm"                        : True,
-                    "nkerns"                            : [ 48, 64, 128 ],              
-                    "filter_size"                       : [ (5, 5), (5 ,5), (3, 3)],
-                    "pooling_size"                      : [ (1, 1), (2, 2), (2, 2)],                                   
+                    "nkerns"                            : [ 28, 28, 28 ],              
+                    "filter_size"                       : [ (5, 5), (5 ,5), (5, 5)],
+                    "pooling_size"                      : [ (1, 1), (2, 2), (1, 1)],                                   
                     "cnn_maxout"                        : [ 2, 2, 2],
                     "mlp_maxout"                        : [ 2 ],
-                    "cnn_dropout_rates"                 : [ 0.1, 0.2, 0.2],
+                    "cnn_dropout_rates"                 : [ 0.5, 0.5, 0.5],
                     "random_seed"                       : 23455, 
                     "max_out"                           : 1
 
                  }
 
     visual_params = {
-                        "visualize_flag"        : True,
+                        "visualize_flag"        : False,
                         "visualize_after_epochs": 1,
                         "n_visual_images"       : 20,
                         "display_flag"          : False,
-                        "color_filter"          : True         
+                        "color_filter"          : False         
                     }                                             
 
     run_cnn(
@@ -127,6 +127,6 @@ if __name__ == '__main__':
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = 1,
-                    n_epochs                = 3000,
+                    n_epochs                = 300,
                     verbose                 = False,                                                
                 )
