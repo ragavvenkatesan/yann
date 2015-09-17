@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from samosa.lenet import network
-from samosa.cnn import ReLU, Sigmoid, Softmax, Tanh
+from samosa.cnn import ReLU, Sigmoid, Softmax, Tanh, Identity
 from samosa.util import load_network
 
 def run_cnn( 
@@ -92,14 +92,14 @@ if __name__ == '__main__':
     arch_params = {
                     
                     "squared_filter_length_limit"       : 15,   
-                    "mlp_activations"                   : [ ReLU, Softmax ],
+                    "mlp_activations"                   : [ Identity, Softmax ],
                     "cnn_dropout"                       : True,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.2 , 0.5],
                     "num_nodes"                         : [ 1200 ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ ReLU, ReLU, ReLU ],             
+                    "cnn_activations"                   : [ Identity, Identity, Identity ],             
                     "batch_norm"                        : True,
                     "nkerns"                            : [ 48, 64, 128 ],              
                     "filter_size"                       : [ (5, 5), (5 ,5), (3, 3)],

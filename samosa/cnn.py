@@ -37,7 +37,10 @@ def Tanh(x):
 #### softmax
 def Softmax(x): 
     return T.nnet.softmax(x)
-   
+    
+### identity 
+def Identity(x):
+    return(x)   
    
    
 def maxpool_3D(input, ds, ignore_border=False):
