@@ -237,12 +237,11 @@ class HiddenLayer(object):
         self.activation = activation
         srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
         if W is None:
-            W_values = numpy.asarray(rng.uniform(
-                    low=-numpy.sqrt(6. / (n_in + n_out)),
-                    high=numpy.sqrt(6. / (n_in + n_out)),
-                    size=(n_in, n_out)
-                ),dtype=theano.config.floatX)
+            W_values = numpy.asarray(0.01 * rng.standard_normal(
+                size=(n_in, n_out)), dtype=theano.config.floatX)
 
+            W = theano.shared(value=W_values, name='W')
+        
             if activation == Sigmoid or activation == T.nnet.sigmoid:
                 W_values*=4 
             W = theano.shared(value=W_values, name='W')
