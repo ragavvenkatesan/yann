@@ -17,9 +17,28 @@ import theano.tensor as T
 from theano.ifelse import ifelse
 
 # CNN code packages
-import cnn
+import core
 import util
-import loaders
+import dataset
+
+# From the Theano Tutorials
+def shared_dataset(data_xy, borrow=True, svm_flag = True ):
+
+	data_x, data_y = data_xy
+
+	shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
+	shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX),  borrow=borrow)
+	                                 
+	if svm_flag is True:
+		# one-hot encoded labels as {-1, 1}
+		n_classes = len(numpy.unique(data_y))  # dangerous?
+		y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
+		y1[numpy.arange(data_y.shape[0]), data_y] = 1
+		shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
+
+		return shared_x, theano.tensor.cast(shared_y, 'int32'), shared_y1
+	else:
+		return shared_x, theano.tensor.cast(shared_y, 'int32') 
 
 class network(object):
 
@@ -43,10 +62,33 @@ class network(object):
         f = gzip.open(self.network_save_name, 'wb')
         for obj in [self.params, self.arch, self.data_struct, self.optim_params]:
             cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
-        f.close()   
-                
-    # Load initial data          
-    def init_data(self, data_params, outs):
+        f.close()  
+        
+    def load_data_init(self, dataset, verbose = False):
+        # every dataset will have atleast one batch ..... load that.
+        if verbose is True:
+            print " ... initializing the first batch of data"
+        f = gzip.open(dataset + '/train/batch_0.pkl.gz', 'rb')
+        train_data_x, train_data_y = cPickle.load(f)
+        f.close()
+
+        f = gzip.open(dataset + '/test/batch_0.pkl.gz', 'rb')
+        test_data_x, test_data_y = cPickle.load(f)
+        f.close()
+        
+        f = gzip.open(dataset + '/valid/batch_0.pkl.gz', 'rb')
+        valid_data_x, valid_data_y = cPickle.load(f)
+        f.close()
+                  
+        self.test_set_x, self.test_set_y, self.test_set_y1 = shared_dataset((test_data_x, test_data_y), svm_flag = True)
+        self.valid_set_x, self.valid_set_y, self.valid_set_y1 = shared_dataset((valid_data_x, valid_data_y), svm_flag = True)
+        self.train_set_x, self.train_set_y, self.train_set_y1 = shared_dataset((train_data_x, train_data_y), svm_flag = True)
+        
+    # this loads up the data_params from a folder and sets up the initial databatch.         
+    def init_data ( self, dataset, verbose = False):
+        f = gzip.open(dataset + '/data_params.pkl.gz', 'rb')
+        data_params = cPickle.load(f)
+        f.close()
         
         self.data_struct         = data_params # This command makes it possible to save down
         self.dataset             = data_params [ "loc" ]
@@ -61,252 +103,13 @@ class network(object):
         self.batches2test        = data_params [ "batches2test" ]
         self.batches2validate    = data_params [ "batches2validate" ] 
         self.channels            = data_params [ "channels" ]
+        self.multi_load          = data_params [ "multi_load" ]
+        self.n_train_batches     = data_params [ "n_train_batches" ]
+        self.n_test_batches      = data_params [ "n_test_batches" ]
+        self.n_valid_batches     = data_params [ "n_valid_batches" ] 
         
-        
-        print "... loading data"
-        start_time = time.clock()
-        # load matlab files as self.dataset.
-        if self.data_type == 'mat':
-            train_data_x, train_data_y, train_data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = 1 , type_set = 'train' , n_classes = outs)             
-            test_data_x, test_data_y, valid_data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = 1 , type_set = 'test' , n_classes = outs)      
-            valid_data_x, valid_data_y, test_data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = 1 , type_set = 'valid' , n_classes = outs)   
+        self.load_data_init(self.dataset, verbose)
 
-            self.train_set_x = theano.shared(numpy.asarray(train_data_x, dtype=theano.config.floatX), borrow=True)
-            self.train_set_y = theano.shared(numpy.asarray(train_data_y, dtype='int32'), borrow=True)
-            self.train_set_y1 = theano.shared(numpy.asarray(train_data_y1, dtype=theano.config.floatX), borrow=True)
-    
-            self.test_set_x = theano.shared(numpy.asarray(test_data_x, dtype=theano.config.floatX), borrow=True)
-            self.test_set_y = theano.shared(numpy.asarray(test_data_y, dtype='int32'), borrow=True) 
-            self.test_set_y1 = theano.shared(numpy.asarray(test_data_y1, dtype=theano.config.floatX), borrow=True)
-    
-            self.valid_set_x = theano.shared(numpy.asarray(valid_data_x, dtype=theano.config.floatX), borrow=True)
-            self.valid_set_y = theano.shared(numpy.asarray(valid_data_y, dtype='int32'), borrow=True)
-            self.valid_set_y1 = theano.shared(numpy.asarray(valid_data_y1, dtype=theano.config.floatX), borrow=True)
-    
-            # compute number of minibatches for training, validation and testing
-            self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
-            self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
-            self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
-    
-            self.multi_load = True
-    
-        # load pkl data as is shown in theano tutorials
-        elif self.data_type == 'pkl':   
-    
-            data = loaders.load_data_pkl(self.dataset)
-            self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
-            self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
-            self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
-    
-             # compute number of minibatches for training, validation and testing
-            self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
-            self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
-            self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
-    
-            n_train_images = self.train_set_x.get_value(borrow=True).shape[0]
-            n_test_images = self.test_set_x.get_value(borrow=True).shape[0]
-            n_valid_images = self.valid_set_x.get_value(borrow=True).shape[0]
-    
-            n_train_batches_all = n_train_images / self.batch_size 
-            n_test_batches_all = n_test_images / self.batch_size 
-            n_valid_batches_all = n_valid_images / self.batch_size
-    
-            if ( (n_train_batches_all < self.batches2train) or 
-                    (n_test_batches_all < self.batches2test) or 
-                      (n_valid_batches_all < self.batches2validate) ):   
-                # You can't have so many batches.
-                print "...  !! self.dataset doens't have so many batches. "
-                raise AssertionError()
-    
-            self.multi_load = False
-    
-        # load skdata ( its a good library that has a lot of self.datasets)
-        elif self.data_type == 'skdata':
-    
-            if (self.dataset == 'mnist' or 
-                self.dataset == 'mnist_noise1' or 
-                self.dataset == 'mnist_noise2' or
-                self.dataset == 'mnist_noise3' or
-                self.dataset == 'mnist_noise4' or
-                self.dataset == 'mnist_noise5' or
-                self.dataset == 'mnist_noise6' or
-                self.dataset == 'mnist_bg_images' or
-                self.dataset == 'mnist_bg_rand' or
-                self.dataset == 'mnist_rotated' or
-                self.dataset == 'mnist_rotated_bg') :
-    
-                print "... importing " + self.dataset + " from skdata"
-                data = getattr(loaders, 'load_skdata_' + self.dataset)()                
-
-                self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
-                self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
-                self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
-    
-                # compute number of minibatches for training, validation and testing
-                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
-    
-                n_train_images = self.train_set_x.get_value(borrow=True).shape[0]
-                n_test_images = self.test_set_x.get_value(borrow=True).shape[0]
-                n_valid_images = self.valid_set_x.get_value(borrow=True).shape[0]
-    
-                n_train_batches_all = n_train_images / self.batch_size 
-                n_test_batches_all = n_test_images / self.batch_size 
-                n_valid_batches_all = n_valid_images / self.batch_size
-    
-                if ( (n_train_batches_all < self.batches2train) or 
-                       (n_test_batches_all < self.batches2test) or 
-                         (n_valid_batches_all < self.batches2validate) ): 
-                    # You can't have so many batches.
-                    print "...  !! self.dataset doens't have so many batches. "
-                    raise AssertionError()
-    
-                self.multi_load = False
-    
-            elif self.dataset == 'cifar10':
-                print "... importing cifar 10 from skdata"
-    
-                data = loaders.load_skdata_cifar10()
-                self.train_set_x, self.train_set_y, self.train_set_y1 = data[0]
-                self.valid_set_x, self.valid_set_y, self.valid_set_y1 = data[1]
-                self.test_set_x, self.test_set_y, self.test_set_y1 = data[2]
-    
-                # compute number of minibatches for training, validation and testing
-                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
-    
-                self.multi_load = False
-    
-            elif self.dataset == 'caltech101':
-                print "... importing caltech 101 from skdata"
-    
-                # shuffle the data
-                total_images_in_dataset = 9144 
-                self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
-                # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
-    
-                n_train_images = total_images_in_dataset / 3
-                n_test_images = total_images_in_dataset / 3
-                n_valid_images = total_images_in_dataset / 3 
-    
-                n_train_batches_all = n_train_images / self.batch_size 
-                n_test_batches_all = n_test_images / self.batch_size 
-                n_valid_batches_all = n_valid_images / self.batch_size
-    
-                if ( (n_train_batches_all < self.batches2train) or 
-                        (n_test_batches_all < self.batches2test) or 
-                        (n_valid_batches_all < self.batches2validate) ): 
-                    # You can't have so many batches.
-                    print "...  !! self.dataset doens't have so many batches. "
-                    raise AssertionError()
-    
-                train_data_x, train_data_y  = loaders.load_skdata_caltech101(
-                                                 batch_size = self.load_batches, 
-                                                  rand_perm = self.rand_perm, 
-                                                  batch = 1 , 
-                                                  type_set = 'train' ,
-                                                  height = self.height,
-                                                  width = self.width)             
-                test_data_x, test_data_y  = loaders.load_skdata_caltech101(
-                                                 batch_size = self.load_batches,
-                                                 rand_perm = self.rand_perm,
-                                                 batch = 1 ,
-                                                 type_set = 'test' , 
-                                                 height = self.height,
-                                                 width = self.width)      
-                valid_data_x, valid_data_y  = loaders.load_skdata_caltech101(
-                                                 batch_size = self.load_batches, 
-                                                 rand_perm = self.rand_perm,
-                                                 batch = 1 , 
-                                                 type_set = 'valid' , 
-                                                 height = self.height, 
-                                                 width = self.width)
-
-    
-                self.train_set_x = theano.shared(train_data_x, borrow=True)
-                self.train_set_y = theano.shared(train_data_y, borrow=True)
-                
-                self.test_set_x = theano.shared(test_data_x, borrow=True)
-                self.test_set_y = theano.shared(test_data_y, borrow=True) 
-              
-                self.valid_set_x = theano.shared(valid_data_x, borrow=True)
-                self.valid_set_y = theano.shared(valid_data_y, borrow=True)
-    
-                # compute number of minibatches for training, validation and testing
-                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
-    
-                self.multi_load = True
-    
-            elif self.dataset == 'caltech256':
-                print "... importing caltech 256 from skdata"
-    
-                    # shuffle the data
-                total_images_in_dataset = 30607 
-                self.rand_perm = numpy.random.permutation(total_images_in_dataset)  # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
-    
-                n_train_images = total_images_in_dataset / 3
-                n_test_images = total_images_in_dataset / 3
-                n_valid_images = total_images_in_dataset / 3 
-    
-                n_train_batches_all = n_train_images / self.batch_size 
-                n_test_batches_all = n_test_images / self.batch_size 
-                n_valid_batches_all = n_valid_images / self.batch_size
-    
-                if ( (n_train_batches_all < self.batches2train) or 
-                     (n_test_batches_all < self.batches2test) or  
-                     (n_valid_batches_all < self.batches2validate) ):        # You can't have so many batches.
-                    print "...  !! self.dataset doens't have so many batches. "
-                    raise AssertionError()
-    
-                
-                train_data_x, train_data_y = loaders.load_skdata_caltech256(
-                                                 batch_size = self.load_batches, 
-                                                  rand_perm = self.rand_perm, 
-                                                  batch = 1 , 
-                                                  type_set = 'train' ,
-                                                  height = self.height,
-                                                  width = self.width)             
-                test_data_x, test_data_y  = loaders.load_skdata_caltech256(
-                                                 batch_size = self.load_batches,
-                                                 rand_perm = self.rand_perm,
-                                                 batch = 1 ,
-                                                 type_set = 'test' , 
-                                                 height = self.height,
-                                                 width = self.width)      
-                valid_data_x, valid_data_y  = loaders.load_skdata_caltech256(
-                                                 batch_size = self.load_batches, 
-                                                 rand_perm = self.rand_perm,
-                                                 batch = 1 , 
-                                                 type_set = 'valid' , 
-                                                 height = self.height, 
-                                                 width = self.width)
-
-                self.train_set_x = theano.shared(train_data_x, borrow=True)
-                self.train_set_y = theano.shared(train_data_y, borrow=True)
-                
-                self.test_set_x = theano.shared(test_data_x, borrow=True)
-                self.test_set_y = theano.shared(test_data_y, borrow=True) 
-              
-                self.valid_set_x = theano.shared(valid_data_x, borrow=True)
-                self.valid_set_y = theano.shared(valid_data_y, borrow=True)
-    
-                # compute number of minibatches for training, validation and testing
-                self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / self.batch_size
-                self.n_test_batches = self.test_set_x.get_value(borrow=True).shape[0] / self.batch_size
-    
-                self.multi_load = True
-    
-        assert ( self.height * self.width * self.channels == 
-                self.train_set_x.get_value( borrow = True ).shape[1] )
-        end_time = time.clock()
-        print "...         time taken is " +str(end_time - start_time) + " seconds"
-        
-    # Class initialization complete.
         
     # define the optimzer function 
     def build_network (self, arch_params, optimization_params , init_params = None, verbose = True):    
@@ -382,14 +185,14 @@ class network(object):
         else: 
             max_out_size = 1
 
-        next_in = [ self.height, self.width, self.channels]
+        next_in = [ self.height, self.width, self.channels ]
         stack_size = 1 
         param_counter = 0 
         
         if not self.nkerns == []:     
             if len(filt_size) == 2:        
                 dropout_conv_layers.append ( 
-                                cnn.DropoutConv2DPoolLayer(
+                                core.DropoutConv2DPoolLayer(
                                         rng = self.rng,
                                         input = first_layer_input,
                                         image_shape=(self.batch_size, self.channels , self.height, self.width),
@@ -405,7 +208,7 @@ class network(object):
                                         p = self.cnn_dropout_rates[0]                                      
                                          ) ) 
                 conv_layers.append ( 
-                                cnn.Conv2DPoolLayer(
+                                core.Conv2DPoolLayer(
                                         rng = self.rng,
                                         input = first_layer_input,
                                         image_shape=(self.batch_size, self.channels , self.height, self.width),
@@ -414,7 +217,7 @@ class network(object):
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[0],
-                                        W = dropout_conv_layers[-1].params[0] ,
+                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[0]) ,
                                         b = dropout_conv_layers[-1].params[1],
                                         batch_norm = self.batch_norm,
                                         alpha = dropout_conv_layers[-1].alpha,
@@ -425,7 +228,7 @@ class network(object):
                 next_in[2] = self.nkerns[0]  / max_out_size                                                                                                                 
             elif len(filt_size) == 3:
                 dropout_conv_layers.append ( 
-                                cnn.DropoutConv3DPoolLayer(
+                                core.DropoutConv3DPoolLayer(
                                         rng = self.rng,
                                         input = first_layer_input,
                                         image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
@@ -441,7 +244,7 @@ class network(object):
                                         p = self.cnn_dropout_rates[0]                             
                                          ) )
                 conv_layers.append ( 
-                                cnn.Conv3DPoolLayer(
+                                core.Conv3DPoolLayer(
                                         rng = self.rng,
                                         input = first_layer_input,
                                         image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
@@ -450,7 +253,7 @@ class network(object):
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,                                        
                                         activation = self.cnn_activations[0],
-                                        W = dropout_conv_layers[-1].params[0] ,
+                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[0]),
                                         b = dropout_conv_layers[-1].params[1],
                                         batch_norm = self.batch_norm,
                                         alpha = dropout_conv_layers[-1].alpha, 
@@ -485,9 +288,9 @@ class network(object):
                 if len(filt_size) == 2:
                     
                     dropout_conv_layers.append ( 
-                                    cnn.DropoutConv2DPoolLayer(
+                                    core.DropoutConv2DPoolLayer(
                                         rng = self.rng,
-                                        input = conv_layers[layer].output,        
+                                        input = dropout_conv_layers[layer].output,        
                                         image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
                                         filter_shape=(self.nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
                                         poolsize=pool_size,
@@ -502,7 +305,7 @@ class network(object):
                                          ) )
                                                  
                     conv_layers.append ( 
-                                    cnn.Conv2DPoolLayer(
+                                    core.Conv2DPoolLayer(
                                         rng = self.rng,
                                         input = conv_layers[layer].output,        
                                         image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
@@ -511,7 +314,7 @@ class network(object):
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
-                                        W = dropout_conv_layers[-1].params[0] ,
+                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[layer + 1]),
                                         b = dropout_conv_layers[-1].params[1],
                                         batch_norm = self.batch_norm, 
                                         alpha = dropout_conv_layers[-1].alpha,
@@ -524,9 +327,9 @@ class network(object):
                     
                 elif len(filt_size) == 3:
                     dropout_conv_layers.append ( 
-                                    cnn.DropoutConv3DPoolLayer(
+                                    core.DropoutConv3DPoolLayer(
                                         rng = self.rng,
-                                        input = conv_layers[layer].output,        
+                                        input = dropout_conv_layers[layer].output,        
                                         image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
                                         filter_shape=(self.nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
                                         poolsize=pool_size,
@@ -540,7 +343,7 @@ class network(object):
                                         p = self.cnn_dropout_rates[layer+1]                                                                                                       
                                          ) )                                                                                             
                     conv_layers.append ( 
-                                    cnn.Conv3DPoolLayer(
+                                    core.Conv3DPoolLayer(
                                         rng = self.rng,
                                         input = conv_layers[layer].output,        
                                         image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
@@ -549,7 +352,7 @@ class network(object):
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
-                                        W = dropout_conv_layers[-1].params[0] ,
+                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[layer + 1]),
                                         b = dropout_conv_layers[-1].params[1] ,
                                         batch_norm = self.batch_norm,
                                         alpha = dropout_con_layers[-1].alpha,
@@ -573,10 +376,8 @@ class network(object):
         if self.nkerns == []:
             fully_connected_input = first_layer_input.flatten(2)
         else:
-            if self.cnn_dropout is False:  # Choose either the dropout path or the without dropout path ... .
-                fully_connected_input = conv_layers[-1].output.flatten(2)
-            else:
-                fully_connected_input = dropout_conv_layers[-1].output.flatten(2)                
+            fully_connected_input = conv_layers[-1].output.flatten(2)
+            dropout_fully_connected_input = dropout_conv_layers[-1].output.flatten(2)                
     
         if len(self.num_nodes) > 1 :
             layer_sizes =[]                        
@@ -598,8 +399,8 @@ class network(object):
         Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
         from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
         """
-        MLPlayers = cnn.MLP( rng = self.rng,
-                         input = fully_connected_input,
+        MLPlayers = core.MLP( rng = self.rng,
+                         input = (fully_connected_input, dropout_fully_connected_input),
                          layer_sizes = layer_sizes,
                          dropout_rates = self.mlp_dropout_rates,
                          maxout_rates = self.mlp_maxout,
@@ -615,6 +416,7 @@ class network(object):
         # I don't like the idea of having test model only hooked to the test_set_x variable.
         # I would probably have liked to have only one data variable.. but theano tutorials is using 
         # this style, so wth, so will I. 
+                                          
         self.test_model = theano.function(
                 inputs = [index],
                 outputs = MLPlayers.errors(y),
@@ -652,7 +454,7 @@ class network(object):
     
         # Compute cost and gradients of the model wrt parameter
         self.params = []
-        for layer in conv_layers:
+        for layer in dropout_conv_layers:
             self.params = self.params + layer.params
             if self.batch_norm is True:
                 self.params.append(layer.alpha)
@@ -701,7 +503,7 @@ class network(object):
         self.eta = theano.shared(numpy.asarray(self.initial_learning_rate,dtype=theano.config.floatX))
         # accumulate gradients for adagrad
          
-        grad_acc = []
+        grad_acc =[]
         for param in self.params:
             eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
             grad_acc.append(theano.shared(eps, borrow=True))
@@ -712,7 +514,6 @@ class network(object):
             velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
             velocities.append(velocity)
          
-    
         # create updates for each combination of stuff 
         updates = OrderedDict()
         print_flag = False
@@ -805,7 +606,7 @@ class network(object):
                         y1: self.train_set_y1[index * self.batch_size:(index + 1) * self.batch_size]},
                     on_unused_input = 'ignore'                    
                         )
-        else:
+        else: 
             self.train_model = theano.function(
                     inputs = [index, epoch],
                     outputs = output,
@@ -831,28 +632,37 @@ class network(object):
                      
     # this is only for self.multi_load = True type of datasets.. 
     # All datasets are not multi_load enabled. This needs to change ??                         
-    def reset_data (self, batch, type_set, verbose = True):
-        if self.data_type == 'mat':
-            data_x, data_y, data_y1 = loaders.load_data_mat(dataset = self.dataset, batch = batch, type_set = type_set, n_classes = self.outs)             
-
-        elif self.data_type == 'skdata':                   
-            if self.dataset == 'caltech101':
-                data_x, data_y  = loaders.load_skdata_caltech101(
-                                                batch_size = self.load_batches, 
-                                                batch = batch, 
-                                                type_set = type_set, 
-                                                rand_perm = self.rand_perm, 
-                                                height = self.height, 
-                                                width = self.width )
-            elif self.dataset == 'caltech256':                  
-                data_x, data_y  = loaders.load_skdata_caltech256(
-                                                batch_size = self.load_batches, 
-                                                batch = batch, 
-                                                type_set = type_set, 
-                                                rand_perm = self.rand_perm, 
-                                                height = self.height, 
-                                                width = self.width )
-        # Do not use svm_flag for caltech 101   
+    # this is only for self.multi_load = True type of datasets.. 
+    # All datasets are not multi_load enabled. This needs to change ??    
+    
+    # from theano tutorials for loading pkl files like what is used in theano tutorials
+    def load_data_base(dataset, batch = 1, type_set = 'train' ):
+        # every dataset will have atleast one batch ..... load that.
+        
+        if type_set == 'train':
+            f = gzip.open(dataset + '/train/batch_' +str(batch) +'.pkl.gz', 'rb')
+        elif type_set == 'valid':
+            f = gzip.open(dataset + '/valid/batch_' +str(batch) +'.pkl.gz', 'rb')            
+        else:
+            f = gzip.open(dataset + '/test/batch_' +str(batch) +'.pkl.gz', 'rb')
+            
+        data_x, data_y = cPickle.load(f)
+        f.close()
+    
+        if self.svm_flag is True:
+            # one-hot encoded labels as {-1, 1}
+            n_classes = len(numpy.unique(data_y))  # dangerous?
+            y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
+            y1[numpy.arange(data_y.shape[0]), data_y] = 1		
+            rval = (data_x, data_y, y1)
+        else:   
+            rval = (data_x, data_y, data_y)
+            
+        return rval
+                       
+    def set_data (self, batch, type_set, verbose = True):
+        
+        data_x, data_y, data_y1 = load_data_base(dataset = self.dataset, batch = batch, type_set = type_set )             
         
         # If we had used only one datavariable instead of three... this wouldn't have been needed. 
         if type_set == 'train':                             
@@ -872,11 +682,12 @@ class network(object):
                 self.valid_set_y1.set_value(data_y1, borrow = True)
         
     def print_net (self, epoch, display_flag = True ):
-        # saving down true images. 
+        # saving down true images.         
         if self.main_img_visual is False:
             for i in xrange( self.n_visual_images):
                 curr_img = numpy.asarray(numpy.reshape(self.train_set_x.get_value( borrow = True )
-                    [self.visualize_ind[i]],[self.height, self.width, self.channels] ) * 255., dtype='uint8' )
+                    [self.visualize_ind[i]],[self.height, self.width, self.channels]), dtype = theano.config.floatX)
+                                       
                 if self.display_flag is True:
                     cv2.imshow("Image Number " +str(i) + 
                          "_label_" + str(self.train_set_y.eval()[self.visualize_ind[i]]),
@@ -978,7 +789,6 @@ class network(object):
         start_time_main = time.clock()
         while (epoch_counter < n_epochs) and (not early_termination):
             epoch_counter = epoch_counter + 1 
-             
             start_time = time.clock() 
             for batch in xrange (self.batches2train):
                 if verbose is True:
@@ -987,23 +797,23 @@ class network(object):
                 if self.multi_load is True:
                     iteration= (epoch_counter - 1) * self.n_train_batches * self.batches2train + batch
                     # Load data for this batch
-                    self.reset_data ( batch = batch + 1, type_set = 'train' ,verbose = verbose)
+                    self.reset_data ( batch = batch + 1, type_set = 'train')
                     for minibatch_index in xrange(self.n_train_batches):
                         if verbose is True:
                             print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
                         cost_saved = cost_saved + [cost_ij]
-                        
+                          
                 else:        
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
                     cost_saved = cost_saved +[cost_ij]
-             
+           
             if  epoch_counter % validate_after_epochs == 0:  
                 validation_losses = 0.   
                 if self.multi_load is True:   
                     for batch in xrange ( self.batches2validate ):
-                        self.reset_data ( batch = batch + 1, type_set = 'valid' ,verbose = verbose)
+                        self.reset_data ( batch = batch + 1, type_set = 'valid' )
                         validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
                         this_validation_loss = this_validation_loss + [validation_losses]
     
@@ -1032,8 +842,9 @@ class network(object):
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + "% ")      
                 else: # if not multi_load
-    
+                    
                     validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
+
                     this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
                     if verbose is True:
                                             
@@ -1071,7 +882,7 @@ class network(object):
             self.decay_learning_rate()    
     
     
-            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:
+            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:               
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)   
             
             end_time = time.clock()
@@ -1121,7 +932,7 @@ class network(object):
                 if verbose is True:
                     print "..       --> testing batch " + str(batch)
                 # Load data for this batch
-                self.reset_data ( batch = batch + 1, type_set = 'test' ,verbose = verbose)
+                self.reset_data ( batch = batch + 1, type_set = 'test')
                 labels = labels + self.test_set_y.eval().tolist() 
                 for mini_batch in xrange(self.n_test_batches):
                     wrong = wrong + int(self.test_model(mini_batch))   
@@ -1158,7 +969,8 @@ class network(object):
         print "confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100) + "%"
         end_time = time.clock()
         print "...         time taken is " +str(end_time - start_time) + " seconds"
-            
+                
         if self.visualize_flag is True:    
             print "... saving down the final model's visualizations" 
             self.print_net (epoch = 'final' , display_flag = self.display_flag)     
+            

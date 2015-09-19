@@ -13,13 +13,6 @@ from theano.ifelse import ifelse
 from theano.tensor.signal.downsample import DownsampleFactorMax
 from theano.tensor.nnet.conv3d2d import conv3d
 
-"""
-# For 3X faster Convolutions
-from pylearn2.sandbox.cuda_convnet.filter_acts import FilterActs
-from pylearn2.sandbox.cuda_convnet.pool import MaxPool
-from theano.sandbox.cuda.basic_ops import gpu_contiguous
-"""
-
 
 #### rectified linear unit
 def ReLU(x):
@@ -41,20 +34,30 @@ def Softmax(x):
 ### identity 
 def Identity(x):
     return(x)   
+
+#From the Theano Tutorials
+def shared_dataset(data_xy, borrow=True, svm_flag = True):
+
+	data_x, data_y = data_xy
+
+	shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
+	shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX),  borrow=borrow)
+	                                 
+	if svm_flag is True:
+		# one-hot encoded labels as {-1, 1}
+		n_classes = len(numpy.unique(data_y))  # dangerous?
+		y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
+		y1[numpy.arange(data_y.shape[0]), data_y] = 1
+		shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
+
+		return shared_x, theano.tensor.cast(shared_y, 'int32'), shared_y1
+	else:
+		return shared_x, theano.tensor.cast(shared_y, 'int32') 
+
    
    
 def maxpool_3D(input, ds, ignore_border=False):
-    """
-    Takes as input a N-D tensor, where N >= 3. It downscales the input video by
-    the specified factor, by keeping only the maximum value of non-overlapping
-    patches of size (ds[0],ds[1],ds[2]) (time, height, width)
-    :type input: N-D theano tensor of input images.
-    :param input: input images. Max pooling will be done over the 3 last dimensions.
-    :type ds: tuple of length 3
-    :param ds: factor by which to downscale. (2,2,2) will halve the video in each dimension.
-    :param ignore_border: boolean value. When True, (5,5,5) input with ds=(2,2,2) will generate a
-      (2,2,2) output. (3,3,3) otherwise.
-    """
+   
     #input.dimshuffle (0, 2, 1, 3, 4)   # convert to make video in back. 
     # no need to reshuffle. 
     if input.ndim < 3:
@@ -148,8 +151,6 @@ class SVMLayer(object):
             return T.maximum(0, 1 - u)
 
     def svm_cost(self, y1):
-        """ return the one-vs-all svm cost
-        given ground-truth y in one-hot {-1, 1} form """
         y1_printed = theano.printing.Print('this is important')(T.max(y1))
         margin = y1 * self.output
         cost = self.hinge(margin).mean(axis=0).sum()
@@ -157,9 +158,6 @@ class SVMLayer(object):
 
 
     def errors(self, y):
-        """ compute zero-one loss
-        note, y is in integer form, not one-hot
-        """
 
         # check if y has same dimension of y_pred
         if y.ndim != self.y_pred.ndim:
@@ -361,9 +359,9 @@ class MLP(object):
         weight_matrix_sizes = zip(layer_sizes, layer_sizes[1:])
         self.layers = []
         self.dropout_layers = []
-        next_layer_input = input
+        next_layer_input, dropout_next_layer_input = input
    
-        next_dropout_layer_input = _dropout_from_layer(rng, input, p=dropout_rates[0])
+        next_dropout_layer_input = _dropout_from_layer(rng, dropout_next_layer_input, p=dropout_rates[0])
         
         layer_counter = 0    
         prev_maxout_size = 1   
@@ -445,7 +443,6 @@ class MLP(object):
             n_in = n_in / prev_maxout_size 
             
         else: 
-            next_layer_input = input
             n_in, n_out = weight_matrix_sizes[-1]
         # Again, reuse paramters in the dropout output.
     
@@ -461,7 +458,7 @@ class MLP(object):
                 output_layer = LogisticRegression(
                     input=next_layer_input,
                     # scale the weight matrix W with (1-p)
-                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                    W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
                     b=dropout_output_layer.b,
                     n_in=n_in, n_out=n_out)
             else:
@@ -474,7 +471,7 @@ class MLP(object):
                     input=next_layer_input,
                     # scale the weight matrix W with (1-p)
                     n_in=n_in, n_out=n_out,
-                    W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                    W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
                     b=dropout_output_layer.b
                     )
 
@@ -505,7 +502,7 @@ class MLP(object):
                     n_in=n_in  , n_out=n_out )
     
                 output_layer = SVMLayer(input = next_layer_input,
-                                        W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                                        W=dropout_output_layer.W ,
                                         b=dropout_output_layer.b,
                                         n_in = n_in,
                                         n_out = n_out)
@@ -516,7 +513,7 @@ class MLP(object):
                     W = params[count], b = params[count+1])
     
                 output_layer = SVMLayer(input = next_layer_input,
-                                        W=dropout_output_layer.W * (1 - dropout_rates[-1]),
+                                        W=dropout_output_layer.W,
                                         b=dropout_output_layer.b,
                                         n_in = n_in,
                                         n_out = n_out)
