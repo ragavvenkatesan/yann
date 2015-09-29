@@ -13,13 +13,12 @@ def run_cnn(
                     n_epochs = 200,
                     validate_after_epochs = 1,
                     verbose = False, 
-           ):
-                   
+           ):            
     net = network(  filename_params = filename_params,
                      random_seed = arch_params ["random_seed"],
                      verbose = verbose )   
                
-    net.init_data ( dataset, verbose )      
+    net.init_data ( dataset, outs = arch_params["outs"], verbose = verbose )      
     
     net.build_network(   arch_params = arch_params,
                          optimization_params = optimization_params,
@@ -58,7 +57,7 @@ def run_cnn(
     test_net.test ( verbose = verbose )
     """                   
                     
-    ## Boiler Plate ## 
+ ## Boiler Plate ## 
 if __name__ == '__main__':
              
     filename_params = { 
@@ -66,14 +65,14 @@ if __name__ == '__main__':
                         "error_file_name"       : "../results/errortxt",
                         "cost_file_name"        : "../results/cost.txt",
                         "confusion_file_name"   : "../results/confusion.txt",
-                        "network_save_name"     : "../results/network.pkl.gz "
+                        "network_save_name"     : "../results/network.pkl.gz"
                     }
     visual_params = {
                         "visualize_flag"        : True,
                         "visualize_after_epochs": 1,
-                        "n_visual_images"       : 20,
+                        "n_visual_images"       : 49,
                         "display_flag"          : False,
-                        "color_filter"          : False         
+                        "color_filter"          : True         
                     }   
                                                                                                                             
     optimization_params = {
@@ -81,10 +80,10 @@ if __name__ == '__main__':
                             "mom_end"                           : 0.99,
                             "mom_interval"                      : 200,
                             "mom_type"                          : 1,                         
-                            "initial_learning_rate"             : 1,                     
+                            "initial_learning_rate"             : 0.01,                     
                             "learning_rate_decay"               : 0.998, 
                             "l1_reg"                            : 0.000,                     
-                            "l2_reg"                            : 0.000,                    
+                            "l2_reg"                            : 0.00001,                    
                             "ada_grad"                          : False,
                             "rms_prop"                          : True,
                             "rms_rho"                           : 0.9,                      
@@ -114,15 +113,14 @@ if __name__ == '__main__':
                     "random_seed"                       : 23455, 
                     "max_out"                           : 1
 
-                 }                                          
-
+                 }                    
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_dataset_18699", 
+                    dataset                 = "_datasets/_dataset_24420", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = 1,
                     n_epochs                = 300,
-                    verbose                 = False,                                                
+                    verbose                 = True,                                                
                 )

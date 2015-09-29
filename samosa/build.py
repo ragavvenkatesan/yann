@@ -22,23 +22,23 @@ import util
 import dataset
 
 # From the Theano Tutorials
-def shared_dataset(data_xy, borrow=True, svm_flag = True ):
+def shared_dataset(data_xy, n_classes, borrow=True, svm_flag = True):
 
-	data_x, data_y = data_xy
-
-	shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
-	shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX),  borrow=borrow)
-	                                 
-	if svm_flag is True:
-		# one-hot encoded labels as {-1, 1}
-		n_classes = len(numpy.unique(data_y))  # dangerous?
-		y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
-		y1[numpy.arange(data_y.shape[0]), data_y] = 1
-		shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
-
-		return shared_x, theano.tensor.cast(shared_y, 'int32'), shared_y1
-	else:
-		return shared_x, theano.tensor.cast(shared_y, 'int32') 
+    data_x, data_y = data_xy
+    
+    shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
+    shared_y = theano.shared(numpy.asarray(data_y, dtype='int32'),  borrow=borrow)
+                                    
+    if svm_flag is True:
+        # one-hot encoded labels as {-1, 1}
+        #n_classes = len(numpy.unique(data_y))  # dangerous?
+        y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
+        y1[numpy.arange(data_y.shape[0]), data_y] = 1
+        shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
+        
+        return shared_x, shared_y, shared_y1
+    else:
+        return shared_x, shared_y  
 
 class network(object):
 
@@ -66,8 +66,7 @@ class network(object):
         
     def load_data_init(self, dataset, verbose = False):
         # every dataset will have atleast one batch ..... load that.
-        if verbose is True:
-            print " ... initializing the first batch of data"
+        
         f = gzip.open(dataset + '/train/batch_0.pkl.gz', 'rb')
         train_data_x, train_data_y = cPickle.load(f)
         f.close()
@@ -80,18 +79,20 @@ class network(object):
         valid_data_x, valid_data_y = cPickle.load(f)
         f.close()
                   
-        self.test_set_x, self.test_set_y, self.test_set_y1 = shared_dataset((test_data_x, test_data_y), svm_flag = True)
-        self.valid_set_x, self.valid_set_y, self.valid_set_y1 = shared_dataset((valid_data_x, valid_data_y), svm_flag = True)
-        self.train_set_x, self.train_set_y, self.train_set_y1 = shared_dataset((train_data_x, train_data_y), svm_flag = True)
+        self.test_set_x, self.test_set_y, self.test_set_y1 = shared_dataset((test_data_x, test_data_y), n_classes = self.outs, svm_flag = True)
+        self.valid_set_x, self.valid_set_y, self.valid_set_y1 = shared_dataset((valid_data_x, valid_data_y), self.outs, svm_flag = True)
+        self.train_set_x, self.train_set_y, self.train_set_y1 = shared_dataset((train_data_x, train_data_y), self.outs, svm_flag = True)
         
     # this loads up the data_params from a folder and sets up the initial databatch.         
-    def init_data ( self, dataset, verbose = False):
+    def init_data ( self, dataset, outs, verbose = False):
+        print "... initializing dataset " + dataset 
         f = gzip.open(dataset + '/data_params.pkl.gz', 'rb')
         data_params = cPickle.load(f)
         f.close()
         
+        self.outs                = outs
         self.data_struct         = data_params # This command makes it possible to save down
-        self.dataset             = data_params [ "loc" ]
+        self.dataset             = dataset
         self.data_type           = data_params [ "type" ]
         self.height              = data_params [ "height" ]
         self.width               = data_params [ "width" ]
@@ -168,7 +169,8 @@ class network(object):
         if self.svm_flag is True:
             y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
      
-        first_layer_input = x.reshape((self.batch_size, self.channels, self.height, self.width))
+        first_layer_input = x.reshape((self.batch_size, self.height, self.width, self.channels)).dimshuffle(0,3,1,2)
+        # whenever we setup data, convert from the above rehsape order//
     
         # Create first convolutional - pooling layers 
         activity = []       # to record Cnn activities 
@@ -268,8 +270,8 @@ class network(object):
             else:
                 print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
                 sys.exit()
-            activity.append ( conv_layers[-1].output )
-            self.weights.append ( conv_layers[-1].filter_img)
+            activity.append ( conv_layers[-1].output.dimshuffle(0,2,3,1) )
+            self.weights.append ( conv_layers[-1].W)
     
     
             # Create the rest of the convolutional - pooling layers in a loop
@@ -365,8 +367,8 @@ class network(object):
                 else:
                     print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
                     sys.exit()
-                self.weights.append ( conv_layers[-1].filter_img )
-                activity.append( conv_layers[-1].output )
+                self.weights.append ( conv_layers[-1].W )
+                activity.append( conv_layers[-1].output.dimshuffle(0,2,3,1) )
 
                 param_counter = param_counter + 2      
                 if self.batch_norm is True:
@@ -636,15 +638,15 @@ class network(object):
     # All datasets are not multi_load enabled. This needs to change ??    
     
     # from theano tutorials for loading pkl files like what is used in theano tutorials
-    def load_data_base(dataset, batch = 1, type_set = 'train' ):
+    def load_data_base( self, batch = 1, type_set = 'train' ):
         # every dataset will have atleast one batch ..... load that.
         
         if type_set == 'train':
-            f = gzip.open(dataset + '/train/batch_' +str(batch) +'.pkl.gz', 'rb')
+            f = gzip.open(self.dataset + '/train/batch_' +str(batch) +'.pkl.gz', 'rb')
         elif type_set == 'valid':
-            f = gzip.open(dataset + '/valid/batch_' +str(batch) +'.pkl.gz', 'rb')            
+            f = gzip.open(self.dataset + '/valid/batch_' +str(batch) +'.pkl.gz', 'rb')            
         else:
-            f = gzip.open(dataset + '/test/batch_' +str(batch) +'.pkl.gz', 'rb')
+            f = gzip.open(self.dataset + '/test/batch_' +str(batch) +'.pkl.gz', 'rb')
             
         data_x, data_y = cPickle.load(f)
         f.close()
@@ -662,7 +664,7 @@ class network(object):
                        
     def set_data (self, batch, type_set, verbose = True):
         
-        data_x, data_y, data_y1 = load_data_base(dataset = self.dataset, batch = batch, type_set = type_set )             
+        data_x, data_y, data_y1 = self.load_data_base(batch, type_set )             
         
         # If we had used only one datavariable instead of three... this wouldn't have been needed. 
         if type_set == 'train':                             
@@ -682,65 +684,32 @@ class network(object):
                 self.valid_set_y1.set_value(data_y1, borrow = True)
         
     def print_net (self, epoch, display_flag = True ):
-        # saving down true images.         
-        if self.main_img_visual is False:
-            for i in xrange( self.n_visual_images):
-                curr_img = numpy.asarray(numpy.reshape(self.train_set_x.get_value( borrow = True )
-                    [self.visualize_ind[i]],[self.height, self.width, self.channels]), dtype = theano.config.floatX)
-                                       
-                if self.display_flag is True:
-                    cv2.imshow("Image Number " +str(i) + 
-                         "_label_" + str(self.train_set_y.eval()[self.visualize_ind[i]]),
-                         curr_img)
-                cv2.imwrite("../visuals/images/image_" 
-                    + str(i)+ "_label_" + str(self.train_set_y.eval()
-                    [self.visualize_ind[i]]) + ".jpg", curr_img )
+        # saving down true images.     
+        if self.main_img_visual is False:          
+            imgs = self.train_set_x.reshape((self.train_set_x.shape[0].eval(),self.height,self.width,self.channels))                                 
+            imgs = imgs.eval()[self.visualize_ind]
+            loc_im = '../visuals/images/image_'
+            imgs = util.visualize(imgs, prefix = loc_im, is_color = self.color_filter if self.channels == 3 else False)    
         self.main_img_visual = True
-
+                
         # visualizing activities.
-        activity = self.activities(0)         
+        activity_now = self.activities(0)     
         for m in xrange(len(self.nkerns)):   #For each layer 
-            loc_ac = '../visuals/activities/layer_' + str(m) + "/epoch_" + str(epoch) +"/"
+            loc_ac = '../visuals/activities/layer_' + str(m) + "/epoch_" + str(epoch)
             if not os.path.exists(loc_ac):   
                 os.makedirs(loc_ac)
-            current_activity = activity[m]
-            for i in xrange(self.n_visual_images):  # for each randomly chosen image .. visualize its activity 
-                util.visualize(current_activity[self.visualize_ind[i]], 
-                    loc = loc_ac, filename = 'activity_' + str(i) + 
-                    "_label_" + str(self.train_set_y.eval()[self.visualize_ind[i]]) +'.jpg' ,
-                    show_img = display_flag)
-
-        # visualizing the filters.
-        for m in xrange(len(self.nkerns)):
-            curr_weights = numpy.squeeze(self.weights[m].eval()) 
-            if curr_weights.shape[1] == 3 and len(curr_weights.shape) == 4 and self.color_filter is True:    
-            # if the image is color, then first layer looks at color pictures and 
-            # I can visualize the filters also as color.
-                # import pdb
-                # pdb.set_trace()
-                curr_image = curr_weights
-                if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
-                    os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))
-                util.visualize_color_filters(curr_image, loc = '../visuals/filters/layer_' + str(m) + 
-                       '/' + 'epoch_' + str(epoch) + '/' , filename = 'kernel_0.jpg' , 
-                       show_img = self.display_flag)
-            elif len(curr_weights.shape) == 3:
-                    if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
-                        os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))
-                    util.visualize(curr_weights, loc = '../visuals/filters/layer_' + str(m) + '/' 
-                        + 'epoch_' + str(epoch) + '/' , filename = 'kernel_' + 
-                        str(i) + '.jpg' , show_img = self.display_flag)
-    
-            else:       # visualize them as grayscale images.
-                for i in xrange(curr_weights.shape[1]):
-                    curr_image = curr_weights [:,i,:,:]
-                    if not os.path.exists('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch)):
-                        os.makedirs('../visuals/filters/layer_'+str(m)+'/epoch_'+str(epoch))
-                    util.visualize(curr_image, loc = '../visuals/filters/layer_' + str(m) + '/' 
-                        + 'epoch_' + str(epoch) + '/' , filename = 'kernel_' + 
-                        str(i) + '.jpg' , show_img = self.display_flag)
-    
-    
+            loc_ac = loc_ac + "/filter_"
+            current_activity = activity_now[m]
+            current_activity = current_activity[self.visualize_ind]                            
+            imgs = util.visualize(current_activity, loc_ac, is_color = False)
+            
+            current_weights = self.weights[m]    # for each layer       
+            loc_we = '../visuals/filters/layer_' + str(m) + "/epoch_" + str(epoch)
+            if not os.path.exists(loc_we):   
+                os.makedirs(loc_we)
+            loc_we = loc_we + "/filter_"
+            imgs = util.visualize(current_weights.dimshuffle(0,2,3,1).eval(), prefix = loc_we, is_color = self.color_filter)            
+            
     # ToDo: should make a results root dir and put in results there ... like root +'/visuals/' 
     def create_dirs( self, visual_params ):  
         
@@ -786,6 +755,7 @@ class network(object):
         early_termination = False
         cost_saved = []
         iteration= 0
+
         start_time_main = time.clock()
         while (epoch_counter < n_epochs) and (not early_termination):
             epoch_counter = epoch_counter + 1 
@@ -797,7 +767,7 @@ class network(object):
                 if self.multi_load is True:
                     iteration= (epoch_counter - 1) * self.n_train_batches * self.batches2train + batch
                     # Load data for this batch
-                    self.reset_data ( batch = batch + 1, type_set = 'train')
+                    self.set_data ( batch = batch , type_set = 'train', verbose = verbose)
                     for minibatch_index in xrange(self.n_train_batches):
                         if verbose is True:
                             print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
@@ -811,9 +781,9 @@ class network(object):
            
             if  epoch_counter % validate_after_epochs == 0:  
                 validation_losses = 0.   
-                if self.multi_load is True:   
-                    for batch in xrange ( self.batches2validate ):
-                        self.reset_data ( batch = batch + 1, type_set = 'valid' )
+                if self.multi_load is True:                    
+                    for batch in xrange ( self.batches2validate):                       
+                        self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
                         validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
                         this_validation_loss = this_validation_loss + [validation_losses]
     
@@ -844,8 +814,8 @@ class network(object):
                 else: # if not multi_load
                     
                     validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
-
                     this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
+                    
                     if verbose is True:
                                             
                         print ("...      -> epoch " + str(epoch_counter) + 
@@ -882,7 +852,7 @@ class network(object):
             self.decay_learning_rate()    
     
     
-            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:               
+            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:            
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)   
             
             end_time = time.clock()
@@ -932,7 +902,7 @@ class network(object):
                 if verbose is True:
                     print "..       --> testing batch " + str(batch)
                 # Load data for this batch
-                self.reset_data ( batch = batch + 1, type_set = 'test')
+                self.set_data ( batch = batch, type_set = 'test' , verbose = verbose)
                 labels = labels + self.test_set_y.eval().tolist() 
                 for mini_batch in xrange(self.n_test_batches):
                     wrong = wrong + int(self.test_model(mini_batch))   

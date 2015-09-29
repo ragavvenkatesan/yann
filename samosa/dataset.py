@@ -12,25 +12,7 @@ from skdata import caltech
 from scipy.misc import imread
 import time
 from scipy import linalg
-from sklearn.utils import array2d, as_float_array
 from sklearn.base import TransformerMixin, BaseEstimator
-
-
-# from theano tutorials for loading pkl files like what is used in theano tutorials.
-def load_data_pkl(dataset):
-
-	# Load the dataset	
-	f = gzip.open(dataset, 'rb')
-	train_set, valid_set, test_set = cPickle.load(f)
-	f.close()
-	
-	train_x, train_y = train_set
-	valid_x, valid_y = valid_set
-	test_x, test_y = test_set 
-	
-	rval = [(train_x, train_y, train_y), (valid_x, valid_y, valid_y), (test_x, test_y, test_y)]
-	return rval
-
 
 # for loading matlab based data.
 def load_data_mat(n_classes, dataset = '../dataset/waldo/' ,batch = 1, type_set = 'train', load_z = False):
@@ -303,7 +285,9 @@ def load_skdata_cifar10():
 	return rval
 
 # caltech 101 of skdata 
-def load_skdata_caltech101(batch_size, rand_perm, batch = 1, type_set = 'train', height = 256, width = 256 ):
+def load_skdata_caltech101(batch_size, n_train_images, n_test_images, n_valid_images,
+						   rand_perm, batch = 1, type_set = 'train', height = 256, width = 256, verbose = False ):
+	# load_batches * batch_size is supplied into batch_size 
 	import skdata
 	from skdata import caltech
 	from scipy.misc import imread
@@ -314,14 +298,27 @@ def load_skdata_caltech101(batch_size, rand_perm, batch = 1, type_set = 'train',
 	img = numpy.asarray(img.objs[0])
 	img = img[rand_perm]								# Shuffle so that the ordering of classes is changed, but use the same shuffle so that loading works consistently.
 	data_y = data_y[rand_perm]
-	data_x = numpy.asarray(numpy.zeros((3*batch_size,height*width*3)), dtype = 'float32' )
-	data_y = numpy.asarray(data_y[0:3*batch_size] , dtype = 'int32' )
+	data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
+	
+	if type_set == 'train':
+		push = 0 + batch * batch_size 	
+	elif type_set == 'test':
+		push = n_train_images + batch * batch_size 
+	elif type_set == 'valid':
+		push = n_train_images + n_test_images + batch * batch_size
+		
+	if verbose is True:
+		print "Processing image:  " + str(push)
+	data_y = numpy.asarray(data_y[push : push + batch_size ] , dtype = 'int32' )	
+	
 	for i in range(batch_size):
-		temp_img = imread(img[3*batch_size*batch + i])
-		temp_img = cv2.normalize(temp_img.astype('float32'), None, 0.0, 1.0, cv2.NORM_MINMAX)
+					
+		temp_img = imread(img[push + i])
+		temp_img = temp_img.astype('float32')
+		
 		if temp_img.ndim != 3:
 	    	# This is a temporary solution. I am allocating to all channels the grayscale values... 
-			temp_img = cv2.normalize(temp_img.astype('float32'), None, 0.0, 1.0, cv2.NORM_MINMAX)
+			temp_img = temp_img.astype('float32')
 			temp_img = cv2.resize(temp_img,(height,width))
 			temp_img1 = numpy.zeros((height,width,3))
 			temp_img1 [:,:,0] = temp_img
@@ -330,40 +327,45 @@ def load_skdata_caltech101(batch_size, rand_perm, batch = 1, type_set = 'train',
 			data_x[i] = numpy.reshape(temp_img1,[1,height*width*3] )
 		else:
 			data_x[i] = numpy.reshape(cv2.resize(temp_img,(height,width)),[1,height*width*3] )
-
-	train_x = data_x[0:batch_size]		
-	train_y = data_y[0:batch_size]
-	test_x = data_x[batch_size:2*batch_size]
-	test_y = data_y[batch_size:2*batch_size]
-	valid_x = data_x[2*batch_size:]
-	valid_y = data_y[2*batch_size:]
-
 	
-	if type_set == 'train':
-		return (train_x,train_y)
-	elif type_set == 'test':
-		return (test_x,test_y)
-	else:
-		return (valid_x,valid_y)
+	return (data_x,data_y)
 
 # caltech 256 of skdata 
-def load_skdata_caltech256(batch_size, rand_perm, batch = 1, type_set = 'train', height = 256, width = 256 ):
+def load_skdata_caltech256(batch_size, n_train_images, n_test_images, n_valid_images,
+						   rand_perm, batch = 1, type_set = 'train', height = 256, width = 256, verbose = False ):
 
+	# load_batches * batch_size is supplied into batch_size 
+	import skdata
+	from skdata import caltech
+	from scipy.misc import imread
 	cal = caltech.Caltech256()
 	cal.fetch()
 	meta = cal._get_meta()
 	img,data_y = cal.img_classification_task()
 	img = numpy.asarray(img.objs[0])
-	img = img[rand_perm]		
+	img = img[rand_perm]								# Shuffle so that the ordering of classes is changed, but use the same shuffle so that loading works consistently.
 	data_y = data_y[rand_perm]
-	data_x = numpy.asarray(numpy.zeros((3*batch_size, height*width*3)), dtype = 'float32' )
-	data_y = numpy.asarray(data_y[0:3*batch_size] , dtype = 'int32' )
+	data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
+	
+	if type_set == 'train':
+		push = 0 + batch * batch_size 	
+	elif type_set == 'test':
+		push = n_train_images + batch * batch_size 
+	elif type_set == 'valid':
+		push = n_train_images + n_test_images + batch * batch_size
+		
+	if verbose is True:
+		print "Processing image:  " + str(push)
+	data_y = numpy.asarray(data_y[push : push + batch_size ] , dtype = 'int32' )	
+	
 	for i in range(batch_size):
-		temp_img = imread(img[3*batch_size*batch + i])
-		temp_img = cv2.normalize(temp_img.astype('float32'), None, 0.0, 1.0, cv2.NORM_MINMAX)
+					
+		temp_img = imread(img[push + i])
+		temp_img = temp_img.astype('float32')
+		
 		if temp_img.ndim != 3:
-	    	# This is a temporary solution. I am allocating to all channels the grayscale values... 
-			temp_img = cv2.normalize(temp_img.astype('float32'), None, 0.0, 1.0, cv2.NORM_MINMAX)
+			# This is a temporary solution. I am allocating to all channels the grayscale values... 
+			temp_img = temp_img.astype('float32')
 			temp_img = cv2.resize(temp_img,(height,width))
 			temp_img1 = numpy.zeros((height,width,3))
 			temp_img1 [:,:,0] = temp_img
@@ -372,27 +374,14 @@ def load_skdata_caltech256(batch_size, rand_perm, batch = 1, type_set = 'train',
 			data_x[i] = numpy.reshape(temp_img1,[1,height*width*3] )
 		else:
 			data_x[i] = numpy.reshape(cv2.resize(temp_img,(height,width)),[1,height*width*3] )
-
-	train_x = data_x[0:batch_size]		
-	train_y = data_y[0:batch_size]
-	test_x = data_x[batch_size:2*batch_size]
-	test_y = data_y[batch_size:2*batch_size]
-	valid_x = data_x[2*batch_size:]
-	valid_y = data_y[2*batch_size:]
-
 	
-	if type_set == 'train':
-		return (train_x,train_y)
-	elif type_set == 'test':
-		return (test_x,test_y)
-	else:
-		return (valid_x,valid_y)
+	return (data_x,data_y)
+
 		
 def rgb2gray(rgb):
 
-    r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
+    r, g, b = rgb[:,:,:,0], rgb[:,:,:,1], rgb[:,:,:,2]
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
-
     return gray
 			
 def preprocessing( data, height, width, channels, params): 
@@ -401,7 +390,6 @@ def preprocessing( data, height, width, channels, params):
 	GCN 			= params [ "GCN" ]      
 	ZCA 			= params [ "ZCA" ]	 
 	gray 			= params [ "gray" ]                     
- 
 	# Assume that the data is already resized on height and widht and all ... 
 	if len(data.shape) == 2 and channels > 1: 	
 		data = numpy.reshape ( data, (data.shape[0], height, width, channels)) 
@@ -409,13 +397,19 @@ def preprocessing( data, height, width, channels, params):
 		data = numpy.reshape ( data, (data.shape[0], height, width)) 
 	shp = data.shape
 	
-	if gray is True and len(shp) == 4: 	
+	out_shp_flag = False
+	if gray is True and len(shp) == 4 and out_shp_flag is False: 	
 		temp_data = numpy.zeros(shp)
-		for i in xrange(shp[0]):			
-			temp_data[i] = (data[i])
-		data = temp_data
+		data = rgb2gray(data)
+		out_shp = (shp[0], shp[1]*shp[2])
+		
+	if len(shp) == 2 and out_shp_flag is False:
+		out_shp = shp
+		
+	if gray is False and len(shp) == 4 and out_shp_flag is False:
 		out_shp = (shp[0], shp[1]*shp[2]*shp[3])
-	elif len(shp) == 3:
+		
+	if len(shp) == 3 and out_shp_flag is False:
 		out_shp = (shp[0], shp[1]*shp[2])
 	
 	# from here on data is processed as a 2D matrix
@@ -458,13 +452,12 @@ class setup_dataset (object):
 		
 		start_time = time.clock()
 		
-		temp_dir = '_dataset_' + str(randint(11111,99999))			
+		temp_dir = './_datasets/_dataset_' + str(randint(11111,99999))			
 		os.mkdir(temp_dir)
 		os.mkdir(temp_dir + "/train" )
 		os.mkdir(temp_dir + "/test"  )
 		os.mkdir(temp_dir + "/valid" )
 			
-		
 		# load matlab files as self.dataset.
 		if self.data_type == 'mat':
 			
@@ -728,6 +721,7 @@ class setup_dataset (object):
 					}
 					
 			elif self.dataset == 'caltech101':
+				verbose = False
 				print "... importing caltech 101 from skdata"
 				
 				# shuffle the data
@@ -735,32 +729,27 @@ class setup_dataset (object):
 				self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
 				# create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
 				
-				n_train_images = total_images_in_dataset / 3
-				n_test_images = total_images_in_dataset / 3
-				n_valid_images = total_images_in_dataset / 3 
+				n_train_images = self.batch_size * self.batches2train
+				n_test_images = self.batch_size * self.batches2test
+				n_valid_images = self.batch_size * self.batches2validate
 				
-				n_train_batches_all = n_train_images / self.batch_size 
-				n_test_batches_all = n_test_images / self.batch_size 
-				n_valid_batches_all = n_valid_images / self.batch_size
+				assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
 				
-				if ( (n_train_batches_all < self.batches2train) or 
-						(n_test_batches_all < self.batches2test) or 
-						(n_valid_batches_all < self.batches2validate) ): 
-					# You can't have so many batches.
-					print "...  !! self.dataset doens't have so many batches. "
-					raise AssertionError()
-				
-				print ".... setting up dataset"
-				
-				print "... 		--> training data "				
-				for i in xrange(self.batches2train):		# for each batch_i file.... 
+				print ".... setting up dataset"				
+				print "... 		--> training data "						
+				looper = n_train_images / self.load_batches						
+				for i in xrange(looper):		# for each batch_i file.... 
 					data_x, data_y  = load_skdata_caltech101(
+													n_train_images = n_train_images,
+													n_test_images = n_test_images,
+													n_valid_images = n_valid_images,
 													batch_size = self.load_batches, 
 													rand_perm = self.rand_perm, 
 													batch = i , 
 													type_set = 'train' ,
 													height = self.height,
-													width = self.width)  
+													width = self.width,
+													verbose = verbose )  													
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
@@ -768,16 +757,23 @@ class setup_dataset (object):
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()
-				
+			
+					
+				self.n_train_batches = data_x.shape[0] / self.batch_size											
 				print "... 		--> testing data "				
-				for i in xrange(self.batches2test):		# for each batch_i file.... 
+				looper = n_test_images / self.load_batches		
+				for i in xrange(looper):		# for each batch_i file.... 
 					data_x, data_y  = load_skdata_caltech101(
+													n_train_images = n_train_images,
+													n_test_images = n_test_images,
+													n_valid_images = n_valid_images,
 													batch_size = self.load_batches, 
 													rand_perm = self.rand_perm, 
 													batch = i , 
 													type_set = 'test' ,
 													height = self.height,
-													width = self.width)  
+													width = self.width,
+													verbose = verbose )  
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
@@ -785,17 +781,22 @@ class setup_dataset (object):
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
-													
+				self.n_test_batches = data_x.shape[0] / self.batch_size																
 				
-				print "... 		--> validation data "				
-				for i in xrange(self.batches2test):		# for each batch_i file.... 
+				print "... 		--> validation data "	
+				looper = n_valid_images / self.load_batches									
+				for i in xrange(looper):		# for each batch_i file.... 
 					data_x, data_y  = load_skdata_caltech101(
+													n_train_images = n_train_images,
+													n_test_images = n_test_images,
+													n_valid_images = n_valid_images,
 													batch_size = self.load_batches, 
 													rand_perm = self.rand_perm, 
 													batch = i , 
 													type_set = 'valid' ,
 													height = self.height,
-													width = self.width)  
+													width = self.width,
+													verbose = verbose  )  
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
@@ -803,17 +804,17 @@ class setup_dataset (object):
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
-														
+				self.n_valid_batches = data_x.shape[0] / self.batch_size																	
 				self.multi_load = True
 				
 				new_data_params = {
 					"type"               : 'base',                                   
 					"loc"                : temp_dir,                                          
 					"batch_size"         : self.batch_size,                                    
-					"load_batches"       : self.load_batches,
-					"batches2train"      : self.batches2train,                                      
-					"batches2test"       : self.batches2test,                                     
-					"batches2validate"   : self.batches2validate,                                       
+					"load_batches"       : self.load_batches / self.batch_size,
+					"batches2train"      : self.batches2train / (self.load_batches / self.batch_size) ,                                      
+					"batches2test"       : self.batches2test / (self.load_batches / self.batch_size),                                     
+					"batches2validate"   : self.batches2validate / (self.load_batches / self.batch_size),                                       
 					"height"             : self.height,                                      
 					"width"              : self.width,                                       
 					"channels"           : self.channels,
@@ -828,34 +829,31 @@ class setup_dataset (object):
 				
 					# shuffle the data
 				total_images_in_dataset = 30607 
-				self.rand_perm = numpy.random.permutation(total_images_in_dataset)  # create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
+				self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
+				# create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
 				
-				n_train_images = total_images_in_dataset / 3
-				n_test_images = total_images_in_dataset / 3
-				n_valid_images = total_images_in_dataset / 3 
-				
-				n_train_batches_all = n_train_images / self.batch_size 
-				n_test_batches_all = n_test_images / self.batch_size 
-				n_valid_batches_all = n_valid_images / self.batch_size
-				
-				if ( (n_train_batches_all < self.batches2train) or 
-						(n_test_batches_all < self.batches2test) or  
-						(n_valid_batches_all < self.batches2validate) ):        # You can't have so many batches.
-					print "...  !! self.dataset doens't have so many batches. "
-					raise AssertionError()
+				n_train_images = self.batch_size * self.batches2train
+				n_test_images = self.batch_size * self.batches2test
+				n_valid_images = self.batch_size * self.batches2validate
 				
 				
-				print ".... setting up dataset"
+				assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
 				
-				print "... 		--> training data "				
-				for i in xrange(self.batches2train):		# for each batch_i file.... 
-					data_x, data_y  = load_skdata_caltech256(
+				print ".... setting up dataset"				
+				print "... 		--> training data "						
+				looper = n_train_images / self.load_batches						
+				for i in xrange(looper):		# for each batch_i file.... 
+					data_x, data_y  = load_skdata_caltech101(
+													n_train_images = n_train_images,
+													n_test_images = n_test_images,
+													n_valid_images = n_valid_images,
 													batch_size = self.load_batches, 
 													rand_perm = self.rand_perm, 
 													batch = i , 
 													type_set = 'train' ,
 													height = self.height,
-													width = self.width)  
+													width = self.width,
+													verbose = verbose )  													
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
@@ -864,15 +862,22 @@ class setup_dataset (object):
 					cPickle.dump(obj, f, protocol=2)
 					f.close()
 				
+					
+				self.n_train_batches = data_x.shape[0] / self.batch_size											
 				print "... 		--> testing data "				
-				for i in xrange(self.batches2test):		# for each batch_i file.... 
-					data_x, data_y  = load_skdata_caltech256(
+				looper = n_test_images / self.load_batches		
+				for i in xrange(looper):		# for each batch_i file.... 
+					data_x, data_y  = load_skdata_caltech101(
+													n_train_images = n_train_images,
+													n_test_images = n_test_images,
+													n_valid_images = n_valid_images,
 													batch_size = self.load_batches, 
 													rand_perm = self.rand_perm, 
 													batch = i , 
 													type_set = 'test' ,
 													height = self.height,
-													width = self.width)  
+													width = self.width,
+													verbose = verbose )  
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
@@ -880,17 +885,22 @@ class setup_dataset (object):
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
-													
+				self.n_test_batches = data_x.shape[0] / self.batch_size																
 				
-				print "... 		--> validation data "				
-				for i in xrange(self.batches2test):		# for each batch_i file.... 
-					data_x, data_y  = load_skdata_caltech256(
+				print "... 		--> validation data "	
+				looper = n_valid_images / self.load_batches									
+				for i in xrange(looper):		# for each batch_i file.... 
+					data_x, data_y  = load_skdata_caltech101(
+													n_train_images = n_train_images,
+													n_test_images = n_test_images,
+													n_valid_images = n_valid_images,
 													batch_size = self.load_batches, 
 													rand_perm = self.rand_perm, 
 													batch = i , 
 													type_set = 'valid' ,
 													height = self.height,
-													width = self.width)  
+													width = self.width,
+													verbose = verbose  )  
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
@@ -898,17 +908,18 @@ class setup_dataset (object):
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
-														
+				self.n_valid_batches = data_x.shape[0] / self.batch_size																	
 				self.multi_load = True
+				
 				
 				new_data_params = {
 					"type"               : 'base',                                   
 					"loc"                : temp_dir,                                          
 					"batch_size"         : self.batch_size,                                    
-					"load_batches"       : self.load_batches,
-					"batches2train"      : self.batches2train,                                      
-					"batches2test"       : self.batches2test,                                     
-					"batches2validate"   : self.batches2validate,                                       
+					"load_batches"       : self.load_batches / self.batch_size,
+					"batches2train"      : self.batches2train / (self.load_batches / self.batch_size),                                      
+					"batches2test"       : self.batches2test / (self.load_batches / self.batch_size),                                     
+					"batches2validate"   : self.batches2validate / (self.load_batches / self.batch_size),                                       
 					"height"             : self.height,                                      
 					"width"              : self.width,                                       
 					"channels"           : self.channels,
@@ -917,7 +928,12 @@ class setup_dataset (object):
 					"n_test_batches"	 : self.n_test_batches,
 					"n_valid_batches"	 : self.n_valid_batches  					                                        
 					}
-		assert ( self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]) )		
+									
+		if preprocess_params["gray"] is True:
+			new_data_params ["channels"] = 1 
+			self.channels = 1 
+		
+		assert ( self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]) )
 		f = gzip.open(temp_dir +  '/data_params.pkl.gz', 'wb')
 		cPickle.dump(new_data_params, f, protocol=2)
 		f.close()				  	

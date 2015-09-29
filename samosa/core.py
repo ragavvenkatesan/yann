@@ -221,7 +221,8 @@ class LogisticRegression(object):
                 ('y', target.type, 'y_pred', self.y_pred.type))
         # check if y is of the correct datatype
         if y.dtype.startswith('int'):
-            return T.sum(T.neq(self.y_pred, y))      # L1 norm of the error. 
+            return T.sum(T.neq(T.cast(self.y_pred,'int32'), T.cast(y,'int32')))      # L1 norm of the error.
+            #return T.sum(T.neq(self.y_pred, y))      # L1 norm of the error.  
         else:
             raise NotImplementedError()
 
@@ -707,10 +708,6 @@ class Conv2DPoolLayer(object):
                 
         # store parameters of this layer
         self.params = [self.W, self.b]
-        self.img_shape = (filter_shape[2], filter_shape[3])
-        self.tile_shape = (numpy.asarray(numpy.ceil(numpy.sqrt(filter_shape[0]*filter_shape[1])), dtype='int32'), 
-                            numpy.asarray(filter_shape[0]*filter_shape[1]/numpy.ceil(filter_shape[0]*filter_shape[1]), dtype='int32') )
-        self.filter_img = self.W.reshape((filter_shape[0],filter_shape[1],filter_shape[2],filter_shape[3]))
                 
 class DropoutConv2DPoolLayer(Conv2DPoolLayer):
     def __init__(self, rng, input,
