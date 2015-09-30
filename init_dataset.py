@@ -22,14 +22,14 @@ if __name__ == '__main__':
               
     data_params = {
                    "type"               : 'skdata',                                   
-                   "loc"                : 'caltech101',                                          
-                   "batch_size"         : 72,                                     
+                   "loc"                : 'cifar10',                                          
+                   "batch_size"         : 100,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 70,                                      
-                   "batches2test"       : 42,                                      
-                   "batches2validate"   : 15,                                        
-                   "height"             : 128,                                       
-                   "width"              : 128,                                       
+                   "batches2train"      : 400,                                      
+                   "batches2test"       : 100,                                      
+                   "batches2validate"   : 100,                                        
+                   "height"             : 32,                                       
+                   "width"              : 32,                                       
                    "channels"           : 3                                       
                   }
                   
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                             "gray"          : False,
                         }
                   
-    setup( data_params = data_params, outs = 102 )
+    setup( data_params = data_params, outs = 10 )
     
     """
     # If you want to modify data_params. 

@@ -190,7 +190,7 @@ class network(object):
         next_in = [ self.height, self.width, self.channels ]
         stack_size = 1 
         param_counter = 0 
-        
+
         if not self.nkerns == []:     
             if len(filt_size) == 2:        
                 dropout_conv_layers.append ( 
@@ -207,7 +207,7 @@ class network(object):
                                         b = None if init_params is None else init_params[param_counter + 1], 
                                         batch_norm = self.batch_norm,
                                         alpha = None if init_params is None else init_params[param_counter + 2],
-                                        p = self.cnn_dropout_rates[0]                                      
+                                        p = self.cnn_dropout_rates[0],                                 
                                          ) ) 
                 conv_layers.append ( 
                                 core.Conv2DPoolLayer(
@@ -223,7 +223,7 @@ class network(object):
                                         b = dropout_conv_layers[-1].params[1],
                                         batch_norm = self.batch_norm,
                                         alpha = dropout_conv_layers[-1].alpha,
-                                        verbose = verbose
+                                        verbose = verbose                                       
                                          ) )  
                 next_in[0] = int(floor(( self.height - filt_size [0] + 1 ))) / (pool_size[0] )       
                 next_in[1] = int(floor(( self.width - filt_size[1] + 1 ))) / (pool_size[1] )    
@@ -262,14 +262,15 @@ class network(object):
                                         verbose = verbose
                                          ) )
                                                                                   
-                next_in[0] = int(floor( ( self.height - filt_size [1] + 1 ))) / (pool_size[1] * max_out_size[1])      
-                next_in[1] = int(floor(( self.width - filt_size[2] + 1 ))) / (pool_size[2] * max_out_size[1])
-                next_in[2] = int(floor(self.nkerns[0] * (self.channels - filt_size[0] + 1))) / (pool_size[0] * max_out_size[0])
+                next_in[0] = int(floor( ( self.height - filt_size [1] + 1 ))) / (pool_size[1])      
+                next_in[1] = int(floor(( self.width - filt_size[2] + 1 ))) / (pool_size[2] )
+                next_in[2] = self.nkerns[0]  / (pool_size[0] * max_out_size)
 
                    
             else:
                 print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
                 sys.exit()
+                
             activity.append ( conv_layers[-1].output.dimshuffle(0,2,3,1) )
             self.weights.append ( conv_layers[-1].W)
     
@@ -357,12 +358,12 @@ class network(object):
                                         W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[layer + 1]),
                                         b = dropout_conv_layers[-1].params[1] ,
                                         batch_norm = self.batch_norm,
-                                        alpha = dropout_con_layers[-1].alpha,
+                                        alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
                                          ) )             
-                    next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * max_out_size[1])    
-                    next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] * max_out_size [2])
-                    next_in[2] = int(floor(self.nkerns[layer+1] * ( next_in[2] - filt_size[0] + 1))) / (pool_size[0] * max_out_size[0])    
+                    next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] )    
+                    next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] )
+                    next_in[2] = self.nkerns[layer+1] / (pool_size[0] * max_out_size)    
                                               
                 else:
                     print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
@@ -372,8 +373,7 @@ class network(object):
 
                 param_counter = param_counter + 2      
                 if self.batch_norm is True:
-                    param_counter = param_counter + 1
-                    
+                    param_counter = param_counter + 1           
         # Assemble fully connected laters
         if self.nkerns == []:
             fully_connected_input = first_layer_input.flatten(2)
