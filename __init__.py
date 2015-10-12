@@ -57,6 +57,7 @@ def run_cnn(
     test_net.test ( verbose = verbose )
     """                   
                     
+                   
  ## Boiler Plate ## 
 if __name__ == '__main__':
              
@@ -65,7 +66,7 @@ if __name__ == '__main__':
                         "error_file_name"       : "../results/errortxt",
                         "cost_file_name"        : "../results/cost.txt",
                         "confusion_file_name"   : "../results/confusion.txt",
-                        "network_save_name"     : "../results/network.pkl.gz"
+                        "network_save_name"     : "../results/network.pkl.gz "
                     }
     visual_params = {
                         "visualize_flag"        : True,
@@ -95,32 +96,33 @@ if __name__ == '__main__':
     arch_params = {
                     
                     "squared_filter_length_limit"       : 15,   
-                    "mlp_activations"                   : [ Identity, Softmax ],
-                    "cnn_dropout"                       : True,
+                    "mlp_activations"                   : [ Softmax ],
+                    "cnn_dropout"                       : False,
                     "mlp_dropout"                       : True,
-                    "mlp_dropout_rates"                 : [ 0.5, 0.5, ],
-                    "num_nodes"                         : [ 800  ],                                     
+                    "mlp_dropout_rates"                 : [ 0.5, ],
+                    "num_nodes"                         : [  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ Identity, Identity, Identity ],             
+                    "cnn_activations"                   : [ ReLU, ReLU, ReLU ],             
                     "batch_norm"                        : True,
-                    "nkerns"                            : [ 28, 28, 28 ],              
-                    "filter_size"                       : [ (5, 5), (5 ,5), (5, 5)],
-                    "pooling_size"                      : [ (1, 1), (2, 2), (1, 1)],                                   
-                    "cnn_maxout"                        : [ 2, 2, 2],
-                    "mlp_maxout"                        : [ 2 ],
-                    "cnn_dropout_rates"                 : [ 0.2, 0.5, 0.5],
+                    "nkerns"                            : [ 32, 32, 64 ],              
+                    "filter_size"                       : [ (5, 5), (5, 5), (5, 5) ],
+                    "pooling_size"                      : [ (2, 2), (2, 2), (1, 1) ],
+                    "cnn_maxout"                        : [ 2, 2, 2 ],                    
+                    "mlp_maxout"                        : [ 2 , 2],
+                    "cnn_dropout_rates"                 : [ 0.2, 0.2, 0.2 ],
                     "random_seed"                       : 23455, 
-                    "max_out"                           : 1
+                    "max_out"                           : 0
 
-                 }                    
+                 }                                          
+
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_24420", 
+                    dataset                 = "_datasets/_dataset_91882", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = 1,
                     n_epochs                = 300,
-                    verbose                 = True,                                                
+                    verbose                 = False,                                                
                 )

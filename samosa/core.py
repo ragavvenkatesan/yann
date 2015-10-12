@@ -741,45 +741,58 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
         self.output = _dropout_from_layer(rng, self.output, p=p)          
                   
               
+# From theano tutorials
 class Conv3DPoolLayer(object):
+    """Pool Layer of a convolutional network .. taken from the theano tutorials"""
 
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize, max_out, maxout_size, activation, W = None, b = None, verbose = True):
-        
-        
+    def __init__(self, rng, input,
+                         filter_shape,
+                          image_shape,
+                           poolsize,
+                            max_out,
+                             maxout_size,
+                              activation,
+                               W = None,
+                                b = None,
+                                 alpha = None,
+                                  batch_norm = False,
+                                   p = 0.5 ,
+                        verbose = True):
+                            
         batchsize  = image_shape[0]
         channels   = image_shape[1] 
         stack_size = image_shape[2]
         width      = image_shape[4]
         height     = image_shape[3]
-        bias_shape     =  int(floor(filter_shape[0] *   (channels - filter_shape[1] + 1))) / poolsize[0] 
-                            		      #  [stacking]  [  Actual convolution on 3D   ]  [ pooling  ]
 
         
         next_height = int(floor((height - filter_shape[3] + 1))) / poolsize[1]
-        next_width = int(floor((width - filter_shape[4] + 1))) / poolsize[2]        
-        output_size = ( batchsize, bias_shape, next_height , next_width )
+        next_width = int(floor((width - filter_shape[4] + 1))) / poolsize[2] 
+        kern_shape = int(floor(filter_shape[0]/maxout_size))     
+
+        #output_size = ( batchsize, bias_shape, next_height , next_width )
         
+        srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
         if verbose is True:
             print "           -->        initializing 3D convolutional layer with " + str(filter_shape[0])  + " kernels"
-            print "                                  ....... kernel size [" + str(filter_shape[3]) + " X " + str(filter_shape[4]) + " X " + str(filter_shape[1]) + "]"
-            print "                                  ....... pooling size [" + str(poolsize[1]) + " X " + str(poolsize[2]) + " X " + str(poolsize[0]) + "]"
-            print "                                  ....... input size ["  + str(image_shape[3]) + " X " + str(image_shape[4]) + " X " + str(image_shape[1]) + "]"
-            print "                                  ....... output size ["  + str(output_size[2]) + " X " + str(output_size[3]) + " X " + str(output_size[1]) + "]"
-        self.input = input.reshape((batchsize, channels, stack_size, width, height))
-        # there are "num input feature maps * filter_depth * stack_size *  filter height * filter width"
-        # inputs to each hidden unit
+            print "                                  ....... kernel size [" + str(filter_shape[1]) + " X " + str(filter_shape[3]) + " X " + str(filter_shape[4]) +"]"
+            print "                                  ....... pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + " X " + str(poolsize[2]) + "]"
+            print "                                  ....... maxout size [" + str(maxout_size) + "]"
+            print "                                  ....... input size ["  + str(height)+ " X " + str(width) + "]"
+            print "                                  ....... input number of feature maps is " +str(channels) 
+            if max_out > 0:
+                print "                                  ....... output size is [" + str((height - filter_shape[3] + 1 ) / (poolsize[1]) ) + " X " + str((width - filter_shape[4] + 1 ) / (poolsize[2]) ) + "]"
+        self.input = input
         
+        # there are "num input feature maps * filter height * filter width"
+        # inputs to each hidden unit
         fan_in = numpy.prod(filter_shape[1:])
         # each unit in the lower layer receives a gradient from:
         # "num output feature maps * filter height * filter width" /
         #   pooling size
         fan_out = (filter_shape[0] * numpy.prod(filter_shape[2:]) /
                    numpy.prod(poolsize))
-        # initialize weights with random weights        
-        # define inputs and filters shapes.
-       
-        # This makes things a bit more clearer. I know its redundant but I am comfortable with this ! :D 
-       
+        # initialize weights with random weights
         W_bound = numpy.sqrt(6. / (fan_in + fan_out))
         if W is None:
             self.W = theano.shared(
@@ -794,44 +807,57 @@ class Conv3DPoolLayer(object):
             self.W = W 
         # the bias is a 1D tensor -- one bias per output feature map
         if b is None:
-            b_values = numpy.zeros((bias_shape,), dtype=theano.config.floatX)
-            self.b = theano.shared(value=b_values, borrow=True)         # poolsize division because the number of feature maps might also be pooled. 
+            b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+            self.b = theano.shared(value=b_values, borrow=True)
         else:
             self.b = b
-
+        
+                 
+        if alpha is None:
+            alpha_values = numpy.ones((filter_shape[0],), dtype=theano.config.floatX)
+            self.alpha = theano.shared(value=alpha_values, borrow = True)
+        else:
+            self.alpha = alpha   
+             
         # convolve input feature maps with filters        
         conv_out = conv3d(            
             signals=self.input,
             filters=self.W,
             signals_shape=image_shape,
-        	filters_shape=filter_shape,
+            filters_shape=filter_shape,
         )
+
+        # downsample each feature map individually, using maxpoolig
+        #if fast_conv is False:
 
         # downsample each feature map individually, using maxpooling        
         pool_out =  maxpool_3D(
                     input=conv_out,
                     ds=poolsize           
                 )
-
   
-        
-        self.output = activation(pool_out.reshape (output_size)
-                            + self.b.dimshuffle('x', 0, 'x', 'x'))
-        
-        # store parameters of this layer
-        self.params = [self.W, self.b]
-        
+        pool_out = pool_out.sum(axis = 1, keepdims = False) # Should this become a summation like what Pascal said happens in the 2D Conv ??        
         self.co = conv_out
         self.po = pool_out
        
-        
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
         # During debugging while in pdb inside a terminal from the lenet module's train function code, use functions such as :
         #    co = theano.function ( inputs = [index], outputs = conv_layers[0].co, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
         #    po = theano.function ( inputs = [index], outputs = conv_layers[0].po, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
         #    ip = theano.function ( inputs = [index], outputs = conv_layers[0].input, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
         #    op = theano.function ( inputs = [index], outputs = conv_layers[0].output, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})                        
+       
         #To debug the layers....
+        if batch_norm is True:
+            mean = pool_out.mean( (0,2,3), keepdims = True )
+            std = pool_out.std( (0,2,3), keepdims = True )
+            
+            std += 0.001 # To avoid divide by zero like fudge_factor
+        
+            self.pool_out = pool_out - mean
+            self.output = activation(pool_out * ( self.alpha.dimshuffle('x', 0, 'x', 'x') / std ) + self.b.dimshuffle('x', 0, 'x', 'x'))
+        else:
+            self.output = activation(pool_out + self.b.dimshuffle('x', 0, 'x', 'x'))              
 
         """ 
             max_out =1 Ian Goodfellow et al. " Maxout Networks " on arXiv. (jmlr)
@@ -842,50 +868,48 @@ class Conv3DPoolLayer(object):
             Same is also implemeted in the MLP layers also.
             
         """
+            
         if max_out == 1:  # Do maxout network.
-            maxout_out = None                                                       
-            for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size]                                   
+            maxout_out = None        
+            for i in xrange(maxout_size):
+                temp = self.output[:,i::maxout_size,:,:]                                   
                 if maxout_out is None:                                              
                     maxout_out = temp                                                  
                 else:                                                               
                     maxout_out = T.maximum(maxout_out, temp)  
-                
+            self.output = maxout_out   
+             
         elif max_out == 2:  # Do meanout network.
             maxout_out = None                                                       
             for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size]                                   
+                temp = self.output[:,i::maxout_size,:,:]                                   
                 if maxout_out is None:                                              
                     maxout_out = temp                                                  
                 else:                                                               
                     maxout_out = (maxout_out*(i+1)+temp)/(i+2)   
-                
+            self.output = maxout_out    
+            
         elif max_out == 3: # Do mixout network.
-        
+            maxout_out = None
             maxout_mean = None
             maxout_max  = None 
             for i in xrange(maxout_size):                                            
-                temp = output[:,i::maxout_size]                                   
+                temp = self.output[:,i::maxout_size,:,:]                                   
                 if maxout_mean is None:                                              
                     maxout_mean = temp
                     maxout_max = temp
+                    maxout_out = temp
                 else:                                                               
                     maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
                     maxout_max = T.maximum(maxout_out, temp) 
                     
             lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
             maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
-            
-        if max_out > 0:
-            self.output = maxout_out        
-            
-            
-        self.img_shape = (filter_shape[2], filter_shape[3])
-        self.tile_shape = (numpy.asarray(numpy.ceil(numpy.sqrt(filter_shape[0]*filter_shape[1])), dtype='int32'), 
-                            numpy.asarray(filter_shape[0]*filter_shape[1]/numpy.ceil(filter_shape[0]*filter_shape[1]), dtype='int32') )
-        self.filter_img = self.W
-        self.filter_img.reshape((filter_shape[0],filter_shape[1]*filter_shape[2],filter_shape[4]))
-        
+            self.output = maxout_out
+                
+        # store parameters of this layer
+        self.params = [self.W, self.b]
+                
 class DropoutConv3DPoolLayer(Conv3DPoolLayer):
     def __init__(self, rng, input,
                              filter_shape,
@@ -896,6 +920,8 @@ class DropoutConv3DPoolLayer(Conv3DPoolLayer):
                                 activation,
                                  W = None,
                                   b = None,
+                                  alpha = None,
+                                  batch_norm = False,
                                  verbose = True,  
                                   p = 0.5):
         super(DropoutConv3DPoolLayer, self).__init__(
@@ -904,9 +930,14 @@ class DropoutConv3DPoolLayer(Conv3DPoolLayer):
                     filter_shape = filter_shape,
                      image_shape = image_shape,
                       poolsize = poolsize,
+                      max_out = max_out,
+                      maxout_size = maxout_size,
                        activation = activation,
                         W = W, 
                         b = b,
-                        verbose = False )
+                        alpha = alpha,
+                        batch_norm = batch_norm,
+                        verbose = False)
                         
-        self.output = _dropout_from_layer(rng, self.output, p=p)      
+        self.output = _dropout_from_layer(rng, self.output, p=p)          
+           
