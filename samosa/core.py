@@ -837,8 +837,9 @@ class Conv3DPoolLayer(object):
                 )
   
         pool_out = pool_out.sum(axis = 1, keepdims = False) # Should this become a summation like what Pascal said happens in the 2D Conv ??        
-        self.co = conv_out
-        self.po = pool_out
+
+        #self.co = conv_out
+        #self.po = pool_out
        
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
         # During debugging while in pdb inside a terminal from the lenet module's train function code, use functions such as :
