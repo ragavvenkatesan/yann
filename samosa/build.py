@@ -144,9 +144,11 @@ class network(object):
         self.outs                            = arch_params [ "outs" ]
         self.filter_size                     = arch_params [ "filter_size" ]
         self.pooling_size                    = arch_params [ "pooling_size" ]
+        self.conv_stride_size                = arch_params [ "conv_stride_size" ]
         self.num_nodes                       = arch_params [ "num_nodes" ]
         random_seed                          = arch_params [ "random_seed" ]
         self.svm_flag                        = arch_params [ "svm_flag" ]   
+        self.mean_subtract                   = arch_params [ "mean_subtract" ]
         self.max_out                         = arch_params [ "max_out" ] 
         self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
         self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
@@ -170,6 +172,8 @@ class network(object):
             y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
      
         first_layer_input = x.reshape((self.batch_size, self.height, self.width, self.channels)).dimshuffle(0,3,1,2)
+        mean_sub_input = first_layer_input - first_layer_input.mean()
+        
         # whenever we setup data, convert from the above rehsape order//
     
         # Create first convolutional - pooling layers 
@@ -182,6 +186,7 @@ class network(object):
         if not self.nkerns == []:
             filt_size = self.filter_size[0]
             pool_size = self.pooling_size[0]
+            stride    = self.conv_stride_size[0]
         if self.max_out > 0:     
             max_out_size = self.cnn_maxout[0]
         else: 
@@ -196,10 +201,11 @@ class network(object):
                 dropout_conv_layers.append ( 
                                 core.DropoutConv2DPoolLayer(
                                         rng = self.rng,
-                                        input = first_layer_input,
+                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
                                         image_shape=(self.batch_size, self.channels , self.height, self.width),
                                         filter_shape=(self.nkerns[0], self.channels , filt_size[0], filt_size[1]),
                                         poolsize = pool_size,
+                                        stride = stride,
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[0],
@@ -212,10 +218,11 @@ class network(object):
                 conv_layers.append ( 
                                 core.Conv2DPoolLayer(
                                         rng = self.rng,
-                                        input = first_layer_input,
+                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
                                         image_shape=(self.batch_size, self.channels , self.height, self.width),
                                         filter_shape=(self.nkerns[0], self.channels , filt_size[0], filt_size[1]),
                                         poolsize = pool_size,
+                                        stride = stride,
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[0],
@@ -225,17 +232,18 @@ class network(object):
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose                                       
                                          ) )  
-                next_in[0] = int(floor(( self.height - filt_size [0] + 1 ))) / (pool_size[0] )       
-                next_in[1] = int(floor(( self.width - filt_size[1] + 1 ))) / (pool_size[1] )    
+                next_in[0] = int(floor(( self.height - filt_size [0] + 1 ))) / (pool_size[0] * stride[0] )       
+                next_in[1] = int(floor(( self.width - filt_size[1] + 1 ))) / (pool_size[1] * stride [1] )    
                 next_in[2] = self.nkerns[0]  / max_out_size                                                                                                                 
             elif len(filt_size) == 3:
                 dropout_conv_layers.append ( 
                                 core.DropoutConv3DPoolLayer(
                                         rng = self.rng,
-                                        input = first_layer_input,
+                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
                                         image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
                                         filter_shape=(self.nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
-                                        poolsize=pool_size,                                        
+                                        poolsize=pool_size,      
+                                        stride = stride,                                   
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[0],
@@ -248,10 +256,11 @@ class network(object):
                 conv_layers.append ( 
                                 core.Conv3DPoolLayer(
                                         rng = self.rng,
-                                        input = first_layer_input,
+                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
                                         image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
                                         filter_shape=(self.nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
                                         poolsize=pool_size,
+                                        stride = stride, 
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,                                        
                                         activation = self.cnn_activations[0],
@@ -262,9 +271,9 @@ class network(object):
                                         verbose = verbose
                                          ) )
                                                                                   
-                next_in[0] = int(floor( ( self.height - filt_size [1] + 1 ))) / (pool_size[1])      
-                next_in[1] = int(floor(( self.width - filt_size[2] + 1 ))) / (pool_size[2] )
-                next_in[2] = self.nkerns[0]  / (pool_size[0] * max_out_size)
+                next_in[0] = int(floor( ( self.height - filt_size [1] + 1 ))) / (pool_size[1] * stride[1])      
+                next_in[1] = int(floor(( self.width - filt_size[2] + 1 ))) / (pool_size[2] * stride[1])
+                next_in[2] = self.nkerns[0]  / (pool_size[0] * max_out_size * stride[0])
 
                    
             else:
@@ -297,6 +306,7 @@ class network(object):
                                         image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
                                         filter_shape=(self.nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
                                         poolsize=pool_size,
+                                        stride = stride,
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
@@ -314,6 +324,7 @@ class network(object):
                                         image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
                                         filter_shape=(self.nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
                                         poolsize=pool_size,
+                                        stride = stride,
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
@@ -324,8 +335,8 @@ class network(object):
                                         verbose = verbose
                                          ) )                                                       
                                           
-                    next_in[0] = int(floor(( next_in[0] - filt_size[0] + 1 ))) / (pool_size[0])      
-                    next_in[1] = int(floor(( next_in[1]- filt_size[1] + 1 ))) / (pool_size[1])
+                    next_in[0] = int(floor(( next_in[0] - filt_size[0] + 1 ))) / (pool_size[0] * stride [0])      
+                    next_in[1] = int(floor(( next_in[1]- filt_size[1] + 1 ))) / (pool_size[1] * stride[1] )
                     next_in[2] = self.nkerns[layer+1] / max_out_size
                     
                 elif len(filt_size) == 3:
@@ -336,6 +347,7 @@ class network(object):
                                         image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
                                         filter_shape=(self.nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
                                         poolsize=pool_size,
+                                        stride = stride,
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
@@ -352,6 +364,7 @@ class network(object):
                                         image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
                                         filter_shape=(self.nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
                                         poolsize=pool_size,
+                                        stride = stride,
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
@@ -361,9 +374,9 @@ class network(object):
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
                                          ) )             
-                    next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] )    
-                    next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] )
-                    next_in[2] = self.nkerns[layer+1] / (pool_size[0] * max_out_size)    
+                    next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * stride[1])    
+                    next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] * stride[2])
+                    next_in[2] = self.nkerns[layer+1] / (pool_size[0] * max_out_size * stride[0])    
                                               
                 else:
                     print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
@@ -376,7 +389,7 @@ class network(object):
                     param_counter = param_counter + 1           
         # Assemble fully connected laters
         if self.nkerns == []:
-            fully_connected_input = first_layer_input.flatten(2)
+            fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)
         else:
             fully_connected_input = conv_layers[-1].output.flatten(2)
             dropout_fully_connected_input = dropout_conv_layers[-1].output.flatten(2)                

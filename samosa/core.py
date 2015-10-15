@@ -15,9 +15,10 @@ from theano.tensor.nnet.conv3d2d import conv3d
 
 
 #### rectified linear unit
-def ReLU(x):
-    y = T.maximum(0.0, x)
+def ReLU(x, alpha = 0):
+    y = T.nnet.relu(x,alpha = alpha)
     return(y)
+    
 #### sigmoid
 def Sigmoid(x):
     y = T.nnet.sigmoid(x)
@@ -549,15 +550,16 @@ class Conv2DPoolLayer(object):
                          filter_shape,
                           image_shape,
                            poolsize,
-                            max_out,
-                             maxout_size,
-                              activation,
-                               W = None,
-                                b = None,
-                                 alpha = None,
-                                  batch_norm = False,
-                                   p = 0.5 ,
-                        verbose = True):
+                            stride,
+                             max_out,
+                              maxout_size,
+                               activation,
+                                W = None,
+                                 b = None,
+                                  alpha = None,
+                                   batch_norm = False,
+                                    p = 0.5 ,
+                                     verbose = True):
                             
         batchsize  = image_shape[0]
         channels   = image_shape[1] 
@@ -573,11 +575,12 @@ class Conv2DPoolLayer(object):
             print "           -->        initializing 2D convolutional layer with " + str(filter_shape[0])  + " kernels"
             print "                                  ....... kernel size [" + str(filter_shape[2]) + " X " + str(filter_shape[3]) +"]"
             print "                                  ....... pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + "]"
+            print "                                  ....... stride size [" + str(stride[0]) + " X " + str(stride[1]) + "]"            
             print "                                  ....... maxout size [" + str(maxout_size) + "]"
             print "                                  ....... input size ["  + str(image_shape[2]) + " " + str(image_shape[3]) + "]"
             print "                                  ....... input number of feature maps is " +str(image_shape[1]) 
             if max_out > 0:
-                print "                                  ....... output size is [" + str((image_shape[2] - filter_shape[2] + 1 ) / (poolsize[0]) ) + " X " + str((image_shape[3] - filter_shape[3] + 1 ) / (poolsize[1]) ) + "]"
+                print "                                  ....... output size is [" + str((image_shape[2] - filter_shape[2] + 1 ) / (poolsize[0] * stride[0]) ) + " X " + str((image_shape[3] - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + "]"
         self.input = input
         assert image_shape[1] == filter_shape[1]
         
@@ -620,10 +623,11 @@ class Conv2DPoolLayer(object):
         
         #if fast_conv is False:
         conv_out = conv.conv2d(
-            input=self.input,
-            filters=self.W,
-            filter_shape=filter_shape,
-            image_shape=image_shape
+            input = self.input,
+            filters = self.W,
+            subsample = stride,
+            filter_shape = filter_shape,
+            image_shape = image_shape
             )
 
         # downsample each feature map individually, using maxpooling
@@ -714,6 +718,7 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                              filter_shape,
                               image_shape,
                                poolsize,
+                               stride,
                                max_out,
                                maxout_size,
                                 activation,
@@ -729,6 +734,7 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                     filter_shape = filter_shape,
                      image_shape = image_shape,
                       poolsize = poolsize,
+                      stride = stride,
                       max_out = max_out,
                       maxout_size = maxout_size,
                        activation = activation,
@@ -749,6 +755,7 @@ class Conv3DPoolLayer(object):
                          filter_shape,
                           image_shape,
                            poolsize,
+                           stride,
                             max_out,
                              maxout_size,
                               activation,
@@ -777,13 +784,17 @@ class Conv3DPoolLayer(object):
             print "           -->        initializing 3D convolutional layer with " + str(filter_shape[0])  + " kernels"
             print "                                  ....... kernel size [" + str(filter_shape[1]) + " X " + str(filter_shape[3]) + " X " + str(filter_shape[4]) +"]"
             print "                                  ....... pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + " X " + str(poolsize[2]) + "]"
+            print "                                  ....... stride size [" + str(stride[0]) + " X " + str(stride[1]) + " X " + str(stride[2]) + "]"            
             print "                                  ....... maxout size [" + str(maxout_size) + "]"
             print "                                  ....... input size ["  + str(height)+ " X " + str(width) + "]"
             print "                                  ....... input number of feature maps is " +str(channels) 
             if max_out > 0:
-                print "                                  ....... output size is [" + str((height - filter_shape[3] + 1 ) / (poolsize[1]) ) + " X " + str((width - filter_shape[4] + 1 ) / (poolsize[2]) ) + "]"
+                print "                                  ....... output size is [" + str((height - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + " X " + str((width - filter_shape[4] + 1 ) / (poolsize[2] * stride[2]) ) + "]"
         self.input = input
         
+        assert stride[2] == 1        
+        assert stride[1] == 1
+        assert stride[0] == 1 
         # there are "num input feature maps * filter height * filter width"
         # inputs to each hidden unit
         fan_in = numpy.prod(filter_shape[1:])
@@ -837,9 +848,8 @@ class Conv3DPoolLayer(object):
                 )
   
         pool_out = pool_out.sum(axis = 1, keepdims = False) # Should this become a summation like what Pascal said happens in the 2D Conv ??        
-
-        #self.co = conv_out
-        #self.po = pool_out
+        self.co = conv_out
+        self.po = pool_out
        
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
         # During debugging while in pdb inside a terminal from the lenet module's train function code, use functions such as :
