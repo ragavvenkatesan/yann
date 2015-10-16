@@ -292,6 +292,7 @@ class network(object):
                 
                 filt_size = self.filter_size[layer+1]
                 pool_size = self.pooling_size[layer+1]
+                stride = self.conv_stride_size[layer+1]
                 if self.max_out > 0:
                     max_out_size = self.cnn_maxout[layer+1]
                 else:
@@ -668,7 +669,7 @@ class network(object):
             # one-hot encoded labels as {-1, 1}
             n_classes = len(numpy.unique(data_y))  # dangerous?
             y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
-            y1[numpy.arange(data_y.shape[0]), data_y] = 1		
+            y1[numpy.arange(data_y.shape[0]), data_y] = 1       
             rval = (data_x, data_y, y1)
         else:   
             rval = (data_x, data_y, data_y)
