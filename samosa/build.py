@@ -758,7 +758,7 @@ class network(object):
         
         
     # TRAIN 
-    def train(self, n_epochs, ft_epochs validate_after_epochs, verbose = True):
+    def train(self, n_epochs, ft_epochs, validate_after_epochs, verbose = True):
         print "... training"        
         self.main_img_visual = False
         patience = numpy.inf 
@@ -820,7 +820,6 @@ class network(object):
                                          "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
                                          ", momentum = " +str(self.momentum_value(epoch_counter)))
                     else:
-                        if numpy.isnan(numpy.mean(cost_saved[-1*self.n_train_batches:])) is True:
                         print ("...      -> epoch " + str(epoch_counter) + 
                                          ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100

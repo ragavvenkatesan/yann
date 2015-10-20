@@ -11,7 +11,7 @@ def run_cnn(
                     filename_params,
                     visual_params,
                     n_epochs = 50,
-                    n_ft_epochs = 200, 
+                    ft_epochs = 200, 
                     validate_after_epochs = 1,
                     verbose = False, 
            ):            
@@ -131,6 +131,6 @@ if __name__ == '__main__':
                     visual_params           = visual_params, 
                     validate_after_epochs   = 1,
                     n_epochs                = 50,
-                    n_ft_epochs             = 200, 
+                    ft_epochs               = 200, 
                     verbose                 = False,                                                
                 )
