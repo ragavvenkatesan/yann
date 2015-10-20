@@ -9,7 +9,7 @@ import cPickle, gzip
 import numpy
 import cv2
 import time
-from math import floor
+from math import floor, ceil
 
 # Theano Packages
 import theano
@@ -120,7 +120,8 @@ class network(object):
         self.mom_end                         = optimization_params [ "mom_end" ]
         self.mom_epoch_interval              = optimization_params [ "mom_interval" ]
         self.mom_type                        = optimization_params [ "mom_type" ]
-        self.initial_learning_rate           = optimization_params [ "initial_learning_rate" ]              
+        self.initial_learning_rate           = optimization_params [ "initial_learning_rate" ]  
+        self.ft_learning_rate                = optimization_params [ "ft_learning_rate" ]          
         self.learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
         self.ada_grad                        = optimization_params [ "ada_grad" ]   
         self.fudge_factor                    = optimization_params [ "fudge_factor" ]
@@ -197,7 +198,7 @@ class network(object):
         param_counter = 0 
 
         if not self.nkerns == []:     
-            if len(filt_size) == 2:        
+            if len(filt_size) == 2:                        
                 dropout_conv_layers.append ( 
                                 core.DropoutConv2DPoolLayer(
                                         rng = self.rng,
@@ -232,8 +233,8 @@ class network(object):
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose                                       
                                          ) )  
-                next_in[0] = int(floor(( self.height - filt_size [0] + 1 ))) / (pool_size[0] * stride[0] )       
-                next_in[1] = int(floor(( self.width - filt_size[1] + 1 ))) / (pool_size[1] * stride [1] )    
+                next_in[0] = int(floor((ceil( (self.height - filt_size [0])  / float(stride[0])) + 1  )/ pool_size[0] ))       
+                next_in[1] = int(floor((ceil( (self.width - filt_size[1]) / float(stride[1]   )) + 1  ) / pool_size[1] ))    
                 next_in[2] = self.nkerns[0]  / max_out_size                                                                                                                 
             elif len(filt_size) == 3:
                 dropout_conv_layers.append ( 
@@ -270,7 +271,8 @@ class network(object):
                                         alpha = dropout_conv_layers[-1].alpha, 
                                         verbose = verbose
                                          ) )
-                                                                                  
+                                          
+                # strides creates a mess in 3D !!                                                                                   
                 next_in[0] = int(floor( ( self.height - filt_size [1] + 1 ))) / (pool_size[1] * stride[1])      
                 next_in[1] = int(floor(( self.width - filt_size[2] + 1 ))) / (pool_size[2] * stride[1])
                 next_in[2] = self.nkerns[0]  / (pool_size[0] * max_out_size * stride[0])
@@ -292,14 +294,13 @@ class network(object):
                 
                 filt_size = self.filter_size[layer+1]
                 pool_size = self.pooling_size[layer+1]
-                stride = self.conv_stride_size[layer+1]
+                stride    = self.conv_stride_size[layer +1 ]
                 if self.max_out > 0:
                     max_out_size = self.cnn_maxout[layer+1]
                 else:
                     max_out_size = 1 
 
                 if len(filt_size) == 2:
-                    
                     dropout_conv_layers.append ( 
                                     core.DropoutConv2DPoolLayer(
                                         rng = self.rng,
@@ -335,9 +336,9 @@ class network(object):
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
                                          ) )                                                       
-                                          
-                    next_in[0] = int(floor(( next_in[0] - filt_size[0] + 1 ))) / (pool_size[0] * stride [0])      
-                    next_in[1] = int(floor(( next_in[1]- filt_size[1] + 1 ))) / (pool_size[1] * stride[1] )
+                                             
+                    next_in[0] = int(floor((ceil( (next_in[0] - filt_size[0] ) / float(stride[0])) + 1 ) / pool_size[0] ))      
+                    next_in[1] = int(floor((ceil( (next_in[1]- filt_size[1] ) / float(stride[1])) + 1 ) / pool_size[1] ))
                     next_in[2] = self.nkerns[layer+1] / max_out_size
                     
                 elif len(filt_size) == 3:
@@ -374,7 +375,9 @@ class network(object):
                                         batch_norm = self.batch_norm,
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
-                                         ) )             
+                                         ) )   
+                                         
+                    # please dont use stride for 3D                                                   
                     next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * stride[1])    
                     next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] * stride[2])
                     next_in[2] = self.nkerns[layer+1] / (pool_size[0] * max_out_size * stride[0])    
@@ -644,8 +647,7 @@ class network(object):
                             )
         end_time = time.clock()
         print "...         time taken is " +str(end_time - start_time) + " seconds"
-      
-                     
+                           
     # this is only for self.multi_load = True type of datasets.. 
     # All datasets are not multi_load enabled. This needs to change ??                         
     # this is only for self.multi_load = True type of datasets.. 
@@ -669,7 +671,7 @@ class network(object):
             # one-hot encoded labels as {-1, 1}
             n_classes = len(numpy.unique(data_y))  # dangerous?
             y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
-            y1[numpy.arange(data_y.shape[0]), data_y] = 1       
+            y1[numpy.arange(data_y.shape[0]), data_y] = 1		
             rval = (data_x, data_y, y1)
         else:   
             rval = (data_x, data_y, data_y)
@@ -756,7 +758,7 @@ class network(object):
         
         
     # TRAIN 
-    def train(self, n_epochs, validate_after_epochs, verbose = True):
+    def train(self, n_epochs, ft_epochs validate_after_epochs, verbose = True):
         print "... training"        
         self.main_img_visual = False
         patience = numpy.inf 
@@ -771,7 +773,10 @@ class network(object):
         iteration= 0
 
         start_time_main = time.clock()
-        while (epoch_counter < n_epochs) and (not early_termination):
+        while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
+            if epoch_counter == n_epochs:
+                print " ... fine tuning"
+                self.eta.set_value(self.ft_learning_rate)
             epoch_counter = epoch_counter + 1 
             start_time = time.clock() 
             for batch in xrange (self.batches2train):
@@ -786,8 +791,7 @@ class network(object):
                         if verbose is True:
                             print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
-                        cost_saved = cost_saved + [cost_ij]
-                          
+                        cost_saved = cost_saved + [cost_ij]                        
                 else:        
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
@@ -816,7 +820,7 @@ class network(object):
                                          "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
                                          ", momentum = " +str(self.momentum_value(epoch_counter)))
                     else:
-                       
+                        if numpy.isnan(numpy.mean(cost_saved[-1*self.n_train_batches:])) is True:
                         print ("...      -> epoch " + str(epoch_counter) + 
                                          ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100

@@ -10,7 +10,8 @@ def run_cnn(
                     dataset, 
                     filename_params,
                     visual_params,
-                    n_epochs = 200,
+                    n_epochs = 50,
+                    n_ft_epochs = 200, 
                     validate_after_epochs = 1,
                     verbose = False, 
            ):            
@@ -27,6 +28,7 @@ def run_cnn(
     net.create_dirs ( visual_params = visual_params )   
                        
     net.train( n_epochs = n_epochs, 
+                ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
                  verbose = verbose )          
     net.test( verbose = verbose )
@@ -78,53 +80,57 @@ if __name__ == '__main__':
                                                                                                                             
     optimization_params = {
                             "mom_start"                         : 0.5,                      
-                            "mom_end"                           : 0.99,
-                            "mom_interval"                      : 200,
+                            "mom_end"                           : 0.65,
+                            "mom_interval"                      : 50,
                             "mom_type"                          : 1,                         
-                            "initial_learning_rate"             : 0.01,                     
-                            "learning_rate_decay"               : 0.998, 
+                            "initial_learning_rate"             : 0.01,
+		 	                "ft_learning_rate"                  : 0.001,    
+                            "learning_rate_decay"               : 0.995,
                             "l1_reg"                            : 0.000,                     
-                            "l2_reg"                            : 0.00001,                    
+                            "l2_reg"                            : 0.000,                    
                             "ada_grad"                          : False,
                             "rms_prop"                          : True,
                             "rms_rho"                           : 0.9,                      
                             "rms_epsilon"                       : 1e-7,                     
                             "fudge_factor"                      : 1e-7,                    
-                            "objective"                         : 1,                        
+                            "objective"                         : 0,    
+                            # for some reason, cross-entropy some times produces NaNs ... need to debug.                     
                             }        
 
     arch_params = {
                     
                     "squared_filter_length_limit"       : 15,   
-                    "mlp_activations"                   : [ Identity, Identity ],
+                    "mlp_activations"                   : [ ReLU, ReLU ],
                     "cnn_dropout"                       : True,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5,  0.5,  0.5 ],
-                    "num_nodes"                         : [ 1500, 750  ],                                     
-                    "outs"                              : 10,                                                                                                                               
+                    "num_nodes"                         : [ 1200, 1200  ],                                     
+                    "outs"                              : 102,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ Identity, Identity, Identity,  Identity, Identity , Identity],             
+                    "cnn_activations"                   : [ Identity, Identity, Identity, Identity, Identity ],             
                     "batch_norm"                        : True,
-                    "nkerns"                            : [ 24,       48,     48,       48,       48,      48   ],              
-                    "filter_size"                       : [ (5, 5 ), (5, 5), (5, 5) , (5, 5 ),  (5, 5),  (5,5)  ],
-                    "pooling_size"                      : [ (1, 1 ), (1, 1), (1, 1) , (1, 1 ),  (1, 1),  (1,1)  ],
-                    "conv_stride_size"                  : [ (1, 1 ), (1, 1), (1, 1) , (1, 1) ,  (1,1),   (1,1)  ],
-                    "cnn_maxout"                        : [ 2,        2,      2,        2 ,       2   , 2 ],                    
-                    "mlp_maxout"                        : [ 2, 2, 1],
-                    "cnn_dropout_rates"                 : [ 0.2, 0.2, 0.2, 0.2, 0.2, 0.2 , 0.2 ],
+                    "nkerns"                            : [ 48,       96,       96,      128,    96,     ],              
+                    "filter_size"                       : [ (5, 5 ),  (5, 5) , (5, 5), (5, 5), (3, 3)    ],
+                    "pooling_size"                      : [ (1, 1 ),  (1, 1),  (2, 2) ,(1 ,1), (1, 1)   ],
+                    # somethign wrong with stride... use only (1,1) for now !!                         
+                    "conv_stride_size"                  : [ (1, 1 ),  (1, 1),  (1, 1) ,(1 ,1), (1, 1)  ],
+                    "cnn_maxout"                        : [ 2,         2,        2,     2,      2    ],                    
+                    "mlp_maxout"                        : [ 1  , 1  ],
+                    "cnn_dropout_rates"                 : [ 0.1,       0.2,      0.2,     0.3,    0.3   ],
                     "random_seed"                       : 23455, 
-                    "mean_subtract"                     : True,
-                    "max_out"                           : 1
+                    "mean_subtract"                     : False,
+                    "max_out"                           : 1 
 
                  }                                          
 
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_76663", 
+                    dataset                 = "_datasets/_dataset_91882", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = 1,
-                    n_epochs                = 300,
+                    n_epochs                = 50,
+                    n_ft_epochs             = 200, 
                     verbose                 = False,                                                
                 )
