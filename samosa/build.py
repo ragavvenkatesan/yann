@@ -638,7 +638,7 @@ class network(object):
     
         self.decay_learning_rate = theano.function(
                inputs=[],          # Just updates the learning rates. 
-               updates={self.eta: self.eta * self.learning_rate_decay}
+               updates={self.eta: self.eta  - self.eta * self.learning_rate_decay}
                 )
     
         self.momentum_value = theano.function ( 

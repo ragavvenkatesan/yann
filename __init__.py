@@ -85,7 +85,7 @@ if __name__ == '__main__':
                             "mom_type"                          : 1,                         
                             "initial_learning_rate"             : 0.01,
 		 	                "ft_learning_rate"                  : 0.001,    
-                            "learning_rate_decay"               : 0.995,
+                            "learning_rate_decay"               : 0.005,
                             "l1_reg"                            : 0.000,                     
                             "l2_reg"                            : 0.000,                    
                             "ada_grad"                          : False,
