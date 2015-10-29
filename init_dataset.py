@@ -22,25 +22,25 @@ if __name__ == '__main__':
               
     data_params = {
                    "type"               : 'mat',                                   
-                   "loc"                : '../../GTSRB/',                                          
-                   "batch_size"         : 32,                                     
+                   "loc"                : '../colored_mnist/',                                          
+                   "batch_size"         : 500,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 128,                                      
-                   "batches2test"       : 78,                                      
-                   "batches2validate"   : 14,                                        
-                   "height"             : 64,                                       
-                   "width"              : 64,                                       
+                   "batches2train"      : 100,                                      
+                   "batches2test"       : 20,                                      
+                   "batches2validate"   : 20,                                        
+                   "height"             : 28,                                       
+                   "width"              : 28,                                       
                    "channels"           : 3                                       
                   }
                   
     preprocess_params = { 
-                            "normalize"     : True,
+                            "normalize"     : False,
                             "GCN"           : False,
                             "ZCA"           : False,
                             "gray"          : False,
                         }
                   
-    setup( data_params = data_params, outs = 62 )
+    setup( data_params = data_params, outs = 8 )
     
     """
     # If you want to modify data_params. 

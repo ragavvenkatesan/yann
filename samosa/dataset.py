@@ -22,6 +22,8 @@ def load_data_mat(n_classes, height, width, channels, dataset = '../dataset/wald
 	#- ----------  Load Dataet ------- -#
 	mat = scipy.io.loadmat(dataset  +  type_set + '/batch_' + str(batch) + '.mat')
 	data_x = numpy.asarray(mat['x'], dtype = 'float32')
+	if data_x.max() > 1:
+		data_x = data_x/data_x.max() # this is not normalize. This just scales. 
 	for i in xrange(data_x.shape[0]):
 		temp = data_x[i,];
 		if channels > 1:

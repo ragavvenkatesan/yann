@@ -235,7 +235,7 @@ class network(object):
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose                                       
                                          ) )  
-                next_in[0] = int(floor((ceil( (self.height - filt_size [0])  / float(stride[0])) + 1  )/ pool_size[0] ))       
+                next_in[0] = int(floor((ceil( (self.height - filt_size [0])  / float(stride[0])) + 1  ) / pool_size[0] ))       
                 next_in[1] = int(floor((ceil( (self.width - filt_size[1]) / float(stride[1]   )) + 1  ) / pool_size[1] ))    
                 next_in[2] = self.nkerns[0]  / max_out_size                                                                                                                 
             elif len(filt_size) == 3:
@@ -655,7 +655,9 @@ class network(object):
                             )
         end_time = time.clock()
         print "...         time taken is " +str(end_time - start_time) + " seconds"
-                           
+                    
+        # import pdb
+        # pdb.set_trace()      
     # this is only for self.multi_load = True type of datasets.. 
     # All datasets are not multi_load enabled. This needs to change ??                         
     # this is only for self.multi_load = True type of datasets.. 

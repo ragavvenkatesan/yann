@@ -579,8 +579,7 @@ class Conv2DPoolLayer(object):
             print "                                  ....... maxout size [" + str(maxout_size) + "]"
             print "                                  ....... input size ["  + str(image_shape[2]) + " " + str(image_shape[3]) + "]"
             print "                                  ....... input number of feature maps is " +str(image_shape[1]) 
-            if max_out > 0:
-                print "                                  ....... output size is [" + str((image_shape[2] - filter_shape[2] + 1 ) / (poolsize[0] * stride[0]) ) + " X " + str((image_shape[3] - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + "]"
+            print "                                  ....... output size is [" + str((image_shape[2] - filter_shape[2] + 1 ) / (poolsize[0] * stride[0]) ) + " X " + str((image_shape[3] - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + "]"
         self.input = input
         assert image_shape[1] == filter_shape[1]
         
@@ -639,8 +638,8 @@ class Conv2DPoolLayer(object):
             ignore_border=True
             )
 
-        #self.co = conv_out
-        #self.po = pool_out
+        # self.co = conv_out
+        # self.po = pool_out
        
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
         # During debugging while in pdb inside a terminal from the lenet module's train function code, use functions such as :
@@ -788,8 +787,7 @@ class Conv3DPoolLayer(object):
             print "                                  ....... maxout size [" + str(maxout_size) + "]"
             print "                                  ....... input size ["  + str(height)+ " X " + str(width) + "]"
             print "                                  ....... input number of feature maps is " +str(channels) 
-            if max_out > 0:
-                print "                                  ....... output size is [" + str((height - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + " X " + str((width - filter_shape[4] + 1 ) / (poolsize[2] * stride[2]) ) + "]"
+            print "                                  ....... output size is [" + str(int(floor(filter_shape[0] / poolsize[0]))) + " X " + str((height - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + " X " + str((width - filter_shape[4] + 1 ) / (poolsize[2] * stride[2]) ) + "]"
         self.input = input
         
         assert stride[2] == 1        
@@ -818,14 +816,14 @@ class Conv3DPoolLayer(object):
             self.W = W 
         # the bias is a 1D tensor -- one bias per output feature map
         if b is None:
-            b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+            b_values = numpy.zeros((floor(filter_shape[0] / poolsize[0]),), dtype=theano.config.floatX)
             self.b = theano.shared(value=b_values, borrow=True)
         else:
             self.b = b
         
                  
         if alpha is None:
-            alpha_values = numpy.ones((filter_shape[0],), dtype=theano.config.floatX)
+            alpha_values = numpy.ones((floor(filter_shape[0] / poolsize[0]),), dtype=theano.config.floatX)
             self.alpha = theano.shared(value=alpha_values, borrow = True)
         else:
             self.alpha = alpha   
@@ -851,8 +849,8 @@ class Conv3DPoolLayer(object):
             pool_out = conv_out
   
         pool_out = pool_out.sum(axis = 1, keepdims = False) # This will become a summation like what Pascal said happens in the 2D Conv ??        
-        self.co = conv_out
-        self.po = pool_out
+        # self.co = conv_out
+        # self.po = pool_out
        
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
         # During debugging while in pdb inside a terminal from the lenet module's train function code, use functions such as :

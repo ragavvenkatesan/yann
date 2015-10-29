@@ -76,7 +76,7 @@ if __name__ == '__main__':
     visual_params = {
                         "visualize_flag"        : True,
                         "visualize_after_epochs": 1,
-                        "n_visual_images"       : 16,
+                        "n_visual_images"       : 81,
                         "display_flag"          : False,
                         "color_filter"          : True         
                     }   
@@ -85,56 +85,54 @@ if __name__ == '__main__':
                             "mom_start"                         : 0.5,                      
                             "mom_end"                           : 0.65,
                             "mom_interval"                      : 50,
-                            "mom_type"                          : 1,                         
+                            "mom_type"                          : 0,                         
                             "initial_learning_rate"             : 0.01,
-			                "ft_learning_rate"                  : 0.001,    
+			                "ft_learning_rate"                  : 0.0001,    
                             "learning_rate_decay"               : 0.005,
                             "l1_reg"                            : 0.000,                     
                             "l2_reg"                            : 0.000,                    
                             "ada_grad"                          : False,
-                            "rms_prop"                          : True,
+                            "rms_prop"                          : False,
                             "rms_rho"                           : 0.9,                      
                             "rms_epsilon"                       : 1e-7,                     
                             "fudge_factor"                      : 1e-7,                    
                             "objective"                         : 0,    
-                            # for some reason, cross-entropy some times produces NaNs ... need to debug.                     
                             }        
 
     arch_params = {
                     
                     "squared_filter_length_limit"       : 15,   
-                    "mlp_activations"                   : [ ReLU, ReLU ],
-                    "cnn_dropout"                       : True,
-                    "mlp_dropout"                       : True,
-                    "mlp_dropout_rates"                 : [ 0.5,  0.5,  0.5 ],
-                    "num_nodes"                         : [ 2048, 2048  ],                                     
-                    "outs"                              : 62,                                                                                                                               
+                    "mlp_activations"                   : [ ReLU ],
+                    "cnn_dropout"                       : False,
+                    "mlp_dropout"                       : False,
+                    "mlp_dropout_rates"                 : [ 0.5,  0.5 ],
+                    "num_nodes"                         : [ 400 ],                                     
+                    "outs"                              : 8,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ Identity, Identity, ReLU, ReLU, ReLU ],             
-                    "cnn_batch_norm"                    : [ True, True, True, True, True],
+                    "cnn_activations"                   : [ ReLU , ReLU ],             
+                    "cnn_batch_norm"                    : [ True , True ],
                     "mlp_batch_norm"                    : True,
-                    "nkerns"                            : [ 48,              96,       96,      128,     256      ],              
-                    "filter_size"                       : [ ( 3, 5, 5 ),  (5, 5, 5) , (5, 5) , (5, 5),  (3, 3 )    ],
-                    "pooling_size"                      : [ ( 1, 2, 2 ),  (1, 2, 2),  (1, 1) , (1 ,1),  (1, 1 )    ],
-                    # somethign wrong with stride... use only (1,1) for now !!                         
-                    "conv_stride_size"                  : [ (1, 1, 1 ),  (1, 1, 1),  ( 1, 1)   ,(1 ,1),  (1 ,1 )    ],
-                    "cnn_maxout"                        : [ 2,              2,          2,            1,        1       ],                    
-                    "mlp_maxout"                        : [ 1  , 1  ],
-                    "cnn_dropout_rates"                 : [ 0.5,       0.5,      0.5,     0.5,       0.5      ],
+                    "nkerns"                            : [     20,     20 ],              
+                    "filter_size"                       : [ ( 3, 5, 5 ) , (5, 5 , 5)],
+                    "pooling_size"                      : [ ( 2, 2, 2 ) , (1, 2, 2 )],
+                    "conv_stride_size"                  : [ ( 1, 1, 1 ) , (1, 1 , 1 )],
+                    "cnn_maxout"                        : [  2,         1 ],                    
+                    "mlp_maxout"                        : [  1    ],
+                    "cnn_dropout_rates"                 : [ 0.5,     0.5    ],
                     "random_seed"                       : 23455, 
                     "mean_subtract"                     : False,
-                    "max_out"                           : 1 
+                    "max_out"                           : 0 
 
                  }                                          
 
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_52679", 
+                    dataset                 = "_datasets/_dataset_36462", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = 1,
                     n_epochs                = 50,
-                    ft_epochs               = 200, 
-                    verbose                 = False,                                                
+                    ft_epochs               = 100, 
+                    verbose                 = False ,                                                
                 )
