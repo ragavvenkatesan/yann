@@ -21,15 +21,15 @@ def setup( data_params, outs ):
 if __name__ == '__main__':
               
     data_params = {
-                   "type"               : 'skdata',                                   
-                   "loc"                : 'cifar10',                                          
-                   "batch_size"         : 100,                                     
+                   "type"               : 'mat',                                   
+                   "loc"                : '../../GTSRB/',                                          
+                   "batch_size"         : 32,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 400,                                      
-                   "batches2test"       : 100,                                      
-                   "batches2validate"   : 100,                                        
-                   "height"             : 32,                                       
-                   "width"              : 32,                                       
+                   "batches2train"      : 128,                                      
+                   "batches2test"       : 78,                                      
+                   "batches2validate"   : 14,                                        
+                   "height"             : 64,                                       
+                   "width"              : 64,                                       
                    "channels"           : 3                                       
                   }
                   
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                             "gray"          : False,
                         }
                   
-    setup( data_params = data_params, outs = 10 )
+    setup( data_params = data_params, outs = 62 )
     
     """
     # If you want to modify data_params. 

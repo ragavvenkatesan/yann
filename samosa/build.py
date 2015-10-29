@@ -138,7 +138,8 @@ class network(object):
         self.cnn_activations                 = arch_params [ "cnn_activations" ]
         self.cnn_dropout                     = arch_params [ "cnn_dropout"  ]
         self.mlp_dropout                     = arch_params [ "mlp_dropout"  ]
-        self.batch_norm                      = arch_params [ "batch_norm"  ]    
+        self.batch_norm                      = arch_params [ "cnn_batch_norm"  ]  
+        self.mlp_batch_norm                  = arch_params [ "mlp_batch_norm" ]  
         self.mlp_dropout_rates               = arch_params [ "mlp_dropout_rates" ]
         self.cnn_dropout_rates               = arch_params [ "cnn_dropout_rates" ]
         self.nkerns                          = arch_params [ "nkerns"  ]
@@ -188,6 +189,7 @@ class network(object):
             filt_size = self.filter_size[0]
             pool_size = self.pooling_size[0]
             stride    = self.conv_stride_size[0]
+            batch_norm_layer = self.batch_norm[0]
         if self.max_out > 0:     
             max_out_size = self.cnn_maxout[0]
         else: 
@@ -212,7 +214,7 @@ class network(object):
                                         activation = self.cnn_activations[0],
                                         W = None if init_params is None else init_params[param_counter],
                                         b = None if init_params is None else init_params[param_counter + 1], 
-                                        batch_norm = self.batch_norm,
+                                        batch_norm = batch_norm_layer,
                                         alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[0],                                 
                                          ) ) 
@@ -229,7 +231,7 @@ class network(object):
                                         activation = self.cnn_activations[0],
                                         W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[0]) ,
                                         b = dropout_conv_layers[-1].params[1],
-                                        batch_norm = self.batch_norm,
+                                        batch_norm = batch_norm_layer,
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose                                       
                                          ) )  
@@ -250,7 +252,7 @@ class network(object):
                                         activation = self.cnn_activations[0],
                                         W = None if init_params is None else init_params[param_counter],
                                         b = None if init_params is None else init_params[param_counter + 1],
-                                        batch_norm = self.batch_norm,
+                                        batch_norm = batch_norm_layer,
                                         alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[0]                             
                                          ) )
@@ -267,7 +269,7 @@ class network(object):
                                         activation = self.cnn_activations[0],
                                         W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[0]),
                                         b = dropout_conv_layers[-1].params[1],
-                                        batch_norm = self.batch_norm,
+                                        batch_norm = batch_norm_layer,
                                         alpha = dropout_conv_layers[-1].alpha, 
                                         verbose = verbose
                                          ) )
@@ -295,6 +297,7 @@ class network(object):
                 filt_size = self.filter_size[layer+1]
                 pool_size = self.pooling_size[layer+1]
                 stride    = self.conv_stride_size[layer +1 ]
+                batch_norm_layer = self.batch_norm [layer + 1]
                 if self.max_out > 0:
                     max_out_size = self.cnn_maxout[layer+1]
                 else:
@@ -314,7 +317,7 @@ class network(object):
                                         activation = self.cnn_activations[layer+1],
                                         W = None if init_params is None else init_params[param_counter    ] ,
                                         b = None if init_params is None else init_params[param_counter + 1] ,
-                                        batch_norm = self.batch_norm,
+                                        batch_norm = batch_norm_layer,
                                         alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[layer+1]                                                                                                        
                                          ) )
@@ -332,7 +335,7 @@ class network(object):
                                         activation = self.cnn_activations[layer+1],
                                         W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[layer + 1]),
                                         b = dropout_conv_layers[-1].params[1],
-                                        batch_norm = self.batch_norm, 
+                                        batch_norm = batch_norm_layer, 
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
                                          ) )                                                       
@@ -355,7 +358,7 @@ class network(object):
                                         activation = self.cnn_activations[layer+1],
                                         W = None if init_params is None else init_params[param_counter    ] ,
                                         b = None if init_params is None else init_params[param_counter + 1] ,
-                                        batch_norm = self.batch_norm,  
+                                        batch_norm = batch_norm_layer,  
                                         alpha = None if init_params is None else init_params[param_counter + 2],
                                         p = self.cnn_dropout_rates[layer+1]                                                                                                       
                                          ) )                                                                                             
@@ -372,7 +375,7 @@ class network(object):
                                         activation = self.cnn_activations[layer+1],
                                         W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[layer + 1]),
                                         b = dropout_conv_layers[-1].params[1] ,
-                                        batch_norm = self.batch_norm,
+                                        batch_norm = batch_norm_layer,
                                         alpha = dropout_conv_layers[-1].alpha,
                                         verbose = verbose
                                          ) )   
@@ -427,7 +430,7 @@ class network(object):
                          activations = self.mlp_activations,
                          use_bias = True,
                          svm_flag = self.svm_flag,
-                         batch_norm = self.batch_norm, 
+                         batch_norm = self.mlp_batch_norm, 
                          params = [] if init_params is None else init_params[param_counter:],
                          verbose = verbose)
     
@@ -473,9 +476,10 @@ class network(object):
     
         # Compute cost and gradients of the model wrt parameter
         self.params = []
+        count = 0
         for layer in dropout_conv_layers:
             self.params = self.params + layer.params
-            if self.batch_norm is True:
+            if self.batch_norm[count] is True:
                 self.params.append(layer.alpha)
         self.params = self.params + MLPlayers.params
        
@@ -506,6 +510,8 @@ class network(object):
                              MLPlayers.dropout_L2 )if self.mlp_dropout else ( cost + self.l1_reg 
                              * MLPlayers.L1 + self.l2_reg * MLPlayers.L2)
     
+        if verbose is True:
+            print "... estimating gradients"
         gradients = []      
         for param in self.params: 
             gradient = T.grad( output ,param)
@@ -537,8 +543,9 @@ class network(object):
         updates = OrderedDict()
         print_flag = False
          
+        if verbose is True:
+            print "... building back prop network" 
         for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, self.params):        
-    
             if self.ada_grad is True:
     
                 """ Adagrad implemented from paper:
@@ -549,8 +556,8 @@ class network(object):
                 current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
                 updates[acc] = current_acc          # updates accumulation at timestamp
     
-            elif self.rms_prop is True:
     
+            elif self.rms_prop is True:
                 """ Tieleman, T. and Hinton, G. (2012):
                 Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
                 Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
@@ -614,7 +621,8 @@ class network(object):
             else:            
                 updates[param] = stepped_param
     
-         
+        if verbose is True:
+            print "... building training model" 
         if self.svm_flag is True:
             self.train_model = theano.function(
                     inputs= [index, epoch],
@@ -638,7 +646,7 @@ class network(object):
     
         self.decay_learning_rate = theano.function(
                inputs=[],          # Just updates the learning rates. 
-               updates={self.eta: self.eta  - self.eta * self.learning_rate_decay}
+               updates={self.eta: self.eta -  self.eta * self.learning_rate_decay }
                 )
     
         self.momentum_value = theano.function ( 
@@ -700,7 +708,7 @@ class network(object):
                 self.valid_set_y1.set_value(data_y1, borrow = True)
         
     def print_net (self, epoch, display_flag = True ):
-        # saving down true images.     
+        # saving down true images.    
         if self.main_img_visual is False:          
             imgs = self.train_set_x.reshape((self.train_set_x.shape[0].eval(),self.height,self.width,self.channels))                                 
             imgs = imgs.eval()[self.visualize_ind]
@@ -724,7 +732,10 @@ class network(object):
             if not os.path.exists(loc_we):   
                 os.makedirs(loc_we)
             loc_we = loc_we + "/filter_"
-            imgs = util.visualize(current_weights.dimshuffle(0,2,3,1).eval(), prefix = loc_we, is_color = self.color_filter)            
+            if len(current_weights.shape.eval()) == 5:
+                imgs = util.visualize(numpy.squeeze(current_weights.dimshuffle(0,3,4,1,2).eval()), prefix = loc_we, is_color = self.color_filter)
+            else:   
+                imgs = util.visualize(current_weights.dimshuffle(0,2,3,1).eval(), prefix = loc_we, is_color = self.color_filter)            
             
     # ToDo: should make a results root dir and put in results there ... like root +'/visuals/' 
     def create_dirs( self, visual_params ):  
@@ -770,12 +781,14 @@ class network(object):
         epoch_counter = 0
         early_termination = False
         cost_saved = []
-        iteration= 0
-
+        iteration= 0        
         start_time_main = time.clock()
+        if os.path.isfile('dump.txt'):
+            os.remove('dump.txt')
+        f = open('dump.txt', 'w')
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
             if epoch_counter == n_epochs:
-                print " ... fine tuning"
+                print "... fine tuning"
                 self.eta.set_value(self.ft_learning_rate)
             epoch_counter = epoch_counter + 1 
             start_time = time.clock() 
@@ -804,10 +817,8 @@ class network(object):
                         self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
                         validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
                         this_validation_loss = this_validation_loss + [validation_losses]
-    
-                    if verbose is True:
-
-                        print ("...      -> epoch " + str(epoch_counter) + 
+   
+                    print ("...      -> epoch " + str(epoch_counter) + 
                                          ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
                                                                  /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
@@ -818,24 +829,31 @@ class network(object):
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
                                                                  /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
                                          "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
-                                         ", momentum = " +str(self.momentum_value(epoch_counter)))
-                    else:
-                        print ("...      -> epoch " + str(epoch_counter) + 
+                                         ", momentum = " +str(self.momentum_value(epoch_counter)))     
+                    f.write(("...      -> epoch " + str(epoch_counter) + 
                                          ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
-                                                                /(self.batch_size*self.n_valid_batches*self.batches2validate)) + 
-                                         "% -> best thus far ") if this_validation_loss[-1] < best_validation_loss else  ("...      -> epoch " + str(epoch_counter) + 
+                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
+                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
+                                         ", momentum = " +str(self.momentum_value(epoch_counter))  +
+                                         " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
                                          ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
                                          ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
-                                                                /(self.batch_size*self.n_valid_batches*self.batches2validate)) + "% ")      
+                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
+                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
+                                         ", momentum = " +str(self.momentum_value(epoch_counter))))
+                    f.write('\n')
                 else: # if not multi_load
                     
+                    
+                    if numpy.isnan(cost_saved[-1]):
+                        print " NAN !! "
+                        import pdb
+                        pdb.set_trace()
                     validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
                     this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
-                    
-                    if verbose is True:
                                             
-                        print ("...      -> epoch " + str(epoch_counter) + 
+                    print ("...      -> epoch " + str(epoch_counter) + 
                               ", cost: " + str(cost_saved[-1]) +
                               ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
                                                            /(self.batch_size*self.batches2validate)) + 
@@ -847,18 +865,19 @@ class network(object):
                                                            /(self.batch_size*self.batches2validate)) + 
                               "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
                               ", momentum = " +str(self.momentum_value(epoch_counter)) )
-                    else:
-                                
-                        print ("...      -> epoch " + str(epoch_counter) + 
+                    f.write(("...      -> epoch " + str(epoch_counter) + 
                               ", cost: " + str(cost_saved[-1]) +
                               ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
                                                            /(self.batch_size*self.batches2validate)) + 
-                              "% -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
+                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
+                              ", momentum = " +str(self.momentum_value(epoch_counter)) +
+                              " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
                               ", cost: " + str(cost_saved[-1]) +
                               ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
                                                            /(self.batch_size*self.batches2validate)) + 
-                              "% ") 
-                       
+                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
+                              ", momentum = " +str(self.momentum_value(epoch_counter)) ) )
+                    f.write('\n')
                 # improve patience if loss improvement is good enough
                 if this_validation_loss[-1] < best_validation_loss *  \
                    improvement_threshold:
@@ -881,7 +900,7 @@ class network(object):
          
         end_time_main = time.clock()
         print "... time taken for the entire training is " +str((end_time_main - start_time_main)/60) + " minutes"
-                    
+        f.close()            
         # Save down training stuff
         f = open(self.error_file_name,'w')
         for i in xrange(len(this_validation_loss)):
@@ -913,7 +932,12 @@ class network(object):
             print ("...      -> total test accuracy : " + str(float((self.batch_size*self.batches2test)-wrong )*100
                                                          /(self.batch_size*self.batches2test)) + 
                          " % out of " + str(self.batch_size*self.batches2test) + " samples.")
-                         
+            f = open('dump.txt','w')
+            f.write(("...      -> total test accuracy : " + str(float((self.batch_size*self.batches2test)-wrong )*100
+                                                         /(self.batch_size*self.batches2test)) + 
+                         " % out of " + str(self.batch_size*self.batches2test) + " samples."))
+            f.close()
+                        
         else:           
             for batch in xrange(self.batches2test):
                 if verbose is True:
@@ -929,7 +953,11 @@ class network(object):
             print ("...      -> total test accuracy : " + str(float((self.batch_size*self.n_test_batches*self.batches2test)-wrong )*100/
                                                          (self.batch_size*self.n_test_batches*self.batches2test)) + 
                          " % out of " + str(self.batch_size*self.n_test_batches*self.batches2test) + " samples.")
-    
+            f = open('dump.txt','w')
+            f.write(("...      -> total test accuracy : " + str(float((self.batch_size*self.n_test_batches*self.batches2test)-wrong )*100/
+                                                         (self.batch_size*self.n_test_batches*self.batches2test)) + 
+                         " % out of " + str(self.batch_size*self.n_test_batches*self.batches2test) + " samples."))
+            f.close()
         correct = 0 
         confusion = numpy.zeros((self.outs,self.outs), dtype = int)
         for index in xrange(len(predictions)):

@@ -24,7 +24,6 @@ def gray2rgb(r, g, b):
 def visualize (imgs, prefix , is_color = False ):          
     raster = []
     count = 0 
-    
     if is_color is True and imgs.shape[3] % 3 != 0:
         filts = numpy.floor( imgs.shape[3] / 3)
         imgs = imgs[:,:,:,0:filts]

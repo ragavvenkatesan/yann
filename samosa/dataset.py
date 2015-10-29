@@ -15,13 +15,22 @@ from scipy import linalg
 from sklearn.base import TransformerMixin, BaseEstimator
 
 # for loading matlab based data.
-def load_data_mat(n_classes, dataset = '../dataset/waldo/' ,batch = 1, type_set = 'train', load_z = False):
+def load_data_mat(n_classes, height, width, channels, dataset = '../dataset/waldo/' ,batch = 1, type_set = 'train', load_z = False):
 
 	# Use this code if the data was created in matlab in the right format and needed to be loaded
 	# print "... Loading " + type_set + " batch number " + str(batch)
 	#- ----------  Load Dataet ------- -#
 	mat = scipy.io.loadmat(dataset  +  type_set + '/batch_' + str(batch) + '.mat')
 	data_x = numpy.asarray(mat['x'], dtype = 'float32')
+	for i in xrange(data_x.shape[0]):
+		temp = data_x[i,];
+		if channels > 1:
+			temp = numpy.reshape (temp,[ height, width, channels ] , order = 'F')
+			temp = numpy.reshape (temp,[1, height * width * channels ]) 
+		else:
+			temp = numpy.reshape (temp,[ height, width ] , order = 'F')
+			temp = numpy.reshape (temp,[1, height * width ])
+		data_x[i] = temp					 
 	data_y = numpy.array(numpy.squeeze(mat['y']), dtype = 'int32')
 	if load_z is True:
 	    data_z = numpy.array(numpy.squeeze(mat['z']), dtype='float32' )
@@ -457,13 +466,13 @@ class setup_dataset (object):
 		os.mkdir(temp_dir + "/train" )
 		os.mkdir(temp_dir + "/test"  )
 		os.mkdir(temp_dir + "/valid" )
-			
+		print "... creating dataset " + temp_dir 			
 		# load matlab files as self.dataset.
 		if self.data_type == 'mat':
 			
 			print "... 		--> training data "
 			for i in xrange(self.batches2train):		# for each batch_i file.... 
-				data_x, data_y, data_y1 = load_data_mat(dataset = self.dataset, batch = i + 1, type_set = 'train' , n_classes = outs)
+				data_x, data_y, data_y1 = load_data_mat(dataset = self.dataset, batch = i + 1, type_set = 'train' , n_classes = outs, height = self.height, width = self.width, channels = self.channels)
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )
 				
 				# compute number of minibatches for training, validation and testing
@@ -472,10 +481,10 @@ class setup_dataset (object):
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()
-				
+				 
 			print "... 		--> testing data "	
 			for i in xrange(self.batches2test):		# for each batch_i file.... 
-				data_x, data_y, data_y1 = load_data_mat(dataset = self.dataset, batch = i + 1, type_set = 'test' , n_classes = outs)
+				data_x, data_y, data_y1 = load_data_mat(dataset = self.dataset, batch = i + 1, type_set = 'test' , n_classes = outs, height = self.height, width = self.width, channels = self.channels)
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )
 				
 				# compute number of minibatches for training, validation and testing
@@ -487,7 +496,7 @@ class setup_dataset (object):
 				
 			print "... 		--> validation data "	
 			for i in xrange(self.batches2validate):		# for each batch_i file.... 
-				data_x, data_y, data_y1 = load_data_mat(dataset = self.dataset, batch = i + 1, type_set = 'valid' , n_classes = outs)
+				data_x, data_y, data_y1 = load_data_mat(dataset = self.dataset, batch = i + 1, type_set = 'valid' , n_classes = outs, height = self.height, width = self.width, channels = self.channels)
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )
 				
 				# compute number of minibatches for training, validation and testing

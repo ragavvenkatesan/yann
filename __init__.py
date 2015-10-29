@@ -4,6 +4,8 @@ from samosa.core import ReLU, Sigmoid, Softmax, Tanh, Identity
 from samosa.util import load_network
 from samosa.dataset import setup_dataset
 
+import pdb
+
 def run_cnn( 
                     arch_params,
                     optimization_params ,
@@ -59,8 +61,9 @@ def run_cnn(
     test_net.test ( verbose = verbose )
     """                   
                     
-                   
- ## Boiler Plate ## 
+    pdb.set_trace()               
+    
+## Boiler Plate ## 
 if __name__ == '__main__':
              
     filename_params = { 
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     visual_params = {
                         "visualize_flag"        : True,
                         "visualize_after_epochs": 1,
-                        "n_visual_images"       : 49,
+                        "n_visual_images"       : 16,
                         "display_flag"          : False,
                         "color_filter"          : True         
                     }   
@@ -84,7 +87,7 @@ if __name__ == '__main__':
                             "mom_interval"                      : 50,
                             "mom_type"                          : 1,                         
                             "initial_learning_rate"             : 0.01,
-		 	                "ft_learning_rate"                  : 0.001,    
+			                "ft_learning_rate"                  : 0.001,    
                             "learning_rate_decay"               : 0.005,
                             "l1_reg"                            : 0.000,                     
                             "l2_reg"                            : 0.000,                    
@@ -104,19 +107,20 @@ if __name__ == '__main__':
                     "cnn_dropout"                       : True,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5,  0.5,  0.5 ],
-                    "num_nodes"                         : [ 1200, 1200  ],                                     
-                    "outs"                              : 102,                                                                                                                               
+                    "num_nodes"                         : [ 2048, 2048  ],                                     
+                    "outs"                              : 62,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ Identity, Identity, Identity, Identity, Identity ],             
-                    "batch_norm"                        : True,
-                    "nkerns"                            : [ 48,       96,       96,      128,    96,     ],              
-                    "filter_size"                       : [ (5, 5 ),  (5, 5) , (5, 5), (5, 5), (3, 3)    ],
-                    "pooling_size"                      : [ (1, 1 ),  (1, 1),  (2, 2) ,(1 ,1), (1, 1)   ],
+                    "cnn_activations"                   : [ Identity, Identity, ReLU, ReLU, ReLU ],             
+                    "cnn_batch_norm"                    : [ True, True, True, True, True],
+                    "mlp_batch_norm"                    : True,
+                    "nkerns"                            : [ 48,              96,       96,      128,     256      ],              
+                    "filter_size"                       : [ ( 3, 5, 5 ),  (5, 5, 5) , (5, 5) , (5, 5),  (3, 3 )    ],
+                    "pooling_size"                      : [ ( 1, 2, 2 ),  (1, 2, 2),  (1, 1) , (1 ,1),  (1, 1 )    ],
                     # somethign wrong with stride... use only (1,1) for now !!                         
-                    "conv_stride_size"                  : [ (1, 1 ),  (1, 1),  (1, 1) ,(1 ,1), (1, 1)  ],
-                    "cnn_maxout"                        : [ 2,         2,        2,     2,      2    ],                    
+                    "conv_stride_size"                  : [ (1, 1, 1 ),  (1, 1, 1),  ( 1, 1)   ,(1 ,1),  (1 ,1 )    ],
+                    "cnn_maxout"                        : [ 2,              2,          2,            1,        1       ],                    
                     "mlp_maxout"                        : [ 1  , 1  ],
-                    "cnn_dropout_rates"                 : [ 0.1,       0.2,      0.2,     0.3,    0.3   ],
+                    "cnn_dropout_rates"                 : [ 0.5,       0.5,      0.5,     0.5,       0.5      ],
                     "random_seed"                       : 23455, 
                     "mean_subtract"                     : False,
                     "max_out"                           : 1 
@@ -126,7 +130,7 @@ if __name__ == '__main__':
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_91882", 
+                    dataset                 = "_datasets/_dataset_52679", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = 1,

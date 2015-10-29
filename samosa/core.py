@@ -841,13 +841,16 @@ class Conv3DPoolLayer(object):
         # downsample each feature map individually, using maxpoolig
         #if fast_conv is False:
 
-        # downsample each feature map individually, using maxpooling        
-        pool_out =  maxpool_3D(
+        # downsample each feature map individually, using maxpooling    
+        if poolsize[1] > 1:    
+            pool_out =  maxpool_3D(
                     input=conv_out,
                     ds=poolsize           
                 )
+        else:
+            pool_out = conv_out
   
-        pool_out = pool_out.sum(axis = 1, keepdims = False) # Should this become a summation like what Pascal said happens in the 2D Conv ??        
+        pool_out = pool_out.sum(axis = 1, keepdims = False) # This will become a summation like what Pascal said happens in the 2D Conv ??        
         self.co = conv_out
         self.po = pool_out
        
@@ -926,6 +929,7 @@ class DropoutConv3DPoolLayer(Conv3DPoolLayer):
                              filter_shape,
                               image_shape,
                                poolsize,
+                               stride,
                                max_out,
                                maxout_size,
                                 activation,
@@ -941,6 +945,7 @@ class DropoutConv3DPoolLayer(Conv3DPoolLayer):
                     filter_shape = filter_shape,
                      image_shape = image_shape,
                       poolsize = poolsize,
+                      stride= stride,
                       max_out = max_out,
                       maxout_size = maxout_size,
                        activation = activation,
