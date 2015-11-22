@@ -351,6 +351,8 @@ class MLP(object):
             dropout_rates,
             maxout_rates,
             activations,
+            copy_from_old,
+            freeze,
             use_bias=True,
             max_out=False,
             svm_flag = True,
@@ -403,8 +405,8 @@ class MLP(object):
                                             batch_norm = batch_norm,
                                             dropout_rate=dropout_rates[layer_counter + 1],
                                             maxout_size = maxout_rates[layer_counter],
-                                            W = params[count],
-                                            b = params[count+1],
+                                            W = params[count] if copy_from_old[layer_counter] is True else None,
+                                            b = params[count+1] if copy_from_old[layer_counter] is True else None,
                                             alpha = params[count+1] if batch_norm is True else None)
     
             
@@ -451,11 +453,13 @@ class MLP(object):
         if svm_flag is False:
             if verbose is True:
                 print "           -->        initializing regression layer with " + str(n_out) + " output units and " + str(n_in) + " input units"
-            if not len(params) < count + 1:
+            if not len(params) < count + 1:      
+      
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out,
-                    W = params[count], b = params[count+1])
+                    W = params[count] if copy_from_old[-1] is True else None,
+                    b = params[count+1] if copy_from_old[-1] is True else None)
         
                 output_layer = LogisticRegression(
                     input=next_layer_input,
@@ -512,7 +516,8 @@ class MLP(object):
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out, 
-                    W = params[count], b = params[count+1])
+                    W = params[count] if copy_from_old[layer_counter] is True else None,
+                    b = params[count+1] if copy_from_old[layer_counter] is True else None)
     
                 output_layer = SVMLayer(input = next_layer_input,
                                         W=dropout_output_layer.W,
@@ -534,8 +539,17 @@ class MLP(object):
 
         self.predicts_dropouts = self.layers[-1].y_pred
         self.predicts = self.layers[-1].y_pred
-        self.params = [ param for layer in self.dropout_layers for param in layer.params ]
-
+        
+        self.params = []
+        count = 0
+        for layer in self.dropout_layers:
+            if freeze[count] is False:
+                for param in layer.params:
+                    self.params.append (param)
+            elif verbose is True:
+                print "           -->        freezing post convolutional layer " + str(count + 1)          
+                                                            
+            count = count + 1
         if svm_flag is True:
             self.probabilities = self.layers[-1].output  
         else:
@@ -618,9 +632,8 @@ class Conv2DPoolLayer(object):
         else:
             self.alpha = alpha   
              
-        # convolve input feature maps with filters
-        
-        #if fast_conv is False:
+        # convolve input feature maps with filters     
+        #if fast_conv is False:                    
         conv_out = conv.conv2d(
             input = self.input,
             filters = self.W,
@@ -710,7 +723,7 @@ class Conv2DPoolLayer(object):
             self.output = maxout_out
                 
         # store parameters of this layer
-        self.params = [self.W, self.b]
+        self.params = [self.W, self.b] if batch_norm is False else [self.W, self.b, self.alpha]
                 
 class DropoutConv2DPoolLayer(Conv2DPoolLayer):
     def __init__(self, rng, input,

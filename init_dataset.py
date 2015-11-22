@@ -21,26 +21,26 @@ def setup( data_params, outs ):
 if __name__ == '__main__':
               
     data_params = {
-                   "type"               : 'mat',                                   
-                   "loc"                : '../colored_mnist/',                                          
+                   "type"               : 'skdata',                                   
+                   "loc"                : 'cifar10',                                          
                    "batch_size"         : 500,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 100,                                      
+                   "batches2train"      : 80,                                      
                    "batches2test"       : 20,                                      
                    "batches2validate"   : 20,                                        
-                   "height"             : 28,                                       
-                   "width"              : 28,                                       
+                   "height"             : 32,                                       
+                   "width"              : 32,                                       
                    "channels"           : 3                                       
                   }
                   
     preprocess_params = { 
-                            "normalize"     : False,
+                            "normalize"     : True,
                             "GCN"           : False,
                             "ZCA"           : False,
                             "gray"          : False,
                         }
                   
-    setup( data_params = data_params, outs = 8 )
+    setup( data_params = data_params, outs = 10 )
     
     """
     # If you want to modify data_params. 
