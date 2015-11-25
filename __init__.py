@@ -110,7 +110,7 @@ if __name__ == '__main__':
                     
     visual_params = {
                         "visualize_flag"        : True,
-                        "visualize_after_epochs": 20,
+                        "visualize_after_epochs": 1,
                         "n_visual_images"       : 81,
                         "display_flag"          : False,
                         "color_filter"          : False         
@@ -138,22 +138,22 @@ if __name__ == '__main__':
                     
                     "squared_filter_length_limit"       : 15,   
                     "mlp_activations"                   : [ ReLU ],
-                    "cnn_dropout"                       : True,
+                    "cnn_dropout"                       : False,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5, 0.5 ],
                     "num_nodes"                         : [ 1600 ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ ReLU , ReLU,  ReLU, ReLU, ReLU ],             
-                    "cnn_batch_norm"                    : [ True , True,  True, True, True],
+                    "cnn_activations"                   : [ ReLU      , ReLU ,  ReLU    ],             
+                    "cnn_batch_norm"                    : [ True      , True,   True    ],
                     "mlp_batch_norm"                    : True,
-                    "nkerns"                            : [     20  ,     20    , 50  ,   50   , 50],              
-                    "filter_size"                       : [ ( 5, 5 ) , (5, 5 ), (5, 5), (5, 5) , (5, 5)],
-                    "pooling_size"                      : [ ( 1, 1 ) , (1, 1 ), (1, 1), (1, 1) , (2, 2)],
-                    "conv_stride_size"                  : [ ( 1, 1 ) , (1, 1 ), (1, 1), (1, 1) , (1, 1)],
-                    "cnn_maxout"                        : [  1,         1 ,       1,     1 ,       1],                    
+                    "nkerns"                            : [     20  ,     20    , 50    ],              
+                    "filter_size"                       : [ ( 5, 5 ) , (5, 5 ), (3, 3)  ],
+                    "pooling_size"                      : [ ( 2, 2 ) , (1, 1 ), (1, 1)  ],
+                    "conv_stride_size"                  : [ ( 1, 1 ) , (1, 1 ), (1, 1)  ],
+                    "cnn_maxout"                        : [  1,         1 ,       1,    ],                    
                     "mlp_maxout"                        : [  1    ],
-                    "cnn_dropout_rates"                 : [ 0.5,        0.5     , 0.5 ,  0.5,   0.5   ],
+                    "cnn_dropout_rates"                 : [ 0.5,        0.5     , 0.5   ],
                     "random_seed"                       : 23455, 
                     "mean_subtract"                     : False,
                     "max_out"                           : 0 
@@ -161,15 +161,15 @@ if __name__ == '__main__':
                  }                          
 
     # other loose parameters. 
-    n_epochs = 100
+    n_epochs = 2
     validate_after_epochs = 1
-    ft_epochs = 100
-    verbose = False 
+    ft_epochs = 2
+    verbose = True 
     
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_39516", 
+                    dataset                 = "_datasets/_dataset_48205", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,
@@ -183,16 +183,20 @@ if __name__ == '__main__':
                 
                 
                 
+    ## Generality experiments begin from here on. Don't bother about these if all you 
+    # want to do is just run the Samosa Toolbox. 
+    
                 
     # All frozen
-    retrain_dataset = "_datasets/_dataset_39516"
+    """
+    retrain_dataset = "_datasets/_dataset_48205"
     arch_params ["outs"]  = 10 
     
     print "... running all frozen"
     f.write("... running all frozen ")
     retrain_params = {
-                        "copy_from_old"     : [ True, True, True, True, True, True, False ],
-                        "freeze"            : [ True, True, True, True, True, True, False ]
+                        "copy_from_old"     : [ True, True, True, True, False ],
+                        "freeze"            : [ True, True, True, True, False ]
                     }                
 
 
@@ -223,8 +227,8 @@ if __name__ == '__main__':
     # one Unfrozen 
     f.write("... running one unfrozen ")
     retrain_params = {
-                        "copy_from_old"     : [ True, True, True, True, True, True, False ],
-                        "freeze"            : [ True, True, True, True, True, False, False ]
+                        "copy_from_old"     : [ True, True, True, True, False ],
+                        "freeze"            : [ True, True, True, False, False ]
                     }                
 
 
@@ -259,8 +263,8 @@ if __name__ == '__main__':
     print "... running two unfrozen"
     f.write("... running two unfrozen ")
     retrain_params = {
-                        "copy_from_old"     : [ True, True, True, True, True, True, False ],
-                        "freeze"            : [ True, True, True, True, False, False, False ]
+                        "copy_from_old"     : [ True, True, True, True, False ],
+                        "freeze"            : [ True, True, False, False, False ]
                     }                
 
 
@@ -296,8 +300,8 @@ if __name__ == '__main__':
     print "... running three unfrozen"
     f.write("... running three unfrozen ")    
     retrain_params = {
-                        "copy_from_old"     : [ True, True, True, True, True, True, False ],
-                        "freeze"            : [ True, True, True, False, False, False, False ]
+                        "copy_from_old"     : [ True, True, True, True, False ],
+                        "freeze"            : [ True, False, False, False, False ]
                     }                
 
 
@@ -335,8 +339,8 @@ if __name__ == '__main__':
     print "... running four unfrozen"
     f.write("... running four unfrozen ")    
     retrain_params = {
-                        "copy_from_old"     : [ True, True, True, True, True, True, False ],
-                        "freeze"            : [ True, True, False, False, False, False, False ]
+                        "copy_from_old"     : [ True, True, True, True, False ],
+                        "freeze"            : [ False, False, False, False, False ]
                     }                
 
 
@@ -362,49 +366,6 @@ if __name__ == '__main__':
                     ft_epochs               = ft_epochs, 
                     verbose                 = verbose ,
                       )                                                  
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-    # five Unfrozen 
-    print "... running five unfrozen"
-    f.write("... running five unfrozen ")    
-    retrain_params = {
-                        "copy_from_old"     : [ True, True, True, True, True, True, False ],
-                        "freeze"            : [ True, False, False, False, False, False, False ]
-                    }                
-
-
-    filename_params_retrain = { 
-                        "results_file_name"     : "../results/results_retrain_5.txt",      
-                        "error_file_name"       : "../results/error_retrain_5.txt",
-                        "cost_file_name"        : "../results/cost_retrain_5.txt",
-                        "confusion_file_name"   : "../results/confusion_retrain_5.txt",
-                        "network_save_name"     : "../results/network_retrain_5.pkl.gz "
-                    }                    
-                    
-    arch_params ["outs"]  = 10                    
-    generality_experiment( 
-                    arch_params             = arch_params,
-                    optimization_params     = optimization_params,
-                    dataset                 = retrain_dataset,
-                    original_filename_params= filename_params, 
-                    filename_params_retrain = filename_params_retrain,  
-                    retrain_params          = retrain_params,        
-                    visual_params           = visual_params, 
-                    validate_after_epochs   = validate_after_epochs,
-                    n_epochs                = n_epochs,
-                    ft_epochs               = ft_epochs, 
-                    verbose                 = verbose ,
-                      )                                                  
-                      
-
-
 
 
 
@@ -412,8 +373,8 @@ if __name__ == '__main__':
     print "... running all unfrozen"
     f.write("... running all unfrozen ")    
     retrain_params = {
-                        "copy_from_old"     : [ True, True, True, True, True, True, False ],
-                        "freeze"            : [ False, False, False, False, False, False, False ]
+                        "copy_from_old"     : [ True, True, True, True, False ],
+                        "freeze"            : [ False, False, False, False, False ]
                     }                
 
 
@@ -440,5 +401,5 @@ if __name__ == '__main__':
                     verbose                 = verbose ,
                       )                                                    
                       
-                      
+    """                  
     pdb.set_trace()                             
