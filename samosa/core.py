@@ -2,7 +2,7 @@
 
 import numpy
 from random import randint
-from math import floor
+from math import floor, ceil
 
 # Theano Packages
 import theano
@@ -800,7 +800,7 @@ class Conv3DPoolLayer(object):
             print "                                  ....... maxout size [" + str(maxout_size) + "]"
             print "                                  ....... input size ["  + str(height)+ " X " + str(width) + "]"
             print "                                  ....... input number of feature maps is " +str(channels) 
-            print "                                  ....... output size is [" + str(int(floor(filter_shape[0] / poolsize[0]))) + " X " + str((height - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + " X " + str((width - filter_shape[4] + 1 ) / (poolsize[2] * stride[2]) ) + "]"
+            print "                                  ....... output size is [" + str(filter_shape[0] / poolsize[0]) + " X " + str(int(ceil(((float(height - filter_shape[3])  /  stride[1]) +1) / poolsize[1]))) + " X " + str(int(ceil(((float(width - filter_shape[4])  /  stride[2]) + 1) / poolsize[2] + "]"
         self.input = input
         
         assert stride[2] == 1        

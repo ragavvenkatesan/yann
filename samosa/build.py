@@ -311,9 +311,10 @@ class network(object):
                                         verbose = verbose
                                          ) )
                                           
-                # strides creates a mess in 3D !!                                                                                   
-                next_in[0] = int(floor( ( self.height - filt_size [1] + 1 ))) / (pool_size[1] * stride[1])      
-                next_in[1] = int(floor(( self.width - filt_size[2] + 1 ))) / (pool_size[2] * stride[1])
+                # strides creates a mess in 3D !! 
+               
+                next_in[0] = int(ceil(((( self.height - filt_size [1])  / float(stride[1])) + 1) / pool_size[1] ))       
+                next_in[1] = int(ceil(((( self.width - filt_size[2]) / float(stride[2]  )) + 1) / pool_size[2] ))                                                                                                
                 next_in[2] = self.nkerns[0]  / (pool_size[0] * max_out_size * stride[0])
 
                    

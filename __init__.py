@@ -164,12 +164,12 @@ if __name__ == '__main__':
     n_epochs = 2
     validate_after_epochs = 1
     ft_epochs = 2
-    verbose = True 
+    verbose = False 
     
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_48205", 
+                    dataset                 = "_datasets/_dataset_65953", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,
@@ -188,8 +188,8 @@ if __name__ == '__main__':
     
                 
     # All frozen
-    """
-    retrain_dataset = "_datasets/_dataset_48205"
+    
+    retrain_dataset = "_datasets/_dataset_65953"
     arch_params ["outs"]  = 10 
     
     print "... running all frozen"
@@ -401,5 +401,5 @@ if __name__ == '__main__':
                     verbose                 = verbose ,
                       )                                                    
                       
-    """                  
+                      
     pdb.set_trace()                             
