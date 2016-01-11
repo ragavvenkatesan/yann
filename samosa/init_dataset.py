@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from samosa.dataset import setup_dataset
+from dataset import setup_dataset
 import os
 import gzip
 import cPickle
