@@ -114,7 +114,6 @@ class network(object):
         
     # define the optimzer function 
     def build_network (self, arch_params, optimization_params , retrain_params = None, init_params = None, verbose = True):    
-    
         self.optim_params                    = optimization_params 
         self.mom_start                       = optimization_params [ "mom_start" ]
         self.mom_end                         = optimization_params [ "mom_end" ]
@@ -227,8 +226,11 @@ class network(object):
                 curr_init_bias = None 
                 curr_init_alpha = None
                 
-        if self.max_out > 0:     
-            max_out_size = self.cnn_maxout[0]
+        if self.max_out > 0:  
+            if self.nkerns == []:
+                max_out_size = self.mlp_maxout[0]
+            else:
+                max_out_size = self.cnn_maxout[0]                
         else: 
             max_out_size = 1
 
@@ -451,8 +453,9 @@ class network(object):
                 if batch_norm_layer is True:
                     param_counter = param_counter + 1           
         # Assemble fully connected laters
-        if self.nkerns == []:
+        if self.nkerns == []: # If there is no convolutional layer 
             fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)
+            dropout_fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)            
         else:
             fully_connected_input = conv_layers[-1].output.flatten(2)
             dropout_fully_connected_input = dropout_conv_layers[-1].output.flatten(2)                
@@ -544,7 +547,6 @@ class network(object):
             count = count + 1 
         self.params = self.params + MLPlayers.params
        
-        
         # Build the expresson for the categorical cross entropy function.
         if self.svm_flag is False:
             if self.objective == 0:
@@ -716,9 +718,7 @@ class network(object):
                             )
         end_time = time.clock()
         print "...         time taken is " +str(end_time - start_time) + " seconds"
-                    
-        # import pdb
-        # pdb.set_trace()      
+                       
     # this is only for self.multi_load = True type of datasets.. 
     # All datasets are not multi_load enabled. This needs to change ??                         
     # this is only for self.multi_load = True type of datasets.. 
@@ -845,6 +845,7 @@ class network(object):
         early_termination = False
         cost_saved = []
         iteration= 0        
+        #self.print_net(epoch = 0, display_flag = self.display_flag)
         start_time_main = time.clock()
         if os.path.isfile('dump.txt'):
             f = open('dump.txt', 'a')
@@ -869,7 +870,7 @@ class network(object):
                             print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
                         cost_saved = cost_saved + [cost_ij]                        
-                else:        
+                else:   
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
                     cost_saved = cost_saved +[cost_ij]

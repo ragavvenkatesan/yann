@@ -125,13 +125,13 @@ def maxpool_3D(input, ds, ignore_border=False):
 # https://groups.google.com/forum/#!msg/theano-users/on4D16jqRX8/IWGa-Gl07g0J
 class SVMLayer(object):
 
-    def __init__(self, input, n_in, n_out, W=None, b=None):
+    def __init__(self, input, n_in, n_out, rng, W=None, b=None):
 
 
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         if W is None:
-            self.W = theano.shared(value=numpy.zeros((n_in, n_out),
-                                                 dtype=theano.config.floatX),
+            self.W = theano.shared(value=numpy.asarray(0.01 * rng.standard_normal(size=(n_in, n_out)),
+                                             dtype=theano.config.floatX),
                                 name='W', borrow=True)
         else:
             self.W = W
@@ -177,13 +177,15 @@ class SVMLayer(object):
 class LogisticRegression(object):
    
 
-    def __init__(self, input, n_in, n_out, W=None, b=None ):
+    def __init__(self, input, n_in, n_out, rng, W=None, b=None ):
 
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         if W is None:
             self.W = theano.shared(
-                    value=numpy.zeros((n_in, n_out), dtype=theano.config.floatX),
+                    value=numpy.asarray(0.01 * rng.standard_normal(size=(n_in, n_out)),
+                                     dtype=theano.config.floatX),
                     name='W')
+                    
         else:
             self.W = W
 
@@ -205,7 +207,7 @@ class LogisticRegression(object):
         # parameters of the model
         self.params = [self.W, self.b]
         self.probabilities = T.log(self.p_y_given_x)
-
+        # po = theano.function ( inputs = [index], outputs = MLPlayers.layers[-1].input, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
     def negative_log_likelihood(self, y ):
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y]) 
         
@@ -457,7 +459,7 @@ class MLP(object):
       
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input,
-                    n_in=n_in, n_out=n_out,
+                    n_in=n_in, n_out=n_out, rng=rng,
                     W = params[count] if copy_from_old[-1] is True else None,
                     b = params[count+1] if copy_from_old[-1] is True else None)
         
@@ -466,17 +468,17 @@ class MLP(object):
                     # scale the weight matrix W with (1-p)
                     W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
                     b=dropout_output_layer.b,
-                    n_in=n_in, n_out=n_out)
+                    n_in=n_in, n_out=n_out, rng=rng)
             else:
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input,
-                    n_in=n_in, n_out=n_out
+                    n_in=n_in, n_out=n_out, rng=rng
                     )
         
                 output_layer = LogisticRegression(
                     input=next_layer_input,
                     # scale the weight matrix W with (1-p)
-                    n_in=n_in, n_out=n_out,
+                    n_in=n_in, n_out=n_out, rng=rng,
                     W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
                     b=dropout_output_layer.b
                     )
@@ -505,17 +507,17 @@ class MLP(object):
             if len(params) < count + 1:
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
-                    n_in=n_in  , n_out=n_out )
+                    n_in=n_in  , n_out=n_out,rng =rng )
     
                 output_layer = SVMLayer(input = next_layer_input,
                                         W=dropout_output_layer.W ,
                                         b=dropout_output_layer.b,
                                         n_in = n_in,
-                                        n_out = n_out)
+                                        n_out = n_out, rng= rng)
             else:
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
-                    n_in=n_in, n_out=n_out, 
+                    n_in=n_in, n_out=n_out, rng = rng,
                     W = params[count] if copy_from_old[layer_counter] is True else None,
                     b = params[count+1] if copy_from_old[layer_counter] is True else None)
     
@@ -523,7 +525,8 @@ class MLP(object):
                                         W=dropout_output_layer.W,
                                         b=dropout_output_layer.b,
                                         n_in = n_in,
-                                        n_out = n_out)
+                                        n_out = n_out,
+                                        rng = rng)
 
             self.layers.append(output_layer)
             self.dropout_layers.append(dropout_output_layer)
@@ -800,7 +803,7 @@ class Conv3DPoolLayer(object):
             print "                                  ....... maxout size [" + str(maxout_size) + "]"
             print "                                  ....... input size ["  + str(height)+ " X " + str(width) + "]"
             print "                                  ....... input number of feature maps is " +str(channels) 
-            print "                                  ....... output size is [" + str(filter_shape[0] / poolsize[0]) + " X " + str(int(ceil(((float(height - filter_shape[3])  /  stride[1]) +1) / poolsize[1]))) + " X " + str(int(ceil(((float(width - filter_shape[4])  /  stride[2]) + 1) / poolsize[2] + "]"
+            #print "                                  ....... output size is [" + str(filter_shape[0] / poolsize[0]) + " X " + str(int(ceil(((float(height - filter_shape[3])  /  stride[1]) +1) / poolsize[1]))) + " X " + str(int(ceil(((float(width - filter_shape[4])  /  stride[2]) + 1) / poolsize[2] + "]"
         self.input = input
         
         assert stride[2] == 1        
