@@ -153,8 +153,7 @@ class network(object):
         self.max_out                         = arch_params [ "max_out" ] 
         self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
         self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
-                  
-        
+       
         if retrain_params is not None:
             self.copy_from_old = retrain_params [ "copy_from_old" ]
             self.freeze_layers = retrain_params [ "freeze" ]
