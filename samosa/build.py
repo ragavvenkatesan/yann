@@ -55,7 +55,7 @@ class network(object):
         self.network_save_name   = filename_params [ "network_save_name" ]
         
         self.rng = numpy.random.RandomState(random_seed)  
-        self. main_img_visual = True 
+        self.main_img_visual = True 
        
     def save_network( self ):          # for others use only data_params or optimization_params
 

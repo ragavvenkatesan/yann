@@ -192,14 +192,13 @@ class LogisticRegression(object):
         # initialize the baises b as a vector of n_out 0s        
         if b is None:
             self.b = theano.shared(
-                    value=numpy.zeros((n_out,), dtype=theano.config.floatX),
+                    value=numpy.asarray(0.01 * rng.standard_normal(size=n_out), dtype=theano.config.floatX),
                     name='b')
         else:
             self.b = b
 
         # compute vector of class-membership probabilities in symbolic form
-        self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
-
+        self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b) 
         # compute prediction as class whose probability is maximal in
         # symbolic form
         self.y_pred = T.argmax(self.p_y_given_x, axis=1)
@@ -249,7 +248,7 @@ class HiddenLayer(object):
             W = theano.shared(value=W_values, name='W')
         
         if b is None:
-            b_values = numpy.zeros((n_out,), dtype=theano.config.floatX)
+            b_values = numpy.asarray(0.01 * rng.standard_normal(size=n_out), dtype=theano.config.floatX)
             b = theano.shared(value=b_values, name='b')
 
         if alpha is None:
@@ -623,7 +622,7 @@ class Conv2DPoolLayer(object):
             self.W = W 
         # the bias is a 1D tensor -- one bias per output feature map
         if b is None:
-            b_values = numpy.zeros((filter_shape[0],), dtype=theano.config.floatX)
+            b_values = numpy.asarray(0.01 * rng.standard_normal(size=filter_shape[0]), dtype=theano.config.floatX)
             self.b = theano.shared(value=b_values, borrow=True)
         else:
             self.b = b
@@ -760,7 +759,6 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                         verbose = False)
                         
         self.output = _dropout_from_layer(rng, self.output, p=p)          
-                  
               
 # From theano tutorials
 class Conv3DPoolLayer(object):

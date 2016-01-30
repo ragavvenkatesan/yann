@@ -49,7 +49,7 @@ def load_network(filename, data_params = False, optimization_params = False):
     f = gzip.open(filename, 'rb')
     params = cPickle.load(f)
     arch_params = cPickle.load(f)
-    
+
     rval = (params, arch_params)
     if data_params is True:
         data_params_out = cPickle.load(f)
