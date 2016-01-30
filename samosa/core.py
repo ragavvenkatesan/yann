@@ -192,7 +192,7 @@ class LogisticRegression(object):
         # initialize the baises b as a vector of n_out 0s        
         if b is None:
             self.b = theano.shared(
-                    value=numpy.asarray(0.01 * rng.standard_normal(size=n_out), dtype=theano.config.floatX),
+                    value=numpy.ones((n_out), dtype=theano.config.floatX),
                     name='b')
         else:
             self.b = b
@@ -248,7 +248,7 @@ class HiddenLayer(object):
             W = theano.shared(value=W_values, name='W')
         
         if b is None:
-            b_values = numpy.asarray(0.01 * rng.standard_normal(size=n_out), dtype=theano.config.floatX)
+            b_values = numpy.ones((n_out,), dtype=theano.config.floatX)
             b = theano.shared(value=b_values, name='b')
 
         if alpha is None:
@@ -408,7 +408,7 @@ class MLP(object):
                                             maxout_size = maxout_rates[layer_counter],
                                             W = params[count] if copy_from_old[layer_counter] is True else None,
                                             b = params[count+1] if copy_from_old[layer_counter] is True else None,
-                                            alpha = params[count+1] if batch_norm is True else None)
+                                            alpha = params[count+2] if batch_norm is True else None)
     
             
                                                         
@@ -470,7 +470,7 @@ class MLP(object):
                     n_in=n_in, n_out=n_out, rng=rng)
             else:
                 dropout_output_layer = LogisticRegression(
-                    input=next_dropout_layer_input,
+                    input=next_dropout_layer_input ,
                     n_in=n_in, n_out=n_out, rng=rng
                     )
         

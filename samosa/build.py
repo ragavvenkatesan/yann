@@ -413,8 +413,8 @@ class network(object):
                                         max_out = self.max_out,
                                         maxout_size = max_out_size,
                                         activation = self.cnn_activations[layer+1],
-                                        W = None if init_params is None else init_params[param_counter    ] ,
-                                        b = None if init_params is None else init_params[param_counter + 1] ,
+                                        W = None if curr_init_weights is None else curr_init_weights ,
+                                        b = None if curr_init_bias is None else curr_init_bias  ,
                                         batch_norm = batch_norm_layer,  
                                         alpha = None if curr_init_alpha is None else curr_init_alpha,
                                         p = self.cnn_dropout_rates[layer+1]                                                                                                       
