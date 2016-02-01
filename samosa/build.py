@@ -153,6 +153,7 @@ class network(object):
         self.max_out                         = arch_params [ "max_out" ] 
         self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
         self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
+        self.use_bias                        = arch_params [ "use_bias" ]
        
         if retrain_params is not None:
             self.copy_from_old = retrain_params [ "copy_from_old" ]
@@ -487,7 +488,7 @@ class network(object):
                          maxout_rates = self.mlp_maxout,
                          max_out = self.max_out, 
                          activations = self.mlp_activations,
-                         use_bias = True,
+                         use_bias = self.use_bias,
                          svm_flag = self.svm_flag,
                          batch_norm = self.mlp_batch_norm, 
                          params = [] if init_params is None else init_params[param_counter:],

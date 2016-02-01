@@ -177,7 +177,7 @@ class SVMLayer(object):
 class LogisticRegression(object):
    
 
-    def __init__(self, input, n_in, n_out, rng, W=None, b=None ):
+    def __init__(self, input, n_in, n_out, rng, W=None, b=None, use_bias = False ):
 
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         if W is None:
@@ -192,19 +192,22 @@ class LogisticRegression(object):
         # initialize the baises b as a vector of n_out 0s        
         if b is None:
             self.b = theano.shared(
-                    value=numpy.ones((n_out), dtype=theano.config.floatX),
+                    value=numpy.asarray(0.01 * rng.standard_normal((n_out)), dtype=theano.config.floatX),
                     name='b')
         else:
             self.b = b
 
         # compute vector of class-membership probabilities in symbolic form
-        self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b) 
+        if use_bias is True:
+            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b) 
+        else:
+            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W))         
         # compute prediction as class whose probability is maximal in
         # symbolic form
         self.y_pred = T.argmax(self.p_y_given_x, axis=1)
 
         # parameters of the model
-        self.params = [self.W, self.b]
+        self.params = [self.W, self.b] if use_bias is True else [self.W]
         self.probabilities = T.log(self.p_y_given_x)
         # po = theano.function ( inputs = [index], outputs = MLPlayers.layers[-1].input, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
     def negative_log_likelihood(self, y ):
@@ -248,7 +251,7 @@ class HiddenLayer(object):
             W = theano.shared(value=W_values, name='W')
         
         if b is None:
-            b_values = numpy.ones((n_out,), dtype=theano.config.floatX)
+            b_values = numpy.asarray(0.01 * rng.standard_normal((n_out)), dtype=theano.config.floatX)
             b = theano.shared(value=b_values, name='b')
 
         if alpha is None:
@@ -460,18 +463,19 @@ class MLP(object):
                     input=next_dropout_layer_input,
                     n_in=n_in, n_out=n_out, rng=rng,
                     W = params[count] if copy_from_old[-1] is True else None,
-                    b = params[count+1] if copy_from_old[-1] is True else None)
+                    b = params[count+1] if copy_from_old[-1] is True and use_bias is True else None, 
+                    use_bias = use_bias)
         
                 output_layer = LogisticRegression(
                     input=next_layer_input,
                     # scale the weight matrix W with (1-p)
                     W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
                     b=dropout_output_layer.b,
-                    n_in=n_in, n_out=n_out, rng=rng)
+                    n_in=n_in, n_out=n_out, rng=rng,  use_bias = use_bias)
             else:
                 dropout_output_layer = LogisticRegression(
                     input=next_dropout_layer_input ,
-                    n_in=n_in, n_out=n_out, rng=rng
+                    n_in=n_in, n_out=n_out, rng=rng,  use_bias = use_bias
                     )
         
                 output_layer = LogisticRegression(
@@ -479,7 +483,7 @@ class MLP(object):
                     # scale the weight matrix W with (1-p)
                     n_in=n_in, n_out=n_out, rng=rng,
                     W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
-                    b=dropout_output_layer.b
+                    b=dropout_output_layer.b,  use_bias = use_bias
                     )
 
             self.layers.append(output_layer)
