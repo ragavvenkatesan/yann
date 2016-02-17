@@ -3,14 +3,17 @@
 import numpy
 from random import randint
 from math import floor, ceil
+from collections import OrderedDict
 
 # Theano Packages
 import theano
 import theano.tensor as T
-from theano.tensor.signal import downsample
+from theano.tensor.signal import pool
 from theano.tensor.nnet import conv
 from theano.ifelse import ifelse
-from theano.tensor.signal.downsample import DownsampleFactorMax
+from theano.tensor.signal.pool import Pool as DownsampleFactorMax
+from theano.tensor.signal.pool import pool_2d as max_pool_2d
+from theano.tensor.signal.pool import max_pool_2d_same_size 
 from theano.tensor.nnet.conv3d2d import conv3d
 
 
@@ -651,7 +654,7 @@ class Conv2DPoolLayer(object):
         # downsample each feature map individually, using maxpooling
         #if fast_conv is False:
 
-        pool_out = downsample.max_pool_2d(
+        pool_out = max_pool_2d(
             input=conv_out,
             ds=poolsize,
             ignore_border=True
@@ -940,6 +943,11 @@ class Conv3DPoolLayer(object):
         # store parameters of this layer
         self.params = [self.W, self.b]
                 
+        """  Dropouts implemented from paper:
+        Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
+        from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
+        """
+                        
 class DropoutConv3DPoolLayer(Conv3DPoolLayer):
     def __init__(self, rng, input,
                              filter_shape,
@@ -973,3 +981,454 @@ class DropoutConv3DPoolLayer(Conv3DPoolLayer):
                         
         self.output = _dropout_from_layer(rng, self.output, p=p)          
            
+        # whenever we setup data, convert from the above rehsape order//
+        
+        
+        
+class ConvolutionalLayers (object):
+
+    def __init__ ( self,
+            rng,
+            input,
+            input_size, 
+            mean_subtract,
+            nkerns,
+            filter_size,
+            pooling_size,
+            cnn_activations,
+            conv_stride_size,
+            cnn_dropout_rates,
+            batch_norm,
+            retrain_params,
+            init_params,            
+            max_out,
+            cnn_maxout,
+            verbose = True                    
+        ):
+        
+        first_layer_input = input[0]
+        mean_sub_input    = input[1] 
+        stack_size = 1
+        # Create first convolutional - pooling layers 
+        self.activity = []       # to record Cnn activities 
+        self.weights = []    
+        self.conv_layers = []         
+        self.dropout_conv_layers = [] 
+        
+        if retrain_params is not None:
+            copy_from_old = retrain_params [ "copy_from_old" ]
+            freeze_layers = retrain_params [ "freeze" ]
+        else:
+            freeze_layers = [] 
+            for i in xrange(len(nkerns)):
+                freeze_layers.append ( False )              
+            
+        # if no retrain specified but if init params are given, make default as copy all params.             
+            if init_params is not None:
+                copy_from_old = []
+                for i in xrange(len(nkerns)):
+                    copy_from_old.append ( True ) 
+                                                
+        filt_size = filter_size[0]
+        pool_size = pooling_size[0]
+        stride    = conv_stride_size[0]
+        batch_norm_layer = batch_norm[0]
+        
+        if retrain_params is not None:
+            curr_copy = copy_from_old[0] 
+            
+            if curr_copy is True:
+                curr_init_weights = init_params[0]
+                curr_init_bias    = init_params[1]
+                
+                if batch_norm_layer is True:
+                    curr_init_alpha    = init_params[2]
+                else:
+                    curr_init_alpha    = None
+            else:
+                curr_init_weights = None
+                curr_init_bias = None
+                curr_init_alpha = None                    
+                
+        if init_params is None:
+            curr_init_weights = None
+            curr_init_bias = None 
+            curr_init_alpha = None
+                
+        if max_out > 0:  
+
+                max_out_size = cnn_maxout[0]                
+        else: 
+            max_out_size = 1
+
+        next_in = [ input_size[0], input_size[1], input_size[2] ]
+        stack_size = 1 
+        param_counter = 0 
+ 
+
+        if len(filt_size) == 2:                        
+            self.dropout_conv_layers.append ( 
+                            DropoutConv2DPoolLayer(
+                                    rng = rng,
+                                    input = first_layer_input if mean_subtract is False else mean_sub_input,
+                                    image_shape=(input_size[3], next_in[2] , next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
+                                    poolsize = pool_size,
+                                    stride = stride,
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,
+                                    activation = cnn_activations[0],
+                                    W = None if curr_init_weights is None else curr_init_weights,
+                                    b = None if curr_init_bias is None else curr_init_bias, 
+                                    batch_norm = batch_norm_layer,
+                                    alpha = None if curr_init_alpha is None else curr_init_alpha,
+                                    p = cnn_dropout_rates[0],                                 
+                                        ) ) 
+            self.conv_layers.append ( 
+                            Conv2DPoolLayer(
+                                    rng = rng,
+                                    input = first_layer_input if mean_subtract is False else mean_sub_input,
+                                    image_shape=(input_size[3], next_in[2] , next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
+                                    poolsize = pool_size,
+                                    stride = stride,
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,
+                                    activation = cnn_activations[0],
+                                    W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[0]) ,
+                                    b = self.dropout_conv_layers[-1].params[1],
+                                    batch_norm = batch_norm_layer,
+                                    alpha = self.dropout_conv_layers[-1].alpha,
+                                    verbose = verbose                                       
+                                        ) )  
+            next_in[0] = int(floor((ceil( (next_in[0] - filt_size [0])  / float(stride[0])) + 1  ) / pool_size[0] ))       
+            next_in[1] = int(floor((ceil( (next_in[1] - filt_size[1]) / float(stride[1]   )) + 1  ) / pool_size[1] ))    
+            next_in[2] = nkerns[0]  / max_out_size                                                                                                                 
+        elif len(filt_size) == 3:
+            dropout_conv_layers.append ( 
+                            DropoutConv3DPoolLayer(
+                                    rng = rng,
+                                    input = first_layer_input if mean_subtract is False else mean_sub_input,
+                                    image_shape=(input_size[3], next_in[2] , stack_size, next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
+                                    poolsize=pool_size,      
+                                    stride = stride,                                   
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,
+                                    activation = cnn_activations[0],
+                                    W = None if curr_init_weights is None else curr_init_weights,
+                                    b = None if curr_init_bias is None else curr_init_bias, 
+                                    batch_norm = batch_norm_layer,
+                                    alpha = None if curr_init_alpha is None else curr_init_alpha,
+                                    p = cnn_dropout_rates[0]                             
+                                        ) )
+            conv_layers.append ( 
+                            Conv3DPoolLayer(
+                                    rng = rng,
+                                    input = first_layer_input if mean_subtract is False else mean_sub_input,
+                                    image_shape=(input_size[3], next_in[2] , stack_size, next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
+                                    poolsize=pool_size,
+                                    stride = stride, 
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,                                        
+                                    activation = cnn_activations[0],
+                                    W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[0]),
+                                    b = self.dropout_conv_layers[-1].params[1],
+                                    batch_norm = batch_norm_layer,
+                                    alpha = self.dropout_conv_layers[-1].alpha, 
+                                    verbose = verbose
+                                        ) )
+                                        
+            # strides creates a mess in 3D !! 
+            
+            next_in[0] = int(ceil(((( next_in[0] - filt_size [1])  / float(stride[1])) + 1) / pool_size[1] ))       
+            next_in[1] = int(ceil(((( next_in[1] - filt_size[2]) / float(stride[2]  )) + 1) / pool_size[2] ))                                                                                                
+            next_in[2] = nkerns[0]  / (pool_size[0] * max_out_size * stride[0])
+
+                
+        else:
+            print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
+            sys.exit()
+            
+        self.activity.append ( self.conv_layers[-1].output.dimshuffle(0,2,3,1) )
+        self.weights.append ( self.conv_layers[-1].W)
+        
+        # Create the rest of the convolutional - pooling layers in a loop
+        param_counter = param_counter + 2  
+        if batch_norm_layer is True:
+            param_counter = param_counter + 1
+        for layer in xrange(len(nkerns)-1):   
+            
+            filt_size = filter_size[layer+1]
+            pool_size = pooling_size[layer+1]
+            stride    = conv_stride_size[layer +1 ]
+            batch_norm_layer = batch_norm [layer + 1]
+            if retrain_params is not None:
+                curr_copy = copy_from_old[layer + 1] 
+                if curr_copy is True:
+                    curr_init_weights = init_params[param_counter]
+                    curr_init_bias    = init_params[param_counter + 1]
+                    if batch_norm_layer is True:
+                        curr_init_alpha = init_params[param_counter + 2]   
+                    else:
+                        curr_init_alpha = None
+                else:
+                    curr_init_weights  = None
+                    curr_init_bias = None
+                    curr_init_alpha = None          
+            if init_params is None:
+                curr_init_weights = None
+                curr_init_bias = None
+                curr_init_alpha = None
+                    
+            if max_out > 0:
+                max_out_size = cnn_maxout[layer+1]
+            else:
+                max_out_size = 1 
+
+            if len(filt_size) == 2:
+                self.dropout_conv_layers.append ( 
+                                DropoutConv2DPoolLayer(
+                                    rng = rng,
+                                    input = self.dropout_conv_layers[layer].output,        
+                                    image_shape=(input_size[3], next_in[2], next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
+                                    poolsize=pool_size,
+                                    stride = stride,
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,
+                                    activation = cnn_activations[layer+1],
+                                    W = None if curr_init_weights is None else curr_init_weights ,
+                                    b = None if curr_init_bias is None else curr_init_bias ,
+                                    batch_norm = batch_norm_layer,
+                                    alpha = None if curr_init_alpha is None else curr_init_alpha ,
+                                    p = cnn_dropout_rates[layer+1]                                                                                                        
+                                        ) )
+                                                
+                self.conv_layers.append ( 
+                                Conv2DPoolLayer(
+                                    rng = rng,
+                                    input = self.conv_layers[layer].output,        
+                                    image_shape=(input_size[3], next_in[2], next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
+                                    poolsize = pool_size,
+                                    stride = stride,
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,
+                                    activation = cnn_activations[layer+1],
+                                    W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[layer + 1]),
+                                    b = self.dropout_conv_layers[-1].params[1],
+                                    batch_norm = batch_norm_layer, 
+                                    alpha = self.dropout_conv_layers[-1].alpha,
+                                    verbose = verbose
+                                        ) )                                                       
+                                            
+                next_in[0] = int(floor((ceil( (next_in[0] - filt_size[0] ) / float(stride[0])) + 1 ) / pool_size[0] ))      
+                next_in[1] = int(floor((ceil( (next_in[1]- filt_size[1] ) / float(stride[1])) + 1 ) / pool_size[1] ))
+                next_in[2] = nkerns[layer+1] / max_out_size
+                
+            elif len(filt_size) == 3:
+                self.dropout_conv_layers.append ( 
+                                DropoutConv3DPoolLayer(
+                                    rng = rng,
+                                    input = self.dropout_conv_layers[layer].output,        
+                                    image_shape=(input_size[3], next_in[2], stack_size, next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
+                                    poolsize=pool_size,
+                                    stride = stride,
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,
+                                    activation = cnn_activations[layer+1],
+                                    W = None if curr_init_weights is None else curr_init_weights ,
+                                    b = None if curr_init_bias is None else curr_init_bias  ,
+                                    batch_norm = batch_norm_layer,  
+                                    alpha = None if curr_init_alpha is None else curr_init_alpha,
+                                    p = cnn_dropout_rates[layer+1]                                                                                                       
+                                        ) )                                                                                             
+                self.conv_layers.append ( 
+                                Conv3DPoolLayer(
+                                    rng = self.rng,
+                                    input = self.conv_layers[layer].output,        
+                                    image_shape=(input_size[3], next_in[2], stack_size, next_in[0], next_in[1]),
+                                    filter_shape=(nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
+                                    poolsize=pool_size,
+                                    stride = stride,
+                                    max_out = max_out,
+                                    maxout_size = max_out_size,
+                                    activation = cnn_activations[layer+1],
+                                    W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[layer + 1]),
+                                    b = self.dropout_conv_layers[-1].params[1] ,
+                                    batch_norm = batch_norm_layer,
+                                    alpha = self.dropout_conv_layers[-1].alpha,
+                                    verbose = verbose
+                                        ) )   
+                                        
+                # please dont use stride for 3D                                                   
+                next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * stride[1])    
+                next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] * stride[2])
+                next_in[2] = nkerns[layer+1] / (pool_size[0] * max_out_size * stride[0])    
+                                            
+            else:
+                print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
+                sys.exit()
+            self.weights.append ( self.conv_layers[-1].W )
+            self.activity.append( self.conv_layers[-1].output.dimshuffle(0,2,3,1) )
+
+            param_counter = param_counter + 2    
+            if batch_norm_layer is True:
+                param_counter = param_counter + 1  
+                
+        self.params = []
+        count = 0
+        for layer in self.dropout_conv_layers:
+            if freeze_layers[count] is False:
+                self.params = self.params + layer.params
+            elif verbose is True:
+                print "           -->        convolutional layer " + str(count +  1) + " is frozen." 
+            count = count + 1 
+        
+        self.output_size = next_in
+        
+    def returnOutputSizes(self):
+        return self.output_size
+        
+    def returnActivity(self):
+        return self.activity
+        
+class optimizer(object):
+    def __init__(self, params, objective, optimization_params, verbose = True):
+        
+        self.mom_start                       = optimization_params [ "mom_start" ]
+        self.mom_end                         = optimization_params [ "mom_end" ]
+        self.mom_epoch_interval              = optimization_params [ "mom_interval" ]
+        self.mom_type                        = optimization_params [ "mom_type" ]
+        self.initial_learning_rate           = optimization_params [ "initial_learning_rate" ]  
+        self.ft_learning_rate                = optimization_params [ "ft_learning_rate" ]          
+        self.learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
+        self.ada_grad                        = optimization_params [ "ada_grad" ]   
+        self.fudge_factor                    = optimization_params [ "fudge_factor" ]
+        self.l1_reg                          = optimization_params [ "l1_reg" ]
+        self.l2_reg                          = optimization_params [ "l2_reg" ]
+        self.rms_prop                        = optimization_params [ "rms_prop" ]
+        self.rms_rho                         = optimization_params [ "rms_rho" ]
+        self.rms_epsilon                     = optimization_params [ "rms_epsilon" ]
+        self.objective                       = optimization_params [ "objective" ]  
+            
+        if self.ada_grad is True:
+            assert self.rms_prop is False
+        elif self.rms_prop is True:
+            assert self.ada_grad is False
+            self.fudge_factor = self.rms_epsilon
+                        
+        if verbose is True:
+            print "... estimating gradients"
+        gradients = []      
+        for param in params: 
+            gradient = T.grad( objective ,param)
+            gradients.append ( gradient )
+        epoch = T.scalar('epoch')
+        # TO DO: Try implementing Adadelta also. 
+        # Compute momentum for the current epoch
+        
+        mom = ifelse(epoch <= self.mom_epoch_interval,
+            self.mom_start*(1.0 - epoch/self.mom_epoch_interval) + self.mom_end*(epoch/self.mom_epoch_interval),
+            self.mom_end)   
+        
+        # learning rate
+        self.eta = theano.shared(numpy.asarray(self.initial_learning_rate,dtype=theano.config.floatX))
+        # accumulate gradients for adagrad
+         
+        grad_acc =[]
+        for param in params:
+            eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
+            grad_acc.append(theano.shared(eps, borrow=True))
+    
+        # accumulate velocities for momentum
+        velocities = []
+        for param in params:
+            velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
+            velocities.append(velocity)
+         
+        # create updates for each combination of stuff 
+        updates = OrderedDict()
+        print_flag = False
+         
+        if verbose is True:
+            print "... building back prop network" 
+        for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
+            if self.ada_grad is True:
+    
+                """ Adagrad implemented from paper:
+                John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
+                for online learning and stochastic optimization. JMLR
+                """
+    
+                current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
+                updates[acc] = current_acc          # updates accumulation at timestamp
+            elif self.rms_prop is True:
+                """ Tieleman, T. and Hinton, G. (2012):
+                Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
+                Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
+    
+                current_acc = self.rms_rho * acc + (1 - self.rms_rho) * T.sqr(gradient) 
+                updates[acc] = current_acc
+
+            else:
+                current_acc = 1
+                self.fudge_factor = 0
+    
+            if self.mom_type == 0:               # no momentum
+                updates[velocity] = -(self.eta / T.sqrt(current_acc + self.fudge_factor)) * gradient                                            
+               
+            elif self.mom_type == 1:       # if polyak momentum    
+    
+                """ Momentum implemented from paper:  
+                Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration methods." 
+                USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
+    
+                Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization and momentum in deep learning." 
+                Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
+                equation (1) and equation (2)"""   
+    
+                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc+ self.fudge_factor))  * gradient                             
+    
+            elif self.mom_type == 2:             # Nestrov accelerated gradient 
+    
+                """Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)."
+                Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
+                Adapted from https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/ 
+    
+                Instead of using past params we use the current params as described in this link
+                https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,"""
+      
+                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc + self.fudge_factor))  * gradient                                 
+                updates[param] = mom * updates[velocity] 
+    
+            else:
+                if print_flag is False:
+                    print_flag = True
+                    print "!! Unrecognized mometum type, switching to no momentum."
+                updates[velocity] = -( self.eta / T.sqrt(current_acc+ self.fudge_factor) ) * gradient                                              
+                            
+    
+            if self.mom_type != 2:
+                stepped_param  = param + updates[velocity]
+            else:
+                stepped_param = param + updates[velocity] + updates[param]
+            column_norm = True #This I don't fully understand if its needed after BN is implemented.
+            if param.get_value(borrow=True).ndim == 2 and column_norm is True:
+    
+                """ constrain the norms of the COLUMNs of the weight, according to
+                https://github.com/BVLC/caffe/issues/109 """
+    
+                col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
+                desired_norms = T.clip(col_norms, 0, T.sqrt(15))
+                scale = desired_norms / (1e-7 + col_norms)
+                updates[param] = stepped_param * scale
+    
+            else:            
+                updates[param] = stepped_param
+        self.epoch = epoch
+        self.mom = mom 
+        self.updates = updates                                               

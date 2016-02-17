@@ -2,7 +2,6 @@
 
 # General Packages
 import os
-from collections import OrderedDict
 import cPickle, gzip
 
 # Math Packages
@@ -114,25 +113,9 @@ class network(object):
         
     # define the optimzer function 
     def build_network (self, arch_params, optimization_params , retrain_params = None, init_params = None, verbose = True):    
-        self.optim_params                    = optimization_params 
-        self.mom_start                       = optimization_params [ "mom_start" ]
-        self.mom_end                         = optimization_params [ "mom_end" ]
-        self.mom_epoch_interval              = optimization_params [ "mom_interval" ]
-        self.mom_type                        = optimization_params [ "mom_type" ]
-        self.initial_learning_rate           = optimization_params [ "initial_learning_rate" ]  
-        self.ft_learning_rate                = optimization_params [ "ft_learning_rate" ]          
-        self.learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
-        self.ada_grad                        = optimization_params [ "ada_grad" ]   
-        self.fudge_factor                    = optimization_params [ "fudge_factor" ]
-        self.l1_reg                          = optimization_params [ "l1_reg" ]
-        self.l2_reg                          = optimization_params [ "l2_reg" ]
-        self.rms_prop                        = optimization_params [ "rms_prop" ]
-        self.rms_rho                         = optimization_params [ "rms_rho" ]
-        self.rms_epsilon                     = optimization_params [ "rms_epsilon" ]
-        self.objective                       = optimization_params [ "objective" ]        
     
+        self.optim_params                    = optimization_params           
         self.arch                            = arch_params
-        self.squared_filter_length_limit     = arch_params [ "squared_filter_length_limit" ]   
         self.mlp_activations                 = arch_params [ "mlp_activations"  ] 
         self.cnn_activations                 = arch_params [ "cnn_activations" ]
         self.cnn_dropout                     = arch_params [ "cnn_dropout"  ]
@@ -153,314 +136,57 @@ class network(object):
         self.max_out                         = arch_params [ "max_out" ] 
         self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
         self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
-        self.use_bias                        = arch_params [ "use_bias" ]
-       
-        if retrain_params is not None:
-            self.copy_from_old = retrain_params [ "copy_from_old" ]
-            self.freeze_layers = retrain_params [ "freeze" ]
-        else:
-            self.freeze_layers = [] 
-            for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
-                self.freeze_layers.append ( False )              
-            
-        # if no retrain specified but if init params are given, make default as copy all params.             
-            if init_params is not None:
-                self.copy_from_old = []
-                for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
-                    self.copy_from_old.append ( True ) 
-                                                      
-        if self.ada_grad is True:
-            assert self.rms_prop is False
-        elif self.rms_prop is True:
-            assert self.ada_grad is False
-            self.fudge_factor = self.rms_epsilon
+        self.use_bias                        = arch_params [ "use_bias" ]                    
        
         print '... building the network'    
         
         
         start_time = time.clock()
+
         # allocate symbolic variables for the data
-        index = T.lscalar('index')  # index to a [mini]batch
-        x = T.matrix('x')           # the data is presented as rasterized images
-        y = T.ivector('y')          # the labels are presented as 1D vector of [int] 
-            
+        
+        self.x = T.matrix('x')           # the data is presented as rasterized images
+        self.y = T.ivector('y')          # the labels are presented as 1D vector of [int] 
+                    
         if self.svm_flag is True:
-            y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
+            self.y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
      
-        first_layer_input = x.reshape((self.batch_size, self.height, self.width, self.channels)).dimshuffle(0,3,1,2)
-        mean_sub_input = first_layer_input - first_layer_input.mean()
+        first_layer_input = self.x.reshape((self.batch_size, self.height, self.width, self.channels)).dimshuffle(0,3,1,2)
+        mean_sub_input = first_layer_input - first_layer_input.mean()        
         
-        # whenever we setup data, convert from the above rehsape order//
-    
-        # Create first convolutional - pooling layers 
-        activity = []       # to record Cnn activities 
-        self.weights = []
-    
-        conv_layers = []         
-        dropout_conv_layers = [] 
+        ###########################################
+        # Convolutional layers 
+        self.ConvLayers = core.ConvolutionalLayers (      
+                                                    input = (first_layer_input, mean_sub_input),
+                                                    rng = self.rng,
+                                                    input_size = (self.height, self.width, self.channels, self.batch_size), 
+                                                    mean_subtract = self.mean_subtract,
+                                                    nkerns = self.nkerns,
+                                                    filter_size = self.filter_size,
+                                                    pooling_size = self.pooling_size,
+                                                    cnn_activations = self.cnn_activations,
+                                                    conv_stride_size = self.conv_stride_size,
+                                                    cnn_dropout_rates = self.cnn_dropout_rates,
+                                                    batch_norm = self.batch_norm,         
+                                                    max_out = self.max_out,
+                                                    cnn_maxout = self.cnn_maxout,
+                                                    retrain_params = retrain_params, # default None
+                                                    init_params = init_params,                                   
+                                                    verbose = verbose          
+                                              )                                                 
         
-        if not self.nkerns == []:
-            filt_size = self.filter_size[0]
-            pool_size = self.pooling_size[0]
-            stride    = self.conv_stride_size[0]
-            batch_norm_layer = self.batch_norm[0]
-            
-            if retrain_params is not None:
-                curr_copy = self.copy_from_old[0] 
-                
-                if curr_copy is True:
-                    curr_init_weights = init_params[0]
-                    curr_init_bias    = init_params[1]
                     
-                    if batch_norm_layer is True:
-                        curr_init_alpha    = init_params[2]
-                    else:
-                        curr_init_alpha    = None
-                else:
-                    curr_init_weights = None
-                    curr_init_bias = None
-                    curr_init_alpha = None                    
-                    
-            if init_params is None:
-                curr_init_weights = None
-                curr_init_bias = None 
-                curr_init_alpha = None
-                
-        if self.max_out > 0:  
-            if self.nkerns == []:
-                max_out_size = self.mlp_maxout[0]
-            else:
-                max_out_size = self.cnn_maxout[0]                
-        else: 
-            max_out_size = 1
-
-        next_in = [ self.height, self.width, self.channels ]
-        stack_size = 1 
-        param_counter = 0 
- 
-        if not self.nkerns == []:     
-            if len(filt_size) == 2:                        
-                dropout_conv_layers.append ( 
-                                core.DropoutConv2DPoolLayer(
-                                        rng = self.rng,
-                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
-                                        image_shape=(self.batch_size, self.channels , self.height, self.width),
-                                        filter_shape=(self.nkerns[0], self.channels , filt_size[0], filt_size[1]),
-                                        poolsize = pool_size,
-                                        stride = stride,
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,
-                                        activation = self.cnn_activations[0],
-                                        W = None if curr_init_weights is None else curr_init_weights,
-                                        b = None if curr_init_bias is None else curr_init_bias, 
-                                        batch_norm = batch_norm_layer,
-                                        alpha = None if curr_init_alpha is None else curr_init_alpha,
-                                        p = self.cnn_dropout_rates[0],                                 
-                                         ) ) 
-                conv_layers.append ( 
-                                core.Conv2DPoolLayer(
-                                        rng = self.rng,
-                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
-                                        image_shape=(self.batch_size, self.channels , self.height, self.width),
-                                        filter_shape=(self.nkerns[0], self.channels , filt_size[0], filt_size[1]),
-                                        poolsize = pool_size,
-                                        stride = stride,
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,
-                                        activation = self.cnn_activations[0],
-                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[0]) ,
-                                        b = dropout_conv_layers[-1].params[1],
-                                        batch_norm = batch_norm_layer,
-                                        alpha = dropout_conv_layers[-1].alpha,
-                                        verbose = verbose                                       
-                                         ) )  
-                next_in[0] = int(floor((ceil( (self.height - filt_size [0])  / float(stride[0])) + 1  ) / pool_size[0] ))       
-                next_in[1] = int(floor((ceil( (self.width - filt_size[1]) / float(stride[1]   )) + 1  ) / pool_size[1] ))    
-                next_in[2] = self.nkerns[0]  / max_out_size                                                                                                                 
-            elif len(filt_size) == 3:
-                dropout_conv_layers.append ( 
-                                core.DropoutConv3DPoolLayer(
-                                        rng = self.rng,
-                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
-                                        image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
-                                        filter_shape=(self.nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
-                                        poolsize=pool_size,      
-                                        stride = stride,                                   
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,
-                                        activation = self.cnn_activations[0],
-                                        W = None if curr_init_weights is None else curr_init_weights,
-                                        b = None if curr_init_bias is None else curr_init_bias, 
-                                        batch_norm = batch_norm_layer,
-                                        alpha = None if curr_init_alpha is None else curr_init_alpha,
-                                        p = self.cnn_dropout_rates[0]                             
-                                         ) )
-                conv_layers.append ( 
-                                core.Conv3DPoolLayer(
-                                        rng = self.rng,
-                                        input = first_layer_input if self.mean_subtract is False else mean_sub_input,
-                                        image_shape=(self.batch_size, self.channels , stack_size, self.height, self.width),
-                                        filter_shape=(self.nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
-                                        poolsize=pool_size,
-                                        stride = stride, 
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,                                        
-                                        activation = self.cnn_activations[0],
-                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[0]),
-                                        b = dropout_conv_layers[-1].params[1],
-                                        batch_norm = batch_norm_layer,
-                                        alpha = dropout_conv_layers[-1].alpha, 
-                                        verbose = verbose
-                                         ) )
-                                          
-                # strides creates a mess in 3D !! 
-               
-                next_in[0] = int(ceil(((( self.height - filt_size [1])  / float(stride[1])) + 1) / pool_size[1] ))       
-                next_in[1] = int(ceil(((( self.width - filt_size[2]) / float(stride[2]  )) + 1) / pool_size[2] ))                                                                                                
-                next_in[2] = self.nkerns[0]  / (pool_size[0] * max_out_size * stride[0])
-
-                   
-            else:
-                print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
-                sys.exit()
-                
-            activity.append ( conv_layers[-1].output.dimshuffle(0,2,3,1) )
-            self.weights.append ( conv_layers[-1].W)
-    
-    
-            # Create the rest of the convolutional - pooling layers in a loop
-            param_counter = param_counter + 2  
-            if batch_norm_layer is True:
-                param_counter = param_counter + 1
-            for layer in xrange(len(self.nkerns)-1):   
-                
-                filt_size = self.filter_size[layer+1]
-                pool_size = self.pooling_size[layer+1]
-                stride    = self.conv_stride_size[layer +1 ]
-                batch_norm_layer = self.batch_norm [layer + 1]
-                if retrain_params is not None:
-                    curr_copy = self.copy_from_old[layer + 1] 
-                    if curr_copy is True:
-                        curr_init_weights = init_params[param_counter]
-                        curr_init_bias    = init_params[param_counter + 1]
-                        if batch_norm_layer is True:
-                            curr_init_alpha = init_params[param_counter + 2]   
-                        else:
-                            curr_init_alpha = None
-                    else:
-                        curr_init_weights  = None
-                        curr_init_bias = None
-                        curr_init_alpha = None          
-                if init_params is None:
-                    curr_init_weights = None
-                    curr_init_bias = None
-                    curr_init_alpha = None
-                     
-                if self.max_out > 0:
-                    max_out_size = self.cnn_maxout[layer+1]
-                else:
-                    max_out_size = 1 
-
-                if len(filt_size) == 2:
-                    dropout_conv_layers.append ( 
-                                    core.DropoutConv2DPoolLayer(
-                                        rng = self.rng,
-                                        input = dropout_conv_layers[layer].output,        
-                                        image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
-                                        filter_shape=(self.nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
-                                        poolsize=pool_size,
-                                        stride = stride,
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,
-                                        activation = self.cnn_activations[layer+1],
-                                        W = None if curr_init_weights is None else curr_init_weights ,
-                                        b = None if curr_init_bias is None else curr_init_bias ,
-                                        batch_norm = batch_norm_layer,
-                                        alpha = None if curr_init_alpha is None else curr_init_alpha ,
-                                        p = self.cnn_dropout_rates[layer+1]                                                                                                        
-                                         ) )
-                                                 
-                    conv_layers.append ( 
-                                    core.Conv2DPoolLayer(
-                                        rng = self.rng,
-                                        input = conv_layers[layer].output,        
-                                        image_shape=(self.batch_size, next_in[2], next_in[0], next_in[1]),
-                                        filter_shape=(self.nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
-                                        poolsize=pool_size,
-                                        stride = stride,
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,
-                                        activation = self.cnn_activations[layer+1],
-                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[layer + 1]),
-                                        b = dropout_conv_layers[-1].params[1],
-                                        batch_norm = batch_norm_layer, 
-                                        alpha = dropout_conv_layers[-1].alpha,
-                                        verbose = verbose
-                                         ) )                                                       
-                                             
-                    next_in[0] = int(floor((ceil( (next_in[0] - filt_size[0] ) / float(stride[0])) + 1 ) / pool_size[0] ))      
-                    next_in[1] = int(floor((ceil( (next_in[1]- filt_size[1] ) / float(stride[1])) + 1 ) / pool_size[1] ))
-                    next_in[2] = self.nkerns[layer+1] / max_out_size
-                    
-                elif len(filt_size) == 3:
-                    dropout_conv_layers.append ( 
-                                    core.DropoutConv3DPoolLayer(
-                                        rng = self.rng,
-                                        input = dropout_conv_layers[layer].output,        
-                                        image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
-                                        filter_shape=(self.nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
-                                        poolsize=pool_size,
-                                        stride = stride,
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,
-                                        activation = self.cnn_activations[layer+1],
-                                        W = None if curr_init_weights is None else curr_init_weights ,
-                                        b = None if curr_init_bias is None else curr_init_bias  ,
-                                        batch_norm = batch_norm_layer,  
-                                        alpha = None if curr_init_alpha is None else curr_init_alpha,
-                                        p = self.cnn_dropout_rates[layer+1]                                                                                                       
-                                         ) )                                                                                             
-                    conv_layers.append ( 
-                                    core.Conv3DPoolLayer(
-                                        rng = self.rng,
-                                        input = conv_layers[layer].output,        
-                                        image_shape=(self.batch_size, next_in[2], stack_size, next_in[0], next_in[1]),
-                                        filter_shape=(self.nkerns[layer+1], filt_size[0], stack_size, filt_size[1], filt_size[2]),
-                                        poolsize=pool_size,
-                                        stride = stride,
-                                        max_out = self.max_out,
-                                        maxout_size = max_out_size,
-                                        activation = self.cnn_activations[layer+1],
-                                        W = dropout_conv_layers[-1].params[0] * (1 - self.cnn_dropout_rates[layer + 1]),
-                                        b = dropout_conv_layers[-1].params[1] ,
-                                        batch_norm = batch_norm_layer,
-                                        alpha = dropout_conv_layers[-1].alpha,
-                                        verbose = verbose
-                                         ) )   
-                                         
-                    # please dont use stride for 3D                                                   
-                    next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * stride[1])    
-                    next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] * stride[2])
-                    next_in[2] = self.nkerns[layer+1] / (pool_size[0] * max_out_size * stride[0])    
-                                              
-                else:
-                    print "!! So far Samosa is only capable of 2D and 3D conv layers."                               
-                    sys.exit()
-                self.weights.append ( conv_layers[-1].W )
-                activity.append( conv_layers[-1].output.dimshuffle(0,2,3,1) )
-
-                param_counter = param_counter + 2    
-                if batch_norm_layer is True:
-                    param_counter = param_counter + 1           
         # Assemble fully connected laters
         if self.nkerns == []: # If there is no convolutional layer 
             fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)
             dropout_fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)            
         else:
-            fully_connected_input = conv_layers[-1].output.flatten(2)
-            dropout_fully_connected_input = dropout_conv_layers[-1].output.flatten(2)                
+            fully_connected_input = self.ConvLayers.conv_layers[-1].output.flatten(2)
+            dropout_fully_connected_input = self.ConvLayers.dropout_conv_layers[-1].output.flatten(2)                
     
-        if len(self.num_nodes) > 1 :
+        next_in = self.ConvLayers.returnOutputSizes()    
+        
+        if len(self.num_nodes) > 1 :     
             layer_sizes =[]                        
             layer_sizes.append( next_in[0] * next_in[1] * next_in[2] )
             
@@ -474,250 +200,170 @@ class network(object):
         elif len(self.num_nodes) ==  1:
             layer_sizes = [ next_in[0] * next_in[1] * next_in[2], self.num_nodes[0] , self.outs]
      
-        assert len(layer_sizes) - 2 == len(self.num_nodes)           # Just checking.
-    
-        """  Dropouts implemented from paper:
-        Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
-        from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
-        """
+        assert len(layer_sizes) - 2 == len(self.num_nodes)           # Just checking.    
         
-        MLPlayers = core.MLP( rng = self.rng,
-                         input = (fully_connected_input, dropout_fully_connected_input),
-                         layer_sizes = layer_sizes,
-                         dropout_rates = self.mlp_dropout_rates,
-                         maxout_rates = self.mlp_maxout,
-                         max_out = self.max_out, 
-                         activations = self.mlp_activations,
-                         use_bias = self.use_bias,
-                         svm_flag = self.svm_flag,
-                         batch_norm = self.mlp_batch_norm, 
-                         params = [] if init_params is None else init_params[param_counter:],
-                         copy_from_old = self.copy_from_old [len(self.nkerns):] if init_params is not None else None,
-                         freeze = self.freeze_layers [ len(self.nkerns):],
-                         verbose = verbose)
-    
+        ###########################################
+        # MLP layers               
+        if retrain_params is not None:
+            self.copy_from_old = retrain_params [ "copy_from_old" ]
+            self.freeze_layers = retrain_params [ "freeze" ]
+        else:
+            self.freeze_layers = [] 
+            for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
+                self.freeze_layers.append ( False )              
+            
+        # if no retrain specified but if init params are given, make default as copy all params.             
+            if init_params is not None:
+                self.copy_from_old = []
+                for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
+                    self.copy_from_old.append ( True ) 
+                                  
+
+        
+        self.MLPlayers = core.MLP  ( 
+                                    rng = self.rng,
+                                    input = (fully_connected_input, dropout_fully_connected_input),
+                                    layer_sizes = layer_sizes,
+                                    dropout_rates = self.mlp_dropout_rates,
+                                    maxout_rates = self.mlp_maxout,
+                                    max_out = self.max_out, 
+                                    activations = self.mlp_activations,
+                                    use_bias = self.use_bias,
+                                    svm_flag = self.svm_flag,
+                                    batch_norm = self.mlp_batch_norm, 
+                                    params = [] if init_params is None else init_params[param_counter:],
+                                    copy_from_old = self.copy_from_old [len(self.nkerns):] if init_params is not None else None,
+                                    freeze = self.freeze_layers [ len(self.nkerns):],
+                                    verbose = verbose
+                              )
+  
+        # Compute cost and gradients of the model wrt parameter           
+        self.params = self.ConvLayers.params + self.MLPlayers.params      
+        self.probabilities = self.MLPlayers.probabilities
+        self.errors = self.MLPlayers.errors
+        self.predicts = self.MLPlayers.predicts                
+        self.activity = self.ConvLayers.activity
+
+        end_time = time.clock()
+        print "...         time taken to build is " +str(end_time - start_time) + " seconds"
+                
+    def build_cost_function(self):
+        # Build the expresson for the categorical cross entropy function.
+        start_time = time.clock()
+        
+        self.objective = self.optim_params["objective"]
+        self.l1_reg = self.optim_params["l1_reg"]
+        self.l2_reg = self.optim_params["l2_reg"]
+        
+        if self.svm_flag is False:
+            if self.objective == 0:
+                cost = self.MLPlayers.negative_log_likelihood( self.y )
+                dropout_cost = self.MLPlayers.dropout_negative_log_likelihood( self.y )
+            elif self.objective == 1:
+                if len(numpy.unique(self.train_set_y.eval())) > 2:
+                    cost = self.MLPlayers.cross_entropy ( self.y )
+                    dropout_cost = self.MLPlayers.dropout_cross_entropy ( self.y )
+                else:
+                    cost = self.MLPlayers.binary_entropy ( self.y )
+                    dropout_cost = self.MLPlayers.dropout_binary_entropy ( self.y )
+            else:
+                print "!! Objective is not understood, switching to cross entropy"
+                cost = self.MLPlayers.cross_entropy ( self.y )
+                dropout_cost = self.MLPlayers.dropout_cross_entropy ( self.y )    
+        else :        
+            cost = self.MLPlayers.hinge_loss( self.y1 )
+            dropout_cost = self.MLPlayers.hinge_loss( self.y1 )
+        self.output = ( dropout_cost + self.l1_reg * self.MLPlayers.dropout_L1 + self.l2_reg *
+                             self.MLPlayers.dropout_L2 )if self.mlp_dropout else ( cost + self.l1_reg 
+                             * self.MLPlayers.L1 + self.l2_reg * self.MLPlayers.L2) 
+                                        
+        optimizer = core.optimizer( params = self.params,
+                                    objective = self.output,
+                                    optimization_params = self.optim_params,
+                                  )
+                                    
+        self.eta = optimizer.eta
+        self.epoch = optimizer.epoch
+        self.updates = optimizer.updates
+        self.mom = optimizer.mom
+        end_time = time.clock()
+        print "...         time taken is " +str(end_time - start_time) + " seconds"        
+        
+    def create_network_functions(self, verbose = True):
         # create theano functions for evaluating the graph
         # I don't like the idea of having test model only hooked to the test_set_x variable.
         # I would probably have liked to have only one data variable.. but theano tutorials is using 
-        # this style, so wth, so will I. 
-                                          
+        # this style, so wth, so will I.        
+        index = T.lscalar('index')  # index to a [mini]batch           
+                                                       
         self.test_model = theano.function(
                 inputs = [index],
-                outputs = MLPlayers.errors(y),
+                outputs = self.errors(self.y),
                 givens={
-                    x: self.test_set_x[index * self.batch_size:(index + 1) * self.batch_size],
-                    y: self.test_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
+                    self.x: self.test_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                    self.y: self.test_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
     
         self.validate_model = theano.function(
                 inputs = [index],
-                outputs = MLPlayers.errors(y),
+                outputs = self.errors(self.y),
                 givens={
-                    x: self.valid_set_x[index * self.batch_size:(index + 1) * self.batch_size],
-                    y: self.valid_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
+                    self.x: self.valid_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                    self.y: self.valid_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
     
         self.prediction = theano.function(
             inputs = [index],
-            outputs = MLPlayers.predicts,
+            outputs = self.predicts,
             givens={
-                    x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
+                    self.x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
     
         self.nll = theano.function(
             inputs = [index],
-            outputs = MLPlayers.probabilities,
+            outputs = self.probabilities,
             givens={
-                x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
+                self.x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
     
         # function to return activations of each image
         if not self.nkerns == [] :
+            activity = self.ConvLayers.returnActivity()
             self.activities = theano.function (
                 inputs = [index],
-                outputs = activity,
+                outputs = self.activity,
                 givens = {
-                        x: self.train_set_x[index * self.batch_size: (index + 1) * self.batch_size]
+                        self.x: self.train_set_x[index * self.batch_size: (index + 1) * self.batch_size]
                         })
-    
-        # Compute cost and gradients of the model wrt parameter
-        self.params = []
-        count = 0
-        for layer in dropout_conv_layers:
-            if self.freeze_layers[count] is False:
-                self.params = self.params + layer.params
-            elif verbose is True:
-                print "           -->        convolutional layer " + str(count +  1) + " is frozen." 
-            count = count + 1 
-        self.params = self.params + MLPlayers.params
-       
-        # Build the expresson for the categorical cross entropy function.
-        if self.svm_flag is False:
-            if self.objective == 0:
-                cost = MLPlayers.negative_log_likelihood( y )
-                dropout_cost = MLPlayers.dropout_negative_log_likelihood( y )
-            elif self.objective == 1:
-                if len(numpy.unique(self.train_set_y.eval())) > 2:
-                    cost = MLPlayers.cross_entropy ( y )
-                    dropout_cost = MLPlayers.dropout_cross_entropy ( y )
-                else:
-                    cost = MLPlayers.binary_entropy ( y )
-                    dropout_cost = MLPlayers.dropout_binary_entropy ( y )
-            else:
-                print "!! Objective is not understood, switching to cross entropy"
-                cost = MLPlayers.cross_entropy ( y )
-                dropout_cost = MLPlayers.dropout_cross_entropy ( y )
-    
-        else :        
-            cost = MLPlayers.hinge_loss( y1 )
-            dropout_cost = MLPlayers.hinge_loss( y1 )
-            
-            
-        output = ( dropout_cost + self.l1_reg * MLPlayers.dropout_L1 + self.l2_reg *
-                             MLPlayers.dropout_L2 )if self.mlp_dropout else ( cost + self.l1_reg 
-                             * MLPlayers.L1 + self.l2_reg * MLPlayers.L2)
-    
-        if verbose is True:
-            print "... estimating gradients"
-        gradients = []      
-        for param in self.params: 
-            gradient = T.grad( output ,param)
-            gradients.append ( gradient )
-    
-        # TO DO: Try implementing Adadelta also. 
-        # Compute momentum for the current epoch
-        epoch = T.scalar()
-        mom = ifelse(epoch <= self.mom_epoch_interval,
-            self.mom_start*(1.0 - epoch/self.mom_epoch_interval) + self.mom_end*(epoch/self.mom_epoch_interval),
-            self.mom_end)
-    
-        # learning rate
-        self.eta = theano.shared(numpy.asarray(self.initial_learning_rate,dtype=theano.config.floatX))
-        # accumulate gradients for adagrad
-         
-        grad_acc =[]
-        for param in self.params:
-            eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
-            grad_acc.append(theano.shared(eps, borrow=True))
-    
-        # accumulate velocities for momentum
-        velocities = []
-        for param in self.params:
-            velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,dtype=theano.config.floatX))
-            velocities.append(velocity)
-         
-        # create updates for each combination of stuff 
-        updates = OrderedDict()
-        print_flag = False
-         
-        if verbose is True:
-            print "... building back prop network" 
-        for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, self.params):        
-            if self.ada_grad is True:
-    
-                """ Adagrad implemented from paper:
-                John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
-                for online learning and stochastic optimization. JMLR
-                """
-    
-                current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
-                updates[acc] = current_acc          # updates accumulation at timestamp
-    
-    
-            elif self.rms_prop is True:
-                """ Tieleman, T. and Hinton, G. (2012):
-                Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
-                Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
-    
-                current_acc = self.rms_rho * acc + (1 - self.rms_rho) * T.sqr(gradient) 
-                updates[acc] = current_acc
-    
-            else:
-                current_acc = 1
-                self.fudge_factor = 0
-    
-            if self.mom_type == 0:               # no momentum
-                updates[velocity] = -(self.eta / T.sqrt(current_acc + self.fudge_factor)) * gradient                                            
                
-            elif self.mom_type == 1:       # if polyak momentum    
-    
-                """ Momentum implemented from paper:  
-                Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration methods." 
-                USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
-    
-                Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization and momentum in deep learning." 
-                Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
-                equation (1) and equation (2)"""   
-    
-                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc+ self.fudge_factor))  * gradient                             
-    
-            elif self.mom_type == 2:             # Nestrov accelerated gradient 
-    
-                """Nesterov, Yurii. "A method of solving a convex programming problem with convergence rate O (1/k2)."
-                Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
-                Adapted from https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/ 
-    
-                Instead of using past params we use the current params as described in this link
-                https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,"""
-      
-                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc + self.fudge_factor))  * gradient                                 
-                updates[param] = mom * updates[velocity] 
-    
-            else:
-                if print_flag is False:
-                    print_flag = True
-                    print "!! Unrecognized mometum type, switching to no momentum."
-                updates[velocity] = -( self.eta / T.sqrt(current_acc+ self.fudge_factor) ) * gradient                                              
-                            
-    
-            if self.mom_type != 2:
-                stepped_param  = param + updates[velocity]
-            else:
-                stepped_param = param + updates[velocity] + updates[param]
-            column_norm = True #This I don't fully understand if its needed after BN is implemented.
-            if param.get_value(borrow=True).ndim == 2 and column_norm is True:
-    
-                """ constrain the norms of the COLUMNs of the weight, according to
-                https://github.com/BVLC/caffe/issues/109 """
-    
-                col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
-                desired_norms = T.clip(col_norms, 0, T.sqrt(self.squared_filter_length_limit))
-                scale = desired_norms / (1e-7 + col_norms)
-                updates[param] = stepped_param * scale
-    
-            else:            
-                updates[param] = stepped_param
-    
         if verbose is True:
             print "... building training model" 
         if self.svm_flag is True:
             self.train_model = theano.function(
-                    inputs= [index, epoch],
-                    outputs = output,
-                    updates = updates,
+                    inputs= [index, self.epoch],
+                    outputs = self.output,
+                    updates = self.updates,
                     givens={
-                        x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
-                        y1: self.train_set_y1[index * self.batch_size:(index + 1) * self.batch_size]},
+                        self.x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                        self.y1: self.train_set_y1[index * self.batch_size:(index + 1) * self.batch_size]},
                     on_unused_input = 'ignore'                    
                         )
         else: 
             self.train_model = theano.function(
-                    inputs = [index, epoch],
-                    outputs = output,
-                    updates = updates,
+                    inputs = [index, self.epoch],
+                    outputs = self.output,
+                    updates = self.updates,
                     givens={
-                        x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
-                        y: self.train_set_y[index * self.batch_size:(index + 1) * self.batch_size]},
+                        self.x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                        self.y: self.train_set_y[index * self.batch_size:(index + 1) * self.batch_size]},
                     on_unused_input='ignore'                    
                         )
     
         self.decay_learning_rate = theano.function(
                inputs=[],          # Just updates the learning rates. 
-               updates={self.eta: self.eta -  self.eta * self.learning_rate_decay }
+               updates={self.eta: self.eta -  self.eta * self.optim_params["learning_rate_decay"] }
                 )
     
         self.momentum_value = theano.function ( 
-                            inputs =[epoch],
-                            outputs = mom,
+                            inputs =[self.epoch],
+                            outputs = self.mom,
                             )
-        end_time = time.clock()
-        print "...         time taken is " +str(end_time - start_time) + " seconds"
                        
     # this is only for self.multi_load = True type of datasets.. 
     # All datasets are not multi_load enabled. This needs to change ??                         
@@ -790,7 +436,7 @@ class network(object):
             current_activity = current_activity[self.visualize_ind]                            
             imgs = util.visualize(current_activity, loc_ac, is_color = False)
             
-            current_weights = self.weights[m]    # for each layer       
+            current_weights = self.ConvLayers.weights[m]    # for each layer       
             loc_we = '../visuals/filters/layer_' + str(m) + "/epoch_" + str(epoch)
             if not os.path.exists(loc_we):   
                 os.makedirs(loc_we)
@@ -1055,5 +701,4 @@ class network(object):
                 
         if self.visualize_flag is True:    
             print "... saving down the final model's visualizations" 
-            self.print_net (epoch = 'final' , display_flag = self.display_flag)     
-            
+            self.print_net (epoch = 'final' , display_flag = self.display_flag)                 
