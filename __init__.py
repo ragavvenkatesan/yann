@@ -1,6 +1,6 @@
 #!/usr/bin/python
-from samosa.build import network
-from samosa.core import ReLU, Sigmoid, Softmax, Tanh, Identity
+from samosa.cnn import cnn_mlp
+from samosa.core import ReLU, Sigmoid, Softmax, Tanh, Abs, Squared
 from samosa.util import load_network
 from samosa.dataset import setup_dataset
 import os
@@ -19,24 +19,19 @@ def run_cnn(
                     verbose = False, 
            ):            
                
-    net = network(  filename_params = filename_params,
-                     random_seed = arch_params ["random_seed"],
-                     verbose = verbose ) 
-    net.init_data ( dataset = dataset , outs = arch_params ["outs"], verbose = verbose )                                 
-    net.build_network(   arch_params = arch_params,
-                         optimization_params = optimization_params,
-                         retrain_params = None,
-                         verbose = verbose)
-    net.create_dirs ( visual_params = visual_params )
-    net.build_cost_function()                                               
-    net.create_network_functions()                                          
+    net = cnn_mlp(   filename_params = filename_params,
+                     arch_params = arch_params,
+                     optimization_params = optimization_params,
+                     retrain_params = None,
+                     init_params = None,
+                     verbose =verbose ) 
+    net.init_data ( dataset = dataset , outs = arch_params ["outs"], visual_params = visual_params, verbose = verbose )                                 
+    net.build_network(verbose = verbose)                               
     net.train( n_epochs = n_epochs, 
                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
                  verbose = verbose )          
-    net.test( verbose = verbose )
-   
-                              
+    net.test( verbose = verbose )                                     
     net.save_network ()   
              
                            
@@ -52,7 +47,8 @@ if __name__ == '__main__':
         f.open ('dump.txt','a')
         
     f.write("... main net")
-    # run the base CNN as usual.              
+    # run the base CNN as usual.   
+               
     filename_params = { 
                         "results_file_name"     : "../results/results.txt",      
                         "error_file_name"       : "../results/error.txt",
@@ -73,7 +69,7 @@ if __name__ == '__main__':
                             "mom_start"                         : 0.5,                      
                             "mom_end"                           : 0.99,
                             "mom_interval"                      : 100,
-                            "mom_type"                          : 1,                         
+                            "mom_type"                          : 2,                         
                             "initial_learning_rate"             : 0.01,
                             "ft_learning_rate"                  : 0.0001,    
                             "learning_rate_decay"               : 0.005,
@@ -84,32 +80,32 @@ if __name__ == '__main__':
                             "rms_rho"                           : 0.9,                      
                             "rms_epsilon"                       : 1e-7,                     
                             "fudge_factor"                      : 1e-7,                    
-                            "objective"                         : 1,   
+                            "objective"                         : 0,   
                             }        
 
     arch_params = {
                     
-                    "mlp_activations"                   : [ ReLU ],
+                    "mlp_activations"                   : [ Abs ],
                     "cnn_dropout"                       : True,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],
                     "num_nodes"                         : [ 800  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ ReLU, ReLU ],             
-                    "cnn_batch_norm"                    : [ True, True ],
+                    "cnn_activations"                   : [ Abs,   Abs  ],             
+                    "cnn_batch_norm"                    : [ True,  True ],
                     "mlp_batch_norm"                    : True,
-                    "nkerns"                            : [ 20,     50   ],              
-                    "filter_size"                       : [ (5,5), (5,5) ],
-                    "pooling_size"                      : [ (2,2), (2,2) ],
-                    "conv_stride_size"                  : [ (1,1), (1,1) ],
-                    "cnn_maxout"                        : [ 2,     2 ],                    
+                    "nkerns"                            : [ 20,     50    ],              
+                    "filter_size"                       : [ (5,5), (5,5)  ],
+                    "pooling_size"                      : [ (2,2), (1,1)  ],
+                    "conv_stride_size"                  : [ (1,1), (1,1)  ],
+                    "cnn_maxout"                        : [ 2,     2      ],                    
                     "mlp_maxout"                        : [ 2 ],
-                    "cnn_dropout_rates"                 : [ 0.5,   0.5   ],
+                    "cnn_dropout_rates"                 : [ 0.5,   0.5    ],
                     "random_seed"                       : 23455,
                     "use_bias"                          : True, 
                     "mean_subtract"                     : True,
-                    "max_out"                           : 0 
+                    "max_out"                           : 1
         
                  }                          
 
@@ -122,7 +118,7 @@ if __name__ == '__main__':
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_68339", 
+                    dataset                 = "_datasets/_dataset_57689", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

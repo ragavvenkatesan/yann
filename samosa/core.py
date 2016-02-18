@@ -35,10 +35,77 @@ def Tanh(x):
 def Softmax(x): 
     return T.nnet.softmax(x)
     
-### identity 
-def Identity(x):
-    return(x)   
+### Abs    
+def Abs(x):
+    return(abs(x))
+ 
+### Squared
+def Squared(x):
+    return(x ** 2)    
 
+### maxouts   
+def max1d (x,i,stride):
+    return x[:,i::stride]
+def max2d (x,i,stride):
+    return x[:,i::stride,:,:]
+    
+def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
+    """ 
+        max_out =1 Ian Goodfellow et al. " Maxout Networks " on arXiv. (jmlr)
+        
+        max_out =2, max_out = 3, Yu, Dingjun, et al. "Mixed Pooling for Convolutional Neural Networks." Rough Sets and Knowledge 
+        Technology. Springer International Publishing, 2014. 364-375.
+
+        Same is also implemeted in the MLP layers also.
+        
+    """   
+    if dimension == 1:
+        maxing = max1d
+    elif dimension == 2:
+        maxing = max2d
+        
+    if max_out_flag == 0:   # Do nothing
+        output = x
+        
+    elif max_out_flag == 1:  # Do maxout network.
+        maxout_out = None        
+        for i in xrange(maxout_size):
+            temp = maxing(x,i,maxout_size)                                   
+            if maxout_out is None:                                              
+                maxout_out = temp                                                  
+            else:                                                               
+                maxout_out = T.maximum(maxout_out, temp)  
+        output = maxout_out   
+            
+    elif max_out_flag == 2:  # Do meanout network.
+        maxout_out = None                                                       
+        for i in xrange(maxout_size):                                            
+            temp = maxing(x,i,maxout_size)                                   
+            if maxout_out is None:                                              
+                maxout_out = temp                                                  
+            else:                                                               
+                maxout_out = (maxout_out*(i+1)+temp)/(i+2)   
+        output = maxout_out    
+        
+    elif max_out == 3: # Do mixout network.
+        maxout_out = None
+        maxout_mean = None
+        maxout_max  = None 
+        for i in xrange(maxout_size):                                            
+            temp = maxing(x,i,maxout_size)                                   
+            if maxout_mean is None:                                              
+                maxout_mean = temp
+                maxout_max = temp
+                maxout_out = temp
+            else:                                                               
+                maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
+                maxout_max = T.maximum(maxout_out, temp) 
+                
+        lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
+        maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
+        output = maxout_out    
+    return output    
+                    
 #From the Theano Tutorials
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
 
@@ -59,9 +126,7 @@ def shared_dataset(data_xy, borrow=True, svm_flag = True):
 		return shared_x, theano.tensor.cast(shared_y, 'int32') 
 
    
-   
-def maxpool_3D(input, ds, ignore_border=False):
-   
+def maxpool_3D(input, ds, ignore_border=False):   
     #input.dimshuffle (0, 2, 1, 3, 4)   # convert to make video in back. 
     # no need to reshuffle. 
     if input.ndim < 3:
@@ -151,6 +216,9 @@ class SVMLayer(object):
         self.output = T.dot(input, self.W) + self.b
         self.y_pred = T.argmax(self.output, axis=1)
 
+        self.L1 = abs(self.W).sum()
+        self.L2 = (self.W ** 2 ).sum()
+        
     def hinge(self, u):
             return T.maximum(0, 1 - u)
 
@@ -195,24 +263,27 @@ class LogisticRegression(object):
         # initialize the baises b as a vector of n_out 0s        
         if b is None:
             self.b = theano.shared(
-                    value=numpy.asarray(0.01 * rng.standard_normal((n_out)), dtype=theano.config.floatX),
+                    value=numpy.asarray(0.001 * rng.standard_normal((n_out)), dtype=theano.config.floatX),
                     name='b')
         else:
             self.b = b
 
         # compute vector of class-membership probabilities in symbolic form
         if use_bias is True:
-            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b) 
+            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b + 1e-7) 
         else:
-            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W))         
+            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + 1e-7)         
         # compute prediction as class whose probability is maximal in
         # symbolic form
         self.y_pred = T.argmax(self.p_y_given_x, axis=1)
 
         # parameters of the model
+        self.L1 = abs(self.W).sum()
+        self.L2 = (self.W ** 2).sum()
         self.params = [self.W, self.b] if use_bias is True else [self.W]
         self.probabilities = T.log(self.p_y_given_x)
         # po = theano.function ( inputs = [index], outputs = MLPlayers.layers[-1].input, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
+        
     def negative_log_likelihood(self, y ):
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y]) 
         
@@ -266,7 +337,7 @@ class HiddenLayer(object):
         self.alpha = alpha 
         
         lin_output = T.dot(input, self.W)
-        
+                
         if batch_norm is True:
             std = lin_output.std( 0 )
             mean = lin_output.mean( 0 )
@@ -277,46 +348,9 @@ class HiddenLayer(object):
             
         if batch_norm is False and use_bias is True:
             lin_output = lin_output  + self.b
-                
-        self.output = (lin_output if activation is None else activation(lin_output))
-
-        if max_out == 1:  # Do maxout network.
-            maxout_out = None        
-            for i in xrange(maxout_size):
-                temp = self.output[:,i::maxout_size]                                   
-                if maxout_out is None:                                              
-                    maxout_out = temp                                                  
-                else:                                                               
-                    maxout_out = T.maximum(maxout_out, temp)  
-            self.output = maxout_out   
-             
-        elif max_out == 2:  # Do meanout network.
-            maxout_out = None                                                       
-            for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size]                                   
-                if maxout_out is None:                                              
-                    maxout_out = temp                                                  
-                else:                                                               
-                    maxout_out = (maxout_out*(i+1)+temp)/(i+2)   
-            self.output = maxout_out    
-            
-        elif max_out == 3: # Do mixout network.
-            maxout_out = None
-            maxout_mean = None
-            maxout_max  = None 
-            for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size]                                   
-                if maxout_mean is None:                                              
-                    maxout_mean = temp
-                    maxout_max = temp
-                    maxout_out = temp
-                else:                                                               
-                    maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
-                    maxout_max = T.maximum(maxout_out, temp) 
-                    
-            lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
-            maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
-            self.output = maxout_out
+                           
+        maxout_output = Maxout(x = lin_output, maxout_size = maxout_size, max_out_flag = max_out, dimension = 1 )         
+        self.output = (lin_output if activation is None else activation(lin_output))      
             
         # parameters of the model
         if batch_norm is True:
@@ -326,13 +360,15 @@ class HiddenLayer(object):
                 self.params = [self.W, self.b]
             else:
                 self.params = [self.W]
-                
+        self.L1 = abs(self.W).sum()  + abs(self.alpha).sum()
+        self.L2 = (self.W**2).sum()  + (self.alpha**2).sum()
+        self.n_out = n_out / maxout_size
+
 # dropout thanks to misha denil 
 # https://github.com/mdenil/dropout
 def _dropout_from_layer(rng, layer, p):
 
     srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
-
     # p=1-p because 1's indicate keep and p is prob of dropping
     mask = srng.binomial(n=1, p=1-p, size=layer.shape)
     # The cast is important because
@@ -377,16 +413,13 @@ class MLP(object):
         layer_counter = 0    
         prev_maxout_size = 1   
 
-        self.dropout_L1 = theano.shared(0)
-        self.dropout_L2 = theano.shared(0)
         self.L1 = theano.shared(0)
         self.L2 = theano.shared(0)
         
         count = 0
         if len(layer_sizes) > 2:
             for n_in, n_out in weight_matrix_sizes[:-1]:
-                if max_out > 0: 
-                    curr_maxout_size = maxout_rates[layer_counter]
+                curr_maxout_size = maxout_rates[layer_counter]
                 if verbose is True and max_out > 0:
                     print "           -->        initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in / prev_maxout_size) + " after maxout this output becomes " + str(n_out / curr_maxout_size)
                 elif verbose is True and max_out == 0:
@@ -418,10 +451,8 @@ class MLP(object):
     
             
                                                         
-                self.dropout_layers.append(next_dropout_layer)
+                self.dropout_layers.append(next_dropout_layer)                
                 next_dropout_layer_input = self.dropout_layers[-1].output
-                self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum()  + abs(self.dropout_layers[-1].alpha**2).sum()
-                self.dropout_L2 = self.dropout_L2 + (self.dropout_layers[-1].W**2).sum()  + abs(self.dropout_layers[-1].alpha**2).sum()
     
                 # Reuse the paramters from the dropout layer here, in a different
                 # path through the graph.                        
@@ -440,10 +471,9 @@ class MLP(object):
                 self.layers.append(next_layer)
                 next_layer_input = self.layers[-1].output
                 #first_layer = False
-                self.L1 = self.L1 + abs(self.layers[-1].W).sum()  + abs(self.layers[-1].alpha).sum()
-                self.L2 = self.L2 + (self.layers[-1].W**2).sum()   + abs(self.layers[-1].alpha**2).sum()
-                if max_out > 0:
-                    prev_maxout_size = maxout_rates [ layer_counter ]                   
+                self.L1 = self.L1 + self.layers[-1].L1
+                self.L2 = self.L2 + self.layers[-1].L2 
+                                
                 layer_counter += 1
                 
                 count = count + 2 
@@ -451,10 +481,10 @@ class MLP(object):
                     count = count + 1 
             # Set up the output layer
             n_in, n_out = weight_matrix_sizes[-1] 
-            n_in = n_in / prev_maxout_size 
-            
+                                    
         else: 
             n_in, n_out = weight_matrix_sizes[-1]
+            
         # Again, reuse paramters in the dropout output.
     
         if svm_flag is False:
@@ -501,11 +531,8 @@ class MLP(object):
             self.dropout_binary_entropy = self.dropout_layers[-1].binary_cross_entropy
             self.binary_entropy = self.layers[-1].binary_cross_entropy
             
-            self.dropout_L1 = self.dropout_L1 + abs(self.dropout_layers[-1].W).sum() 
-            self.dropout_L2 = self.dropout_L2 + abs(self.dropout_layers[-1].W**2).sum()
-
-            self.L1 = self.L1 + abs(self.layers[-1].W).sum() 
-            self.L2 = self.L2 + abs(self.layers[-1].W**2).sum()
+            self.L1 = self.L1 + self.layers[-1].L1
+            self.L2 = self.L2 + self.layers[-1].L2
 
         else:
             if verbose is True:
@@ -678,62 +705,17 @@ class Conv2DPoolLayer(object):
             std += 0.001 # To avoid divide by zero like fudge_factor
         
             self.pool_out = pool_out - mean
-            self.output = activation(pool_out * ( self.alpha.dimshuffle('x', 0, 'x', 'x') / std ) + self.b.dimshuffle('x', 0, 'x', 'x'))
+            self.output = pool_out * ( self.alpha.dimshuffle('x', 0, 'x', 'x') / std ) + self.b.dimshuffle('x', 0, 'x', 'x')
         else:
-            self.output = activation(pool_out + self.b.dimshuffle('x', 0, 'x', 'x'))              
-
-       
-        """ 
-            max_out =1 Ian Goodfellow et al. " Maxout Networks " on arXiv. (jmlr)
+            self.output = pool_out + self.b.dimshuffle('x', 0, 'x', 'x')
             
-            max_out =2, max_out = 3, Yu, Dingjun, et al. "Mixed Pooling for Convolutional Neural Networks." Rough Sets and Knowledge 
-            Technology. Springer International Publishing, 2014. 364-375.
-
-            Same is also implemeted in the MLP layers also.
-            
-        """
-            
-        if max_out == 1:  # Do maxout network.
-            maxout_out = None        
-            for i in xrange(maxout_size):
-                temp = self.output[:,i::maxout_size,:,:]                                   
-                if maxout_out is None:                                              
-                    maxout_out = temp                                                  
-                else:                                                               
-                    maxout_out = T.maximum(maxout_out, temp)  
-            self.output = maxout_out   
-             
-        elif max_out == 2:  # Do meanout network.
-            maxout_out = None                                                       
-            for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size,:,:]                                   
-                if maxout_out is None:                                              
-                    maxout_out = temp                                                  
-                else:                                                               
-                    maxout_out = (maxout_out*(i+1)+temp)/(i+2)   
-            self.output = maxout_out    
-            
-        elif max_out == 3: # Do mixout network.
-            maxout_out = None
-            maxout_mean = None
-            maxout_max  = None 
-            for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size,:,:]                                   
-                if maxout_mean is None:                                              
-                    maxout_mean = temp
-                    maxout_max = temp
-                    maxout_out = temp
-                else:                                                               
-                    maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
-                    maxout_max = T.maximum(maxout_out, temp) 
-                    
-            lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
-            maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
-            self.output = maxout_out
-                
+        self.output = Maxout(x = self.output, maxout_size = maxout_size, max_out_flag = max_out, dimension = 2)                                               
+        self.output = activation(self.output)
+        
         # store parameters of this layer
-        self.params = [self.W, self.b] if batch_norm is False else [self.W, self.b, self.alpha]
-                
+        self.params = [self.W, self.b] if batch_norm is False else [self.W, self.b, self.alpha]                
+        self.output_size = [next_height, next_width, kern_shape]
+                            
 class DropoutConv2DPoolLayer(Conv2DPoolLayer):
     def __init__(self, rng, input,
                              filter_shape,
@@ -888,65 +870,15 @@ class Conv3DPoolLayer(object):
             std += 0.001 # To avoid divide by zero like fudge_factor
         
             self.pool_out = pool_out - mean
-            self.output = activation(pool_out * ( self.alpha.dimshuffle('x', 0, 'x', 'x') / std ) + self.b.dimshuffle('x', 0, 'x', 'x'))
+            self.output = pool_out * ( self.alpha.dimshuffle('x', 0, 'x', 'x') / std ) + self.b.dimshuffle('x', 0, 'x', 'x')
         else:
-            self.output = activation(pool_out + self.b.dimshuffle('x', 0, 'x', 'x'))              
-
-        """ 
-            max_out =1 Ian Goodfellow et al. " Maxout Networks " on arXiv. (jmlr)
+            self.output = pool_out + self.b.dimshuffle('x', 0, 'x', 'x')              
             
-            max_out =2, max_out = 3, Yu, Dingjun, et al. "Mixed Pooling for Convolutional Neural Networks." Rough Sets and Knowledge 
-            Technology. Springer International Publishing, 2014. 364-375.
-
-            Same is also implemeted in the MLP layers also.
-            
-        """
-            
-        if max_out == 1:  # Do maxout network.
-            maxout_out = None        
-            for i in xrange(maxout_size):
-                temp = self.output[:,i::maxout_size,:,:]                                   
-                if maxout_out is None:                                              
-                    maxout_out = temp                                                  
-                else:                                                               
-                    maxout_out = T.maximum(maxout_out, temp)  
-            self.output = maxout_out   
-             
-        elif max_out == 2:  # Do meanout network.
-            maxout_out = None                                                       
-            for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size,:,:]                                   
-                if maxout_out is None:                                              
-                    maxout_out = temp                                                  
-                else:                                                               
-                    maxout_out = (maxout_out*(i+1)+temp)/(i+2)   
-            self.output = maxout_out    
-            
-        elif max_out == 3: # Do mixout network.
-            maxout_out = None
-            maxout_mean = None
-            maxout_max  = None 
-            for i in xrange(maxout_size):                                            
-                temp = self.output[:,i::maxout_size,:,:]                                   
-                if maxout_mean is None:                                              
-                    maxout_mean = temp
-                    maxout_max = temp
-                    maxout_out = temp
-                else:                                                               
-                    maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
-                    maxout_max = T.maximum(maxout_out, temp) 
-                    
-            lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
-            maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
-            self.output = maxout_out
-                
+        self.output = Maxout (self.output, max_out_size = max_out_size, max_out_flag = max_out, dimension = 2)
         # store parameters of this layer
-        self.params = [self.W, self.b]
-                
-        """  Dropouts implemented from paper:
-        Srivastava, Nitish, et al. "Dropout: A simple way to prevent neural networks
-        from overfitting." The Journal of Machine Learning Research 15.1 (2014): 1929-1958.
-        """
+        self.params = [self.W, self.b]    
+        self.output_size =  [next_height, next_width, bias_shape]
+                    
                         
 class DropoutConv3DPoolLayer(Conv3DPoolLayer):
     def __init__(self, rng, input,
@@ -1065,7 +997,6 @@ class ConvolutionalLayers (object):
         stack_size = 1 
         param_counter = 0 
  
-
         if len(filt_size) == 2:                        
             self.dropout_conv_layers.append ( 
                             DropoutConv2DPoolLayer(
@@ -1101,9 +1032,8 @@ class ConvolutionalLayers (object):
                                     alpha = self.dropout_conv_layers[-1].alpha,
                                     verbose = verbose                                       
                                         ) )  
-            next_in[0] = int(floor((ceil( (next_in[0] - filt_size [0])  / float(stride[0])) + 1  ) / pool_size[0] ))       
-            next_in[1] = int(floor((ceil( (next_in[1] - filt_size[1]) / float(stride[1]   )) + 1  ) / pool_size[1] ))    
-            next_in[2] = nkerns[0]  / max_out_size                                                                                                                 
+            next_in = self.conv_layers[-1].output_size
+                                                                                                                          
         elif len(filt_size) == 3:
             dropout_conv_layers.append ( 
                             DropoutConv3DPoolLayer(
@@ -1141,10 +1071,7 @@ class ConvolutionalLayers (object):
                                         ) )
                                         
             # strides creates a mess in 3D !! 
-            
-            next_in[0] = int(ceil(((( next_in[0] - filt_size [1])  / float(stride[1])) + 1) / pool_size[1] ))       
-            next_in[1] = int(ceil(((( next_in[1] - filt_size[2]) / float(stride[2]  )) + 1) / pool_size[2] ))                                                                                                
-            next_in[2] = nkerns[0]  / (pool_size[0] * max_out_size * stride[0])
+            next_in = self.conv_layers[-1].output_size
 
                 
         else:
@@ -1152,7 +1079,7 @@ class ConvolutionalLayers (object):
             sys.exit()
             
         self.activity.append ( self.conv_layers[-1].output.dimshuffle(0,2,3,1) )
-        self.weights.append ( self.conv_layers[-1].W)
+        self.weights.append ( self.conv_layers[-1].W )
         
         # Create the rest of the convolutional - pooling layers in a loop
         param_counter = param_counter + 2  
@@ -1187,7 +1114,7 @@ class ConvolutionalLayers (object):
             else:
                 max_out_size = 1 
 
-            if len(filt_size) == 2:
+            if len(filt_size) == 2:         
                 self.dropout_conv_layers.append ( 
                                 DropoutConv2DPoolLayer(
                                     rng = rng,
@@ -1224,9 +1151,7 @@ class ConvolutionalLayers (object):
                                     verbose = verbose
                                         ) )                                                       
                                             
-                next_in[0] = int(floor((ceil( (next_in[0] - filt_size[0] ) / float(stride[0])) + 1 ) / pool_size[0] ))      
-                next_in[1] = int(floor((ceil( (next_in[1]- filt_size[1] ) / float(stride[1])) + 1 ) / pool_size[1] ))
-                next_in[2] = nkerns[layer+1] / max_out_size
+                next_in = self.conv_layers[-1].output_size
                 
             elif len(filt_size) == 3:
                 self.dropout_conv_layers.append ( 
@@ -1265,9 +1190,7 @@ class ConvolutionalLayers (object):
                                         ) )   
                                         
                 # please dont use stride for 3D                                                   
-                next_in[0] = int(floor(( next_in[0] - filt_size[1] + 1 ))) / (pool_size[1] * stride[1])    
-                next_in[1] = int(floor(( next_in[1] - filt_size[2] + 1 ))) / (pool_size[2] * stride[2])
-                next_in[2] = nkerns[layer+1] / (pool_size[0] * max_out_size * stride[0])    
+                next_in = self.conv_layers[-1].output_size   
                                             
             else:
                 print "!! So far Samosa is only capable of 2D and 3D conv layers."                               

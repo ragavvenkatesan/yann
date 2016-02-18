@@ -39,10 +39,13 @@ def shared_dataset(data_xy, n_classes, borrow=True, svm_flag = True):
     else:
         return shared_x, shared_y  
 
-class network(object):
+class cnn_mlp(object):
 
-    def __init__(  self, random_seed,
-                         filename_params, 
+    def __init__(  self, filename_params, 
+                         optimization_params,
+                         arch_params,   
+                         retrain_params,
+                         init_params,                      
                          verbose = False, 
                         ):
 
@@ -52,10 +55,37 @@ class network(object):
         self.cost_file_name      = filename_params [ "cost_file_name"  ]
         self.confusion_file_name = filename_params [ "confusion_file_name" ]
         self.network_save_name   = filename_params [ "network_save_name" ]
-        
+        random_seed = arch_params["random_seed"]
         self.rng = numpy.random.RandomState(random_seed)  
         self.main_img_visual = True 
-       
+        
+        self.optim_params                    = optimization_params           
+        self.arch                            = arch_params
+        self.mlp_activations                 = arch_params [ "mlp_activations"  ] 
+        self.cnn_activations                 = arch_params [ "cnn_activations" ]
+        self.cnn_dropout                     = arch_params [ "cnn_dropout"  ]
+        self.mlp_dropout                     = arch_params [ "mlp_dropout"  ]
+        self.batch_norm                      = arch_params [ "cnn_batch_norm"  ]  
+        self.mlp_batch_norm                  = arch_params [ "mlp_batch_norm" ]  
+        self.mlp_dropout_rates               = arch_params [ "mlp_dropout_rates" ]
+        self.cnn_dropout_rates               = arch_params [ "cnn_dropout_rates" ]
+        self.nkerns                          = arch_params [ "nkerns"  ]
+        self.outs                            = arch_params [ "outs" ]
+        self.filter_size                     = arch_params [ "filter_size" ]
+        self.pooling_size                    = arch_params [ "pooling_size" ]
+        self.conv_stride_size                = arch_params [ "conv_stride_size" ]
+        self.num_nodes                       = arch_params [ "num_nodes" ]
+        random_seed                          = arch_params [ "random_seed" ]
+        self.svm_flag                        = arch_params [ "svm_flag" ]   
+        self.mean_subtract                   = arch_params [ "mean_subtract" ]
+        self.max_out                         = arch_params [ "max_out" ] 
+        self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
+        self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
+        self.use_bias                        = arch_params [ "use_bias" ]           
+
+        self.retrain_params = retrain_params
+        self.init_params    = init_params 
+        
     def save_network( self ):          # for others use only data_params or optimization_params
 
         f = gzip.open(self.network_save_name, 'wb')
@@ -83,7 +113,7 @@ class network(object):
         self.train_set_x, self.train_set_y, self.train_set_y1 = shared_dataset((train_data_x, train_data_y), self.outs, svm_flag = True)
         
     # this loads up the data_params from a folder and sets up the initial databatch.         
-    def init_data ( self, dataset, outs, verbose = False):
+    def init_data ( self, dataset, outs, visual_params = None, verbose = False):
         print "... initializing dataset " + dataset 
         f = gzip.open(dataset + '/data_params.pkl.gz', 'rb')
         data_params = cPickle.load(f)
@@ -109,45 +139,20 @@ class network(object):
         self.n_valid_batches     = data_params [ "n_valid_batches" ] 
         
         self.load_data_init(self.dataset, verbose)
-
+        if visual_params is not None:
+            self.create_dirs ( visual_params = visual_params )       
         
     # define the optimzer function 
-    def build_network (self, arch_params, optimization_params , retrain_params = None, init_params = None, verbose = True):    
-    
-        self.optim_params                    = optimization_params           
-        self.arch                            = arch_params
-        self.mlp_activations                 = arch_params [ "mlp_activations"  ] 
-        self.cnn_activations                 = arch_params [ "cnn_activations" ]
-        self.cnn_dropout                     = arch_params [ "cnn_dropout"  ]
-        self.mlp_dropout                     = arch_params [ "mlp_dropout"  ]
-        self.batch_norm                      = arch_params [ "cnn_batch_norm"  ]  
-        self.mlp_batch_norm                  = arch_params [ "mlp_batch_norm" ]  
-        self.mlp_dropout_rates               = arch_params [ "mlp_dropout_rates" ]
-        self.cnn_dropout_rates               = arch_params [ "cnn_dropout_rates" ]
-        self.nkerns                          = arch_params [ "nkerns"  ]
-        self.outs                            = arch_params [ "outs" ]
-        self.filter_size                     = arch_params [ "filter_size" ]
-        self.pooling_size                    = arch_params [ "pooling_size" ]
-        self.conv_stride_size                = arch_params [ "conv_stride_size" ]
-        self.num_nodes                       = arch_params [ "num_nodes" ]
-        random_seed                          = arch_params [ "random_seed" ]
-        self.svm_flag                        = arch_params [ "svm_flag" ]   
-        self.mean_subtract                   = arch_params [ "mean_subtract" ]
-        self.max_out                         = arch_params [ "max_out" ] 
-        self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
-        self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
-        self.use_bias                        = arch_params [ "use_bias" ]                    
+    def build_network (self, verbose = True):    
+                     
        
         print '... building the network'    
         
         
         start_time = time.clock()
-
-        # allocate symbolic variables for the data
-        
+        # allocate symbolic variables for the data       
         self.x = T.matrix('x')           # the data is presented as rasterized images
-        self.y = T.ivector('y')          # the labels are presented as 1D vector of [int] 
-                    
+        self.y = T.ivector('y')          # the labels are presented as 1D vector of [int]                     
         if self.svm_flag is True:
             self.y1 = T.matrix('y1')     # [-1 , 1] labels in case of SVM    
      
@@ -170,12 +175,10 @@ class network(object):
                                                     batch_norm = self.batch_norm,         
                                                     max_out = self.max_out,
                                                     cnn_maxout = self.cnn_maxout,
-                                                    retrain_params = retrain_params, # default None
-                                                    init_params = init_params,                                   
+                                                    retrain_params = self.retrain_params, # default None
+                                                    init_params = self.init_params,                                   
                                                     verbose = verbose          
-                                              )                                                 
-        
-                    
+                                              )                                                                             
         # Assemble fully connected laters
         if self.nkerns == []: # If there is no convolutional layer 
             fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)
@@ -183,9 +186,8 @@ class network(object):
         else:
             fully_connected_input = self.ConvLayers.conv_layers[-1].output.flatten(2)
             dropout_fully_connected_input = self.ConvLayers.dropout_conv_layers[-1].output.flatten(2)                
-    
-        next_in = self.ConvLayers.returnOutputSizes()    
-        
+                
+        next_in = self.ConvLayers.returnOutputSizes()            
         if len(self.num_nodes) > 1 :     
             layer_sizes =[]                        
             layer_sizes.append( next_in[0] * next_in[1] * next_in[2] )
@@ -194,8 +196,7 @@ class network(object):
                 layer_sizes.append ( self.num_nodes[i] )
             layer_sizes.append ( self.outs )
             
-        elif self.num_nodes == [] :
-            
+        elif self.num_nodes == [] :            
             layer_sizes = [ next_in[0] * next_in[1] * next_in[2], self.outs]
         elif len(self.num_nodes) ==  1:
             layer_sizes = [ next_in[0] * next_in[1] * next_in[2], self.num_nodes[0] , self.outs]
@@ -204,22 +205,19 @@ class network(object):
         
         ###########################################
         # MLP layers               
-        if retrain_params is not None:
-            self.copy_from_old = retrain_params [ "copy_from_old" ]
-            self.freeze_layers = retrain_params [ "freeze" ]
+        if self.retrain_params is not None:
+            self.copy_from_old = self.retrain_params [ "copy_from_old" ]
+            self.freeze_layers = self.retrain_params [ "freeze" ]
         else:
             self.freeze_layers = [] 
             for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
-                self.freeze_layers.append ( False )              
-            
+                self.freeze_layers.append ( False )                          
         # if no retrain specified but if init params are given, make default as copy all params.             
-            if init_params is not None:
+            if self.init_params is not None:
                 self.copy_from_old = []
                 for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
                     self.copy_from_old.append ( True ) 
-                                  
-
-        
+                                          
         self.MLPlayers = core.MLP  ( 
                                     rng = self.rng,
                                     input = (fully_connected_input, dropout_fully_connected_input),
@@ -231,8 +229,8 @@ class network(object):
                                     use_bias = self.use_bias,
                                     svm_flag = self.svm_flag,
                                     batch_norm = self.mlp_batch_norm, 
-                                    params = [] if init_params is None else init_params[param_counter:],
-                                    copy_from_old = self.copy_from_old [len(self.nkerns):] if init_params is not None else None,
+                                    params = [] if self.init_params is None else self.init_params[param_counter:],
+                                    copy_from_old = self.copy_from_old [len(self.nkerns):] if self.init_params is not None else None,
                                     freeze = self.freeze_layers [ len(self.nkerns):],
                                     verbose = verbose
                               )
@@ -243,18 +241,22 @@ class network(object):
         self.errors = self.MLPlayers.errors
         self.predicts = self.MLPlayers.predicts                
         self.activity = self.ConvLayers.activity
-
         end_time = time.clock()
         print "...         time taken to build is " +str(end_time - start_time) + " seconds"
-                
+        if verbose is True:
+            print "... building cost function"
+        self.build_cost_function()            
+        
+        if verbose is True:
+            print "... creating network functions"                                   
+        self.create_network_functions(verbose = verbose)
+                                   
     def build_cost_function(self):
         # Build the expresson for the categorical cross entropy function.
-        start_time = time.clock()
-        
+        start_time = time.clock()        
         self.objective = self.optim_params["objective"]
         self.l1_reg = self.optim_params["l1_reg"]
-        self.l2_reg = self.optim_params["l2_reg"]
-        
+        self.l2_reg = self.optim_params["l2_reg"]        
         if self.svm_flag is False:
             if self.objective == 0:
                 cost = self.MLPlayers.negative_log_likelihood( self.y )
@@ -273,15 +275,13 @@ class network(object):
         else :        
             cost = self.MLPlayers.hinge_loss( self.y1 )
             dropout_cost = self.MLPlayers.hinge_loss( self.y1 )
-        self.output = ( dropout_cost + self.l1_reg * self.MLPlayers.dropout_L1 + self.l2_reg *
-                             self.MLPlayers.dropout_L2 )if self.mlp_dropout else ( cost + self.l1_reg 
-                             * self.MLPlayers.L1 + self.l2_reg * self.MLPlayers.L2) 
+        self.output =  dropout_cost if self.mlp_dropout else cost
+        self.output = self.output + + self.l1_reg * self.MLPlayers.L1 + self.l2_reg * self.MLPlayers.L2  
                                         
         optimizer = core.optimizer( params = self.params,
                                     objective = self.output,
                                     optimization_params = self.optim_params,
-                                  )
-                                    
+                                  )                                    
         self.eta = optimizer.eta
         self.epoch = optimizer.epoch
         self.updates = optimizer.updates
@@ -301,27 +301,23 @@ class network(object):
                 outputs = self.errors(self.y),
                 givens={
                     self.x: self.test_set_x[index * self.batch_size:(index + 1) * self.batch_size],
-                    self.y: self.test_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
-    
+                    self.y: self.test_set_y[index * self.batch_size:(index + 1) * self.batch_size]})    
         self.validate_model = theano.function(
                 inputs = [index],
                 outputs = self.errors(self.y),
                 givens={
                     self.x: self.valid_set_x[index * self.batch_size:(index + 1) * self.batch_size],
-                    self.y: self.valid_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
-    
+                    self.y: self.valid_set_y[index * self.batch_size:(index + 1) * self.batch_size]})    
         self.prediction = theano.function(
             inputs = [index],
             outputs = self.predicts,
             givens={
-                    self.x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
-    
+                    self.x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})    
         self.nll = theano.function(
             inputs = [index],
             outputs = self.probabilities,
             givens={
-                self.x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
-    
+                self.x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})    
         # function to return activations of each image
         if not self.nkerns == [] :
             activity = self.ConvLayers.returnActivity()
@@ -330,8 +326,7 @@ class network(object):
                 outputs = self.activity,
                 givens = {
                         self.x: self.train_set_x[index * self.batch_size: (index + 1) * self.batch_size]
-                        })
-               
+                        })               
         if verbose is True:
             print "... building training model" 
         if self.svm_flag is True:
@@ -353,24 +348,16 @@ class network(object):
                         self.x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
                         self.y: self.train_set_y[index * self.batch_size:(index + 1) * self.batch_size]},
                     on_unused_input='ignore'                    
-                        )
-    
+                        )    
         self.decay_learning_rate = theano.function(
                inputs=[],          # Just updates the learning rates. 
                updates={self.eta: self.eta -  self.eta * self.optim_params["learning_rate_decay"] }
-                )
-    
+                )    
         self.momentum_value = theano.function ( 
                             inputs =[self.epoch],
                             outputs = self.mom,
-                            )
-                       
-    # this is only for self.multi_load = True type of datasets.. 
-    # All datasets are not multi_load enabled. This needs to change ??                         
-    # this is only for self.multi_load = True type of datasets.. 
-    # All datasets are not multi_load enabled. This needs to change ??    
-    
-    # from theano tutorials for loading pkl files like what is used in theano tutorials
+                            )                       
+                            
     def load_data_base( self, batch = 1, type_set = 'train' ):
         # every dataset will have atleast one batch ..... load that.
         
@@ -379,11 +366,9 @@ class network(object):
         elif type_set == 'valid':
             f = gzip.open(self.dataset + '/valid/batch_' +str(batch) +'.pkl.gz', 'rb')            
         else:
-            f = gzip.open(self.dataset + '/test/batch_' +str(batch) +'.pkl.gz', 'rb')
-            
+            f = gzip.open(self.dataset + '/test/batch_' +str(batch) +'.pkl.gz', 'rb')            
         data_x, data_y = cPickle.load(f)
-        f.close()
-    
+        f.close()    
         if self.svm_flag is True:
             # one-hot encoded labels as {-1, 1}
             n_classes = len(numpy.unique(data_y))  # dangerous?
@@ -391,14 +376,11 @@ class network(object):
             y1[numpy.arange(data_y.shape[0]), data_y] = 1		
             rval = (data_x, data_y, y1)
         else:   
-            rval = (data_x, data_y, data_y)
-            
+            rval = (data_x, data_y, data_y)            
         return rval
                        
-    def set_data (self, batch, type_set, verbose = True):
-        
-        data_x, data_y, data_y1 = self.load_data_base(batch, type_set )             
-        
+    def set_data (self, batch, type_set, verbose = True):        
+        data_x, data_y, data_y1 = self.load_data_base(batch, type_set )                     
         # If we had used only one datavariable instead of three... this wouldn't have been needed. 
         if type_set == 'train':                             
             self.train_set_x.set_value(data_x ,borrow = True)
@@ -423,8 +405,7 @@ class network(object):
             imgs = imgs.eval()[self.visualize_ind]
             loc_im = '../visuals/images/image_'
             imgs = util.visualize(imgs, prefix = loc_im, is_color = self.color_filter if self.channels == 3 else False)    
-        self.main_img_visual = True
-                
+        self.main_img_visual = True                
         # visualizing activities.
         activity_now = self.activities(0)     
         for m in xrange(len(self.nkerns)):   #For each layer 
@@ -447,8 +428,7 @@ class network(object):
                 imgs = util.visualize(current_weights.dimshuffle(0,2,3,1).eval(), prefix = loc_we, is_color = self.color_filter)            
             
     # ToDo: should make a results root dir and put in results there ... like root +'/visuals/' 
-    def create_dirs( self, visual_params ):  
-        
+    def create_dirs( self, visual_params ):          
         self.visualize_flag          = visual_params ["visualize_flag" ]
         self.visualize_after_epochs  = visual_params ["visualize_after_epochs" ]
         self.n_visual_images         = visual_params ["n_visual_images" ] 
@@ -472,13 +452,11 @@ class network(object):
             if not os.path.exists('../visuals/images'):
                 os.makedirs('../visuals/images')
         if not os.path.exists('../results/'):
-            os.makedirs ('../results')
-        
+            os.makedirs ('../results')        
         assert self.batch_size >= self.n_visual_images
-        
-        
+                
     # TRAIN 
-    def train(self, n_epochs, ft_epochs, validate_after_epochs, verbose = True):
+    def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, verbose = True):
         print "... training"        
         self.main_img_visual = False
         patience = numpy.inf 
@@ -505,8 +483,7 @@ class network(object):
             start_time = time.clock() 
             for batch in xrange (self.batches2train):
                 if verbose is True:
-                    print "...          -> epoch: " + str(epoch_counter) + " batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"
-    
+                    print "...          -> epoch: " + str(epoch_counter) + " batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"    
                 if self.multi_load is True:
                     iteration= (epoch_counter - 1) * self.n_train_batches * self.batches2train + batch
                     # Load data for this batch
@@ -519,8 +496,7 @@ class network(object):
                 else:   
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
-                    cost_saved = cost_saved +[cost_ij]
-           
+                    cost_saved = cost_saved +[cost_ij]           
             if  epoch_counter % validate_after_epochs == 0:  
                 validation_losses = 0.   
                 if self.multi_load is True:                    
@@ -555,8 +531,6 @@ class network(object):
                                          ", momentum = " +str(self.momentum_value(epoch_counter))))
                     f.write('\n')
                 else: # if not multi_load
-                    
-                    
                     if numpy.isnan(cost_saved[-1]):
                         print " NAN !! "
                         import pdb
@@ -594,21 +568,18 @@ class network(object):
                    improvement_threshold:
                     patience = max(patience, iteration* patience_increase)
                     best_iter = iteration
-
                 best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
             self.decay_learning_rate()    
-    
-    
+                    
             if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:            
-                self.print_net (epoch = epoch_counter, display_flag = self.display_flag)   
-            
+                self.print_net (epoch = epoch_counter, display_flag = self.display_flag)               
             end_time = time.clock()
             print "...           time taken for this epoch is " +str((end_time - start_time)) + " seconds"
             
             if patience <= iteration:
                 early_termination = True
                 break
-         
+                         
         end_time_main = time.clock()
         print "... time taken for the entire training is " +str((end_time_main - start_time_main)/60) + " minutes"
         f.close()            
