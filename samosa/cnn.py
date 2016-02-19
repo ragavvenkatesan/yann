@@ -162,8 +162,9 @@ class cnn_mlp(object):
         mean_sub_input = first_layer_input - first_layer_input.mean()        
         
         ###########################################
-        # Convolutional layers 
-        self.ConvLayers = core.ConvolutionalLayers (      
+        # Convolutional layers        
+        if not self.nkerns == []: # If there are some convolutional layers... 
+            self.ConvLayers = core.ConvolutionalLayers (      
                                                     input = (first_layer_input, mean_sub_input),
                                                     rng = self.rng,
                                                     input_size = (self.height, self.width, self.channels, self.batch_size), 
