@@ -220,7 +220,7 @@ class cnn_mlp(object):
                 for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
                     self.copy_from_old.append ( True ) 
                                           
-        param_counter = self.nkerns * 2 if self.batch_norm is False else self.nkerns * 3                                          
+        param_counter = len(self.nkerns) * 2 if self.batch_norm is False else len(self.nkerns) * 3                                          
         self.MLPlayers = core.MLP  ( 
                                     rng = self.rng,
                                     input = (fully_connected_input, dropout_fully_connected_input),
