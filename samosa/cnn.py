@@ -86,6 +86,8 @@ class cnn_mlp(object):
         self.retrain_params = retrain_params
         self.init_params    = init_params 
         
+        self.ft_learning_rate = self.optim_params["ft_learning_rate"]
+                
     def save_network( self ):          # for others use only data_params or optimization_params
 
         f = gzip.open(self.network_save_name, 'wb')
@@ -469,6 +471,7 @@ class cnn_mlp(object):
         early_termination = False
         cost_saved = []
         iteration= 0        
+        
         #self.print_net(epoch = 0, display_flag = self.display_flag)
         start_time_main = time.clock()
         if os.path.isfile('dump.txt'):

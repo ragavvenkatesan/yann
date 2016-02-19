@@ -85,34 +85,34 @@ if __name__ == '__main__':
 
     arch_params = {
                     
-                    "mlp_activations"                   : [ Abs ],
+                    "mlp_activations"                   : [ ReLU ],
                     "cnn_dropout"                       : True,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],
                     "num_nodes"                         : [ 800  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ Abs,   Abs  ],             
+                    "cnn_activations"                   : [ ReLU,   ReLU  ],             
                     "cnn_batch_norm"                    : [ True,  True ],
                     "mlp_batch_norm"                    : True,
                     "nkerns"                            : [ 20,     50    ],              
                     "filter_size"                       : [ (5,5), (5,5)  ],
                     "pooling_size"                      : [ (2,2), (1,1)  ],
                     "conv_stride_size"                  : [ (1,1), (1,1)  ],
-                    "cnn_maxout"                        : [ 2,     2      ],                    
-                    "mlp_maxout"                        : [ 2 ],
+                    "cnn_maxout"                        : [ 1,     1      ],                    
+                    "mlp_maxout"                        : [ 1 ],
                     "cnn_dropout_rates"                 : [ 0.5,   0.5    ],
                     "random_seed"                       : 23455,
                     "use_bias"                          : True, 
                     "mean_subtract"                     : True,
-                    "max_out"                           : 1
+                    "max_out"                           : 0
         
                  }                          
 
     # other loose parameters. 
-    n_epochs = 100
+    n_epochs = 2
     validate_after_epochs = 1
-    ft_epochs = 50
+    ft_epochs = 2
     verbose = False 
     
     run_cnn(
