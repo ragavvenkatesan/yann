@@ -497,18 +497,19 @@ class cnn_mlp(object):
             else:
                 print "                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate))
                 
-            print "                         training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_training_batches*self.batches2train))                                        
-            
-            f.write ("...      -> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:]))  + "\n")
-            if self.this_validation_loss[-1] < self.best_validation_loss:
-                f.write ("                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + " -> best thus far \n")
+            if self.this_training_loss[-1] < self.best_training_loss:
+                print "                         training accuracy : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + " -> best thus far "
             else:
-                f.write ("                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +"\n")
+                print "                         training accuracy : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train))
+                 
+            f.write ("...      -> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:]))  + "\n")
+            f.write ("                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +"\n")
             f.write ("                         training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + "\n")                                                    
             
         else: # if not multi_load
             validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
             self.this_validation_loss = self.this_validation_loss + [numpy.sum(validation_losses)]
+            
             training_losses = [self.training_accuracy(i) for i in xrange(self.batches2train)]
             self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]            
                                     
@@ -518,13 +519,13 @@ class cnn_mlp(object):
                 print "                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +  " -> best thus far "
             else:
                 print "                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate))
-            print "                         training accuracy : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train))                  
+            if self.this_training_loss[-1] < self.best_training_loss:
+                print "                         training accuracy : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train)) +  " -> best thus far "
+            else:
+                print "                         training accuracy : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train))
 
             f.write ("...      -> epoch " + str(epoch) +  ", cost : " + str(self.cost_saved[-1])  + "\n")
-            if self.this_validation_loss[-1] < self.best_validation_loss:
-                f.write ("                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) + " -> best thus far \n")
-            else:
-                f.write ("                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +"\n")
+            f.write ("                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +"\n")
             f.write ("                         training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train)) + "\n")                                                                
         f.close()    
          
@@ -587,6 +588,7 @@ class cnn_mlp(object):
                 patience = max(patience, iteration* patience_increase)
                 best_iter = iteration
             self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
+            self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])            
             
             self.decay_learning_rate()  
             if patience <= iteration:
