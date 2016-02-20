@@ -69,54 +69,55 @@ if __name__ == '__main__':
                             "mom_start"                         : 0.5,                      
                             "mom_end"                           : 0.99,
                             "mom_interval"                      : 100,
-                            "mom_type"                          : 0,                         
-                            "initial_learning_rate"             : 1,
+                            "mom_type"                          : 2,                         
+                            "initial_learning_rate"             : 0.001,
                             "ft_learning_rate"                  : 0.0001,    
                             "learning_rate_decay"               : 0.005,
                             "l1_reg"                            : 0.000,                     
                             "l2_reg"                            : 0.000,                    
                             "ada_grad"                          : False,
-                            "rms_prop"                          : False,
-                            "rms_rho"                           : 0.9,                                     
-                            "objective"                         : 0,   
+                            "rms_prop"                          : True,
+                            "rms_rho"                           : 0.9,                      
+                            "rms_epsilon"                       : 1e-7,                     
+                            "fudge_factor"                      : 1e-7,                    
+                            "objective"                         : 1,    
                             }        
 
     arch_params = {
-                    
                     "mlp_activations"                   : [ ReLU ],
                     "cnn_dropout"                       : False,
-                    "mlp_dropout"                       : False,
+                    "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],
-                    "num_nodes"                         : [ 800 ],                                     
+                    "num_nodes"                         : [ 400  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ ReLU,   ReLU  ],             
-                    "cnn_batch_norm"                    : [ False,  False ],
-                    "mlp_batch_norm"                    : False,
-                    "nkerns"                            : [ 10,    50     ],              
-                    "filter_size"                       : [ (5,5), (3,3)  ],
-                    "pooling_size"                      : [ (2,2), (1,1)  ],
-                    "conv_stride_size"                  : [ (1,1), (1,1)  ],
-                    "cnn_maxout"                        : [ 1,     1      ],                    
+                    "cnn_activations"                   : [ ],             
+                    "cnn_batch_norm"                    : [ ],
+                    "mlp_batch_norm"                    : True,
+                    "nkerns"                            : [ ],              
+                    "filter_size"                       : [ ],
+                    "pooling_size"                      : [ ],
+                    "conv_stride_size"                  : [ ],
+                    "cnn_maxout"                        : [ ],                    
                     "mlp_maxout"                        : [ 1 ],
-                    "cnn_dropout_rates"                 : [ 0.5,   0.5    ],
-                    "random_seed"                       : 23455,
-                    "use_bias"                          : True, 
+                    "cnn_dropout_rates"                 : [ ],
+                    "random_seed"                       : 23455, 
                     "mean_subtract"                     : False,
-                    "max_out"                           : 0
+                    "use_bias"                          : True,                    
+                    "max_out"                           : 0 
         
                  }                          
 
     # other loose parameters. 
-    n_epochs = 10
+    n_epochs = 100
     validate_after_epochs = 1
-    ft_epochs = 5
+    ft_epochs = 100
     verbose = False 
     
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_33024", 
+                    dataset                 = "_datasets/_dataset_57689", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

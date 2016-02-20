@@ -368,7 +368,13 @@ class cnn_mlp(object):
                             inputs =[self.epoch],
                             outputs = self.mom,
                             )                       
-                            
+        self.training_accuracy = theano.function(
+                inputs = [index],
+                outputs = self.errors(self.y),
+                givens={
+                    self.x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
+                    self.y: self.train_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
+                                                                                         
     def load_data_base( self, batch = 1, type_set = 'train' ):
         # every dataset will have atleast one batch ..... load that.
         
@@ -467,26 +473,87 @@ class cnn_mlp(object):
         assert self.batch_size >= self.n_visual_images
                 
     # TRAIN 
+    def validate(self, epoch, verbose = True):
+        validation_losses = 0.   
+        training_losses = 0.
+        if os.path.isfile('dump.txt'):
+            f = open('dump.txt', 'a')
+        else:
+            f = open('dump.txt', 'w')       
+        if self.multi_load is True:                    
+            for batch in xrange ( self.batches2validate):                       
+                self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
+                validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
+                self.this_validation_loss = self.this_validation_loss + [validation_losses]
+            for batch in xrange (self.batches2test):
+                self.set_data ( batch = batch , type_set = 'test' , verbose = verbose)            
+                training_losses = training_losses + numpy.sum([[self.training_accuracy(i) for i in xrange(self.n_train_batches)]])            
+                self.this_training_loss = self.this_training_loss + [training_losses]
+                
+            print "...      -> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:])) + " learning_rate : " + str(self.eta.get_value(borrow=True))
+            print "                         momentum            : " + str(self.momentum_value(epoch))
+            if self.this_validation_loss[-1] < self.best_validation_loss:
+                print "                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + " -> best thus far "
+            else:
+                print "                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate))
+                
+            print "                         training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_training_batches*self.batches2train))                                        
+            
+            f.write ("...      -> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:]))  + "\n")
+            if self.this_validation_loss[-1] < self.best_validation_loss:
+                f.write ("                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + " -> best thus far \n")
+            else:
+                f.write ("                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +"\n")
+            f.write ("                         training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + "\n")                                                    
+            
+        else: # if not multi_load
+            validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
+            self.this_validation_loss = self.this_validation_loss + [numpy.sum(validation_losses)]
+            training_losses = [self.training_accuracy(i) for i in xrange(self.batches2train)]
+            self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]            
+                                    
+            print "...      -> epoch " + str(epoch) + ", cost : " + str(self.cost_saved[-1]) + " learning_rate : " + str(self.eta.get_value(borrow=True))
+            print "                         momentum            : " +str(self.momentum_value(epoch)) 
+            if self.this_validation_loss[-1] < self.best_validation_loss:
+                print "                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +  " -> best thus far "
+            else:
+                print "                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate))
+            print "                         training accuracy : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train))                  
+
+            f.write ("...      -> epoch " + str(epoch) +  ", cost : " + str(self.cost_saved[-1])  + "\n")
+            if self.this_validation_loss[-1] < self.best_validation_loss:
+                f.write ("                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) + " -> best thus far \n")
+            else:
+                f.write ("                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +"\n")
+            f.write ("                         training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train)) + "\n")                                                                
+        f.close()    
+         
+        # Save down training stuff
+        f = open(self.error_file_name,'w')
+        f.write(str(self.this_validation_loss[-1])  + "\t" + str(self.this_training_loss[-1]))
+        f.write("\n")
+        f.close()
+                
     def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, verbose = True):
         print "... training"        
         self.main_img_visual = False
         patience = numpy.inf 
         patience_increase = 2  
         improvement_threshold = 0.995  
-        this_validation_loss = []
-        best_validation_loss = numpy.inf
+        self.this_validation_loss = []
+        self.best_validation_loss = numpy.inf
+        
+        self.this_training_loss = []
+        self.best_training_loss = numpy.inf
+        
         best_iter = 0
         epoch_counter = 0
         early_termination = False
-        cost_saved = []
+        self.cost_saved = []
         iteration= 0        
         
         #self.print_net(epoch = 0, display_flag = self.display_flag)
         start_time_main = time.clock()
-        if os.path.isfile('dump.txt'):
-            f = open('dump.txt', 'a')
-        else:
-            f = open('dump.txt', 'w')
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
             if epoch_counter == n_epochs:
                 print "... fine tuning"
@@ -504,110 +571,41 @@ class cnn_mlp(object):
                         if verbose is True:
                             print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
-                        cost_saved = cost_saved + [cost_ij]                        
+                        self.cost_saved = self.cost_saved + [cost_ij]                        
                 else:   
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
-                    cost_saved = cost_saved +[cost_ij]           
+                    self.cost_saved = self.cost_saved +[cost_ij] 
+            if numpy.isnan(self.cost_saved[-1]):
+                print " NAN !! "            
             if  epoch_counter % validate_after_epochs == 0:  
-                validation_losses = 0.   
-                if self.multi_load is True:                    
-                    for batch in xrange ( self.batches2validate):                       
-                        self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
-                        validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
-                        this_validation_loss = this_validation_loss + [validation_losses]
-   
-                    print ("...      -> epoch " + str(epoch_counter) + 
-                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
-                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
-                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
-                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
-                                         ", momentum = " +str(self.momentum_value(epoch_counter))  +
-                                         " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
-                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
-                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
-                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
-                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
-                                         ", momentum = " +str(self.momentum_value(epoch_counter)))     
-                    f.write(("...      -> epoch " + str(epoch_counter) + 
-                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
-                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
-                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
-                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
-                                         ", momentum = " +str(self.momentum_value(epoch_counter))  +
-                                         " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
-                                         ", cost: " + str(numpy.mean(cost_saved[-1*self.n_train_batches:])) +
-                                         ",  validation accuracy :" + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - this_validation_loss[-1])*100
-                                                                 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +
-                                         "%, learning_rate = " + str(self.eta.get_value(borrow=True))+ 
-                                         ", momentum = " +str(self.momentum_value(epoch_counter))))
-                    f.write('\n')
-                else: # if not multi_load
-                    if numpy.isnan(cost_saved[-1]):
-                        print " NAN !! "
-                        import pdb
-                        pdb.set_trace()
-                    validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
-                    this_validation_loss = this_validation_loss + [numpy.sum(validation_losses)]
-                                            
-                    print ("...      -> epoch " + str(epoch_counter) + 
-                              ", cost: " + str(cost_saved[-1]) +
-                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
-                                                           /(self.batch_size*self.batches2validate)) + 
-                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
-                              ", momentum = " +str(self.momentum_value(epoch_counter)) +
-                              " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
-                              ", cost: " + str(cost_saved[-1]) +
-                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
-                                                           /(self.batch_size*self.batches2validate)) + 
-                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
-                              ", momentum = " +str(self.momentum_value(epoch_counter)) )
-                    f.write(("...      -> epoch " + str(epoch_counter) + 
-                              ", cost: " + str(cost_saved[-1]) +
-                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
-                                                           /(self.batch_size*self.batches2validate)) + 
-                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
-                              ", momentum = " +str(self.momentum_value(epoch_counter)) +
-                              " -> best thus far ") if this_validation_loss[-1] < best_validation_loss else ("...      -> epoch " + str(epoch_counter) + 
-                              ", cost: " + str(cost_saved[-1]) +
-                              ",  validation accuracy :" + str(float(self.batch_size*self.batches2validate - this_validation_loss[-1])*100
-                                                           /(self.batch_size*self.batches2validate)) + 
-                              "%, learning_rate = " + str(self.eta.get_value(borrow=True)) + 
-                              ", momentum = " +str(self.momentum_value(epoch_counter)) ) )
-                    f.write('\n')
-                # improve patience if loss improvement is good enough
-                if this_validation_loss[-1] < best_validation_loss *  \
-                   improvement_threshold:
-                    patience = max(patience, iteration* patience_increase)
-                    best_iter = iteration
-                best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
-            self.decay_learning_rate()    
+                self.validate(epoch = epoch_counter, verbose = verbose)
                     
+            # improve patience if loss improvement is good enough
+            if self.this_validation_loss[-1] < self.best_validation_loss *  \
+                improvement_threshold:
+                patience = max(patience, iteration* patience_increase)
+                best_iter = iteration
+            self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
+            
+            self.decay_learning_rate()  
+            if patience <= iteration:
+                early_termination = True
+                break                                                
             if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)               
             end_time = time.clock()
             print "...           time taken for this epoch is " +str((end_time - start_time)) + " seconds"
-            
-            if patience <= iteration:
-                early_termination = True
-                break
-                         
+             
         end_time_main = time.clock()
-        print "... time taken for the entire training is " +str((end_time_main - start_time_main)/60) + " minutes"
-        f.close()            
-        # Save down training stuff
-        f = open(self.error_file_name,'w')
-        for i in xrange(len(this_validation_loss)):
-            f.write(str(this_validation_loss[i]))
-            f.write("\n")
-        f.close()
-    
+        print "... time taken for the entire training is " +str((end_time_main - start_time_main)/60) + " minutes"                
+                         
         f = open(self.cost_file_name,'w')
-        for i in xrange(len(cost_saved)):
-            f.write(str(cost_saved[i]))
+        for i in xrange(len(self.cost_saved)):
+            f.write(str(self.cost_saved[i]))
             f.write("\n")
-        f.close()
-    
+        f.close()  
+            
     def test(self, verbose = True):
         print "... testing"
         start_time = time.clock()
