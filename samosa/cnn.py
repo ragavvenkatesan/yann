@@ -185,12 +185,14 @@ class cnn_mlp(object):
         # Assemble fully connected laters
         if self.nkerns == []: # If there is no convolutional layer 
             fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)
-            dropout_fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2)            
+            dropout_fully_connected_input = first_layer_input.flatten(2) if self.mean_subtract is False else mean_sub_input.flatten(2) 
+            next_in = self.height, self.width, self.channels                
+
         else:
             fully_connected_input = self.ConvLayers.conv_layers[-1].output.flatten(2)
-            dropout_fully_connected_input = self.ConvLayers.dropout_conv_layers[-1].output.flatten(2)                
-                
-        next_in = self.ConvLayers.returnOutputSizes()            
+            dropout_fully_connected_input = self.ConvLayers.dropout_conv_layers[-1].output.flatten(2)    
+            next_in = self.ConvLayers.returnOutputSizes() 
+
         if len(self.num_nodes) > 1 :     
             layer_sizes =[]                        
             layer_sizes.append( next_in[0] * next_in[1] * next_in[2] )
@@ -239,12 +241,17 @@ class cnn_mlp(object):
                                     verbose = verbose
                               )
   
-        # Compute cost and gradients of the model wrt parameter           
-        self.params = self.ConvLayers.params + self.MLPlayers.params      
+        # Compute cost and gradients of the model wrt parameter   
+        if self.nkerns == []: 
+            self.params = self.MLPlayers.params 
+        else:
+            self.params = self.ConvLayers.params + self.MLPlayers.params      
+
         self.probabilities = self.MLPlayers.probabilities
         self.errors = self.MLPlayers.errors
-        self.predicts = self.MLPlayers.predicts                
-        self.activity = self.ConvLayers.activity
+        self.predicts = self.MLPlayers.predicts  
+        if not self.nkerns == []:              
+            self.activity = self.ConvLayers.activity
         end_time = time.clock()
         print "...         time taken to build is " +str(end_time - start_time) + " seconds"
         if verbose is True:
@@ -576,7 +583,7 @@ class cnn_mlp(object):
                 best_validation_loss = min(best_validation_loss, this_validation_loss[-1])
             self.decay_learning_rate()    
                     
-            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0:            
+            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)               
             end_time = time.clock()
             print "...           time taken for this epoch is " +str((end_time - start_time)) + " seconds"
@@ -675,6 +682,6 @@ class cnn_mlp(object):
         end_time = time.clock()
         print "...         time taken is " +str(end_time - start_time) + " seconds"
                 
-        if self.visualize_flag is True:    
+        if self.visualize_flag is True and not self.nkerns == []:    
             print "... saving down the final model's visualizations" 
             self.print_net (epoch = 'final' , display_flag = self.display_flag)                 

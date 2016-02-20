@@ -1230,22 +1230,20 @@ class optimizer(object):
         self.ft_learning_rate                = optimization_params [ "ft_learning_rate" ]          
         self.learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
         self.ada_grad                        = optimization_params [ "ada_grad" ]   
-        self.fudge_factor                    = optimization_params [ "fudge_factor" ]
         self.l1_reg                          = optimization_params [ "l1_reg" ]
         self.l2_reg                          = optimization_params [ "l2_reg" ]
         self.rms_prop                        = optimization_params [ "rms_prop" ]
         self.rms_rho                         = optimization_params [ "rms_rho" ]
-        self.rms_epsilon                     = optimization_params [ "rms_epsilon" ]
         self.objective                       = optimization_params [ "objective" ]  
-            
+              
         if self.ada_grad is True:
             assert self.rms_prop is False
         elif self.rms_prop is True:
             assert self.ada_grad is False
-            self.fudge_factor = self.rms_epsilon
                         
         if verbose is True:
             print "... estimating gradients"
+
         gradients = []      
         for param in params: 
             gradient = T.grad( objective ,param)
@@ -1276,7 +1274,7 @@ class optimizer(object):
         # create updates for each combination of stuff 
         updates = OrderedDict()
         print_flag = False
-         
+        
         if verbose is True:
             print "... building back prop network" 
         for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
@@ -1289,6 +1287,7 @@ class optimizer(object):
     
                 current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
                 updates[acc] = current_acc          # updates accumulation at timestamp
+                fudge_factor = 1e-7
             elif self.rms_prop is True:
                 """ Tieleman, T. and Hinton, G. (2012):
                 Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
@@ -1296,13 +1295,14 @@ class optimizer(object):
     
                 current_acc = self.rms_rho * acc + (1 - self.rms_rho) * T.sqr(gradient) 
                 updates[acc] = current_acc
-
+                fudge_factor = 1e-7
+                
             else:
-                current_acc = 1
-                self.fudge_factor = 0
-    
+                current_acc = 1.
+                fudge_factor = 0 
+                
             if self.mom_type == 0:               # no momentum
-                updates[velocity] = -(self.eta / T.sqrt(current_acc + self.fudge_factor)) * gradient                                            
+                updates[velocity] = - (self.eta / T.sqrt(current_acc + fudge_factor)) * gradient                                            
                
             elif self.mom_type == 1:       # if polyak momentum    
     
@@ -1314,7 +1314,7 @@ class optimizer(object):
                 Proceedings of the 30th international conference on machine learning (ICML-13). 2013.
                 equation (1) and equation (2)"""   
     
-                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc+ self.fudge_factor))  * gradient                             
+                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc+ fudge_factor))  * gradient                             
     
             elif self.mom_type == 2:             # Nestrov accelerated gradient 
     
@@ -1325,29 +1325,28 @@ class optimizer(object):
                 Instead of using past params we use the current params as described in this link
                 https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,"""
       
-                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc + self.fudge_factor))  * gradient                                 
+                updates[velocity] = mom * velocity - (1.-mom) * ( self.eta / T.sqrt(current_acc + fudge_factor))  * gradient                                 
                 updates[param] = mom * updates[velocity] 
     
             else:
                 if print_flag is False:
                     print_flag = True
                     print "!! Unrecognized mometum type, switching to no momentum."
-                updates[velocity] = -( self.eta / T.sqrt(current_acc+ self.fudge_factor) ) * gradient                                              
-                            
-    
-            if self.mom_type != 2:
-                stepped_param  = param + updates[velocity]
-            else:
-                stepped_param = param + updates[velocity] + updates[param]
+                updates[velocity] = -( self.eta / T.sqrt(current_acc+ fudge_factor) ) * gradient                                              
+                
+            stepped_param  = param + updates[velocity]
+            if self.mom_type == 2:
+                stepped_param = stepped_param + updates[param]
+
             column_norm = True #This I don't fully understand if its needed after BN is implemented.
             if param.get_value(borrow=True).ndim == 2 and column_norm is True:
     
                 """ constrain the norms of the COLUMNs of the weight, according to
                 https://github.com/BVLC/caffe/issues/109 """
-    
+                fudge_factor = 1e-7
                 col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
                 desired_norms = T.clip(col_norms, 0, T.sqrt(15))
-                scale = desired_norms / (1e-7 + col_norms)
+                scale = desired_norms / (fudge_factor + col_norms)
                 updates[param] = stepped_param * scale
     
             else:            
