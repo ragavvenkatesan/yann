@@ -43,8 +43,6 @@ if __name__ == '__main__':
         f = open('dump.txt', 'a')
     else:
         f = open('dump.txt', 'w')
-        f.close()
-        f.open ('dump.txt','a')
         
     f.write("... main net")
     # run the base CNN as usual.   
@@ -117,7 +115,7 @@ if __name__ == '__main__':
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_57689", 
+                    dataset                 = "_datasets/_dataset_92291", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

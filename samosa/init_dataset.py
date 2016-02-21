@@ -22,15 +22,15 @@ if __name__ == '__main__':
               
     data_params = {
                    "type"               : 'skdata',                                   
-                   "loc"                : 'mnist',                                          
+                   "loc"                : 'cifar10',                                          
                    "batch_size"         : 500,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 100,                                      
+                   "batches2train"      : 80,                                      
                    "batches2test"       : 20,                                      
                    "batches2validate"   : 20,                                        
-                   "height"             : 28,                                       
-                   "width"              : 28,                                       
-                   "channels"           : 1                                       
+                   "height"             : 32,                                       
+                   "width"              : 32,                                       
+                   "channels"           : 3                                       
                   }
                   
     preprocess_params = { 
