@@ -26,7 +26,7 @@ def run_cnn(
                      init_params = None,
                      verbose =verbose ) 
     net.init_data ( dataset = dataset , outs = arch_params ["outs"], visual_params = visual_params, verbose = verbose )                                 
-    net.build_network(verbose = verbose)                               
+    net.build_network(verbose = verbose)                             
     net.train( n_epochs = n_epochs, 
                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
@@ -64,9 +64,7 @@ if __name__ == '__main__':
                     }   
                                                                                                                             
     optimization_params = {
-                            "mom_start"                         : 0.5,                      
-                            "mom_end"                           : 0.99,
-                            "mom_interval"                      : 100,
+                            "mom"                         	: (0.5, 0.99, 100)                      
                             "mom_type"                          : 2,                         
                             "initial_learning_rate"             : 0.001,
                             "ft_learning_rate"                  : 0.0001,    
@@ -115,7 +113,7 @@ if __name__ == '__main__':
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_92291", 
+                    dataset                 = "_datasets/_dataset_24340", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

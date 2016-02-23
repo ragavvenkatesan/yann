@@ -1222,9 +1222,9 @@ class ConvolutionalLayers (object):
 class optimizer(object):
     def __init__(self, params, objective, optimization_params, verbose = True):
         
-        self.mom_start                       = optimization_params [ "mom_start" ]
-        self.mom_end                         = optimization_params [ "mom_end" ]
-        self.mom_epoch_interval              = optimization_params [ "mom_interval" ]
+        self.mom_start                       = optimization_params [ "mom" ][0]
+        self.mom_end                         = optimization_params [ "mom" ][1]
+        self.mom_epoch_interval              = optimization_params [ "mom" ][2]
         self.mom_type                        = optimization_params [ "mom_type" ]
         self.initial_learning_rate           = optimization_params [ "initial_learning_rate" ]  
         self.ft_learning_rate                = optimization_params [ "ft_learning_rate" ]          
