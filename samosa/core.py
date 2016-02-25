@@ -12,8 +12,9 @@ from theano.tensor.signal import pool
 from theano.tensor.nnet import conv
 from theano.ifelse import ifelse
 from theano.tensor.signal.pool import Pool as DownsampleFactorMax
-from theano.tensor.signal.pool import pool_2d as max_pool_2d
+from theano.tensor.signal.pool import pool_2d 
 from theano.tensor.signal.pool import max_pool_2d_same_size 
+
 from theano.tensor.nnet.conv3d2d import conv3d
 
 
@@ -105,7 +106,7 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
         maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
         output = maxout_out    
     return output    
-                    
+            
 #From the Theano Tutorials
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
 
@@ -246,7 +247,6 @@ class SVMLayer(object):
 
 # Modified From https://github.com/mdenil/dropout/blob/master/mlp.py
 class LogisticRegression(object):
-   
 
     def __init__(self, input, n_in, n_out, rng, W=None, b=None, use_bias = False ):
 
@@ -263,7 +263,7 @@ class LogisticRegression(object):
         # initialize the baises b as a vector of n_out 0s        
         if b is None:
             self.b = theano.shared(
-                    value=numpy.asarray(0.001 * rng.standard_normal((n_out)), dtype=theano.config.floatX),
+                    value=numpy.zeros((n_out,), dtype=theano.config.floatX),
                     name='b')
         else:
             self.b = b
@@ -325,7 +325,7 @@ class HiddenLayer(object):
             W = theano.shared(value=W_values, name='W')
         
         if b is None:
-            b_values = numpy.asarray(0.01 * rng.standard_normal((n_out)), dtype=theano.config.floatX)
+            b_values = numpy.zeros((n_out,), dtype=theano.config.floatX)
             b = theano.shared(value=b_values, name='b')
 
         if alpha is None:
@@ -600,6 +600,7 @@ class Conv2DPoolLayer(object):
                          filter_shape,
                           image_shape,
                            poolsize,
+                           pooltype,
                             stride,
                              max_out,
                               maxout_size,
@@ -616,8 +617,11 @@ class Conv2DPoolLayer(object):
         width      = image_shape[3]
         height     = image_shape[2]
         
-        next_height = int(floor((height - filter_shape[2] + 1))) / poolsize[0]
-        next_width = int(floor((width - filter_shape[3] + 1))) / poolsize[1] 
+        next_height = int(floor((height - filter_shape[2] + 1))) / (poolsize[0] * stride[0])
+        next_width = int(floor((width - filter_shape[3] + 1))) / (poolsize[1] * stride[1]) 
+        if pooltype == 0:
+            next_height = int(floor((height - filter_shape[2] + 1))/ stride[0]) 
+            next_width = int(floor((width - filter_shape[3] + 1)) / stride[1])             
         kern_shape = int(floor(filter_shape[0]/maxout_size))       
         output_size = ( batchsize, kern_shape, next_height , next_width )
         srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
@@ -629,7 +633,7 @@ class Conv2DPoolLayer(object):
             print "                                  ....... maxout size [" + str(maxout_size) + "]"
             print "                                  ....... input size ["  + str(image_shape[2]) + " " + str(image_shape[3]) + "]"
             print "                                  ....... input number of feature maps is " +str(image_shape[1]) 
-            print "                                  ....... output size is [" + str((image_shape[2] - filter_shape[2] + 1 ) / (poolsize[0] * stride[0]) ) + " X " + str((image_shape[3] - filter_shape[3] + 1 ) / (poolsize[1] * stride[1]) ) + "]"
+            print "                                  ....... output size is [" + str(next_height ) + " X " + str(next_width ) + "]"
         self.input = input
         assert image_shape[1] == filter_shape[1]
         
@@ -656,7 +660,7 @@ class Conv2DPoolLayer(object):
             self.W = W 
         # the bias is a 1D tensor -- one bias per output feature map
         if b is None:
-            b_values = numpy.asarray(0.01 * rng.standard_normal(size=filter_shape[0]), dtype=theano.config.floatX)
+            b_values = numpy.zeros((filter_shape[0]), dtype=theano.config.floatX)
             self.b = theano.shared(value=b_values, borrow=True)
         else:
             self.b = b
@@ -680,16 +684,35 @@ class Conv2DPoolLayer(object):
 
         # downsample each feature map individually, using maxpooling
         #if fast_conv is False:
-
-        pool_out = max_pool_2d(
-            input=conv_out,
-            ds=poolsize,
-            ignore_border=True
-            )
+        
+        if poolsize == (1,1):
+            pool_out = conv_out 
+            
+        elif pooltype == 0:
+            pool_out = max_pool_2d_same_size(
+                input=conv_out,
+                patch_size=poolsize,
+                )
+                
+        elif pooltype == 1:
+            pool_out = pool_2d(
+                input=conv_out,
+                ds=poolsize,
+                ignore_border = False,
+                mode = 'max'
+                )
+                
+        elif pooltype == 2:                
+            pool_out = pool_2d(
+                input=conv_out,
+                ds=poolsize,
+                ignore_border = False,                
+                mode = 'sum'
+                )                
+                
 
         # self.co = conv_out
         # self.po = pool_out
-       
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
         # During debugging while in pdb inside a terminal from the lenet module's train function code, use functions such as :
         #    co = theano.function ( inputs = [index], outputs = conv_layers[0].co, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
@@ -721,6 +744,7 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                              filter_shape,
                               image_shape,
                                poolsize,
+                               pooltype,
                                stride,
                                max_out,
                                maxout_size,
@@ -737,6 +761,7 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                     filter_shape = filter_shape,
                      image_shape = image_shape,
                       poolsize = poolsize,
+                      pooltype = pooltype,
                       stride = stride,
                       max_out = max_out,
                       maxout_size = maxout_size,
@@ -900,7 +925,7 @@ class DropoutConv3DPoolLayer(Conv3DPoolLayer):
                     input = input, 
                     filter_shape = filter_shape,
                      image_shape = image_shape,
-                      poolsize = poolsize,
+                      poolsize = poolsize,                      
                       stride= stride,
                       max_out = max_out,
                       maxout_size = maxout_size,
@@ -927,6 +952,7 @@ class ConvolutionalLayers (object):
             nkerns,
             filter_size,
             pooling_size,
+            pooling_type,
             cnn_activations,
             conv_stride_size,
             cnn_dropout_rates,
@@ -963,6 +989,7 @@ class ConvolutionalLayers (object):
                                                 
         filt_size = filter_size[0]
         pool_size = pooling_size[0]
+        pool_type = pooling_type[0]
         stride    = conv_stride_size[0]
         batch_norm_layer = batch_norm[0]
         
@@ -996,7 +1023,7 @@ class ConvolutionalLayers (object):
         next_in = [ input_size[0], input_size[1], input_size[2] ]
         stack_size = 1 
         param_counter = 0 
- 
+
         if len(filt_size) == 2:                        
             self.dropout_conv_layers.append ( 
                             DropoutConv2DPoolLayer(
@@ -1005,6 +1032,7 @@ class ConvolutionalLayers (object):
                                     image_shape=(input_size[3], next_in[2] , next_in[0], next_in[1]),
                                     filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
+                                    pooltype = pool_type,
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,
@@ -1022,6 +1050,7 @@ class ConvolutionalLayers (object):
                                     image_shape=(input_size[3], next_in[2] , next_in[0], next_in[1]),
                                     filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
+                                    pooltype = pool_type,
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,
@@ -1041,7 +1070,7 @@ class ConvolutionalLayers (object):
                                     input = first_layer_input if mean_subtract is False else mean_sub_input,
                                     image_shape=(input_size[3], next_in[2] , stack_size, next_in[0], next_in[1]),
                                     filter_shape=(nkerns[0], filt_size[0] , stack_size, filt_size[1], filt_size[2]),
-                                    poolsize=pool_size,      
+                                    poolsize=pool_size,                                         
                                     stride = stride,                                   
                                     max_out = max_out,
                                     maxout_size = max_out_size,
@@ -1089,6 +1118,7 @@ class ConvolutionalLayers (object):
             
             filt_size = filter_size[layer+1]
             pool_size = pooling_size[layer+1]
+            pool_type = pooling_type[layer+1]
             stride    = conv_stride_size[layer +1 ]
             batch_norm_layer = batch_norm [layer + 1]
             if retrain_params is not None:
@@ -1122,6 +1152,7 @@ class ConvolutionalLayers (object):
                                     image_shape=(input_size[3], next_in[2], next_in[0], next_in[1]),
                                     filter_shape=(nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
                                     poolsize=pool_size,
+                                    pooltype = pool_type,
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,
@@ -1140,6 +1171,7 @@ class ConvolutionalLayers (object):
                                     image_shape=(input_size[3], next_in[2], next_in[0], next_in[1]),
                                     filter_shape=(nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
+                                    pooltype = pool_type,
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,

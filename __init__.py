@@ -30,7 +30,7 @@ def run_cnn(
     net.train( n_epochs = n_epochs, 
                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
-                 verbose = verbose )          
+                 verbose = verbose )   
     net.test( verbose = verbose )                                     
     net.save_network ()   
              
@@ -64,8 +64,8 @@ if __name__ == '__main__':
                     }   
                                                                                                                             
     optimization_params = {
-                            "mom"                         	: (0.5, 0.99, 100)                      
-                            "mom_type"                          : 2,                         
+                            "mom"                         	    : (0.5, 0.99, 100),                      
+                            "mom_type"                          : 1,                         
                             "initial_learning_rate"             : 0.001,
                             "ft_learning_rate"                  : 0.0001,    
                             "learning_rate_decay"               : 0.005,
@@ -84,19 +84,20 @@ if __name__ == '__main__':
                     "cnn_dropout"                       : False,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],
-                    "num_nodes"                         : [ 400  ],                                     
+                    "num_nodes"                         : [ 800  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ ],             
-                    "cnn_batch_norm"                    : [ ],
+                    "cnn_activations"                   : [ ReLU, ReLU, ReLU ],             
+                    "cnn_batch_norm"                    : [ True, True, True],
                     "mlp_batch_norm"                    : True,
-                    "nkerns"                            : [ ],              
-                    "filter_size"                       : [ ],
-                    "pooling_size"                      : [ ],
-                    "conv_stride_size"                  : [ ],
-                    "cnn_maxout"                        : [ ],                    
+                    "nkerns"                            : [ 20, 50, 50 ],              
+                    "filter_size"                       : [ (5,5), (5,5), (3,3) ],
+                    "pooling_size"                      : [ (2,2), (2,2), (2,2) ],
+                    "pooling_type"                      : [ 1, 1, 1 ],      # 0 = maxpool_same_size 1 = maxpool, 2 = sumpool                                                                          
+                    "conv_stride_size"                  : [ (2,2), (2,2), (1,1) ],
+                    "cnn_maxout"                        : [ 1, 1, 1 ],                    
                     "mlp_maxout"                        : [ 1 ],
-                    "cnn_dropout_rates"                 : [ ],
+                    "cnn_dropout_rates"                 : [ 0.5, 0.5, 0.5 ],
                     "random_seed"                       : 23455, 
                     "mean_subtract"                     : False,
                     "use_bias"                          : True,                    
@@ -105,15 +106,15 @@ if __name__ == '__main__':
                  }                          
 
     # other loose parameters. 
-    n_epochs = 100
+    n_epochs = 3
     validate_after_epochs = 1
-    ft_epochs = 100
-    verbose = False 
+    ft_epochs = 2
+    verbose = True 
     
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_24340", 
+                    dataset                 = "_datasets/_dataset_57689", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

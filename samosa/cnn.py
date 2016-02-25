@@ -18,8 +18,8 @@ from theano.ifelse import ifelse
 # CNN code packages
 import core
 import util
-import dataset
-
+import dataset   
+    
 # From the Theano Tutorials
 def shared_dataset(data_xy, n_classes, borrow=True, svm_flag = True):
 
@@ -81,7 +81,8 @@ class cnn_mlp(object):
         self.max_out                         = arch_params [ "max_out" ] 
         self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
         self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
-        self.use_bias                        = arch_params [ "use_bias" ]           
+        self.use_bias                        = arch_params [ "use_bias" ]  
+        self.pooling_type                    = arch_params [ "pooling_type"]         
 
         self.retrain_params = retrain_params
         self.init_params    = init_params 
@@ -172,6 +173,7 @@ class cnn_mlp(object):
                                                     nkerns = self.nkerns,
                                                     filter_size = self.filter_size,
                                                     pooling_size = self.pooling_size,
+                                                    pooling_type = self.pooling_type,
                                                     cnn_activations = self.cnn_activations,
                                                     conv_stride_size = self.conv_stride_size,
                                                     cnn_dropout_rates = self.cnn_dropout_rates,
@@ -472,7 +474,9 @@ class cnn_mlp(object):
         if not os.path.exists('../results/'):
             os.makedirs ('../results')        
         assert self.batch_size >= self.n_visual_images
-                
+        
+
+                    
     # TRAIN 
     def validate(self, epoch, verbose = True):
         validation_losses = 0.   
