@@ -14,9 +14,9 @@ from theano.ifelse import ifelse
 from theano.tensor.signal.pool import Pool as DownsampleFactorMax
 from theano.tensor.signal.pool import pool_2d 
 from theano.tensor.signal.pool import max_pool_2d_same_size 
-
 from theano.tensor.nnet.conv3d2d import conv3d
 
+from theano.tensor.nnet.neighbours import images2neibs
 
 #### rectified linear unit
 def ReLU(x, alpha = 0):
@@ -47,18 +47,16 @@ def Squared(x):
 ### maxouts   
 def max1d (x,i,stride):
     return x[:,i::stride]
+    
 def max2d (x,i,stride):
     return x[:,i::stride,:,:]
     
 def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
     """ 
-        max_out =1 Ian Goodfellow et al. " Maxout Networks " on arXiv. (jmlr)
-        
+        max_out =1 Ian Goodfellow et al. " Maxout Networks " on arXiv. (jmlr)        
         max_out =2, max_out = 3, Yu, Dingjun, et al. "Mixed Pooling for Convolutional Neural Networks." Rough Sets and Knowledge 
         Technology. Springer International Publishing, 2014. 364-375.
-
-        Same is also implemeted in the MLP layers also.
-        
+        Same is also implemeted in the MLP layers also.        
     """   
     if dimension == 1:
         maxing = max1d
@@ -66,8 +64,7 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
         maxing = max2d
         
     if max_out_flag == 0:   # Do nothing
-        output = x
-        
+        output = x        
     elif max_out_flag == 1:  # Do maxout network.
         maxout_out = None        
         for i in xrange(maxout_size):
@@ -76,8 +73,7 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
                 maxout_out = temp                                                  
             else:                                                               
                 maxout_out = T.maximum(maxout_out, temp)  
-        output = maxout_out   
-            
+        output = maxout_out               
     elif max_out_flag == 2:  # Do meanout network.
         maxout_out = None                                                       
         for i in xrange(maxout_size):                                            
@@ -86,8 +82,7 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
                 maxout_out = temp                                                  
             else:                                                               
                 maxout_out = (maxout_out*(i+1)+temp)/(i+2)   
-        output = maxout_out    
-        
+        output = maxout_out            
     elif max_out == 3: # Do mixout network.
         maxout_out = None
         maxout_mean = None
@@ -100,13 +95,24 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
                 maxout_out = temp
             else:                                                               
                 maxout_mean = (maxout_out*(i+1)+temp)/(i+2) 
-                maxout_max = T.maximum(maxout_out, temp) 
-                
+                maxout_max = T.maximum(maxout_out, temp)                 
         lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
         maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
         output = maxout_out    
     return output    
             
+
+def randpool ( input, ds, ignore_border = False ):
+    rng = numpy.random.RandomState(24546)
+    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])
+    
+    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+    pos = srng.random_integers(size=(1,1), low = 0, high = (ds[0] * ds[1])-1)
+    neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
+    pooled_vectors = neib[:,pos]
+    return T.reshape(pooled_vectors, out_shp, ndim = 4 )
+    
+                
 #From the Theano Tutorials
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
 
@@ -128,66 +134,30 @@ def shared_dataset(data_xy, borrow=True, svm_flag = True):
 
    
 def maxpool_3D(input, ds, ignore_border=False):   
-    #input.dimshuffle (0, 2, 1, 3, 4)   # convert to make video in back. 
-    # no need to reshuffle. 
     if input.ndim < 3:
         raise NotImplementedError('max_pool_3d requires a dimension >= 3')
-
-    # extract nr dimensions
     vid_dim = input.ndim
-    # max pool in two different steps, so we can use the 2d implementation of 
-    # downsamplefactormax. First maxpool frames as usual. 
-    # Then maxpool the time dimension. Shift the time dimension to the third 
-    # position, so rows and cols are in the back
-
-
-    # extract dimensions
     frame_shape = input.shape[-2:]
-    
-    # count the number of "leading" dimensions, store as dmatrix
     batch_size = T.prod(input.shape[:-2])
     batch_size = T.shape_padright(batch_size,1)
-    
-    # store as 4D tensor with shape: (batch_size,1,height,width)
-    new_shape = T.cast(T.join(0, batch_size,
-                                        T.as_tensor([1,]), 
-                                        frame_shape), 'int32')
+    new_shape = T.cast(T.join(0, batch_size, T.as_tensor([1,]),  frame_shape), 'int32')
     input_4D = T.reshape(input, new_shape, ndim=4)
-
-    # downsample mini-batch of videos in rows and cols
-    op = DownsampleFactorMax((ds[1],ds[2]), ignore_border)          # so second and third dimensions of ds are for height and width
+    op = DownsampleFactorMax((ds[1],ds[2]), ignore_border)       
     output = op(input_4D)
-    # restore to original shape                                     
     outshape = T.join(0, input.shape[:-2], output.shape[-2:])
     out = T.reshape(output, outshape, ndim=input.ndim)
-
-    # now maxpool time
-    # output (time, rows, cols), reshape so that time is in the back
     shufl = (list(range(vid_dim-3)) + [vid_dim-2]+[vid_dim-1]+[vid_dim-3])
     input_time = out.dimshuffle(shufl)
-    # reset dimensions
     vid_shape = input_time.shape[-2:]
-    
-    # count the number of "leading" dimensions, store as dmatrix
     batch_size = T.prod(input_time.shape[:-2])
     batch_size = T.shape_padright(batch_size,1)
-    
-    # store as 4D tensor with shape: (batch_size,1,width,time)
-    new_shape = T.cast(T.join(0, batch_size,
-                                        T.as_tensor([1,]), 
-                                        vid_shape), 'int32')
+    new_shape = T.cast(T.join(0, batch_size, T.as_tensor([1,]),vid_shape), 'int32')
     input_4D_time = T.reshape(input_time, new_shape, ndim=4)
-    # downsample mini-batch of videos in time
-    op = DownsampleFactorMax((1,ds[0]), ignore_border)            # Here the time dimension is downsampled. 
+    op = DownsampleFactorMax((1,ds[0]), ignore_border)        
     outtime = op(input_4D_time)
-    # output 
-    # restore to original shape (xxx, rows, cols, time)
     outshape = T.join(0, input_time.shape[:-2], outtime.shape[-2:])
     shufl = (list(range(vid_dim-3)) + [vid_dim-1]+[vid_dim-3]+[vid_dim-2])
-    #rval = T.reshape(outtime, outshape, ndim=input.ndim).dimshuffle(shufl)
     return T.reshape(outtime, outshape, ndim=input.ndim).dimshuffle(shufl)
-    #rval.dimshuffle ( 0, 2, 1, 3, 4 )                      
-    # return rval 
     
              
 # SVM layer from the discussions in this group
@@ -566,9 +536,6 @@ class MLP(object):
 
             self.dropout_hinge_loss = self.dropout_layers[-1].svm_cost
             self.hinge_loss = self.layers[-1].svm_cost
-
-        # Use the negative log likelihood of the logistic regression layer as
-        # the objective.
         
         self.dropout_errors = self.dropout_layers[-1].errors
         self.errors = self.layers[-1].errors
@@ -710,6 +677,12 @@ class Conv2DPoolLayer(object):
                 mode = 'sum'
                 )                
                 
+        elif pooltype == 3:
+            pool_out = randpool(
+                input = conv_out,
+                ds = poolsize,
+                ignore_border = False,                
+                )
 
         # self.co = conv_out
         # self.po = pool_out

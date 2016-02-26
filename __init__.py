@@ -31,6 +31,7 @@ def run_cnn(
                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
                  verbose = verbose )   
+    net.convert2maxpool(verbose = verbose)
     net.test( verbose = verbose )                                     
     net.save_network ()   
              
@@ -84,7 +85,7 @@ if __name__ == '__main__':
                     "cnn_dropout"                       : False,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],
-                    "num_nodes"                         : [ 800  ],                                     
+                    "num_nodes"                         : [ 450  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
                     "cnn_activations"                   : [ ReLU, ReLU, ReLU ],             
@@ -92,9 +93,9 @@ if __name__ == '__main__':
                     "mlp_batch_norm"                    : True,
                     "nkerns"                            : [ 20, 50, 50 ],              
                     "filter_size"                       : [ (5,5), (5,5), (3,3) ],
-                    "pooling_size"                      : [ (2,2), (2,2), (2,2) ],
-                    "pooling_type"                      : [ 1, 1, 1 ],      # 0 = maxpool_same_size 1 = maxpool, 2 = sumpool                                                                          
-                    "conv_stride_size"                  : [ (2,2), (2,2), (1,1) ],
+                    "pooling_size"                      : [ (2,2), (2,2), (1,1) ],
+                    "pooling_type"                      : [ 3,     3,     3     ],                                                                                
+                    "conv_stride_size"                  : [ (1,1), (1,1), (1,1) ],
                     "cnn_maxout"                        : [ 1, 1, 1 ],                    
                     "mlp_maxout"                        : [ 1 ],
                     "cnn_dropout_rates"                 : [ 0.5, 0.5, 0.5 ],
