@@ -116,11 +116,12 @@ def randpool ( input, ds, ignore_border = False ):
 def milpool ( input, ds, ignore_border = False ):
     # Still a little buggy 
     out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])
+    print " ... currently MILPOOl doesn't work. Dont try !!" 
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
     temp = neib / neib.max( axis = -1 ).reshape(neib.shape[0],neib.shape[1],neib.shape[2],1)
     temp = 1 - temp 
     temp = temp.prod( axis = -1 )
-    temp = temp = 1 - temp
+    temp = temp = 1 - temp    
     return T.reshape(temp, out_shp, ndim = 4 )
     
 #From the Theano Tutorials
@@ -593,9 +594,8 @@ class Conv2DPoolLayer(object):
         channels   = image_shape[1] 
         width      = image_shape[3]
         height     = image_shape[2]
-        
-        next_height = int(floor((height - filter_shape[2] + 1))) / (poolsize[0] * stride[0])
-        next_width = int(floor((width - filter_shape[3] + 1))) / (poolsize[1] * stride[1]) 
+        next_height = int(ceil((height - filter_shape[2] + 1) / float((poolsize[0] * stride[0]) )))
+        next_width = int(ceil((width - filter_shape[3] + 1) / float((poolsize[1] * stride[1]) ))) 
         if pooltype == 0:
             next_height = int(floor((height - filter_shape[2] + 1))/ stride[0]) 
             next_width = int(floor((width - filter_shape[3] + 1)) / stride[1])             
@@ -687,7 +687,7 @@ class Conv2DPoolLayer(object):
                 mode = 'sum'
                 )                
                 
-        elif pooltype == 3:
+        elif pooltype == 3:           
             pool_out = randpool(
                 input = conv_out,
                 ds = poolsize,
@@ -790,8 +790,8 @@ class Conv3DPoolLayer(object):
         height     = image_shape[3]
 
         
-        next_height = int(floor((height - filter_shape[3] + 1))) / poolsize[1]
-        next_width = int(floor((width - filter_shape[4] + 1))) / poolsize[2] 
+        next_height = int(ceil((height - filter_shape[3] + 1) / poolsize[1] ))
+        next_width = int(ceil((width - filter_shape[4] + 1) / poolsize[2] ))
         kern_shape = int(floor(filter_shape[0]/maxout_size))     
 
         #output_size = ( batchsize, bias_shape, next_height , next_width )
