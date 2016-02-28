@@ -122,9 +122,8 @@ def meanpool ( input, ds, ignore_border = False ):
 def milpool ( input, ds, ignore_border = False ):
     # Still a little buggy 
     out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])
-    print " ... currently MILPOOl doesn't work. Dont try !!" 
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
-    temp = neib / neib.max( axis = -1 ).reshape(neib.shape[0],neib.shape[1],neib.shape[2],1)
+    temp = neib / neib.max( axis = -1 , keepdims = True) # normalize
     temp = 1 - temp 
     temp = temp.prod( axis = -1 )
     temp = temp = 1 - temp    
