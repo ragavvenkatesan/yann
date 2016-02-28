@@ -99,19 +99,25 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
         lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
         maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
         output = maxout_out    
-    return output    
-            
+    return output                
 
 def randpool ( input, ds, ignore_border = False ):
     rng = numpy.random.RandomState(24546)
-    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])
-    
+    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])    
     srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
     pos = srng.random_integers(size=(1,1), low = 0, high = (ds[0] * ds[1])-1)
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
     pooled_vectors = neib[:,pos]
-
     return T.reshape(pooled_vectors, out_shp, ndim = 4 )
+    
+def meanpool ( input, ds, ignore_border = False ):
+    rng = numpy.random.RandomState(24546)
+    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])    
+    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+    pos = srng.random_integers(size=(1,1), low = 0, high = (ds[0] * ds[1])-1)
+    neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
+    pooled_vectors = neib.mean( axis = - 1 )
+    return T.reshape(pooled_vectors, out_shp, ndim = 4 )    
    
 def milpool ( input, ds, ignore_border = False ):
     # Still a little buggy 
@@ -128,7 +134,6 @@ def milpool ( input, ds, ignore_border = False ):
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
 
 	data_x, data_y = data_xy
-
 	shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
 	shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX),  borrow=borrow)
 	                                 
@@ -680,12 +685,11 @@ class Conv2DPoolLayer(object):
                 )
                 
         elif pooltype == 2:                
-            pool_out = pool_2d(
-                input=conv_out,
-                ds=poolsize,
+            pool_out = meanpool(
+                input = conv_out,
+                ds = poolsize,
                 ignore_border = False,                
-                mode = 'sum'
-                )                
+                )             
                 
         elif pooltype == 3:           
             pool_out = randpool(

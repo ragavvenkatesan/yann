@@ -26,12 +26,13 @@ def run_cnn(
                      init_params = None,
                      verbose =verbose ) 
     net.init_data ( dataset = dataset , outs = arch_params ["outs"], visual_params = visual_params, verbose = verbose )                                 
-    net.build_network(verbose = verbose)                             
+    net.build_network(verbose = verbose)   
     net.train( n_epochs = n_epochs, 
                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
                  verbose = verbose )   
-    net.convert2maxpool(verbose = verbose)
+    net.test( verbose = verbose )                                                                                    
+    net.convert2meanpool(verbose = verbose) 
     net.test( verbose = verbose )                                     
     net.save_network ()   
              
@@ -85,20 +86,20 @@ if __name__ == '__main__':
                     "cnn_dropout"                       : False,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],
-                    "num_nodes"                         : [ 450  ],                                     
+                    "num_nodes"                         : [ 800  ],                                     
                     "outs"                              : 10,                                                                                                                               
                     "svm_flag"                          : False,                                       
-                    "cnn_activations"                   : [ ReLU, ReLU, ReLU ],             
-                    "cnn_batch_norm"                    : [ True, True, True],
+                    "cnn_activations"                   : [ ReLU ],             
+                    "cnn_batch_norm"                    : [ True ],
                     "mlp_batch_norm"                    : True,
-                    "nkerns"                            : [ 20, 50, 50 ],              
-                    "filter_size"                       : [ (5,5), (5,5), (3,3) ],
-                    "pooling_size"                      : [ (2,2), (2,2), (1,1) ],
-                    "pooling_type"                      : [ 3,     3,     3     ],                                                                                
-                    "conv_stride_size"                  : [ (1,1), (1,1), (1,1) ],
-                    "cnn_maxout"                        : [ 1, 1, 1 ],                    
+                    "nkerns"                            : [ 20,  ],              
+                    "filter_size"                       : [ (5,5) ],
+                    "pooling_size"                      : [ (2,2) ],
+                    "pooling_type"                      : [ 3,    ],                                                                                
+                    "conv_stride_size"                  : [ (2,2) ],
+                    "cnn_maxout"                        : [ 1,    ],                    
                     "mlp_maxout"                        : [ 1 ],
-                    "cnn_dropout_rates"                 : [ 0.5, 0.5, 0.5 ],
+                    "cnn_dropout_rates"                 : [ 0.5 ],
                     "random_seed"                       : 23455, 
                     "mean_subtract"                     : False,
                     "use_bias"                          : True,                    
@@ -107,10 +108,10 @@ if __name__ == '__main__':
                  }                          
 
     # other loose parameters. 
-    n_epochs = 3
+    n_epochs = 2
     validate_after_epochs = 1
     ft_epochs = 2
-    verbose = True 
+    verbose = False 
     
     run_cnn(
                     arch_params             = arch_params,
@@ -122,7 +123,5 @@ if __name__ == '__main__':
                     n_epochs                = n_epochs,
                     ft_epochs               = ft_epochs, 
                     verbose                 = verbose ,                                                
-                )
-                
- 
+                )                 
     pdb.set_trace()                             
