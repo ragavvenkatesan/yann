@@ -478,6 +478,7 @@ class cnn_mlp(object):
     def convert2maxpool(self, verbose):
         pool_flag = False
         count = 0
+        pool_temp = self.pooling_type
         for pool in self.pooling_type:
             if pool > 1:    # only convert those that are not maxpool or maxpool_same_size 
                             # this is done to avoid recreating a network that is already maxpool only.
@@ -491,7 +492,9 @@ class cnn_mlp(object):
                                     "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
                                   } 
             self.init_params = self.params
-            self.build_network(verbose = verbose)             
+            self.build_network(verbose = verbose)
+            #reset it back
+            self.pooling_type = pool_temp             
         elif verbose is True:
             print "... no layer to be converted from randpool to maxpool"                    
                     

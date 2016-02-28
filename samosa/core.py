@@ -110,9 +110,19 @@ def randpool ( input, ds, ignore_border = False ):
     pos = srng.random_integers(size=(1,1), low = 0, high = (ds[0] * ds[1])-1)
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
     pooled_vectors = neib[:,pos]
+
     return T.reshape(pooled_vectors, out_shp, ndim = 4 )
+   
+def milpool ( input, ds, ignore_border = False ):
+    # Still a little buggy 
+    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])
+    neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
+    temp = neib / neib.max( axis = -1 ).reshape(neib.shape[0],neib.shape[1],neib.shape[2],1)
+    temp = 1 - temp 
+    temp = temp.prod( axis = -1 )
+    temp = temp = 1 - temp
+    return T.reshape(temp, out_shp, ndim = 4 )
     
-                
 #From the Theano Tutorials
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
 
@@ -684,6 +694,13 @@ class Conv2DPoolLayer(object):
                 ignore_border = False,                
                 )
 
+        elif pooltype == 4:
+            pool_out = milpool(
+                input = conv_out,
+                ds = poolsize,
+                ignore_border = False,                
+                )         
+                   
         # self.co = conv_out
         # self.po = pool_out
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
