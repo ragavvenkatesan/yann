@@ -112,7 +112,7 @@ def maxrandpool ( input, ds, p, ignore_border = False ):
     rng = numpy.random.RandomState(24546)
     out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])        
     srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
-    pos = srng.random_integers(size=(1,1), low = 0, high = p)
+    pos = srng.random_integers(size=(1,1), low = ds[0]*ds[1]-1-p, high = ds[0]*ds[1]-1)
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders') 
     neib = neib.sort(axis = -1) 
     pooled_vectors = neib[:,pos]   
@@ -541,10 +541,7 @@ class MLP(object):
             self.dropout_hinge_loss = self.dropout_layers[-1].svm_cost
             self.hinge_loss = self.layers[-1].svm_cost
         
-        self.dropout_errors = self.dropout_layers[-1].errors
         self.errors = self.layers[-1].errors
-
-        self.predicts_dropouts = self.layers[-1].y_pred
         self.predicts = self.layers[-1].y_pred
         
         self.params = []
@@ -681,7 +678,7 @@ class Conv2DPoolLayer(object):
                 )             
                          
         elif pooltype == 3: 
-            p = self.arch_params["p"]
+            p = maxrandpool_p
             assert p < poolsize[0]*poolsize[1] - 1         
             pool_out = maxrandpool(
                 input = conv_out,
