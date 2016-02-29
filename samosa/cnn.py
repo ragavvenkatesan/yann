@@ -82,7 +82,8 @@ class cnn_mlp(object):
         self.cnn_maxout                      = arch_params [ "cnn_maxout" ]   
         self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
         self.use_bias                        = arch_params [ "use_bias" ]  
-        self.pooling_type                    = arch_params [ "pooling_type"]         
+        self.pooling_type                    = arch_params [ "pooling_type"]  
+        self.max_rand_pool_p                 = arch_params [ "maxrandpool_p"]          
 
         self.retrain_params = retrain_params
         self.init_params    = init_params 
@@ -164,7 +165,7 @@ class cnn_mlp(object):
         
         ###########################################
         # Convolutional layers        
-        if not self.nkerns == []: # If there are some convolutional layers... 
+        if not self.nkerns == []: # If there are some convolutional layers...              
             self.ConvLayers = core.ConvolutionalLayers (      
                                                     input = (first_layer_input, mean_sub_input),
                                                     rng = self.rng,
@@ -174,6 +175,7 @@ class cnn_mlp(object):
                                                     filter_size = self.filter_size,
                                                     pooling_size = self.pooling_size,
                                                     pooling_type = self.pooling_type,
+                                                    maxrandpool_p = self.maxrandpool_p,
                                                     cnn_activations = self.cnn_activations,
                                                     conv_stride_size = self.conv_stride_size,
                                                     cnn_dropout_rates = self.cnn_dropout_rates,
@@ -476,51 +478,31 @@ class cnn_mlp(object):
         assert self.batch_size >= self.n_visual_images
         
     def convert2maxpool(self, verbose):
-        pool_flag = False
         count = 0
-        pool_temp = self.pooling_type
-        for pool in self.pooling_type:
-            if pool > 1:    # only convert those that are not maxpool or maxpool_same_size 
-                            # this is done to avoid recreating a network that is already maxpool only.
-                pool_flag = True
-                self.pooling_type[count] = 1        # set as max pool
-            count = count + 1            
-        if pool_flag is True:
-            print "... rebuilding net with maxpool"            
-            self.retrain_params = {
-                                    "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1),
-                                    "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
-                                  } 
-            self.init_params = self.params
-            self.build_network(verbose = verbose)
-            #reset it back
-            self.pooling_type = pool_temp             
-        elif verbose is True:
-            print "... no layer to be converted from randpool to maxpool"  
-            
+        pool_temp = self.pooling_type    
+        print "... rebuilding net with maxpool"            
+        self.retrain_params = {
+                                "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1),
+                                "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
+                                } 
+        self.init_params = self.params
+        self.build_network(verbose = verbose)
+        #reset it back
+        self.pooling_type = pool_temp             
+        
     def convert2meanpool(self, verbose):
-        pool_flag = False
         count = 0
         pool_temp = self.pooling_type
-        for pool in self.pooling_type:
-            if not pool == 0 and not pool == 2:    # only convert those that are not meanpool or maxpool_same_size 
-                            # this is done to avoid recreating a network that is already maxpool only.
-                pool_flag = True
-                self.pooling_type[count] = 2        # set as max pool
-            count = count + 1            
-        if pool_flag is True:
-            print "... rebuilding net with meanpool"            
-            self.retrain_params = {
-                                    "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1),
-                                    "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
-                                  } 
-            self.init_params = self.params
-            self.build_network(verbose = verbose)
-            #reset it back
-            self.pooling_type = pool_temp             
-        elif verbose is True:
-            print "... no layer to be converted from randpool to meanpool"                               
-                    
+        print "... rebuilding net with meanpool"            
+        self.retrain_params = {
+                                "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1),
+                                "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
+                                } 
+        self.init_params = self.params
+        self.build_network(verbose = verbose)
+        #reset it back
+        self.pooling_type = pool_temp             
+                          
     # TRAIN 
     def validate(self, epoch, verbose = True):
         validation_losses = 0.   

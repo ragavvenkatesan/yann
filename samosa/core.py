@@ -571,7 +571,7 @@ class Conv2DPoolLayer(object):
                          filter_shape,
                           image_shape,
                            poolsize,
-                           pooltype,
+                           pooltype,                           
                             stride,
                              max_out,
                               maxout_size,
@@ -581,6 +581,7 @@ class Conv2DPoolLayer(object):
                                   alpha = None,
                                    batch_norm = False,
                                     p = 0.5 ,
+                                     maxrandpool_p = 0,
                                      verbose = True):
                             
         batchsize  = image_shape[0]
@@ -734,7 +735,8 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                                   alpha = None,
                                   batch_norm = False,
                                  verbose = True,  
-                                  p = 0.5):
+                                  p = 0.5,
+                                  maxrandpool_p = 0,):
         super(DropoutConv2DPoolLayer, self).__init__(
                  rng = rng,
                     input = input, 
@@ -750,6 +752,7 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                         b = b,
                         alpha = alpha,
                         batch_norm = batch_norm,
+                        maxrandpool_p = maxrandpool_p,
                         verbose = False)
                         
         self.output = _dropout_from_layer(rng, self.output, p=p)          
@@ -933,6 +936,7 @@ class ConvolutionalLayers (object):
             filter_size,
             pooling_size,
             pooling_type,
+            maxrandpool_p,
             cnn_activations,
             conv_stride_size,
             cnn_dropout_rates,
@@ -972,6 +976,7 @@ class ConvolutionalLayers (object):
         pool_type = pooling_type[0]
         stride    = conv_stride_size[0]
         batch_norm_layer = batch_norm[0]
+        maxrandp = maxrandpool_p[0] 
         
         if retrain_params is not None:
             curr_copy = copy_from_old[0] 
@@ -1013,6 +1018,7 @@ class ConvolutionalLayers (object):
                                     filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
                                     pooltype = pool_type,
+                                    maxrandpool_p = maxrandp,
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,
@@ -1031,6 +1037,7 @@ class ConvolutionalLayers (object):
                                     filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
                                     pooltype = pool_type,
+                                    maxrandpool_p = maxrandp,                                    
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,
@@ -1099,6 +1106,7 @@ class ConvolutionalLayers (object):
             filt_size = filter_size[layer+1]
             pool_size = pooling_size[layer+1]
             pool_type = pooling_type[layer+1]
+            maxrandp  = maxrandpool_p[layer+1]            
             stride    = conv_stride_size[layer +1 ]
             batch_norm_layer = batch_norm [layer + 1]
             if retrain_params is not None:
@@ -1133,6 +1141,7 @@ class ConvolutionalLayers (object):
                                     filter_shape=(nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
                                     poolsize=pool_size,
                                     pooltype = pool_type,
+                                    maxrandpool_p = maxrandp,                                    
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,
@@ -1152,6 +1161,7 @@ class ConvolutionalLayers (object):
                                     filter_shape=(nkerns[layer+1], next_in[2], filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
                                     pooltype = pool_type,
+                                    maxrandpool_p = maxrandp,                                    
                                     stride = stride,
                                     max_out = max_out,
                                     maxout_size = max_out_size,
