@@ -509,7 +509,7 @@ class cnn_mlp(object):
                 self.pooling_type[count] = 2        # set as max pool
             count = count + 1            
         if pool_flag is True:
-            print "... rebuilding net with maxpool"            
+            print "... rebuilding net with meanpool"            
             self.retrain_params = {
                                     "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1),
                                     "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
@@ -519,7 +519,7 @@ class cnn_mlp(object):
             #reset it back
             self.pooling_type = pool_temp             
         elif verbose is True:
-            print "... no layer to be converted from randpool to maxpool"                               
+            print "... no layer to be converted from randpool to meanpool"                               
                     
     # TRAIN 
     def validate(self, epoch, verbose = True):

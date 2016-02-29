@@ -100,24 +100,23 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
         maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
         output = maxout_out    
     return output                
-
-def randpool ( input, ds, ignore_border = False ):
-    rng = numpy.random.RandomState(24546)
-    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])    
-    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
-    pos = srng.random_integers(size=(1,1), low = 0, high = (ds[0] * ds[1])-1)
-    neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
-    pooled_vectors = neib[:,pos]
-    return T.reshape(pooled_vectors, out_shp, ndim = 4 )
     
 def meanpool ( input, ds, ignore_border = False ):
-    rng = numpy.random.RandomState(24546)
     out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])    
-    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
-    pos = srng.random_integers(size=(1,1), low = 0, high = (ds[0] * ds[1])-1)
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
     pooled_vectors = neib.mean( axis = - 1 )
     return T.reshape(pooled_vectors, out_shp, ndim = 4 )    
+    
+def maxrandpool ( input, ds, p, ignore_border = False ):
+    """ provide random pooling among the top 'p' sorted outputs p = 0 is maxpool """
+    rng = numpy.random.RandomState(24546)
+    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])        
+    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+    pos = srng.random_integers(size=(1,1), low = 0, high = p)
+    neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders') 
+    neib = neib.sort(axis = -1) 
+    pooled_vectors = neib[:,pos]   
+    return T.reshape(pooled_vectors, out_shp, ndim = 4 )           
     
 #From the Theano Tutorials
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
@@ -679,15 +678,17 @@ class Conv2DPoolLayer(object):
                 ds = poolsize,
                 ignore_border = False,                
                 )             
-                
-        elif pooltype == 3:           
-            pool_out = randpool(
+                         
+        elif pooltype == 3: 
+            p = self.arch_params["p"]
+            assert p < poolsize[0]*poolsize[1] - 1         
+            pool_out = maxrandpool(
                 input = conv_out,
                 ds = poolsize,
-                ignore_border = False,                
+                p = p,                               
+                ignore_border = False
                 )
-         
-                   
+                            
         # self.co = conv_out
         # self.po = pool_out
         # The above statements are used for debugging and probing purposes. They have no use and can be commented out.
