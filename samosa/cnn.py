@@ -598,7 +598,7 @@ class cnn_mlp(object):
         early_termination = False
         self.cost_saved = []
         iteration= 0        
-        
+
         temp_params = self.params
         #self.print_net(epoch = 0, display_flag = self.display_flag)
         start_time_main = time.clock()

@@ -118,16 +118,6 @@ def meanpool ( input, ds, ignore_border = False ):
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
     pooled_vectors = neib.mean( axis = - 1 )
     return T.reshape(pooled_vectors, out_shp, ndim = 4 )    
-   
-def milpool ( input, ds, ignore_border = False ):
-    # Still a little buggy 
-    out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])
-    neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
-    temp = neib / neib.max( axis = -1 , keepdims = True) # normalize
-    temp = 1 - temp 
-    temp = temp.prod( axis = -1 )
-    temp = temp = 1 - temp    
-    return T.reshape(temp, out_shp, ndim = 4 )
     
 #From the Theano Tutorials
 def shared_dataset(data_xy, borrow=True, svm_flag = True):
@@ -696,13 +686,7 @@ class Conv2DPoolLayer(object):
                 ds = poolsize,
                 ignore_border = False,                
                 )
-
-        elif pooltype == 4:
-            pool_out = milpool(
-                input = conv_out,
-                ds = poolsize,
-                ignore_border = False,                
-                )         
+         
                    
         # self.co = conv_out
         # self.po = pool_out
@@ -729,9 +713,11 @@ class Conv2DPoolLayer(object):
         self.output = activation(self.output)
         
         # store parameters of this layer
-        self.params = [self.W, self.b] if batch_norm is False else [self.W, self.b, self.alpha]                
+        self.params = [self.W, self.b] 
+        if batch_norm is True: 
+            self.params.append(self.alpha)
         self.output_size = [next_height, next_width, kern_shape]
-                            
+    
 class DropoutConv2DPoolLayer(Conv2DPoolLayer):
     def __init__(self, rng, input,
                              filter_shape,
