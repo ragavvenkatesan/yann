@@ -19,28 +19,32 @@ def setup( data_params, outs ):
                    
     ## Boiler Plate ## 
 if __name__ == '__main__':
-              
+    
+    # Just enter dataset parameters as defined in how to.          
     data_params = {
                    "type"               : 'skdata',                                   
-                   "loc"                : 'mnist',                                          
-                   "batch_size"         : 500,                                     
+                   "loc"                : 'caltech101',                                          
+                   "batch_size"         : 72,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 100,                                      
-                   "batches2test"       : 20,                                      
-                   "batches2validate"   : 20,                                        
-                   "height"             : 28,                                       
-                   "width"              : 28,                                       
-                   "channels"           : 1                                       
+                   "batches2train"      : 63,                                      
+                   "batches2test"       : 32,                                      
+                   "batches2validate"   : 32,                                        
+                   "height"             : 224,                                       
+                   "width"              : 224,                                       
+                   "channels"           : 3                                       
                   }
-                  
+    
+    # parameters relating to preprocessing.
     preprocess_params = { 
                             "normalize"     : True,
                             "GCN"           : False,
                             "ZCA"           : False,
                             "gray"          : False,
                         }
-                  
-    setup( data_params = data_params, outs = 10 )
+          
+    # run and it will create a directory with a random name. 
+    # Ensure that _datasets directory exist in the directory from which this is being called from.
+    setup( data_params = data_params, outs = 102 )
     
     """
     # If you want to modify data_params. 

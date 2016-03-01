@@ -20,6 +20,8 @@ import core
 import util
 import dataset   
     
+    
+    
 # From the Theano Tutorials
 def shared_dataset(data_xy, n_classes, borrow=True, svm_flag = True):
 
@@ -74,6 +76,7 @@ class cnn_mlp(object):
         self.filter_size                     = arch_params [ "filter_size" ]
         self.pooling_size                    = arch_params [ "pooling_size" ]
         self.conv_stride_size                = arch_params [ "conv_stride_size" ]
+        self.conv_pad                        = arch_params [ "conv_pad" ]        
         self.num_nodes                       = arch_params [ "num_nodes" ]
         random_seed                          = arch_params [ "random_seed" ]
         self.svm_flag                        = arch_params [ "svm_flag" ]   
@@ -180,6 +183,7 @@ class cnn_mlp(object):
                                                     cnn_activations = self.cnn_activations,
                                                     conv_stride_size = self.conv_stride_size,
                                                     cnn_dropout_rates = self.cnn_dropout_rates,
+                                                    conv_pad = self.conv_pad,
                                                     batch_norm = self.batch_norm,         
                                                     max_out = self.max_out,
                                                     cnn_maxout = self.cnn_maxout,
@@ -541,7 +545,7 @@ class cnn_mlp(object):
             
             training_losses = [self.training_accuracy(i) for i in xrange(self.batches2train)]
             self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]            
-                                    
+            print "\n\n\n\n"                                        
             print "...      -> epoch " + str(epoch) + ", cost : " + str(self.cost_saved[-1]) + " learning_rate : " + str(self.eta.get_value(borrow=True))
             print "                         momentum            : " +str(self.momentum_value(epoch)) 
             if self.this_validation_loss[-1] < self.best_validation_loss:
