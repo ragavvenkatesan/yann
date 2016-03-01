@@ -83,12 +83,13 @@ class cnn_mlp(object):
         self.mlp_maxout                      = arch_params [ "mlp_maxout" ]
         self.use_bias                        = arch_params [ "use_bias" ]  
         self.pooling_type                    = arch_params [ "pooling_type"]  
-        self.max_rand_pool_p                 = arch_params [ "maxrandpool_p"]          
+        self.maxrandpool_p                   = arch_params [ "maxrandpool_p"]          
 
         self.retrain_params = retrain_params
         self.init_params    = init_params 
         
-        self.ft_learning_rate = self.optim_params["ft_learning_rate"]
+        self.ft_learning_rate = self.optim_params["learning_rate"][1] 
+        self.learning_rate_decay = self.optim_params["learning_rate"][2]      
                 
     def save_network( self ):          # for others use only data_params or optimization_params
 
@@ -270,8 +271,8 @@ class cnn_mlp(object):
         # Build the expresson for the categorical cross entropy function.
         start_time = time.clock()        
         self.objective = self.optim_params["objective"]
-        self.l1_reg = self.optim_params["l1_reg"]
-        self.l2_reg = self.optim_params["l2_reg"]        
+        self.l1_reg = self.optim_params["reg"][0]
+        self.l2_reg = self.optim_params["reg"][1]        
         if self.svm_flag is False:
             if self.objective == 0:
                 cost = self.MLPlayers.negative_log_likelihood( self.y )
@@ -367,7 +368,7 @@ class cnn_mlp(object):
                         
         self.decay_learning_rate = theano.function(
                inputs=[],          # Just updates the learning rates. 
-               updates={self.eta: self.eta -  self.eta * self.optim_params["learning_rate_decay"] }
+               updates={self.eta: self.eta -  self.eta * self.learning_rate_decay }
                 )    
         self.momentum_value = theano.function ( 
                             inputs =[self.epoch],

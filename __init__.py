@@ -31,9 +31,7 @@ def run_cnn(
                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
                  verbose = verbose )   
-    net.test( verbose = verbose )                                                                                    
-    net.convert2meanpool(verbose = verbose) 
-    net.test( verbose = verbose )                                     
+    net.test( verbose = verbose )                                        
     net.save_network ()   
              
                            
@@ -66,23 +64,16 @@ if __name__ == '__main__':
                     }   
                                                                                                                             
     optimization_params = {
-                            "mom"                         	    : (0.5, 0.99, 100),                      
-                            "mom_type"                          : 1,                         
-                            "initial_learning_rate"             : 0.001,
-                            "ft_learning_rate"                  : 0.0001,    
-                            "learning_rate_decay"               : 0.005,
-                            "l1_reg"                            : 0.000,                     
-                            "l2_reg"                            : 0.000,                    
-                            "ada_grad"                          : False,
-                            "rms_prop"                          : True,
-                            "rms_rho"                           : 0.9,                      
-                            "rms_epsilon"                       : 1e-7,                     
-                            "fudge_factor"                      : 1e-7,                    
-                            "objective"                         : 1,    
+                            "mom"                         	    : (0.5, 0.99, 100), # (mom_start, momentum_end, momentum_interval)                     
+                            "mom_type"                          : 1,                # 0-no mom, 1-polyak, 2-nestrov          
+                            "learning_rate"                     : (0.001,0.0001, 0.05 ),          # (initial_learning_rate, ft_learning_rate, annealing)
+                            "reg"                               : (0.000,0.000),    # l1_coeff, l2_coeff                                
+                            "optim_type"                        : 3,                # 0-SGD, 1-Adagrad, 2-RmsProp, 3-Adam
+                            "objective"                         : 1,                # 0-negative log likelihood, 1-categorical cross entropy, 2-binary cross entropy
                             }        
 
     arch_params = {
-                    "mlp_activations"                   : [ ReLU ],
+                    "mlp_activations"                   : [ ReLU ],                     
                     "cnn_dropout"                       : False,
                     "mlp_dropout"                       : True,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],
@@ -92,11 +83,12 @@ if __name__ == '__main__':
                     "cnn_activations"                   : [ ReLU ],             
                     "cnn_batch_norm"                    : [ True ],
                     "mlp_batch_norm"                    : True,
-                    "nkerns"                            : [ 20,  ],              
+                    "nkerns"                            : [ 20,   ],              
                     "filter_size"                       : [ (5,5) ],
                     "pooling_size"                      : [ (2,2) ],
-                    "pooling_type"                      : [ 3,    ],                                                                                
-                    "conv_stride_size"                  : [ (2,2) ],
+                    "pooling_type"                      : [ 1,    ],
+                    "maxrandpool_p"                     : [ 1,    ],                                                                                                    
+                    "conv_stride_size"                  : [ (1,1) ],
                     "cnn_maxout"                        : [ 1,    ],                    
                     "mlp_maxout"                        : [ 1 ],
                     "cnn_dropout_rates"                 : [ 0.5 ],

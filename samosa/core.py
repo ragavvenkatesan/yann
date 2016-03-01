@@ -1245,20 +1245,13 @@ class optimizer(object):
         self.mom_end                         = optimization_params [ "mom" ][1]
         self.mom_epoch_interval              = optimization_params [ "mom" ][2]
         self.mom_type                        = optimization_params [ "mom_type" ]
-        self.initial_learning_rate           = optimization_params [ "initial_learning_rate" ]  
-        self.ft_learning_rate                = optimization_params [ "ft_learning_rate" ]          
-        self.learning_rate_decay             = optimization_params [ "learning_rate_decay" ] 
-        self.ada_grad                        = optimization_params [ "ada_grad" ]   
-        self.l1_reg                          = optimization_params [ "l1_reg" ]
-        self.l2_reg                          = optimization_params [ "l2_reg" ]
-        self.rms_prop                        = optimization_params [ "rms_prop" ]
-        self.rms_rho                         = optimization_params [ "rms_rho" ]
-        self.objective                       = optimization_params [ "objective" ]  
-              
-        if self.ada_grad is True:
-            assert self.rms_prop is False
-        elif self.rms_prop is True:
-            assert self.ada_grad is False
+        self.initial_learning_rate           = optimization_params [ "learning_rate" ][0]  
+        self.ft_learning_rate                = optimization_params [ "learning_rate" ][1]          
+        self.learning_rate_decay             = optimization_params [ "learning_rate" ][2] 
+        self.optim_type                      = optimization_params [ "optim_type" ]   
+        self.l1_reg                          = optimization_params [ "reg" ][0]
+        self.l2_reg                          = optimization_params [ "reg" ][1]
+        self.objective                       = optimization_params [ "objective" ]               
                         
         if verbose is True:
             print "... estimating gradients"
@@ -1280,9 +1273,11 @@ class optimizer(object):
         # accumulate gradients for adagrad
          
         grad_acc =[]
+        grad_acc2= []
         for param in params:
             eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)   
             grad_acc.append(theano.shared(eps, borrow=True))
+            grad_acc2.append(theano.shared(eps, borrow=True))
     
         # accumulate velocities for momentum
         velocities = []
@@ -1293,11 +1288,18 @@ class optimizer(object):
         # create updates for each combination of stuff 
         updates = OrderedDict()
         print_flag = False
-        
+                               
+        timestep = theano.shared(numpy.asarray(0., dtype=theano.config.floatX))
+        delta_t = timestep + 1
+        b1=0.9                       # for ADAM
+        b2=0.999                     # for ADAM
+        a = T.sqrt (   1-  b2  **  delta_t )   /   (   1   -   b1  **  delta_t )     # for ADAM
+        fudge_factor = 1e-7
+                
         if verbose is True:
             print "... building back prop network" 
-        for velocity, gradient, acc , param in zip(velocities, gradients, grad_acc, params):        
-            if self.ada_grad is True:
+        for velocity, gradient, acc , acc2, param in zip(velocities, gradients, grad_acc, grad_acc2, params):        
+            if self.optim_type == 1:
     
                 """ Adagrad implemented from paper:
                 John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
@@ -1306,19 +1308,36 @@ class optimizer(object):
     
                 current_acc = acc + T.sqr(gradient) # Accumulates Gradient 
                 updates[acc] = current_acc          # updates accumulation at timestamp
-                fudge_factor = 1e-7
-            elif self.rms_prop is True:
+
+            elif self.optim_type == 2:
                 """ Tieleman, T. and Hinton, G. (2012):
                 Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
                 Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
-    
-                current_acc = self.rms_rho * acc + (1 - self.rms_rho) * T.sqr(gradient) 
-                updates[acc] = current_acc
-                fudge_factor = 1e-7
                 
-            else:
+                rms_rho                         = 0.9    
+                current_acc = rms_rho * acc + (1 - rms_rho) * T.sqr(gradient) 
+                updates[acc] = current_acc
+
+                
+            elif self.optim_type == 0:
                 current_acc = 1.
-                fudge_factor = 0 
+
+
+            
+            elif self.optim_type == 3:
+                """ Kingma, Diederik, and Jimmy Ba. "Adam: A method for stochastic optimization." arXiv preprint arXiv:1412.6980 (2014)."""  
+                if not self.mom_type == -1: 
+                    self.mom_type = - 1
+                    if verbose is True:
+                        print "... ADAM doesn't need explicit momentum. Momentum is removed."                                 
+
+                current_acc2 = b1 * acc2 + (1-b1) * gradient
+                current_acc = b2 * acc + (1-b2) * T.sqr( gradient )                
+                updates[acc2] = current_acc2
+                updates[acc] = current_acc
+                
+            if self.mom_type == -1:
+                updates[velocity] = a * current_acc2 / (T.sqrt(current_acc) + fudge_factor)
                 
             if self.mom_type == 0:               # no momentum
                 updates[velocity] = - (self.eta / T.sqrt(current_acc + fudge_factor)) * gradient                                            
@@ -1370,6 +1389,10 @@ class optimizer(object):
     
             else:            
                 updates[param] = stepped_param
+                
+        if self.optim_type == 3:
+            updates[timestep] = delta_t       
+                     
         self.epoch = epoch
         self.mom = mom 
         self.updates = updates                                               
