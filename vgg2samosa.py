@@ -30,7 +30,7 @@ def load_vgg(model, dataset, optimization_params, filename_params, visual_params
                 'https://s3.amazonaws.com/lasagne/recipes/pretrained/imagenet/vgg19.pkl'
             )
             print('Downloading data from %s' % origin)
-            urllib.request.urlretrieve(origin,)
+            urllib.request.urlretrieve(origin,model)
     
     f = open(model)
     vgg_loaded = cPickle.load(f)
