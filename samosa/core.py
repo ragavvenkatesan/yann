@@ -597,7 +597,6 @@ class Conv2DPoolLayer(object):
                   
         kern_shape = int(floor(filter_shape[0]/maxout_size))       
         output_size = ( batchsize, kern_shape, next_height , next_width )
-        
         srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
         if verbose is True:
             print "           -->        initializing 2D convolutional layer with " + str(filter_shape[0])  + " kernels"
@@ -709,8 +708,7 @@ class Conv2DPoolLayer(object):
         #    co = theano.function ( inputs = [index], outputs = conv_layers[0].co, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
         #    po = theano.function ( inputs = [index], outputs = conv_layers[0].po, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
         #    ip = theano.function ( inputs = [index], outputs = conv_layers[0].input, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})
-        #    op = theano.function ( inputs = [index], outputs = conv_layers[0].output, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})                        
-       
+        #    op = theano.function ( inputs = [index], outputs = conv_layers[0].output, givens = {x: self.test_set_x[index * self.batch_size: (index + 1) * self.batch_size]})                              
         #To debug the layers....
         if batch_norm is True:
             mean = pool_out.mean( (0,2,3), keepdims = True )
@@ -876,7 +874,8 @@ class ConvolutionalLayers (object):
                                     b = None if curr_init_bias is None else curr_init_bias, 
                                     batch_norm = batch_norm_layer,
                                     alpha = None if curr_init_alpha is None else curr_init_alpha,
-                                    p = cnn_dropout_rates[0],                                 
+                                    p = cnn_dropout_rates[0],  
+                                    verbose = verbose                               
                                         ) ) 
             self.conv_layers.append ( 
                             Conv2DPoolLayer(
@@ -896,7 +895,6 @@ class ConvolutionalLayers (object):
                                     b = self.dropout_conv_layers[-1].params[1],
                                     batch_norm = batch_norm_layer,
                                     alpha = self.dropout_conv_layers[-1].alpha,
-                                    verbose = verbose                                       
                                         ) )  
             next_in = self.conv_layers[-1].output_size
                                                                                                                            
@@ -1003,7 +1001,7 @@ class ConvolutionalLayers (object):
             if freeze_layers[count] is False:
                 self.params = self.params + layer.params
             elif verbose is True:
-                print "           -->        convolutional layer " + str(count +  1) + " is frozen." 
+                print "           -->        freezing convolutional layer " + str(count +  1)  
             count = count + 1 
         
         self.output_size = next_in

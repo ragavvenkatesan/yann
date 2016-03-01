@@ -5,6 +5,8 @@ import os
 import pdb
 import cPickle
 
+import theano, numpy 
+
 from samosa.cnn import cnn_mlp
 from samosa.core import ReLU, Sigmoid, Softmax, Tanh, Abs, Squared
 from samosa.util import load_network
@@ -22,7 +24,7 @@ class vgg_net(cnn_mlp):
             self.retrain_params["copy_from_old"][-1] = False
             self.retrain_params["freeze"][-1] = False 
             
-def load_vgg(model, dataset, optimization_params, filename_params, visual_params, freeze_layer_params = True, verbose = True):
+def load_vgg(model, dataset, outs, optimization_params, filename_params, visual_params, freeze_layer_params = True, verbose = True):
 
     if (not os.path.isfile(model)):
             from six.moves import urllib
@@ -75,16 +77,16 @@ def load_vgg(model, dataset, optimization_params, filename_params, visual_params
                           
     init_params = []
     for param_values in vgg_loaded['param values']:
-        init_params.append(param_values)       
+        init_params.append(theano.shared(numpy.asarray(param_values, dtype = theano.config.floatX)))       
                                                 
     net = vgg_net(   filename_params = filename_params,
                      arch_params = arch_params,
                      optimization_params = optimization_params,
-                     retrain_params = None,
-                     init_params = None,
+                     retrain_params = retrain_params,
+                     init_params = init_params,
                      verbose =verbose    ) 
 
-    net.init_data(dataset = dataset , outs = arch_params ["outs"], visual_params = visual_params, verbose = verbose)     
+    net.init_data(dataset = dataset , outs = outs, visual_params = visual_params, verbose = verbose)     
     net.build_network(verbose = verbose)                                                                             
     pdb.set_trace()                                                    
 
@@ -93,6 +95,7 @@ if __name__ == '__main__':
 
     model = './dataset/vgg/vgg19.pkl'
     dataset = "_datasets/_dataset_99113"
+    outs = 102
     verbose = True
     freeze_layer_params = True
         
@@ -127,5 +130,6 @@ if __name__ == '__main__':
                 optimization_params = optimization_params,
                 freeze_layer_params = freeze_layer_params,
                 visual_params = visual_params,
+                outs = outs,
                 verbose = verbose
             )   

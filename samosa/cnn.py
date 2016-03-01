@@ -33,7 +33,7 @@ def shared_dataset(data_xy, n_classes, borrow=True, svm_flag = True):
     if svm_flag is True:
         # one-hot encoded labels as {-1, 1}
         #n_classes = len(numpy.unique(data_y))  # dangerous?
-        y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
+        y1 = -1 * numpy.ones((data_y.shape[0], n_classes + 1))
         y1[numpy.arange(data_y.shape[0]), data_y] = 1
         shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
         
