@@ -647,7 +647,7 @@ class Conv2DPoolLayer(object):
             self.alpha = theano.shared(value=alpha_values, borrow = True)
         else:
             self.alpha = alpha   
-             
+            
         # convolve input feature maps with filters     
         #if fast_conv is False:  
         if not border_mode =='same' :
@@ -769,7 +769,7 @@ class DropoutConv2DPoolLayer(Conv2DPoolLayer):
                         alpha = alpha,
                         batch_norm = batch_norm,
                         maxrandpool_p = maxrandpool_p,
-                        verbose = False)
+                        verbose = verbose)
                         
         self.output = _dropout_from_layer(rng, self.output, p=p)                        
         
@@ -796,7 +796,7 @@ class ConvolutionalLayers (object):
             cnn_maxout,
             verbose = True                    
         ):
-        
+
         first_layer_input = input[0]
         mean_sub_input    = input[1] 
         stack_size = 1
@@ -899,6 +899,7 @@ class ConvolutionalLayers (object):
                                     b = self.dropout_conv_layers[-1].params[1],
                                     batch_norm = batch_norm_layer,
                                     alpha = self.dropout_conv_layers[-1].alpha,
+                                    verbose = False
                                         ) )  
             next_in = self.conv_layers[-1].output_size
                                                                                                                            
@@ -964,7 +965,8 @@ class ConvolutionalLayers (object):
                                     b = None if curr_init_bias is None else curr_init_bias ,
                                     batch_norm = batch_norm_layer,
                                     alpha = None if curr_init_alpha is None else curr_init_alpha ,
-                                    p = cnn_dropout_rates[layer+1]                                                                                                        
+                                    p = cnn_dropout_rates[layer+1],      
+                                    verbose = verbose                                                                                                  
                                         ) )
                                                 
                 self.conv_layers.append ( 
@@ -985,7 +987,7 @@ class ConvolutionalLayers (object):
                                     b = self.dropout_conv_layers[-1].params[1],
                                     batch_norm = batch_norm_layer, 
                                     alpha = self.dropout_conv_layers[-1].alpha,
-                                    verbose = verbose
+                                    verbose = False
                                         ) )                                                       
                                             
                 next_in = self.conv_layers[-1].output_size                            

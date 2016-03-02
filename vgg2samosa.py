@@ -84,11 +84,8 @@ def load_vgg(model, dataset, outs, optimization_params, filename_params, visual_
                      optimization_params = optimization_params,
                      retrain_params = retrain_params,
                      init_params = init_params,
-                     verbose =verbose    ) 
-
-    net.init_data(dataset = dataset , outs = outs, visual_params = visual_params, verbose = verbose)     
-    net.build_network(verbose = verbose)                                                                             
-    pdb.set_trace()                                                    
+                     verbose =verbose    )                                                                               
+    return net                                                 
 
     
 if __name__ == '__main__':

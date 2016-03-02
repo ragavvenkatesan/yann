@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         "error_file_name"       : "../results/error.txt",
                         "cost_file_name"        : "../results/cost.txt",
                         "confusion_file_name"   : "../results/confusion.txt",
-                        "network_save_name"     : "../results/network.pkl.gz "
+                        "network_save_name"     : "../results/network.pkl "
                     }
                     
     visual_params = {
@@ -111,35 +111,37 @@ if __name__ == '__main__':
                     }   
                                                                                                                             
     optimization_params = {
-                            "mom"                         	    : (0.5, 0.99, 100), # (mom_start, momentum_end, momentum_interval)                     
-                            "mom_type"                          : 1,                # 0-no mom, 1-polyak, 2-nestrov          
+        
+                            "mom"                         	    : (0.5, 0.85, 100),     # (mom_start, momentum_end, momentum_interval)                     
+                            "mom_type"                          : 1,                    # 0-no mom, 1-polyak, 2-nestrov          
                             "learning_rate"                     : (0.001,0.0001, 0.05 ),          # (initial_learning_rate, ft_learning_rate, annealing)
-                            "reg"                               : (0.000,0.000),    # l1_coeff, l2_coeff                                
-                            "optim_type"                        : 3,                # 0-SGD, 1-Adagrad, 2-RmsProp, 3-Adam
-                            "objective"                         : 1,                # 0-negative log likelihood, 1-categorical cross entropy, 2-binary cross entropy
-                            }        
+                            "reg"                               : (0.000,0.000),       # l1_coeff, l2_coeff                                
+                            "optim_type"                        : 2,                   # 0-SGD, 1-Adagrad, 2-RmsProp, 3-Adam
+                            "objective"                         : 1,                   # 0-negative log likelihood, 1-categorical cross entropy, 2-binary cross entropy
+                              
+                                }       
 
     arch_params = {
-                    "mlp_activations"                   : [ ReLU ],         # activation functions for each mlp layers                
+                    "mlp_activations"                   : [ ReLU, ReLU ],         # activation functions for each mlp layers                
                     "mlp_dropout"                       : True,             # same as above 
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],    # p values for dropout first one for input
-                    "num_nodes"                         : [ 800  ],         # number of nodes in mlp layers only    
+                    "num_nodes"                         : [ 4096  ],         # number of nodes in mlp layers only    
                     "mlp_batch_norm"                    : True ,            # batch norm for mlp layers           
                     "mlp_maxout"                        : [ 1 ],            # 1 - nothing, >1 maxout by that size.                                               
                     "outs"                              : 10,               # nuber of output nodes in softmax or svm layer                                                                                                                
                     "svm_flag"                          : False,            # toggle between softmax and svm layers                            
-                    "cnn_activations"                   : [ ReLU ],         # activation functions for each cnn layer    
-                    "cnn_batch_norm"                    : [ True ],         # batch norm for cnn layers 
-                    "nkerns"                            : [ 20,   ],        # number of convolutional kernels in each layer       
-                    "filter_size"                       : [ (5,5) ],        # filter size of each convoutional filter
-                    "pooling_size"                      : [ (2,2) ],        # pooling size after the layer
-                    "pooling_type"                      : [ 1,    ],        # 0 - maxpool to same size, 1 - maxpool, 2- average pool, 3-maxrand pool
-                    "maxrandpool_p"                     : [ 1,    ],        # p value for maxrand pool, used only if maxrand pool is used.                                                                                            
-                    "conv_stride_size"                  : [ (1,1) ],        # stride size of each convolutional layer
-                    "conv_pad"                          : [ 0,    ],        # 0 - 'valid' convolution and 1 - ' fully padded convolution' 
+                    "cnn_activations"                   : [ ReLU,   ReLU,   ReLU ],         # activation functions for each cnn layer    
+                    "cnn_batch_norm"                    : [ True,   True,   True ],         # batch norm for cnn layers 
+                    "nkerns"                            : [ 20,     50,     50],        # number of convolutional kernels in each layer       
+                    "filter_size"                       : [ (3,3),  (3,3),  (3,3) ],        # filter size of each convoutional filter
+                    "pooling_size"                      : [ (2,2),  (1,1),  (1,1) ],        # pooling size after the layer
+                    "pooling_type"                      : [ 1,      1,      1,    ],        # 0 - maxpool to same size, 1 - maxpool, 2- average pool, 3-maxrand pool
+                    "maxrandpool_p"                     : [ 1,      1,      1,    ],        # p value for maxrand pool, used only if maxrand pool is used.                                                                                            
+                    "conv_stride_size"                  : [ (1,1),  (1,1),  (1,1) ],        # stride size of each convolutional layer
+                    "conv_pad"                          : [ 0,      0,      0,    ],        # 0 - 'valid' convolution and 1 - ' fully padded convolution' 2- 'same' size convolutiona 
                     "cnn_maxout"                        : [ 1,    ],        # 1 - nothing, >1 maxout by that size.             
                     "cnn_dropout"                       : False,            # False for no dropout, True for dropout                    
-                    "cnn_dropout_rates"                 : [ 0.5 ],          # p values for dropout, used only if convolutioanl dropouts are True.
+                    "cnn_dropout_rates"                 : [ 0,    0,      0       ],          # p values for dropout, used only if convolutioanl dropouts are True.
                     "random_seed"                       : 23455,            # Just a random seed, different seeds create new type of initializations
                     "mean_subtract"                     : False,            # subtract means of inputs. 
                     "use_bias"                          : True,             # use bias in all layers.       
@@ -157,7 +159,7 @@ if __name__ == '__main__':
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_57689", 
+                    dataset                 = "_datasets/_dataset_42740", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

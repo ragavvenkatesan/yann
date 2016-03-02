@@ -3,7 +3,6 @@ import os
 import sys
 import numpy
 import scipy.io
-import gzip
 import cPickle
 import cv2
 from random import randint
@@ -479,7 +478,7 @@ class setup_dataset (object):
 				
 				# compute number of minibatches for training, validation and testing
 				self.n_train_batches = data_x.shape[0] / self.batch_size			
-				f = gzip.open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+				f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()
@@ -491,7 +490,7 @@ class setup_dataset (object):
 				
 				# compute number of minibatches for training, validation and testing
 				self.n_test_batches = data_x.shape[0] / self.batch_size			
-				f = gzip.open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+				f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()
@@ -503,7 +502,7 @@ class setup_dataset (object):
 				
 				# compute number of minibatches for training, validation and testing
 				self.n_valid_batches = data_x.shape[0] / self.batch_size			
-				f = gzip.open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+				f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()	
@@ -537,7 +536,7 @@ class setup_dataset (object):
 			n_train_images = data_x.shape[0]
 			n_train_batches_all = n_train_images / self.batch_size 
 			self.n_train_batches = data_x.shape[0] / self.batch_size			
-			f = gzip.open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+			f = open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
 			f.close()		
@@ -548,7 +547,7 @@ class setup_dataset (object):
 			n_valid_images = data_x.shape[0]
 			n_valid_batches_all = n_valid_images / self.batch_size 
 			self.n_valid_batches = data_x.shape[0] / self.batch_size			
-			f = gzip.open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+			f = open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
 			f.close()				
@@ -559,7 +558,7 @@ class setup_dataset (object):
 			n_test_images = data_x.shape[0]
 			n_test_batches_all = n_test_images / self.batch_size 
 			self.n_test_batches = data_x.shape[0] / self.batch_size			
-			f = gzip.open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+			f = open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
 			f.close()	
@@ -614,7 +613,7 @@ class setup_dataset (object):
 					n_train_images = data_x.shape[0]
 					n_train_batches_all = n_train_images / self.batch_size 
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl', 'wb')
 						
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
@@ -626,7 +625,7 @@ class setup_dataset (object):
 					n_valid_images = data_x.shape[0]
 					n_valid_batches_all = n_valid_images / self.batch_size 
 					self.n_valid_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl', 'wb')
 					obj = (data_x, data_y )					
 					cPickle.dump(obj, f, protocol=2)
 					f.close()				
@@ -637,7 +636,7 @@ class setup_dataset (object):
 					n_test_images = data_x.shape[0]
 					n_test_batches_all = n_test_images / self.batch_size 
 					self.n_test_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl', 'wb')
 					obj = (data_x, data_y )					
 					cPickle.dump(obj, f, protocol=2)
 					f.close()	
@@ -678,7 +677,7 @@ class setup_dataset (object):
 				n_train_images = data_x.shape[0]
 				n_train_batches_all = n_train_images / self.batch_size 
 				self.n_train_batches = data_x.shape[0] / self.batch_size			
-				f = gzip.open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+				f = open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()		
@@ -689,7 +688,7 @@ class setup_dataset (object):
 				n_valid_images = data_x.shape[0]
 				n_valid_batches_all = n_valid_images / self.batch_size 
 				self.n_valid_batches = data_x.shape[0] / self.batch_size			
-				f = gzip.open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+				f = open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()				
@@ -700,7 +699,7 @@ class setup_dataset (object):
 				n_test_images = data_x.shape[0]
 				n_test_batches_all = n_test_images / self.batch_size 
 				self.n_test_batches = data_x.shape[0] / self.batch_size			
-				f = gzip.open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl.gz', 'wb')
+				f = open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()	
@@ -764,7 +763,7 @@ class setup_dataset (object):
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()
@@ -788,7 +787,7 @@ class setup_dataset (object):
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
@@ -811,7 +810,7 @@ class setup_dataset (object):
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
@@ -868,7 +867,7 @@ class setup_dataset (object):
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()
@@ -892,7 +891,7 @@ class setup_dataset (object):
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
@@ -915,7 +914,7 @@ class setup_dataset (object):
 					data_x = preprocessing ( data_x, self.height, self.width, self.channels, preprocess_params )				
 					# compute number of minibatches for training, validation and testing
 					self.n_train_batches = data_x.shape[0] / self.batch_size			
-					f = gzip.open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl.gz', 'wb')
+					f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 					obj = (data_x, data_y )
 					cPickle.dump(obj, f, protocol=2)
 					f.close()							  
@@ -945,7 +944,7 @@ class setup_dataset (object):
 			self.channels = 1 
 		
 		assert ( self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]) )
-		f = gzip.open(temp_dir +  '/data_params.pkl.gz', 'wb')
+		f = open(temp_dir +  '/data_params.pkl', 'wb')
 		cPickle.dump(new_data_params, f, protocol=2)
 		f.close()				  	
 		end_time = time.clock()

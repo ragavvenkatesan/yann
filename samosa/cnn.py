@@ -2,7 +2,7 @@
 
 # General Packages
 import os
-import cPickle, gzip
+import cPickle
 
 # Math Packages
 import numpy
@@ -96,7 +96,7 @@ class cnn_mlp(object):
                 
     def save_network( self ):          # for others use only data_params or optimization_params
 
-        f = gzip.open(self.network_save_name, 'wb')
+        f = open(self.network_save_name, 'wb')
         for obj in [self.params, self.arch, self.data_struct, self.optim_params]:
             cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
         f.close()  
@@ -104,15 +104,15 @@ class cnn_mlp(object):
     def load_data_init(self, dataset, verbose = False):
         # every dataset will have atleast one batch ..... load that.
         
-        f = gzip.open(dataset + '/train/batch_0.pkl.gz', 'rb')
+        f = open(dataset + '/train/batch_0.pkl', 'rb')
         train_data_x, train_data_y = cPickle.load(f)
         f.close()
 
-        f = gzip.open(dataset + '/test/batch_0.pkl.gz', 'rb')
+        f = open(dataset + '/test/batch_0.pkl', 'rb')
         test_data_x, test_data_y = cPickle.load(f)
         f.close()
         
-        f = gzip.open(dataset + '/valid/batch_0.pkl.gz', 'rb')
+        f = open(dataset + '/valid/batch_0.pkl', 'rb')
         valid_data_x, valid_data_y = cPickle.load(f)
         f.close()
                   
@@ -123,7 +123,7 @@ class cnn_mlp(object):
     # this loads up the data_params from a folder and sets up the initial databatch.         
     def init_data ( self, dataset, outs, visual_params = None, verbose = False):
         print "... initializing dataset " + dataset 
-        f = gzip.open(dataset + '/data_params.pkl.gz', 'rb')
+        f = open(dataset + '/data_params.pkl', 'rb')
         data_params = cPickle.load(f)
         f.close()
         
@@ -389,11 +389,11 @@ class cnn_mlp(object):
         # every dataset will have atleast one batch ..... load that.
         
         if type_set == 'train':
-            f = gzip.open(self.dataset + '/train/batch_' +str(batch) +'.pkl.gz', 'rb')
+            f = open(self.dataset + '/train/batch_' +str(batch) +'.pkl', 'rb')
         elif type_set == 'valid':
-            f = gzip.open(self.dataset + '/valid/batch_' +str(batch) +'.pkl.gz', 'rb')            
+            f = open(self.dataset + '/valid/batch_' +str(batch) +'.pkl', 'rb')            
         else:
-            f = gzip.open(self.dataset + '/test/batch_' +str(batch) +'.pkl.gz', 'rb')            
+            f = open(self.dataset + '/test/batch_' +str(batch) +'.pkl', 'rb')            
         data_x, data_y = cPickle.load(f)
         f.close()    
         if self.svm_flag is True:
