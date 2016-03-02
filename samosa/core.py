@@ -14,6 +14,7 @@ from theano.ifelse import ifelse
 from theano.tensor.signal.pool import Pool as DownsampleFactorMax
 from theano.tensor.signal.pool import pool_2d 
 from theano.tensor.signal.pool import max_pool_2d_same_size 
+from theano.sandbox.cuda import dnn
 
 from theano.tensor.nnet.neighbours import images2neibs
 
@@ -50,21 +51,52 @@ def max1d (x,i,stride):
 def max2d (x,i,stride):
     return x[:,i::stride,:,:]
     
-def conv2d_border_mode_same( 
+def convolution( 
                 input,
                 filters,
                 subsample,
                 filter_shape,
-                image_shape):
-
-    out = conv.conv2d(input = input ,
-                      filters = filters,
-                      border_mode='full',
+                image_shape,
+                border_mode):
+           
+    if border_mode == 'same':
+        x = (filter_shape[2] - 1) // 2
+        y = (filter_shape[3] - 1) // 2
+        border_mode = (x,y)       
+        if subsample[0] == 1 and subsample[1] == 1:
+            out = dnn.dnn_conv (
+                      img = input ,
+                      kerns = filters,
+                      border_mode= border_mode,
+                      conv_mode = 'cross'
+                     )
+        else:
+            out = dnn.dnn_conv (
+                      img = input ,
+                      kerns = filters,
+                      border_mode= border_mode,
                       subsample = subsample,
-                      image_shape = image_shape ) 
-    x = (filter_shape[2] - 1) // 2
-    y = (filter_shape[3] - 1) // 2    
-    return out[:,:,x:image_shape[2] + x, y:image_shape[3] + y]    
+                      conv_mode = 'cross'
+                     )
+    else:
+        if subsample[0] == 1 and subsample[1] == 1:
+             out = conv.conv2d (
+                        input = input,
+                        filters = filters,
+                        image_shape = image_shape,
+                        filter_shape = filter_shape,
+                        border_mode = border_mode,
+                        )
+        else:
+             out = conv.conv2d (
+                        input = input,
+                        filters = filters,
+                        image_shape = image_shape,
+                        filter_shape = filter_shape,
+                        subsample = subsample,
+                        border_mode = border_mode,
+                        )            
+    return out    
         
 def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
     """ 
@@ -647,11 +679,8 @@ class Conv2DPoolLayer(object):
             self.alpha = theano.shared(value=alpha_values, borrow = True)
         else:
             self.alpha = alpha   
-            
-        # convolve input feature maps with filters     
-        #if fast_conv is False:  
-        if not border_mode =='same' :
-            conv_out = conv.conv2d(
+          
+        conv_out = convolution(
                 input = self.input,
                 filters = self.W,
                 subsample = stride,
@@ -659,14 +688,6 @@ class Conv2DPoolLayer(object):
                 image_shape = image_shape,
                 border_mode = border_mode
                 )
-        else:
-            conv_out = conv2d_border_mode_same(
-                input = self.input,
-                filters = self.W,
-                subsample = stride,
-                image_shape = image_shape,
-                filter_shape = filter_shape
-             )
 
         # downsample each feature map individually, using maxpooling
         #if fast_conv is False:

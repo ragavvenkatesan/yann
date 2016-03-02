@@ -23,7 +23,7 @@ if __name__ == '__main__':
                    "type"               : 'skdata',                                   
                    "loc"                : 'caltech101',                                          
                    "batch_size"         : 36,                                     
-                   "load_batches"       : 4, 
+                   "load_batches"       : 1, 
                    "batches2train"      : 127,                                      
                    "batches2test"       : 63,                                      
                    "batches2validate"   : 64,                                        

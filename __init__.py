@@ -113,7 +113,7 @@ if __name__ == '__main__':
     optimization_params = {
         
                             "mom"                         	    : (0.5, 0.85, 100),     # (mom_start, momentum_end, momentum_interval)                     
-                            "mom_type"                          : 1,                    # 0-no mom, 1-polyak, 2-nestrov          
+                            "mom_type"                          : 2,                    # 0-no mom, 1-polyak, 2-nestrov          
                             "learning_rate"                     : (0.001,0.0001, 0.05 ),          # (initial_learning_rate, ft_learning_rate, annealing)
                             "reg"                               : (0.000,0.000),       # l1_coeff, l2_coeff                                
                             "optim_type"                        : 2,                   # 0-SGD, 1-Adagrad, 2-RmsProp, 3-Adam
@@ -122,38 +122,37 @@ if __name__ == '__main__':
                                 }       
 
     arch_params = {
-                    "mlp_activations"                   : [ ReLU, ReLU ],         # activation functions for each mlp layers                
-                    "mlp_dropout"                       : True,             # same as above 
-                    "mlp_dropout_rates"                 : [ 0.5 , 0.5 ],    # p values for dropout first one for input
-                    "num_nodes"                         : [ 4096  ],         # number of nodes in mlp layers only    
-                    "mlp_batch_norm"                    : True ,            # batch norm for mlp layers           
-                    "mlp_maxout"                        : [ 1 ],            # 1 - nothing, >1 maxout by that size.                                               
-                    "outs"                              : 10,               # nuber of output nodes in softmax or svm layer                                                                                                                
-                    "svm_flag"                          : False,            # toggle between softmax and svm layers                            
-                    "cnn_activations"                   : [ ReLU,   ReLU,   ReLU ],         # activation functions for each cnn layer    
-                    "cnn_batch_norm"                    : [ True,   True,   True ],         # batch norm for cnn layers 
-                    "nkerns"                            : [ 20,     50,     50],        # number of convolutional kernels in each layer       
-                    "filter_size"                       : [ (3,3),  (3,3),  (3,3) ],        # filter size of each convoutional filter
-                    "pooling_size"                      : [ (2,2),  (1,1),  (1,1) ],        # pooling size after the layer
-                    "pooling_type"                      : [ 1,      1,      1,    ],        # 0 - maxpool to same size, 1 - maxpool, 2- average pool, 3-maxrand pool
-                    "maxrandpool_p"                     : [ 1,      1,      1,    ],        # p value for maxrand pool, used only if maxrand pool is used.                                                                                            
-                    "conv_stride_size"                  : [ (1,1),  (1,1),  (1,1) ],        # stride size of each convolutional layer
-                    "conv_pad"                          : [ 0,      0,      0,    ],        # 0 - 'valid' convolution and 1 - ' fully padded convolution' 2- 'same' size convolutiona 
-                    "cnn_maxout"                        : [ 1,    ],        # 1 - nothing, >1 maxout by that size.             
-                    "cnn_dropout"                       : False,            # False for no dropout, True for dropout                    
-                    "cnn_dropout_rates"                 : [ 0,    0,      0       ],          # p values for dropout, used only if convolutioanl dropouts are True.
-                    "random_seed"                       : 23455,            # Just a random seed, different seeds create new type of initializations
-                    "mean_subtract"                     : False,            # subtract means of inputs. 
-                    "use_bias"                          : True,             # use bias in all layers.       
-                    "max_out"                           : 0                 # maxout type. 0-no maxout, 1-maxout, 2-meanout, 3-randout.
-        
+                            "mlp_activations"                   : [  ReLU, ReLU ],
+                            "cnn_dropout"                       : False,
+                            "mlp_dropout"                       : True,
+                            "mlp_dropout_rates"                 : [ 0.5,  0.5, 0.5],
+                            "num_nodes"                         : [ 4096, 4096 ],                                     
+                            "outs"                              : 102,                                                                                                                               
+                            "svm_flag"                          : False,                                       
+                            "cnn_activations"                   : [ ReLU,   ReLU,   ReLU,   ReLU  ],             
+                            "cnn_batch_norm"                    : [ False,  False,  False,  False  ],
+                            "mlp_batch_norm"                    : True,
+                            "nkerns"                            : [  64,    128,    256,    512   ],              
+                            "filter_size"                       : [ (3,3),  (3,3),  (3,3),  (3,3) ],
+                            "pooling_size"                      : [ (1,1),  (2,2),  (2,2),  (2,2) ],
+                            "conv_pad"                          : [ 2,      0,      0,      0     ],                            
+                            "pooling_type"                      : [ 1,      1,      1,      1     ],
+                            "maxrandpool_p"                     : [ 1,      1,      1,      1,    ],                           
+                            "conv_stride_size"                  : [ (1,1),  (2,2),  (2,2),  (2,2) ],
+                            "cnn_maxout"                        : [ 1,      1,      1,      1,    ],                    
+                            "mlp_maxout"                        : [ 1,      1,      1,      1,    ],
+                            "cnn_dropout_rates"                 : [ 0,    0.5,    0.5,    0.5   ],
+                            "random_seed"                       : 23455, 
+                            "mean_subtract"                     : False,
+                            "use_bias"                          : True,
+                            "max_out"                           : 0 
                  }                          
 
     # other loose parameters. 
     n_epochs = 2                    # number of epochs to run unless early terminated
     validate_after_epochs = 1       # number of epochs after which to validate.    
     ft_epochs = 2                   # number of epoch to finetune learning with.
-    verbose = False                 # if True makes a lot of prints, if False doesn't. 
+    verbose = True                 # if True makes a lot of prints, if False doesn't. 
     
     # code to tutor on how to setup and run. 
     run_cnn(
