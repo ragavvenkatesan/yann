@@ -94,7 +94,7 @@ def load_vgg(model, dataset, outs, optimization_params, filename_params, visual_
 if __name__ == '__main__':
 
     model = './dataset/vgg/vgg19.pkl'
-    dataset = "_datasets/_dataset_99113"
+    dataset = "_datasets/_dataset_41982"
     outs = 102
     verbose = True
     freeze_layer_params = True

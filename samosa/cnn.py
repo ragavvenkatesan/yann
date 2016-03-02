@@ -201,7 +201,7 @@ class cnn_mlp(object):
             fully_connected_input = self.ConvLayers.conv_layers[-1].output.flatten(2)
             dropout_fully_connected_input = self.ConvLayers.dropout_conv_layers[-1].output.flatten(2)    
             next_in = self.ConvLayers.returnOutputSizes() 
-
+            
         if len(self.num_nodes) > 1 :     
             layer_sizes =[]                        
             layer_sizes.append( next_in[0] * next_in[1] * next_in[2] )
@@ -268,7 +268,7 @@ class cnn_mlp(object):
         self.build_cost_function()            
         
         if verbose is True:
-            print "... creating network functions"                                   
+            print "... creating network functions"                                 
         self.create_network_functions(verbose = verbose)
                                    
     def build_cost_function(self):

@@ -50,18 +50,21 @@ def max1d (x,i,stride):
 def max2d (x,i,stride):
     return x[:,i::stride,:,:]
     
-def conv2D_border_mode_same( 
+def conv2d_border_mode_same( 
                 input,
                 filters,
                 subsample,
-                image_shape,):
-    filter_shp = T.shape(filters)[2] - 1 
+                filter_shape,
+                image_shape):
+
     out = conv.conv2d(input = input ,
                       filters = filters,
                       border_mode='full',
                       subsample = subsample,
-                      image_shape = image_shape )                      
-    return out[:,:,filter_shp:1+filter_shp,filter_shp:1+filter_shp]    
+                      image_shape = image_shape ) 
+    x = (filter_shape[2] - 1) // 2
+    y = (filter_shape[3] - 1) // 2    
+    return out[:,:,x:image_shape[2] + x, y:image_shape[3] + y]    
         
 def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
     """ 
@@ -657,11 +660,12 @@ class Conv2DPoolLayer(object):
                 border_mode = border_mode
                 )
         else:
-            conv_out = conv2D_border_mode_same(
+            conv_out = conv2d_border_mode_same(
                 input = self.input,
                 filters = self.W,
                 subsample = stride,
-                image_shape = image_shape
+                image_shape = image_shape,
+                filter_shape = filter_shape
              )
 
         # downsample each feature map individually, using maxpooling
