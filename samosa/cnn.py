@@ -3,6 +3,7 @@
 # General Packages
 import os
 import cPickle
+import progressbar
 
 # Math Packages
 import numpy
@@ -518,7 +519,7 @@ class cnn_mlp(object):
                 self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
                 validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
                 self.this_validation_loss = self.this_validation_loss + [validation_losses]
-            for batch in xrange (self.batches2train):
+            for batch in xrange (self.batches2test):
                 self.set_data ( batch = batch , type_set = 'test' , verbose = verbose)            
                 training_losses = training_losses + numpy.sum([[self.training_accuracy(i) for i in xrange(self.n_train_batches)]])            
                 self.this_training_loss = self.this_training_loss + [training_losses]
@@ -595,9 +596,12 @@ class cnn_mlp(object):
                 self.eta.set_value(self.ft_learning_rate)
             epoch_counter = epoch_counter + 1 
             start_time = time.clock() 
+            print "...    -> epoch:" +str(epoch_counter) 
+            bar = progressbar.ProgressBar(maxval=self.batches2train, \
+                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',progressbar.ETA()]).start()
             for batch in xrange (self.batches2train):
                 if verbose is True:
-                    print "...          -> epoch: " + str(epoch_counter) + " batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"    
+                    print "...          -> batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"    
                 if self.multi_load is True:
                     iteration= (epoch_counter - 1) * self.n_train_batches * self.batches2train + batch
                     # Load data for this batch
@@ -611,6 +615,8 @@ class cnn_mlp(object):
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
                     self.cost_saved = self.cost_saved +[cost_ij] 
+                bar.update(batch+1)
+            bar.finish()
             if numpy.isnan(self.cost_saved[-1]):
                 print " NAN !! resetting params back and going back to fine tuning learning rate"                     
                 self.params = temp_params

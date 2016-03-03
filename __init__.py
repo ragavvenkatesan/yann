@@ -105,7 +105,7 @@ if __name__ == '__main__':
     visual_params = {
                         "visualize_flag"        : True,
                         "visualize_after_epochs": 1,
-                        "n_visual_images"       : 81,
+                        "n_visual_images"       : 36,
                         "display_flag"          : False,
                         "color_filter"          : True         
                     }   
@@ -122,6 +122,7 @@ if __name__ == '__main__':
                                 }       
 
     arch_params = {
+                    
                             "mlp_activations"                   : [  ReLU, ReLU ],
                             "cnn_dropout"                       : False,
                             "mlp_dropout"                       : True,
@@ -129,20 +130,20 @@ if __name__ == '__main__':
                             "num_nodes"                         : [ 4096, 4096 ],                                     
                             "outs"                              : 102,                                                                                                                               
                             "svm_flag"                          : False,                                       
-                            "cnn_activations"                   : [ ReLU,   ReLU,   ReLU,   ReLU  ],             
-                            "cnn_batch_norm"                    : [ False,  False,  False,  False  ],
+                            "cnn_activations"                   : [ ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ],             
+                            "cnn_batch_norm"                    : [ False,  True,   True,   True,   True,   ],
                             "mlp_batch_norm"                    : True,
-                            "nkerns"                            : [  64,    128,    256,    512   ],              
-                            "filter_size"                       : [ (3,3),  (3,3),  (3,3),  (3,3) ],
-                            "pooling_size"                      : [ (1,1),  (2,2),  (2,2),  (2,2) ],
-                            "conv_pad"                          : [ 2,      0,      0,      0     ],                            
-                            "pooling_type"                      : [ 1,      1,      1,      1     ],
-                            "maxrandpool_p"                     : [ 1,      1,      1,      1,    ],                           
-                            "conv_stride_size"                  : [ (1,1),  (2,2),  (2,2),  (2,2) ],
-                            "cnn_maxout"                        : [ 1,      1,      1,      1,    ],                    
-                            "mlp_maxout"                        : [ 1,      1,      1,      1,    ],
-                            "cnn_dropout_rates"                 : [ 0,    0.5,    0.5,    0.5   ],
-                            "random_seed"                       : 23455, 
+                            "nkerns"                            : [  64,    64,     128,    128,    256,    ],              
+                            "filter_size"                       : [ (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  ],
+                            "pooling_size"                      : [ (1,1),  (3,3),  (2,2),  (3,3),  (2,2),  ],
+                            "conv_pad"                          : [ 2,      0,      0,      0,      2,      ],                            
+                            "pooling_type"                      : [ 1,      1,      1,      1,      1,      ],
+                            "maxrandpool_p"                     : [ 1,      1,      1,      1,      1,      ],                           
+                            "conv_stride_size"                  : [ (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  ],
+                            "cnn_maxout"                        : [ 1,      1,      1,      1,      1,      ],                    
+                            "mlp_maxout"                        : [ 1,      1,      1,      1,      1,      ],
+                            "cnn_dropout_rates"                 : [ 0,    0.5,    0.5,    0.5,      0.5,    ],
+                            "random_seed"                       : 23455,
                             "mean_subtract"                     : False,
                             "use_bias"                          : True,
                             "max_out"                           : 0 
@@ -158,7 +159,7 @@ if __name__ == '__main__':
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_42740", 
+                    dataset                 = "_datasets/_dataset_76223", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,
