@@ -414,9 +414,9 @@ class MLP(object):
             for n_in, n_out in weight_matrix_sizes[:-1]:
                 curr_maxout_size = maxout_rates[layer_counter]
                 if verbose is True and max_out > 0:
-                    print "           -->        initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in / prev_maxout_size) + " after maxout this output becomes " + str(n_out / curr_maxout_size)
+                    print "--> initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in / prev_maxout_size) + " after maxout this output becomes " + str(n_out / curr_maxout_size)
                 elif verbose is True and max_out == 0:
-                    print "           -->        initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in) 
+                    print "-->   initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in) 
                 if len(params) < count + 1:
                     next_dropout_layer = DropoutHiddenLayer(rng=rng,
                                                     input=next_dropout_layer_input,
@@ -482,7 +482,7 @@ class MLP(object):
     
         if svm_flag is False:
             if verbose is True:
-                print "           -->        initializing regression layer with " + str(n_out) + " output units and " + str(n_in) + " input units"
+                print "-->   initializing regression layer with " + str(n_out) + " output units and " + str(n_in) + " input units"
             if not len(params) < count + 1:      
       
                 dropout_output_layer = LogisticRegression(
@@ -529,7 +529,7 @@ class MLP(object):
 
         else:
             if verbose is True:
-                print "           -->        initializing max-margin layer with " + str(n_out) + " class predictors and " + str(n_in) + " input units."
+                print "-->   initializing max-margin layer with " + str(n_out) + " class predictors and " + str(n_in) + " input units."
             if len(params) < count + 1:
                 dropout_output_layer = SVMLayer(
                     input=next_dropout_layer_input,
@@ -570,7 +570,7 @@ class MLP(object):
                 for param in layer.params:
                     self.params.append (param)
             elif verbose is True:
-                print "           -->        freezing post convolutional layer " + str(count + 1)          
+                print "-->   freezing post convolutional layer " + str(count + 1)          
                                                             
             count = count + 1
         if svm_flag is True:
@@ -620,7 +620,7 @@ class Conv2DPoolLayer(object):
             conv_out_width = width   
                      
         else:
-            print "... unrecognized padding mode in convolutional layer"
+            print "unrecognized padding mode in convolutional layer"
             sys.exit(0)
                     
         if pooltype == 0:
@@ -634,14 +634,14 @@ class Conv2DPoolLayer(object):
         output_size = ( batchsize, kern_shape, next_height , next_width )
         srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
         if verbose is True:
-            print "           -->        initializing 2D convolutional layer with " + str(filter_shape[0])  + " kernels"
-            print "                                  ....... kernel size [" + str(filter_shape[2]) + " X " + str(filter_shape[3]) +"]"
-            print "                                  ....... pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + "]"
-            print "                                  ....... stride size [" + str(stride[0]) + " X " + str(stride[1]) + "]"            
-            print "                                  ....... maxout size [" + str(maxout_size) + "]"
-            print "                                  ....... input size ["  + str(image_shape[2]) + " " + str(image_shape[3]) + "]"
-            print "                                  ....... input number of feature maps is " +str(image_shape[1]) 
-            print "                                  ....... output size is [" + str(next_height ) + " X " + str(next_width ) + "]"
+            print "-->   initializing 2D convolutional layer with " + str(filter_shape[0])  + " kernels"
+            print "      kernel size [" + str(filter_shape[2]) + " X " + str(filter_shape[3]) +"]"
+            print "      pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + "]"
+            print "      stride size [" + str(stride[0]) + " X " + str(stride[1]) + "]"            
+            print "      maxout size [" + str(maxout_size) + "]"
+            print "      input size ["  + str(image_shape[2]) + " " + str(image_shape[3]) + "]"
+            print "      input number of feature maps is " +str(image_shape[1]) 
+            print "      output size is [" + str(next_height ) + " X " + str(next_width ) + "]"
         self.input = input
         assert image_shape[1] == filter_shape[1]
         
@@ -1028,7 +1028,7 @@ class ConvolutionalLayers (object):
             if freeze_layers[count] is False:
                 self.params = self.params + layer.params
             elif verbose is True:
-                print "           -->        freezing convolutional layer " + str(count +  1)  
+                print "-->   freezing convolutional layer " + str(count +  1)  
             count = count + 1 
         
         self.output_size = next_in
@@ -1055,7 +1055,7 @@ class optimizer(object):
         self.objective                       = optimization_params [ "objective" ]               
                         
         if verbose is True:
-            print "... estimating gradients"
+            print "estimating gradients"
 
         gradients = []      
         for param in params: 
@@ -1098,7 +1098,7 @@ class optimizer(object):
         fudge_factor = 1e-7
                 
         if verbose is True:
-            print "... building back prop network" 
+            print "building back prop network" 
         for velocity, gradient, acc , acc2, param in zip(velocities, gradients, grad_acc, grad_acc2, params):        
             if self.optim_type == 1:
     
@@ -1130,7 +1130,7 @@ class optimizer(object):
                 if not self.mom_type == -1: 
                     self.mom_type = - 1
                     if verbose is True:
-                        print "... ADAM doesn't need explicit momentum. Momentum is removed."                                 
+                        print "ADAM doesn't need explicit momentum. Momentum is removed."                                 
 
                 current_acc2 = b1 * acc2 + (1-b1) * gradient
                 current_acc = b2 * acc + (1-b2) * T.sqr( gradient )                

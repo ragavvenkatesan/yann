@@ -27,8 +27,8 @@ if __name__ == '__main__':
                    "batches2train"      : 127,                                      
                    "batches2test"       : 63,                                      
                    "batches2validate"   : 64,                                        
-                   "height"             : 224,                                       
-                   "width"              : 224,                                       
+                   "height"             : 32,                                       
+                   "width"              : 32,                                       
                    "channels"           : 3                                       
                   }
                       
@@ -42,7 +42,7 @@ if __name__ == '__main__':
           
     # run and it will create a directory with a random name. 
     # Ensure that _datasets directory exist in the directory from which this is being called from.
-    setup( data_params = data_params, outs = 10 )
+    setup( data_params = data_params, outs = 102 )
     
     """
     # If you want to modify data_params. 

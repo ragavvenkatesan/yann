@@ -307,7 +307,7 @@ def load_skdata_caltech101(batch_size, n_train_images, n_test_images, n_valid_im
 	img,data_y = cal.img_classification_task()
 	img = numpy.asarray(img.objs[0])
 	img = img[rand_perm]								# Shuffle so that the ordering of classes is changed, but use the same shuffle so that loading works consistently.
-	data_y = data_y[rand_perm]
+	data_y = data_y[rand_perm] - 1
 	data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
 	
 	if type_set == 'train':
@@ -354,7 +354,7 @@ def load_skdata_caltech256(batch_size, n_train_images, n_test_images, n_valid_im
 	img,data_y = cal.img_classification_task()
 	img = numpy.asarray(img.objs[0])
 	img = img[rand_perm]								# Shuffle so that the ordering of classes is changed, but use the same shuffle so that loading works consistently.
-	data_y = data_y[rand_perm]
+	data_y = data_y[rand_perm] - 1
 	data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
 	
 	if type_set == 'train':

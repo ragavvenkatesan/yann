@@ -21,6 +21,7 @@ def run_cnn(
              
     # first things first, initialize the net.
     # This call creates an object net, but also initializes more parameters of the network.
+    
     net = cnn_mlp(   filename_params = filename_params,
                      arch_params = arch_params,
                      optimization_params = optimization_params,
@@ -28,7 +29,24 @@ def run_cnn(
                      init_params = None,
                      verbose =verbose ) 
                      
-                     
+    """
+    # Use this to pre-load and build VGG-19 network.
+    # Read vgg2samosa for parameter desctiptions.
+    model = './dataset/vgg/vgg19.pkl'
+    outs = 102
+    freeze_layer_params = True
+    from vgg2samosa import load_vgg
+    net = load_vgg(   
+                            model = model,
+                            dataset = dataset[0],
+                            filename_params = filename_params,
+                            optimization_params = optimization_params,
+                            freeze_layer_params = freeze_layer_params,
+                            visual_params = visual_params,
+                            outs = arch_params["outs"],
+                            verbose = verbose
+                           ) 
+    """
     # load the inputs of the net. 
     # This is needed to create variables like batchsizes and input layer sizes.
     net.init_data ( dataset = dataset , outs = arch_params ["outs"], visual_params = visual_params, verbose = verbose )   
@@ -43,7 +61,7 @@ def run_cnn(
     
     
     # this function saves the network.  Just so that you don't have to lose everything.                                 
-    net.save_network ()        
+    # net.save_network ()        
     # This function goes through the epochs      
     net.train( n_epochs = n_epochs, 
                 ft_epochs = ft_epochs,
@@ -105,44 +123,43 @@ if __name__ == '__main__':
     visual_params = {
                         "visualize_flag"        : True,
                         "visualize_after_epochs": 1,
-                        "n_visual_images"       : 36,
+                        "n_visual_images"       : 4,
                         "display_flag"          : False,
                         "color_filter"          : True         
                     }   
                                                                                                                             
     optimization_params = {
         
-                            "mom"                         	    : (0.5, 0.85, 100),     # (mom_start, momentum_end, momentum_interval)                     
+                            "mom"                         	    : (0.5, 0.85, 30),     # (mom_start, momentum_end, momentum_interval)                     
                             "mom_type"                          : 2,                    # 0-no mom, 1-polyak, 2-nestrov          
-                            "learning_rate"                     : (0.001,0.0001, 0.05 ),          # (initial_learning_rate, ft_learning_rate, annealing)
+                            "learning_rate"                     : (0.01,0.001, 0.05 ),          # (initial_learning_rate, ft_learning_rate, annealing)
                             "reg"                               : (0.000,0.000),       # l1_coeff, l2_coeff                                
                             "optim_type"                        : 2,                   # 0-SGD, 1-Adagrad, 2-RmsProp, 3-Adam
                             "objective"                         : 1,                   # 0-negative log likelihood, 1-categorical cross entropy, 2-binary cross entropy
                               
                                 }       
 
-    arch_params = {
-                    
+    arch_params = {                    
                             "mlp_activations"                   : [  ReLU, ReLU ],
                             "cnn_dropout"                       : False,
                             "mlp_dropout"                       : True,
                             "mlp_dropout_rates"                 : [ 0.5,  0.5, 0.5],
-                            "num_nodes"                         : [ 4096, 4096 ],                                     
+                            "num_nodes"                         : [ 450, 450 ],                                     
                             "outs"                              : 102,                                                                                                                               
                             "svm_flag"                          : False,                                       
-                            "cnn_activations"                   : [ ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ],             
-                            "cnn_batch_norm"                    : [ False,  True,   True,   True,   True,   ],
+                            "cnn_activations"                   : [ ReLU,   ReLU,   ReLU,    ],             
+                            "cnn_batch_norm"                    : [ False,  True,   True,    ],
                             "mlp_batch_norm"                    : True,
-                            "nkerns"                            : [  64,    64,     128,    128,    256,    ],              
-                            "filter_size"                       : [ (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  ],
-                            "pooling_size"                      : [ (1,1),  (3,3),  (2,2),  (3,3),  (2,2),  ],
-                            "conv_pad"                          : [ 2,      0,      0,      0,      2,      ],                            
-                            "pooling_type"                      : [ 1,      1,      1,      1,      1,      ],
-                            "maxrandpool_p"                     : [ 1,      1,      1,      1,      1,      ],                           
-                            "conv_stride_size"                  : [ (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  ],
-                            "cnn_maxout"                        : [ 1,      1,      1,      1,      1,      ],                    
-                            "mlp_maxout"                        : [ 1,      1,      1,      1,      1,      ],
-                            "cnn_dropout_rates"                 : [ 0,    0.5,    0.5,    0.5,      0.5,    ],
+                            "nkerns"                            : [  20,    50,     50,         ],              
+                            "filter_size"                       : [ (3,3),  (3,3),  (3,3),       ],
+                            "pooling_size"                      : [ (2,2),  (2,2),  (2,2),       ],
+                            "conv_pad"                          : [ 0,      0,      0,           ],                            
+                            "pooling_type"                      : [ 1,      1,      1,           ],
+                            "maxrandpool_p"                     : [ 1,      1,      1,           ],                           
+                            "conv_stride_size"                  : [ (1,1),  (1,1),  (1,1),       ],
+                            "cnn_maxout"                        : [ 1,      1,      1,           ],                    
+                            "mlp_maxout"                        : [ 1,      1,      1,           ],
+                            "cnn_dropout_rates"                 : [ 0,    0.5,    0.5,           ],
                             "random_seed"                       : 23455,
                             "mean_subtract"                     : False,
                             "use_bias"                          : True,
@@ -153,13 +170,13 @@ if __name__ == '__main__':
     n_epochs = 2                    # number of epochs to run unless early terminated
     validate_after_epochs = 1       # number of epochs after which to validate.    
     ft_epochs = 2                   # number of epoch to finetune learning with.
-    verbose = True                 # if True makes a lot of prints, if False doesn't. 
+    verbose = False                 # if True makes a lot of prints, if False doesn't. 
     
     # code to tutor on how to setup and run. 
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_76223", 
+                    dataset                 = "_datasets/_dataset_69858", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

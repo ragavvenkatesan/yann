@@ -4,6 +4,7 @@
 import os
 import cPickle
 import progressbar
+import copy
 
 # Math Packages
 import numpy
@@ -103,7 +104,7 @@ class cnn_mlp(object):
         f.close()  
         
     def load_data_init(self, dataset, verbose = False):
-        # every dataset will have atleast one batch ..... load that.
+        # every dataset will have atleast one batch ..load that.
         
         f = open(dataset + '/train/batch_0.pkl', 'rb')
         train_data_x, train_data_y = cPickle.load(f)
@@ -123,7 +124,7 @@ class cnn_mlp(object):
         
     # this loads up the data_params from a folder and sets up the initial databatch.         
     def init_data ( self, dataset, outs, visual_params = None, verbose = False):
-        print "... initializing dataset " + dataset 
+        print "initializing dataset " + dataset 
         f = open(dataset + '/data_params.pkl', 'rb')
         data_params = cPickle.load(f)
         f.close()
@@ -155,7 +156,7 @@ class cnn_mlp(object):
     def build_network (self, verbose = True):    
                      
        
-        print '... building the network'    
+        print 'building the network'    
         
         
         start_time = time.clock()
@@ -170,7 +171,7 @@ class cnn_mlp(object):
         
         ###########################################
         # Convolutional layers        
-        if not self.nkerns == []: # If there are some convolutional layers...              
+        if not self.nkerns == []: # If there are some convolutional layers             
             self.ConvLayers = core.ConvolutionalLayers (      
                                                     input = (first_layer_input, mean_sub_input),
                                                     rng = self.rng,
@@ -263,13 +264,13 @@ class cnn_mlp(object):
         if not self.nkerns == []:              
             self.activity = self.ConvLayers.activity
         end_time = time.clock()
-        print "...         time taken to build is " +str(end_time - start_time) + " seconds"
+        print "        time taken to build is " +str(end_time - start_time) + " seconds"
         if verbose is True:
-            print "... building cost function"
+            print "building cost function"
         self.build_cost_function()            
         
         if verbose is True:
-            print "... creating network functions"                                 
+            print "creating network functions"                                 
         self.create_network_functions(verbose = verbose)
                                    
     def build_cost_function(self):
@@ -308,7 +309,7 @@ class cnn_mlp(object):
         self.updates = network_optimizer.updates
         self.mom = network_optimizer.mom
         end_time = time.clock()
-        print "...         time taken is " +str(end_time - start_time) + " seconds"        
+        print "        time taken is " +str(end_time - start_time) + " seconds"        
         
     def create_network_functions(self, verbose = True):
         # create theano functions for evaluating the graph
@@ -349,7 +350,7 @@ class cnn_mlp(object):
                         self.x: self.train_set_x[index * self.batch_size: (index + 1) * self.batch_size]
                         })               
         if verbose is True:
-            print "... building training model" 
+            print "building training model" 
         if self.svm_flag is True:
             self.train_model = theano.function(
                     inputs= [index, self.epoch],
@@ -387,7 +388,7 @@ class cnn_mlp(object):
                     self.y: self.train_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
                                                                                          
     def load_data_base( self, batch = 1, type_set = 'train' ):
-        # every dataset will have atleast one batch ..... load that.
+        # every dataset will have atleast one batch ..load that.
         
         if type_set == 'train':
             f = open(self.dataset + '/train/batch_' +str(batch) +'.pkl', 'rb')
@@ -409,7 +410,7 @@ class cnn_mlp(object):
                        
     def set_data (self, batch, type_set, verbose = True):        
         data_x, data_y, data_y1 = self.load_data_base(batch, type_set )                     
-        # If we had used only one datavariable instead of three... this wouldn't have been needed. 
+        # If we had used only one datavariable instead of threethis wouldn't have been needed. 
         if type_set == 'train':                             
             self.train_set_x.set_value(data_x ,borrow = True)
             self.train_set_y.set_value(data_y ,borrow = True)                
@@ -455,7 +456,7 @@ class cnn_mlp(object):
             else:   
                 imgs = util.visualize(current_weights.dimshuffle(0,2,3,1).eval(), prefix = loc_we, is_color = self.color_filter)            
             
-    # ToDo: should make a results root dir and put in results there ... like root +'/visuals/' 
+    # ToDo: should make a results root dir and put in results there like root +'/visuals/' 
     def create_dirs( self, visual_params ):          
         self.visualize_flag          = visual_params ["visualize_flag" ]
         self.visualize_after_epochs  = visual_params ["visualize_after_epochs" ]
@@ -486,7 +487,7 @@ class cnn_mlp(object):
     def convert2maxpool(self, verbose):
         count = 0
         pool_temp = self.pooling_type    
-        print "... rebuilding net with maxpool"            
+        print "rebuilding net with maxpool"            
         self.retrain_params = {
                                 "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1),
                                 "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
@@ -499,7 +500,7 @@ class cnn_mlp(object):
     def convert2meanpool(self, verbose):
         count = 0
         pool_temp = self.pooling_type
-        print "... rebuilding net with meanpool"            
+        print "rebuilding net with meanpool"            
         self.retrain_params = {
                                 "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1),
                                 "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1)
@@ -514,30 +515,38 @@ class cnn_mlp(object):
         validation_losses = 0.   
         training_losses = 0.
     	f = open('dump.txt', 'a')
-        if self.multi_load is True:                    
-            for batch in xrange ( self.batches2validate):                       
+        print "   validating"    
+        if self.multi_load is True:   
+            bar = progressbar.ProgressBar(maxval=self.batches2validate + self.batches2train, \
+                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
+                               ' ',progressbar.ETA(), \
+                                ]).start()                        
+            for batch in xrange ( self.batches2validate):  
                 self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
                 validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
                 self.this_validation_loss = self.this_validation_loss + [validation_losses]
-            for batch in xrange (self.batches2test):
-                self.set_data ( batch = batch , type_set = 'test' , verbose = verbose)            
+                bar.update(batch+1)
+            for batch in xrange (self.batches2train):
+                self.set_data ( batch = batch , type_set = 'train' , verbose = verbose)            
                 training_losses = training_losses + numpy.sum([[self.training_accuracy(i) for i in xrange(self.n_train_batches)]])            
                 self.this_training_loss = self.this_training_loss + [training_losses]
-            print "...      -> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:])) + " learning_rate : " + str(self.eta.get_value(borrow=True))
-            print "                         momentum            : " + str(self.momentum_value(epoch))
+                bar.update(batch+1+self.batches2validate)
+            bar.finish()
+            print "   cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:])) + " learning_rate : " + str(self.eta.get_value(borrow=True))
+            print "   momentum            : " + str(self.momentum_value(epoch))
             if self.this_validation_loss[-1] < self.best_validation_loss:
-                print "                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + " -> best thus far "
+                print "   validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + " -> best thus far "
             else:
-                print "                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate))
+                print "   validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate))
                 
             if self.this_training_loss[-1] < self.best_training_loss:
-                print "                         training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + " -> best thus far "
+                print "   training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + " -> best thus far "
             else:
-                print "                         training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train))
+                print "   training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train))
                  
-            f.write ("...      -> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:]))  + "\n")
-            f.write ("                         validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +"\n")
-            f.write ("                         training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + "\n")                                                    
+            f.write ("-> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:]))  + "\n")
+            f.write ("   validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) +"\n")
+            f.write ("   training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + "\n")                                                    
             
         else: # if not multi_load
             validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
@@ -545,20 +554,20 @@ class cnn_mlp(object):
             
             training_losses = [self.training_accuracy(i) for i in xrange(self.batches2train)]
             self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]            
-            print "...      -> epoch " + str(epoch) + ", cost : " + str(self.cost_saved[-1]) + " learning_rate : " + str(self.eta.get_value(borrow=True))
-            print "                         momentum            : " +str(self.momentum_value(epoch)) 
+            print "   cost : " + str(self.cost_saved[-1]) + " learning_rate : " + str(self.eta.get_value(borrow=True))
+            print "   momentum            : " +str(self.momentum_value(epoch)) 
             if self.this_validation_loss[-1] < self.best_validation_loss:
-                print "                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +  " -> best thus far "
+                print "   validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +  " -> best thus far "
             else:
-                print "                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate))
+                print "   validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate))
             if self.this_training_loss[-1] < self.best_training_loss:
-                print "                         training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train)) +  " -> best thus far "
+                print "   training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train)) +  " -> best thus far "
             else:
-                print "                         training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train))
+                print "   training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train))
 
-            f.write ("...      -> epoch " + str(epoch) +  ", cost : " + str(self.cost_saved[-1])  + "\n")
-            f.write ("                         validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +"\n")
-            f.write ("                         training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train)) + "\n")                                                                
+            f.write ("-> epoch " + str(epoch) +  ", cost : " + str(self.cost_saved[-1])  + "\n")
+            f.write ("   validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +"\n")
+            f.write ("   training accuracy   : " + str(float(self.batch_size*self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.batches2train)) + "\n")                                                                
         f.close()    
          
         # Save down training stuff
@@ -568,11 +577,13 @@ class cnn_mlp(object):
         f.close()
                 
     def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, verbose = True):
-        print "... training"        
+        print "training"        
         self.main_img_visual = False
-        patience = numpy.inf 
+        patience = self.n_train_batches * self.batch_size
+        # wait one epoch no matter what. 
         patience_increase = 2  
         improvement_threshold = 0.995  
+
         self.this_validation_loss = []
         self.best_validation_loss = numpy.inf
         
@@ -585,39 +596,44 @@ class cnn_mlp(object):
         self.cost_saved = []
         iteration= 0        
 
-        temp_params = self.params
+        best_params = self.params
         #self.print_net(epoch = 0, display_flag = self.display_flag)
         start_time_main = time.clock()
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
             if epoch_counter == n_epochs:
-                print "... fine tuning"
+                print "fine tuning"
                 self.eta.set_value(self.ft_learning_rate)
             epoch_counter = epoch_counter + 1 
             start_time = time.clock() 
-            print "\n\n\n\n"                
-            print "...    -> epoch:" +str(epoch_counter)             
-            bar = progressbar.ProgressBar(maxval=self.batches2train, \
-                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',progressbar.ETA()]).start()
+            print "-> epoch: " +str(epoch_counter)     
+            if not verbose is True:         
+                batch = 0
+                bar = progressbar.ProgressBar(maxval=self.batches2train, \
+                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
+                               ' ',progressbar.ETA(), \
+                                ]).start()
             for batch in xrange (self.batches2train):
                 if verbose is True:
-                    print "...          -> batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"    
+                    print "   batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"    
                 if self.multi_load is True:
                     iteration= (epoch_counter - 1) * self.n_train_batches * self.batches2train + batch
                     # Load data for this batch
                     self.set_data ( batch = batch , type_set = 'train', verbose = verbose)
                     for minibatch_index in xrange(self.n_train_batches):
                         if verbose is True:
-                            print "...                  ->    mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
+                            print "      mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
                         self.cost_saved = self.cost_saved + [cost_ij]                        
                 else:   
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
                     self.cost_saved = self.cost_saved +[cost_ij] 
-                bar.update(batch+1)
-            bar.finish()
+                if not verbose is True:
+                    bar.update(batch+1)
+            if not verbose is True:
+                bar.finish()
             if numpy.isnan(self.cost_saved[-1]):
-                print " NAN !! resetting params back and going back to fine tuning learning rate"                     
+                print "NAN !! resetting params back and going back to fine tuning learning rate"                     
                 self.params = temp_params
                 epoch_counter = n_epochs
             if  epoch_counter % validate_after_epochs == 0:  
@@ -628,21 +644,24 @@ class cnn_mlp(object):
                 improvement_threshold:
                 patience = max(patience, iteration* patience_increase)
                 best_iter = iteration
+                best_params = copy.deepcopy(self.params)
             self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
             self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
-                   
+            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
+                self.print_net (epoch = epoch_counter, display_flag = self.display_flag)            
+                                   
             self.decay_learning_rate()  
             if patience <= iteration:
                 early_termination = True
-                break                                                
-            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
-                self.print_net (epoch = epoch_counter, display_flag = self.display_flag)               
+                break   
+                end_time = time.clock()
+                print "   time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
+                                                                                
             end_time = time.clock()
-            temp_params = self.params            
-            print "                         time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
+            print "   time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
              
         end_time_main = time.clock()
-        print "                         time taken for the entire training is " +str((end_time_main - start_time_main)/3600) + " hours"                
+        print "   time taken for the entire training is " +str((end_time_main - start_time_main)/3600) + " hours"                
                          
         f = open(self.cost_file_name,'w')
         for i in xrange(len(self.cost_saved)):
@@ -651,7 +670,7 @@ class cnn_mlp(object):
         f.close()  
             
     def test(self, verbose = True):
-        print "... testing"
+        print "testing"
         start_time = time.clock()
         wrong = 0
         predictions = []
@@ -659,46 +678,63 @@ class cnn_mlp(object):
         labels = []
          
         if self.multi_load is False:   
-            labels = self.test_set_y.eval().tolist()   
+            labels = self.test_set_y.eval().tolist()  
+            bar = progressbar.ProgressBar(maxval=self.batches2test, \
+                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
+                               ' ',progressbar.ETA(), \
+                                ]).start()               
             for mini_batch in xrange(self.batches2test):
                 #print ".. Testing batch " + str(mini_batch)
                 wrong = wrong + int(self.test_model(mini_batch))                        
                 predictions = predictions + self.prediction(mini_batch).tolist()
                 class_prob = class_prob + self.nll(mini_batch).tolist()
-            print ("...      -> total test accuracy : " + str(float((self.batch_size*self.batches2test)-wrong )*100
+                bar.update(mini_batch)
+            bar.finish()
+            print ("total test accuracy : " + str(float((self.batch_size*self.batches2test)-wrong )*100
                                                          /(self.batch_size*self.batches2test)) + 
                          " % out of " + str(self.batch_size*self.batches2test) + " samples.")
             f = open('dump.txt','a')
             
-            f.write(("...      -> total test accuracy : " + str(float((self.batch_size*self.batches2test)-wrong )*100
+            f.write(("total test accuracy : " + str(float((self.batch_size*self.batches2test)-wrong )*100
                                                          /(self.batch_size*self.batches2test)) + 
                          " % out of " + str(self.batch_size*self.batches2test) + " samples."))
             f.write('\n')                         
             f.close()
                         
-        else:           
-            for batch in xrange(self.batches2test):
+        else: 
+            if verbose is False:
+                bar = progressbar.ProgressBar(maxval=self.batches2test * self.n_test_batches, \
+                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
+                               ' ',progressbar.ETA(), \
+                                ]).start()                   
+            for batch in xrange(self.batches2test):                                           
                 if verbose is True:
-                    print "..       --> testing batch " + str(batch)
+                    print "   testing batch " + str(batch)
                 # Load data for this batch
                 self.set_data ( batch = batch, type_set = 'test' , verbose = verbose)
-                labels = labels + self.test_set_y.eval().tolist() 
+                labels = labels + self.test_set_y.eval().tolist()                   
                 for mini_batch in xrange(self.n_test_batches):
                     wrong = wrong + int(self.test_model(mini_batch))   
                     predictions = predictions + self.prediction(mini_batch).tolist()
                     class_prob = class_prob + self.nll(mini_batch).tolist()
+                    if verbose is False:
+                        bar.update(mini_batch * (batch+1) + 1)
+            if verbose is False:
+                bar.finish()
              
-            print ("...      -> total test accuracy : " + str(float((self.batch_size*self.n_test_batches*self.batches2test)-wrong )*100/
+            print ("total test accuracy : " + str(float((self.batch_size*self.n_test_batches*self.batches2test)-wrong )*100/
                                                          (self.batch_size*self.n_test_batches*self.batches2test)) + 
                          " % out of " + str(self.batch_size*self.n_test_batches*self.batches2test) + " samples.")
             f = open('dump.txt','a')
-            f.write(("...      -> total test accuracy : " + str(float((self.batch_size*self.n_test_batches*self.batches2test)-wrong )*100/
+            f.write(("total test accuracy : " + str(float((self.batch_size*self.n_test_batches*self.batches2test)-wrong )*100/
                                                          (self.batch_size*self.n_test_batches*self.batches2test)) + 
                          " % out of " + str(self.batch_size*self.n_test_batches*self.batches2test) + " samples."))
             f.write('\n')                         
             f.close()
         correct = 0 
         confusion = numpy.zeros((self.outs,self.outs), dtype = int)
+        import pdb
+        pdb.set_trace()
         for index in xrange(len(predictions)):
             if labels[index] == predictions[index]:
                 correct = correct + 1
@@ -722,8 +758,8 @@ class cnn_mlp(object):
         numpy.savetxt(self.confusion_file_name, confusion, newline="\n")
         print "confusion Matrix with accuracy : " + str(float(correct)/len(predictions)*100) + "%"
         end_time = time.clock()
-        print "...         time taken is " +str(end_time - start_time) + " seconds"
+        print "        time taken is " +str(end_time - start_time) + " seconds"
                 
         if self.visualize_flag is True and not self.nkerns == []:    
-            print "... saving down the final model's visualizations" 
+            print "saving down the final model's visualizations" 
             self.print_net (epoch = 'final' , display_flag = self.display_flag)                 
