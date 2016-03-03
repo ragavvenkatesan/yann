@@ -523,7 +523,6 @@ class cnn_mlp(object):
                 self.set_data ( batch = batch , type_set = 'test' , verbose = verbose)            
                 training_losses = training_losses + numpy.sum([[self.training_accuracy(i) for i in xrange(self.n_train_batches)]])            
                 self.this_training_loss = self.this_training_loss + [training_losses]
-            print "\n\n\n\n"    
             print "...      -> epoch " + str(epoch) +  ", cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:])) + " learning_rate : " + str(self.eta.get_value(borrow=True))
             print "                         momentum            : " + str(self.momentum_value(epoch))
             if self.this_validation_loss[-1] < self.best_validation_loss:
@@ -546,7 +545,6 @@ class cnn_mlp(object):
             
             training_losses = [self.training_accuracy(i) for i in xrange(self.batches2train)]
             self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]            
-            print "\n\n\n\n"                                        
             print "...      -> epoch " + str(epoch) + ", cost : " + str(self.cost_saved[-1]) + " learning_rate : " + str(self.eta.get_value(borrow=True))
             print "                         momentum            : " +str(self.momentum_value(epoch)) 
             if self.this_validation_loss[-1] < self.best_validation_loss:
@@ -596,7 +594,8 @@ class cnn_mlp(object):
                 self.eta.set_value(self.ft_learning_rate)
             epoch_counter = epoch_counter + 1 
             start_time = time.clock() 
-            print "...    -> epoch:" +str(epoch_counter) 
+            print "\n\n\n\n"                
+            print "...    -> epoch:" +str(epoch_counter)             
             bar = progressbar.ProgressBar(maxval=self.batches2train, \
                         widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), ' ',progressbar.ETA()]).start()
             for batch in xrange (self.batches2train):
@@ -640,10 +639,10 @@ class cnn_mlp(object):
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)               
             end_time = time.clock()
             temp_params = self.params            
-            print "                         time taken for this epoch is " +str((end_time - start_time)) + " seconds"
+            print "                         time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
              
         end_time_main = time.clock()
-        print "                         time taken for the entire training is " +str((end_time_main - start_time_main)/60) + " minutes"                
+        print "                         time taken for the entire training is " +str((end_time_main - start_time_main)/3600) + " hours"                
                          
         f = open(self.cost_file_name,'w')
         for i in xrange(len(self.cost_saved)):
