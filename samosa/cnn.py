@@ -575,7 +575,8 @@ class cnn_mlp(object):
         f.write(str(self.this_validation_loss[-1])  + "\t" + str(self.this_training_loss[-1]))
         f.write("\n")
         f.close()
-                
+        self.save_network()  
+              
     def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, verbose = True):
         print "training"        
         self.main_img_visual = False
@@ -597,6 +598,7 @@ class cnn_mlp(object):
         iteration= 0        
 
         best_params = self.params
+        nan_flag = False
         #self.print_net(epoch = 0, display_flag = self.display_flag)
         start_time_main = time.clock()
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
@@ -620,24 +622,34 @@ class cnn_mlp(object):
                     # Load data for this batch
                     self.set_data ( batch = batch , type_set = 'train', verbose = verbose)
                     for minibatch_index in xrange(self.n_train_batches):
-                        if verbose is True:
+                        if verbose is True and self.n_train_batches > 1:
                             print "      mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
+                        if numpy.isnan(cost_ij):
+                            print "NAN !! reducing the learning rate by 10 times and resetting back to last epoch"
+                            self.eta.set_value(self.eta.get_value(borrow = True)*0.1)                                                    
+                            self.params = copy.deepcopy(best_params)
+                            nan_flag = True     
+                            break         
                         self.cost_saved = self.cost_saved + [cost_ij]                        
                 else:   
                     iteration= (epoch_counter - 1) * self.n_train_batches + batch
                     cost_ij = self.train_model(batch, epoch_counter)
+                    if numpy.isnan(cost_ij):
+                        print "NAN !! reducing the learning rate by 10 times and resetting back to last epoch"                     
+                        self.params = copy.deepcopy(best_params)
+                        nan_flag = True
+                        self.eta.set_value(self.eta.get_value(borrow = True)*0.1)   
+                        break                 
                     self.cost_saved = self.cost_saved +[cost_ij] 
                 if not verbose is True:
                     bar.update(batch+1)
             if not verbose is True:
                 bar.finish()
-            if numpy.isnan(self.cost_saved[-1]):
-                print "NAN !! resetting params back and going back to fine tuning learning rate"                     
-                self.params = temp_params
-                epoch_counter = n_epochs
+
             if  epoch_counter % validate_after_epochs == 0:  
-                self.validate(epoch = epoch_counter, verbose = verbose)
+                if nan_flag is False:
+                    self.validate(epoch = epoch_counter, verbose = verbose)
                     
             # improve patience if loss improvement is good enough
             if self.this_validation_loss[-1] < self.best_validation_loss *  \
@@ -647,19 +659,23 @@ class cnn_mlp(object):
                 best_params = copy.deepcopy(self.params)
             self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
             self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
-            if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
+            if self.visualize_flag is True and nan_flag is False and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)            
-                                   
+            
+            print "   early stop : " + str(iteration/ float(patience))                           
             self.decay_learning_rate()  
             if patience <= iteration:
                 early_termination = True
                 break   
                 end_time = time.clock()
                 print "   time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
-                                                                                
+            if nan_flag is True:
+                nan_flag = False 
+                                                                                    
             end_time = time.clock()
             print "   time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
-             
+        
+        self.params = copy.deepcopy(best_params)     
         end_time_main = time.clock()
         print "   time taken for the entire training is " +str((end_time_main - start_time_main)/3600) + " hours"                
                          

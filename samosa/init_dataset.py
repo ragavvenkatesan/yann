@@ -25,13 +25,13 @@ if __name__ == '__main__':
                    "batch_size"         : 36,                                     
                    "load_batches"       : 1, 
                    "batches2train"      : 127,                                      
-                   "batches2test"       : 63,                                      
-                   "batches2validate"   : 64,                                        
-                   "height"             : 32,                                       
-                   "width"              : 32,                                       
+                   "batches2test"       : 64,                                      
+                   "batches2validate"   : 63,                                        
+                   "height"             : 224,                                       
+                   "width"              : 224,                                       
                    "channels"           : 3                                       
                   }
-                      
+                  
     # parameters relating to preprocessing.
     preprocess_params = { 
                             "normalize"     : True,
