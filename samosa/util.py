@@ -46,7 +46,7 @@ def visualize (imgs, prefix , is_color = False ):
 # function to load saved down data previously. Assumes that the first two elements are definitely params and arch_params.
 def load_network(filename, data_params = False, optimization_params = False):
     
-    f = gzip.open(filename, 'rb')
+    f = open(filename, 'rb')
     params = cPickle.load(f)
     arch_params = cPickle.load(f)
 

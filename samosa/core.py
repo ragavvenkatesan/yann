@@ -480,7 +480,7 @@ class MLP(object):
                 layer_counter += 1
                 
                 count = count + 2 
-                if batch_norm is True:
+                if batch_norm is True or batch_norm == [True]:
                     count = count + 1 
             # Set up the output layer
             n_in, n_out = weight_matrix_sizes[-1] 
@@ -692,7 +692,9 @@ class Conv2DPoolLayer(object):
             self.alpha = theano.shared(value=alpha_values, borrow = True)
         else:
             self.alpha = alpha   
-          
+        
+       
+                 
         conv_out = convolution(
                 input = self.input,
                 filters = self.W,
@@ -866,7 +868,7 @@ class ConvolutionalLayers (object):
                 curr_init_weights = init_params[0]
                 curr_init_bias    = init_params[1]
                 
-                if batch_norm is True:
+                if batch_norm is True or batch_norm == [True]:
                     curr_init_alpha    = init_params[2]
                 else:
                     curr_init_alpha    = None
@@ -945,7 +947,7 @@ class ConvolutionalLayers (object):
         
         # Create the rest of the convolutional - pooling layers in a loop
         param_counter = param_counter + 2  
-        if batch_norm is True:
+        if batch_norm is True or batch_norm == [True]:
             param_counter = param_counter + 1
         for layer in xrange(len(nkerns)-1):   
             
@@ -960,7 +962,7 @@ class ConvolutionalLayers (object):
                 if curr_copy is True:
                     curr_init_weights = init_params[param_counter]
                     curr_init_bias    = init_params[param_counter + 1]
-                    if batch_norm is True:
+                    if batch_norm is True or batch_norm == [True]:
                         curr_init_alpha = init_params[param_counter + 2]   
                     else:
                         curr_init_alpha = None
@@ -980,7 +982,7 @@ class ConvolutionalLayers (object):
                  
             if cnn_dropout_rates[layer + 1] == 1:
                 print " Don't dropout everything"
-                    
+                  
             if len(filt_size) == 2:         
                 self.dropout_conv_layers.append ( 
                                 DropoutConv2DPoolLayer(
@@ -1033,7 +1035,7 @@ class ConvolutionalLayers (object):
             self.activity.append( self.conv_layers[-1].output.dimshuffle(0,2,3,1) )
 
             param_counter = param_counter + 2    
-            if batch_norm is True:
+            if batch_norm is True or batch_norm == [True]:
                 param_counter = param_counter + 1  
                 
         self.params = []
