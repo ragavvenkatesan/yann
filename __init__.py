@@ -59,10 +59,11 @@ def run_cnn(
     # build network is the important part of the code where all the action happens.                            
     net.build_network(verbose = verbose)   
     
-    
+    # This is needed to build the backprop part of the network
+    net.build_learner(verbose = verbose)    
     # this function saves the network.  Just so that you don't have to lose everything.                                 
     # net.save_network ()        
-    # This function goes through the epochs      
+    # This function goes through the epochs             
     net.train( n_epochs = n_epochs, 
                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
@@ -130,17 +131,17 @@ if __name__ == '__main__':
                                                                                                                             
     optimization_params = {
         
-                            "mom"                         	    : (0.5, 0.85, 30),     # (mom_start, momentum_end, momentum_interval)                     
+                            "mom"                         	    : (0.9, 0.95, 30),     # (mom_start, momentum_end, momentum_interval)                     
                             "mom_type"                          : 2,                    # 0-no mom, 1-polyak, 2-nestrov          
                             "learning_rate"                     : (0.01,0.001, 0.05 ),          # (initial_learning_rate, ft_learning_rate, annealing)
-                            "reg"                               : (0.000,0.000),       # l1_coeff, l2_coeff                                
+                            "reg"                               : (0.000,0.00051),       # l1_coeff, l2_coeff                                
                             "optim_type"                        : 2,                   # 0-SGD, 1-Adagrad, 2-RmsProp, 3-Adam
                             "objective"                         : 1,                   # 0-negative log likelihood, 1-categorical cross entropy, 2-binary cross entropy
                               
                                 }       
 
     arch_params = {                    
-                            "mlp_activations"                   : [  ReLU, ReLU ],
+                            "mlp_activations"                   : [  ReLU, ReLU, Softmax ],
                             "cnn_dropout"                       : False,
                             "mlp_dropout"                       : True,
                             "mlp_dropout_rates"                 : [ 0.5,  0.5, 0.5],
@@ -148,7 +149,7 @@ if __name__ == '__main__':
                             "outs"                              : 102,                                                                                                                               
                             "svm_flag"                          : False,                                       
                             "cnn_activations"                   : [ ReLU,   ReLU,   ReLU,    ],             
-                            "cnn_batch_norm"                    : [ False,  True,   True,    ],
+                            "cnn_batch_norm"                    : False,
                             "mlp_batch_norm"                    : True,
                             "nkerns"                            : [  20,    50,     50,         ],              
                             "filter_size"                       : [ (3,3),  (3,3),  (3,3),       ],
@@ -159,7 +160,7 @@ if __name__ == '__main__':
                             "conv_stride_size"                  : [ (1,1),  (1,1),  (1,1),       ],
                             "cnn_maxout"                        : [ 1,      1,      1,           ],                    
                             "mlp_maxout"                        : [ 1,      1,      1,           ],
-                            "cnn_dropout_rates"                 : [ 0,    0.5,    0.5,           ],
+                            "cnn_dropout_rates"                 : [ 0.5,    0.5,    0.5,         ],
                             "random_seed"                       : 23455,
                             "mean_subtract"                     : False,
                             "use_bias"                          : True,
@@ -167,16 +168,16 @@ if __name__ == '__main__':
                  }                          
 
     # other loose parameters. 
-    n_epochs = 2                    # number of epochs to run unless early terminated
+    n_epochs = 200                    # number of epochs to run unless early terminated
     validate_after_epochs = 1       # number of epochs after which to validate.    
-    ft_epochs = 2                   # number of epoch to finetune learning with.
-    verbose = False                 # if True makes a lot of prints, if False doesn't. 
+    ft_epochs = 200                   # number of epoch to finetune learning with.
+    verbose = True                 # if True makes a lot of prints, if False doesn't. 
     
     # code to tutor on how to setup and run. 
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_69858", 
+                    dataset                 = "_datasets/_dataset_99802", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,

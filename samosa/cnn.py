@@ -22,27 +22,6 @@ import core
 import util
 import dataset   
     
-    
-    
-# From the Theano Tutorials
-def shared_dataset(data_xy, n_classes, borrow=True, svm_flag = True):
-
-    data_x, data_y = data_xy
-    
-    shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
-    shared_y = theano.shared(numpy.asarray(data_y, dtype='int32'),  borrow=borrow)
-                                    
-    if svm_flag is True:
-        # one-hot encoded labels as {-1, 1}
-        #n_classes = len(numpy.unique(data_y))  # dangerous?
-        y1 = -1 * numpy.ones((data_y.shape[0], n_classes + 1))
-        y1[numpy.arange(data_y.shape[0]), data_y] = 1
-        shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
-        
-        return shared_x, shared_y, shared_y1
-    else:
-        return shared_x, shared_y  
-
 class cnn_mlp(object):
 
     def __init__(  self, filename_params, 
@@ -59,8 +38,8 @@ class cnn_mlp(object):
         self.cost_file_name      = filename_params [ "cost_file_name"  ]
         self.confusion_file_name = filename_params [ "confusion_file_name" ]
         self.network_save_name   = filename_params [ "network_save_name" ]
-        random_seed = arch_params["random_seed"]
-        self.rng = numpy.random.RandomState(random_seed)  
+
+        self.rng = numpy.random  
         self.main_img_visual = True 
         
         self.optim_params                    = optimization_params           
@@ -80,7 +59,7 @@ class cnn_mlp(object):
         self.conv_stride_size                = arch_params [ "conv_stride_size" ]
         self.conv_pad                        = arch_params [ "conv_pad" ]        
         self.num_nodes                       = arch_params [ "num_nodes" ]
-        random_seed                          = arch_params [ "random_seed" ]
+
         self.svm_flag                        = arch_params [ "svm_flag" ]   
         self.mean_subtract                   = arch_params [ "mean_subtract" ]
         self.max_out                         = arch_params [ "max_out" ] 
@@ -96,9 +75,10 @@ class cnn_mlp(object):
         self.ft_learning_rate = self.optim_params["learning_rate"][1] 
         self.learning_rate_decay = self.optim_params["learning_rate"][2]      
                 
-    def save_network( self ):          # for others use only data_params or optimization_params
-
-        f = open(self.network_save_name, 'wb')
+    def save_network( self, verbose = False ):          # for others use only data_params or optimization_params
+        if verbose is True:
+            print "   dumping network"
+        f = open(self.network_save_name, 'wb')                   
         for obj in [self.params, self.arch, self.data_struct, self.optim_params]:
             cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
         f.close()  
@@ -118,9 +98,9 @@ class cnn_mlp(object):
         valid_data_x, valid_data_y = cPickle.load(f)
         f.close()
                   
-        self.test_set_x, self.test_set_y, self.test_set_y1 = shared_dataset((test_data_x, test_data_y), n_classes = self.outs, svm_flag = True)
-        self.valid_set_x, self.valid_set_y, self.valid_set_y1 = shared_dataset((valid_data_x, valid_data_y), self.outs, svm_flag = True)
-        self.train_set_x, self.train_set_y, self.train_set_y1 = shared_dataset((train_data_x, train_data_y), self.outs, svm_flag = True)
+        self.test_set_x, self.test_set_y, self.test_set_y1 = core.shared_dataset((test_data_x, test_data_y), n_classes = self.outs, svm_flag = True)
+        self.valid_set_x, self.valid_set_y, self.valid_set_y1 = core.shared_dataset((valid_data_x, valid_data_y), self.outs, svm_flag = True)
+        self.train_set_x, self.train_set_y, self.train_set_y1 = core.shared_dataset((train_data_x, train_data_y), self.outs, svm_flag = True)
         
     # this loads up the data_params from a folder and sets up the initial databatch.         
     def init_data ( self, dataset, outs, visual_params = None, verbose = False):
@@ -168,12 +148,13 @@ class cnn_mlp(object):
      
         first_layer_input = self.x.reshape((self.batch_size, self.height, self.width, self.channels)).dimshuffle(0,3,1,2)
         mean_sub_input = first_layer_input - first_layer_input.mean()        
-        
+                
+        next_in = mean_sub_input if self.mean_subtract is True else first_layer_input 
         ###########################################
         # Convolutional layers        
         if not self.nkerns == []: # If there are some convolutional layers             
             self.ConvLayers = core.ConvolutionalLayers (      
-                                                    input = (first_layer_input, mean_sub_input),
+                                                    input = next_in,
                                                     rng = self.rng,
                                                     input_size = (self.height, self.width, self.channels, self.batch_size), 
                                                     mean_subtract = self.mean_subtract,
@@ -234,7 +215,8 @@ class cnn_mlp(object):
                 for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
                     self.copy_from_old.append ( True ) 
                                           
-        param_counter = len(self.nkerns) * 2 if self.batch_norm is False else len(self.nkerns) * 3                                          
+        param_counter = len(self.nkerns) * 2 if self.batch_norm is False else len(self.nkerns) * 3 
+                                       
         self.MLPlayers = core.MLP  ( 
                                     rng = self.rng,
                                     input = (fully_connected_input, dropout_fully_connected_input),
@@ -246,6 +228,7 @@ class cnn_mlp(object):
                                     use_bias = self.use_bias,
                                     svm_flag = self.svm_flag,
                                     batch_norm = self.mlp_batch_norm, 
+                                    cnn_dropped = self.cnn_dropout,
                                     params = [] if self.init_params is None else self.init_params[param_counter:],
                                     copy_from_old = self.copy_from_old [len(self.nkerns):] if self.init_params is not None else None,
                                     freeze = self.freeze_layers [ len(self.nkerns):],
@@ -265,20 +248,14 @@ class cnn_mlp(object):
             self.activity = self.ConvLayers.activity
         end_time = time.clock()
         print "        time taken to build is " +str(end_time - start_time) + " seconds"
-        if verbose is True:
-            print "building cost function"
-        self.build_cost_function()            
-        
-        if verbose is True:
-            print "creating network functions"                                 
-        self.create_network_functions(verbose = verbose)
                                    
-    def build_cost_function(self):
+    def build_cost_function(self, verbose):
+        if verbose is True:
+            print "building cost function"    
         # Build the expresson for the categorical cross entropy function.
-        start_time = time.clock()        
         self.objective = self.optim_params["objective"]
-        self.l1_reg = self.optim_params["reg"][0]
-        self.l2_reg = self.optim_params["reg"][1]        
+        self.l1_reg = float(self.optim_params["reg"][0])
+        self.l2_reg = float(self.optim_params["reg"][1])        
         if self.svm_flag is False:
             if self.objective == 0:
                 cost = self.MLPlayers.negative_log_likelihood( self.y )
@@ -289,7 +266,7 @@ class cnn_mlp(object):
                     dropout_cost = self.MLPlayers.dropout_cross_entropy ( self.y )
                 else:
                     cost = self.MLPlayers.binary_entropy ( self.y )
-                    dropout_cost = self.MLPlayers.dropout_binary_entropy ( self.y )
+                    dropout_cost = self.MLPlayers.dropout_binary_entropy ( self.y )                    
             else:
                 print "!! Objective is not understood, switching to cross entropy"
                 cost = self.MLPlayers.cross_entropy ( self.y )
@@ -297,9 +274,11 @@ class cnn_mlp(object):
         else :        
             cost = self.MLPlayers.hinge_loss( self.y1 )
             dropout_cost = self.MLPlayers.hinge_loss( self.y1 )
-        self.output =  dropout_cost if self.mlp_dropout else cost
-        self.output = self.output + + self.l1_reg * self.MLPlayers.L1 + self.l2_reg * self.MLPlayers.L2  
-                                        
+        output = dropout_cost if self.mlp_dropout else cost
+        self.output = output + self.l1_reg * self.MLPlayers.L1 + self.l2_reg * self.MLPlayers.L2  
+       
+       
+    def build_optimizer(self, verbose):                                    
         network_optimizer = core.optimizer( params = self.params,
                                     objective = self.output,
                                     optimization_params = self.optim_params,
@@ -308,14 +287,16 @@ class cnn_mlp(object):
         self.epoch = network_optimizer.epoch
         self.updates = network_optimizer.updates
         self.mom = network_optimizer.mom
-        end_time = time.clock()
-        print "        time taken is " +str(end_time - start_time) + " seconds"        
+    
         
-    def create_network_functions(self, verbose = True):
+    def build_network_functions(self, verbose = True):
         # create theano functions for evaluating the graph
         # I don't like the idea of having test model only hooked to the test_set_x variable.
         # I would probably have liked to have only one data variable.. but theano tutorials is using 
-        # this style, so wth, so will I.        
+        # this style, so wth, so will I.    
+        if verbose is True:
+            print "creating network functions"
+                        
         index = T.lscalar('index')  # index to a [mini]batch           
                                                        
         self.test_model = theano.function(
@@ -386,7 +367,15 @@ class cnn_mlp(object):
                 givens={
                     self.x: self.train_set_x[index * self.batch_size:(index + 1) * self.batch_size],
                     self.y: self.train_set_y[index * self.batch_size:(index + 1) * self.batch_size]})
-                                                                                         
+
+    def build_learner (self, verbose = True):
+        start_time = time.clock()   
+        self.build_cost_function(verbose =verbose)     
+        self.build_optimizer (verbose = verbose)                                                        
+        self.build_network_functions(verbose = verbose)
+        end_time = time.clock()
+        print "        time taken is " +str(end_time - start_time) + " seconds"
+                                                                                                                
     def load_data_base( self, batch = 1, type_set = 'train' ):
         # every dataset will have atleast one batch ..load that.
         
@@ -437,6 +426,12 @@ class cnn_mlp(object):
         self.main_img_visual = True                
         # visualizing activities.
         activity_now = self.activities(0)     
+        bar = progressbar.ProgressBar(maxval=len(self.nkerns), \
+                        widgets=[progressbar.AnimatedMarker(), \
+                        ' visualizing ', 
+                        ' ', progressbar.Percentage(), \
+                        ' ',progressbar.ETA(), \
+                        ]).start()        
         for m in xrange(len(self.nkerns)):   #For each layer 
             loc_ac = '../visuals/activities/layer_' + str(m) + "/epoch_" + str(epoch)
             if not os.path.exists(loc_ac):   
@@ -455,7 +450,8 @@ class cnn_mlp(object):
                 imgs = util.visualize(numpy.squeeze(current_weights.dimshuffle(0,3,4,1,2).eval()), prefix = loc_we, is_color = self.color_filter)
             else:   
                 imgs = util.visualize(current_weights.dimshuffle(0,2,3,1).eval(), prefix = loc_we, is_color = self.color_filter)            
-            
+            bar.update(m+1)
+        bar.finish()
     # ToDo: should make a results root dir and put in results there like root +'/visuals/' 
     def create_dirs( self, visual_params ):          
         self.visualize_flag          = visual_params ["visualize_flag" ]
@@ -514,26 +510,28 @@ class cnn_mlp(object):
     def validate(self, epoch, verbose = True):
         validation_losses = 0.   
         training_losses = 0.
-    	f = open('dump.txt', 'a')
-        print "   validating"    
-        if self.multi_load is True:   
-            bar = progressbar.ProgressBar(maxval=self.batches2validate + self.batches2train, \
-                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
-                               ' ',progressbar.ETA(), \
-                                ]).start()                        
+    	f = open('dump.txt', 'a')        
+        if self.multi_load is True:                       
+            print "   cost                : " + str(numpy.mean(self.cost_saved[-1*self.batches2train*self.n_train_batches:]))
+            print "   learning_rate       : " + str(self.eta.get_value(borrow=True))
+            print "   momentum            : " + str(self.momentum_value(epoch))
+            bar = progressbar.ProgressBar(maxval=self.batches2train + self.batches2validate, \
+                        widgets=[progressbar.AnimatedMarker(), \
+                        ' validation ', 
+                        ' ', progressbar.Percentage(), \
+                        ' ',progressbar.ETA(), \
+                        ]).start()
             for batch in xrange ( self.batches2validate):  
                 self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
                 validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
                 self.this_validation_loss = self.this_validation_loss + [validation_losses]
-                bar.update(batch+1)
+                bar.update(batch + 1)
             for batch in xrange (self.batches2train):
                 self.set_data ( batch = batch , type_set = 'train' , verbose = verbose)            
                 training_losses = training_losses + numpy.sum([[self.training_accuracy(i) for i in xrange(self.n_train_batches)]])            
                 self.this_training_loss = self.this_training_loss + [training_losses]
-                bar.update(batch+1+self.batches2validate)
-            bar.finish()
-            print "   cost : " + str(numpy.mean(self.cost_saved[-1*self.n_train_batches:])) + " learning_rate : " + str(self.eta.get_value(borrow=True))
-            print "   momentum            : " + str(self.momentum_value(epoch))
+                bar.update(batch+1 + self.batches2validate)
+            bar.finish()    
             if self.this_validation_loss[-1] < self.best_validation_loss:
                 print "   validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + " -> best thus far "
             else:
@@ -549,13 +547,15 @@ class cnn_mlp(object):
             f.write ("   training accuracy   : " + str(float( self.batch_size * self.n_train_batches * self.batches2train - self.this_training_loss[-1])*100 /(self.batch_size*self.n_train_batches*self.batches2train)) + "\n")                                                    
             
         else: # if not multi_load
+            print "   cost                : " + str(numpy.mean(self.cost_saved[-1*self.batches2train:]))
+            print "   learning_rate       : " + str(self.eta.get_value(borrow=True))
+            print "   momentum            : " +str(self.momentum_value(epoch))   
+            
             validation_losses = [self.validate_model(i) for i in xrange(self.batches2validate)]
             self.this_validation_loss = self.this_validation_loss + [numpy.sum(validation_losses)]
             
             training_losses = [self.training_accuracy(i) for i in xrange(self.batches2train)]
             self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]            
-            print "   cost : " + str(self.cost_saved[-1]) + " learning_rate : " + str(self.eta.get_value(borrow=True))
-            print "   momentum            : " +str(self.momentum_value(epoch)) 
             if self.this_validation_loss[-1] < self.best_validation_loss:
                 print "   validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +  " -> best thus far "
             else:
@@ -572,19 +572,18 @@ class cnn_mlp(object):
          
         # Save down training stuff
         f = open(self.error_file_name,'a')
+        f.write("\n")        
         f.write(str(self.this_validation_loss[-1])  + "\t" + str(self.this_training_loss[-1]))
-        f.write("\n")
         f.close()
         self.save_network()  
               
-    def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, verbose = True):
-        print "training"        
+    def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, patience_epochs = 1, verbose = True):
+
         self.main_img_visual = False
-        patience = self.n_train_batches * self.batch_size
-        # wait one epoch no matter what. 
+        patience = patience_epochs * validate_after_epochs * self.batches2train * self.n_train_batches + 1
+        # wait one validation cycle
         patience_increase = 2  
         improvement_threshold = 0.995  
-
         self.this_validation_loss = []
         self.best_validation_loss = numpy.inf
         
@@ -602,16 +601,19 @@ class cnn_mlp(object):
         #self.print_net(epoch = 0, display_flag = self.display_flag)
         start_time_main = time.clock()
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
+            start_time = time.clock()         
             if epoch_counter == n_epochs:
+                print "\n\n"
                 print "fine tuning"
                 self.eta.set_value(self.ft_learning_rate)
             epoch_counter = epoch_counter + 1 
-            start_time = time.clock() 
+            print "\n"
             print "-> epoch: " +str(epoch_counter)     
             if not verbose is True:         
                 batch = 0
                 bar = progressbar.ProgressBar(maxval=self.batches2train, \
-                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
+                        widgets=[ progressbar.AnimatedMarker(), ' ', progressbar.Percentage(), \
+                               ' training ', 
                                ' ',progressbar.ETA(), \
                                 ]).start()
             for batch in xrange (self.batches2train):
@@ -627,21 +629,25 @@ class cnn_mlp(object):
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
                         if numpy.isnan(cost_ij):
                             print "NAN !! reducing the learning rate by 10 times and resetting back to last epoch"
-                            self.eta.set_value(self.eta.get_value(borrow = True)*0.1)                                                    
+                            self.eta.set_value(numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX))   
                             self.params = copy.deepcopy(best_params)
                             nan_flag = True     
                             break         
-                        self.cost_saved = self.cost_saved + [cost_ij]                        
+                        self.cost_saved = self.cost_saved + [cost_ij]     
+                    if verbose is True:
+                        print "      cost: " + str(cost_ij)
                 else:   
-                    iteration= (epoch_counter - 1) * self.n_train_batches + batch
+                    iteration= (epoch_counter - 1) * self.batches2train + batch
                     cost_ij = self.train_model(batch, epoch_counter)
                     if numpy.isnan(cost_ij):
                         print "NAN !! reducing the learning rate by 10 times and resetting back to last epoch"                     
                         self.params = copy.deepcopy(best_params)
                         nan_flag = True
-                        self.eta.set_value(self.eta.get_value(borrow = True)*0.1)   
+                        self.eta.set_value(numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX))   
                         break                 
                     self.cost_saved = self.cost_saved +[cost_ij] 
+                    if verbose is True:                    
+                        print "      cost: " + str(cost_ij)                    
                 if not verbose is True:
                     bar.update(batch+1)
             if not verbose is True:
@@ -662,18 +668,18 @@ class cnn_mlp(object):
             if self.visualize_flag is True and nan_flag is False and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
                 self.print_net (epoch = epoch_counter, display_flag = self.display_flag)            
             
-            print "   early stop : " + str(iteration/ float(patience))                           
+            print "   early stop : " + str(iteration/ float(patience)) +" ( " + str(iteration) +"/" + str(patience) +")"                          
             self.decay_learning_rate()  
             if patience <= iteration:
                 early_termination = True
                 break   
                 end_time = time.clock()
-                print "   time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
+                print "   total time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
             if nan_flag is True:
                 nan_flag = False 
                                                                                     
             end_time = time.clock()
-            print "   time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
+            print "   total time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
         
         self.params = copy.deepcopy(best_params)     
         end_time_main = time.clock()
@@ -696,9 +702,10 @@ class cnn_mlp(object):
         if self.multi_load is False:   
             labels = self.test_set_y.eval().tolist()  
             bar = progressbar.ProgressBar(maxval=self.batches2test, \
-                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
-                               ' ',progressbar.ETA(), \
-                                ]).start()               
+                        widgets=[progressbar.AnimatedMarker(), ' ', progressbar.Percentage(), \
+                                ' testing ',                        
+                                ' ',progressbar.ETA(), \
+                                ]).start()              
             for mini_batch in xrange(self.batches2test):
                 #print ".. Testing batch " + str(mini_batch)
                 wrong = wrong + int(self.test_model(mini_batch))                        
@@ -720,9 +727,10 @@ class cnn_mlp(object):
         else: 
             if verbose is False:
                 bar = progressbar.ProgressBar(maxval=self.batches2test * self.n_test_batches, \
-                        widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), \
+                        widgets=[progressbar.AnimatedMarker(), ' ', progressbar.Percentage(), \
+                               ' testing ',
                                ' ',progressbar.ETA(), \
-                                ]).start()                   
+                                ]).start()                  
             for batch in xrange(self.batches2test):                                           
                 if verbose is True:
                     print "   testing batch " + str(batch)
@@ -749,8 +757,7 @@ class cnn_mlp(object):
             f.close()
         correct = 0 
         confusion = numpy.zeros((self.outs,self.outs), dtype = int)
-        import pdb
-        pdb.set_trace()
+
         for index in xrange(len(predictions)):
             if labels[index] == predictions[index]:
                 correct = correct + 1

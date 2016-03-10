@@ -14,7 +14,11 @@ from theano.ifelse import ifelse
 from theano.tensor.signal.pool import Pool as DownsampleFactorMax
 from theano.tensor.signal.pool import pool_2d 
 from theano.tensor.signal.pool import max_pool_2d_same_size 
+
+
 from theano.sandbox.cuda import dnn
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+# from theano.tensor.shared_randomstreams import RandomStreams
 
 from theano.tensor.nnet.neighbours import images2neibs
 
@@ -147,7 +151,7 @@ def Maxout(x, maxout_size, max_out_flag = 1, dimension = 1):
         maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
         output = maxout_out    
     return output                
-    
+  
 def meanpool ( input, ds, ignore_border = False ):
     out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])    
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders')
@@ -158,31 +162,33 @@ def maxrandpool ( input, ds, p, ignore_border = False ):
     """ provide random pooling among the top 'p' sorted outputs p = 0 is maxpool """
     rng = numpy.random.RandomState(24546)
     out_shp = (input.shape[0], input.shape[1], input.shape[2]/ds[0], input.shape[3]/ds[1])        
-    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+    srng = RandomStreams(rng.randint(2147462579))
     pos = srng.random_integers(size=(1,1), low = ds[0]*ds[1]-1-p, high = ds[0]*ds[1]-1)
     neib = images2neibs(input, neib_shape = ds ,mode = 'valid' if ignore_border is False else 'ignore_borders') 
     neib = neib.sort(axis = -1) 
     pooled_vectors = neib[:,pos]   
     return T.reshape(pooled_vectors, out_shp, ndim = 4 )           
     
-#From the Theano Tutorials
-def shared_dataset(data_xy, borrow=True, svm_flag = True):
+# From the Theano Tutorials
+def shared_dataset(data_xy, n_classes, borrow=True, svm_flag = True):
 
-	data_x, data_y = data_xy
-	shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
-	shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX),  borrow=borrow)
-	                                 
-	if svm_flag is True:
-		# one-hot encoded labels as {-1, 1}
-		n_classes = len(numpy.unique(data_y))  # dangerous?
-		y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
-		y1[numpy.arange(data_y.shape[0]), data_y] = 1
-		shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
+    data_x, data_y = data_xy
+    
+    shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
+    shared_y = theano.shared(numpy.asarray(data_y, dtype='int32'),  borrow=borrow)
+                                    
+    if svm_flag is True:
+        # one-hot encoded labels as {-1, 1}
+        #n_classes = len(numpy.unique(data_y))  # dangerous?
+        y1 = -1 * numpy.ones((data_y.shape[0], n_classes + 1))
+        y1[numpy.arange(data_y.shape[0]), data_y] = 1
+        shared_y1 = theano.shared(numpy.asarray(y1,dtype=theano.config.floatX), borrow=borrow)
+        
+        return shared_x, shared_y, shared_y1
+    else:
+        return shared_x, shared_y  
 
-		return shared_x, theano.tensor.cast(shared_y, 'int32'), shared_y1
-	else:
-		return shared_x, theano.tensor.cast(shared_y, 'int32') 
-             
+
 # SVM layer from the discussions in this group
 # https://groups.google.com/forum/#!msg/theano-users/on4D16jqRX8/IWGa-Gl07g0J
 class SVMLayer(object):
@@ -241,7 +247,7 @@ class SVMLayer(object):
 # Modified From https://github.com/mdenil/dropout/blob/master/mlp.py
 class LogisticRegression(object):
 
-    def __init__(self, input, n_in, n_out, rng, W=None, b=None, use_bias = False ):
+    def __init__(self, input, n_in, n_out, rng, activation = Softmax, W=None, b=None, use_bias = False ):
 
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         if W is None:
@@ -263,9 +269,9 @@ class LogisticRegression(object):
 
         # compute vector of class-membership probabilities in symbolic form
         if use_bias is True:
-            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b + 1e-7) 
+            self.p_y_given_x = activation(T.dot(input, self.W) + self.b ) 
         else:
-            self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + 1e-7)         
+            self.p_y_given_x = activation(T.dot(input, self.W))         
         # compute prediction as class whose probability is maximal in
         # symbolic form
         self.y_pred = T.argmax(self.p_y_given_x, axis=1)
@@ -305,8 +311,8 @@ class HiddenLayer(object):
                  use_bias=False):
 
         self.input = input
-        self.activation = activation
-        srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+        self.activation = activation  
+        srng = RandomStreams(rng.randint(1,2147462579))
         if W is None:
             W_values = numpy.asarray(0.01 * rng.standard_normal(
                 size=(n_in, n_out)), dtype=theano.config.floatX)
@@ -353,6 +359,7 @@ class HiddenLayer(object):
                 self.params = [self.W, self.b]
             else:
                 self.params = [self.W]
+                
         self.L1 = abs(self.W).sum()  + abs(self.alpha).sum()
         self.L2 = (self.W**2).sum()  + (self.alpha**2).sum()
         self.n_out = n_out / maxout_size
@@ -361,12 +368,10 @@ class HiddenLayer(object):
 # https://github.com/mdenil/dropout
 def _dropout_from_layer(rng, layer, p):
 
-    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+    srng = RandomStreams(rng.randint(1,2147462579),use_cuda = True)
     # p=1-p because 1's indicate keep and p is prob of dropping
-    mask = srng.binomial(n=1, p=1-p, size=layer.shape)
-    # The cast is important because
-    # int * float32 = float64 which pulls things off the gpu
-    output = layer * T.cast(mask, theano.config.floatX)
+    mask = srng.binomial(n=1, p=1-p, size=layer.shape, dtype = theano.config.floatX )
+    output = layer * mask
     return output
 
 class DropoutHiddenLayer(HiddenLayer):
@@ -389,6 +394,7 @@ class MLP(object):
             activations,
             copy_from_old,
             freeze,
+            cnn_dropped=False,
             use_bias=True,
             max_out=False,
             svm_flag = True,
@@ -398,17 +404,21 @@ class MLP(object):
 
         weight_matrix_sizes = zip(layer_sizes, layer_sizes[1:])
         self.layers = []
-        self.dropout_layers = []
+        self.dropout_layers = []        
         next_layer_input, dropout_next_layer_input = input
-   
-        next_dropout_layer_input = _dropout_from_layer(rng, dropout_next_layer_input, p=dropout_rates[0])
         
+        if cnn_dropped is False:
+            next_dropout_layer_input = _dropout_from_layer(rng, next_layer_input, p=dropout_rates[0])
+        else:
+            next_dropout_layer_input = dropout_next_layer_input          
+              
         layer_counter = 0    
         prev_maxout_size = 1   
 
-        self.L1 = theano.shared(0)
-        self.L2 = theano.shared(0)
+        self.L1 = theano.shared(numpy.asarray(0., dtype=theano.config.floatX))
+        self.L2 = theano.shared(numpy.asarray(0., dtype=theano.config.floatX))
         
+
         count = 0
         if len(layer_sizes) > 2:
             for n_in, n_out in weight_matrix_sizes[:-1]:
@@ -424,7 +434,7 @@ class MLP(object):
                                                     n_in=n_in / prev_maxout_size, n_out = n_out,
                                                     use_bias=use_bias, 
                                                     max_out = max_out,
-                                                    batch_norm = batch_norm,
+                                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer_counter],
                                                     dropout_rate=dropout_rates[layer_counter + 1],
                                                     maxout_size = maxout_rates[layer_counter]
                                                     )
@@ -435,7 +445,7 @@ class MLP(object):
                                             n_in=n_in / prev_maxout_size , n_out = n_out,
                                             use_bias=use_bias,
                                             max_out = max_out,
-                                            batch_norm = batch_norm,
+                                            batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer_counter],
                                             dropout_rate=dropout_rates[layer_counter + 1],
                                             maxout_size = maxout_rates[layer_counter],
                                             W = params[count] if copy_from_old[layer_counter] is True else None,
@@ -457,7 +467,7 @@ class MLP(object):
                         b=next_dropout_layer.b,
                         alpha =next_dropout_layer.alpha,
                         max_out = max_out,
-                        batch_norm = batch_norm,
+                        batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer_counter],
                         maxout_size = maxout_rates[ layer_counter ],
                         n_in = n_in / prev_maxout_size, n_out=n_out,
                         use_bias=use_bias)
@@ -490,25 +500,27 @@ class MLP(object):
                     n_in=n_in, n_out=n_out, rng=rng,
                     W = params[count] if copy_from_old[-1] is True else None,
                     b = params[count+1] if copy_from_old[-1] is True and use_bias is True else None, 
+                    activation = activations[ layer_counter ],
                     use_bias = use_bias)
         
                 output_layer = LogisticRegression(
                     input=next_layer_input,
                     # scale the weight matrix W with (1-p)
-                    W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
-                    b=dropout_output_layer.b,
+                    W=dropout_output_layer.W * (1 - dropout_rates[ layer_counter ]),
+                    b=dropout_output_layer.b, activation = activations[ layer_counter ],
                     n_in=n_in, n_out=n_out, rng=rng,  use_bias = use_bias)
+                    
             else:
                 dropout_output_layer = LogisticRegression(
-                    input=next_dropout_layer_input ,
+                    input=next_dropout_layer_input , activation = activations[ layer_counter ],
                     n_in=n_in, n_out=n_out, rng=rng,  use_bias = use_bias
                     )
         
                 output_layer = LogisticRegression(
-                    input=next_layer_input,
+                    input=next_layer_input, activation = activations[ layer_counter ],
                     # scale the weight matrix W with (1-p)
                     n_in=n_in, n_out=n_out, rng=rng,
-                    W=dropout_output_layer.W * (1 - dropout_rates[layer_counter]),
+                    W=dropout_output_layer.W * (1 - dropout_rates[ layer_counter ]),
                     b=dropout_output_layer.b,  use_bias = use_bias
                     )
 
@@ -632,7 +644,7 @@ class Conv2DPoolLayer(object):
                   
         kern_shape = int(floor(filter_shape[0]/maxout_size))       
         output_size = ( batchsize, kern_shape, next_height , next_width )
-        srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+        srng = RandomStreams(rng.randint(1,2147462579))
         if verbose is True:
             print "-->   initializing 2D convolutional layer with " + str(filter_shape[0])  + " kernels"
             print "      kernel size [" + str(filter_shape[2]) + " X " + str(filter_shape[3]) +"]"
@@ -655,6 +667,7 @@ class Conv2DPoolLayer(object):
                    numpy.prod(poolsize))
         # initialize weights with random weights
         W_bound = numpy.sqrt(6. / (fan_in + fan_out))
+
         if W is None:
             self.W = theano.shared(
                 numpy.asarray(
@@ -817,9 +830,7 @@ class ConvolutionalLayers (object):
             cnn_maxout,
             verbose = True                    
         ):
-
-        first_layer_input = input[0]
-        mean_sub_input    = input[1] 
+ 
         stack_size = 1
         # Create first convolutional - pooling layers 
         self.activity = []       # to record Cnn activities 
@@ -846,7 +857,6 @@ class ConvolutionalLayers (object):
         pool_type = pooling_type[0]
         stride    = conv_stride_size[0]
         pad       = conv_pad[0]
-        batch_norm_layer = batch_norm[0]
         maxrandp = maxrandpool_p[0] 
         
         if retrain_params is not None:
@@ -856,7 +866,7 @@ class ConvolutionalLayers (object):
                 curr_init_weights = init_params[0]
                 curr_init_bias    = init_params[1]
                 
-                if batch_norm_layer is True:
+                if batch_norm is True:
                     curr_init_alpha    = init_params[2]
                 else:
                     curr_init_alpha    = None
@@ -884,7 +894,7 @@ class ConvolutionalLayers (object):
             self.dropout_conv_layers.append ( 
                             DropoutConv2DPoolLayer(
                                     rng = rng,
-                                    input = first_layer_input if mean_subtract is False else mean_sub_input,
+                                    input = input,
                                     image_shape=(input_size[3], next_in[2] , next_in[0], next_in[1]),
                                     filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
@@ -897,7 +907,7 @@ class ConvolutionalLayers (object):
                                     activation = cnn_activations[0],
                                     W = None if curr_init_weights is None else curr_init_weights,
                                     b = None if curr_init_bias is None else curr_init_bias, 
-                                    batch_norm = batch_norm_layer,
+                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[0],
                                     alpha = None if curr_init_alpha is None else curr_init_alpha,
                                     p = cnn_dropout_rates[0],  
                                     verbose = verbose                               
@@ -905,7 +915,7 @@ class ConvolutionalLayers (object):
             self.conv_layers.append ( 
                             Conv2DPoolLayer(
                                     rng = rng,
-                                    input = first_layer_input if mean_subtract is False else mean_sub_input,
+                                    input = input,
                                     image_shape=(input_size[3], next_in[2] , next_in[0], next_in[1]),
                                     filter_shape=(nkerns[0], next_in[2] , filt_size[0], filt_size[1]),
                                     poolsize = pool_size,
@@ -916,9 +926,9 @@ class ConvolutionalLayers (object):
                                     max_out = max_out,
                                     maxout_size = max_out_size,
                                     activation = cnn_activations[0],
-                                    W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[0]) ,
+                                    W = self.dropout_conv_layers[-1].params[0],
                                     b = self.dropout_conv_layers[-1].params[1],
-                                    batch_norm = batch_norm_layer,
+                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[0],
                                     alpha = self.dropout_conv_layers[-1].alpha,
                                     verbose = False
                                         ) )  
@@ -927,13 +937,15 @@ class ConvolutionalLayers (object):
         else:
             print "!! as of now Samosa is only capable of 2D conv layers."                               
             sys.exit()
+        if cnn_dropout_rates[0] == 1:
+            print " Don't dropout everything"
             
         self.activity.append ( self.conv_layers[-1].output.dimshuffle(0,2,3,1) )
         self.weights.append ( self.conv_layers[-1].W )
         
         # Create the rest of the convolutional - pooling layers in a loop
         param_counter = param_counter + 2  
-        if batch_norm_layer is True:
+        if batch_norm is True:
             param_counter = param_counter + 1
         for layer in xrange(len(nkerns)-1):   
             
@@ -943,13 +955,12 @@ class ConvolutionalLayers (object):
             maxrandp  = maxrandpool_p[layer+1]            
             stride    = conv_stride_size[layer +1 ]
             pad       = conv_pad[layer + 1]
-            batch_norm_layer = batch_norm [layer + 1]
             if retrain_params is not None:
                 curr_copy = copy_from_old[layer + 1] 
                 if curr_copy is True:
                     curr_init_weights = init_params[param_counter]
                     curr_init_bias    = init_params[param_counter + 1]
-                    if batch_norm_layer is True:
+                    if batch_norm is True:
                         curr_init_alpha = init_params[param_counter + 2]   
                     else:
                         curr_init_alpha = None
@@ -965,8 +976,11 @@ class ConvolutionalLayers (object):
             if max_out > 0:
                 max_out_size = cnn_maxout[layer+1]
             else:
-                max_out_size = 1 
-
+                max_out_size = 1
+                 
+            if cnn_dropout_rates[layer + 1] == 1:
+                print " Don't dropout everything"
+                    
             if len(filt_size) == 2:         
                 self.dropout_conv_layers.append ( 
                                 DropoutConv2DPoolLayer(
@@ -984,9 +998,9 @@ class ConvolutionalLayers (object):
                                     activation = cnn_activations[layer+1],
                                     W = None if curr_init_weights is None else curr_init_weights ,
                                     b = None if curr_init_bias is None else curr_init_bias ,
-                                    batch_norm = batch_norm_layer,
+                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer + 1],
                                     alpha = None if curr_init_alpha is None else curr_init_alpha ,
-                                    p = cnn_dropout_rates[layer+1],      
+                                    p = cnn_dropout_rates[layer],      
                                     verbose = verbose                                                                                                  
                                         ) )
                                                 
@@ -1004,9 +1018,9 @@ class ConvolutionalLayers (object):
                                     max_out = max_out,
                                     maxout_size = max_out_size,
                                     activation = cnn_activations[layer+1],
-                                    W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[layer + 1]),
+                                    W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[layer-1]),
                                     b = self.dropout_conv_layers[-1].params[1],
-                                    batch_norm = batch_norm_layer, 
+                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer + 1], 
                                     alpha = self.dropout_conv_layers[-1].alpha,
                                     verbose = False
                                         ) )                                                       
@@ -1019,7 +1033,7 @@ class ConvolutionalLayers (object):
             self.activity.append( self.conv_layers[-1].output.dimshuffle(0,2,3,1) )
 
             param_counter = param_counter + 2    
-            if batch_norm_layer is True:
+            if batch_norm is True:
                 param_counter = param_counter + 1  
                 
         self.params = []

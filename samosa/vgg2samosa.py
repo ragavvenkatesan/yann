@@ -1,15 +1,14 @@
 #!/usr/bin/python
-#from samosa.cnn import cnn_mlp
-#from samosa.core import ReLU
+
 import os
 import pdb
 import cPickle
 
 import theano, numpy 
 
-from samosa.cnn import cnn_mlp
-from samosa.core import ReLU, Sigmoid, Softmax, Tanh, Abs, Squared
-from samosa.util import load_network
+from cnn import cnn_mlp
+from core import ReLU, Sigmoid, Softmax, Tanh, Abs, Squared
+from util import load_network
 
 class vgg_net(cnn_mlp):
     def init_data (self, dataset, outs, visual_params = None, verbose = False):
@@ -23,7 +22,7 @@ class vgg_net(cnn_mlp):
                 print "... loading a non imagenet dataset. creating random nodes for the last layer."                        
             self.retrain_params["copy_from_old"][-1] = False
             self.retrain_params["freeze"][-1] = False 
-            
+    
 def load_vgg(model, dataset, outs, optimization_params, filename_params, visual_params, freeze_layer_params = True, verbose = True):
 
     if (not os.path.isfile(model)):
@@ -39,17 +38,17 @@ def load_vgg(model, dataset, outs, optimization_params, filename_params, visual_
     vgg_params = vgg_loaded['param values']
     
     arch_params = {
-                    "mlp_activations"                   : [ ReLU, ReLU, ReLU ],                     
+                    "mlp_activations"                   : [ ReLU, ReLU, Softmax ],                     
                     "cnn_dropout"                       : False,
-                    "mlp_dropout"                       : True,
+                    "mlp_dropout"                       : False,
                     "mlp_dropout_rates"                 : [ 0.5 , 0.5, 0.5 ],
                     "num_nodes"                         : [ 4096, 4096  ],  
                     "mlp_maxout"                        : [ 1,    1 ],     
-                    "mlp_batch_norm"                    : False,                                                                      
+                    "mlp_batch_norm"                    : [ False ],                                                                      
                     "outs"                              : 1000,                                                                                                                               
                     "svm_flag"                          : False,                                       
                     "cnn_activations"                   : [ ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU,   ReLU    ],             
-                    "cnn_batch_norm"                    : [ False,  False,  False,  False,  False,  False,  False,  False,  False,  False,  False,  False,  False,  False,  False,  False   ],
+                    "cnn_batch_norm"                    : [ False ],
                     "nkerns"                            : [ 64,     64,     128,    128,    256,    256,    256,    256,    512,    512,    512,    512,    512,    512,    512,    512     ],              
                     "filter_size"                       : [ (3,3), (3,3),   (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3),  (3,3)   ],
                     "pooling_size"                      : [ (1,1), (2,2),   (1,1),  (2,2),  (1,1),  (1,1),  (1,1),  (2,2),  (1,1),  (1,1),  (1,1),  (2,2),  (1,1),  (1,1),  (1,1),  (2,2)   ],
@@ -59,8 +58,7 @@ def load_vgg(model, dataset, outs, optimization_params, filename_params, visual_
                     "conv_stride_size"                  : [ (1,1), (1,1),   (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1),  (1,1)   ],
                     "cnn_maxout"                        : [ 1,     1,       1,      1,      1,      1,      1,      1,       1,      1,      1,      1,     1,      1,      1,      1,      ],                    
                     "cnn_dropout_rates"                 : [ 0,     0,       0,      0,      0,      0,      0,      0,       0,      0,      0,      0,     0,      0,      0,      0,      ],
-                    "random_seed"                       : 23455, 
-                    "mean_subtract"                     : False,
+                    "mean_subtract"                     : True,
                     "use_bias"                          : True,                    
                     "max_out"                           : 0 
         
@@ -75,10 +73,13 @@ def load_vgg(model, dataset, outs, optimization_params, filename_params, visual_
                             "freeze"            : [freeze_layer_params] * (len(arch_params["nkerns"]) + len(arch_params["num_nodes"])) + [freeze_classifier_layer]
                      } 
                           
+    # this is needed because samosa loads and saves dropout params, these are normal params.
+    for i in xrange((len(arch_params["num_nodes"]) + 1)  * 2):  # Last six parameters.. three weights and three biases.                                         
+        vgg_params[-1*(i + 1)] = vgg_params [-1*(i+1)] / 0.5          
     init_params = []
     for param_values in vgg_loaded['param values']:
-        init_params.append(theano.shared(numpy.asarray(param_values, dtype = theano.config.floatX)))       
-                                                
+        init_params.append(theano.shared(numpy.asarray(param_values, dtype = theano.config.floatX)))   
+            
     net = vgg_net(   filename_params = filename_params,
                      arch_params = arch_params,
                      optimization_params = optimization_params,
@@ -121,7 +122,7 @@ if __name__ == '__main__':
                         "color_filter"          : True         
                     }   
                                         
-    load_vgg(   model = model,
+    net = load_vgg(   model = model,
                 dataset = dataset,
                 filename_params = filename_params,
                 optimization_params = optimization_params,
@@ -129,4 +130,7 @@ if __name__ == '__main__':
                 visual_params = visual_params,
                 outs = outs,
                 verbose = verbose
-            )   
+            ) 
+            
+    import pdb
+    pdb.set_trace()

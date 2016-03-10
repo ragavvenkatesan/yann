@@ -293,12 +293,19 @@ def load_skdata_cifar10():
 
 	rval = [(train_x, train_y, train_y), (valid_x, valid_y, valid_y), (test_x, test_y, test_y)]
 	return rval
+"""
+# Pascal 2007
+def load_pascal_2007 (batch_size, n_train_images, n_test_images, n_valid_images, 
+						   rand_perm, batch = 1, type_set = 'train', height = 256, width = 256, verbose = False ):
+	from skdata import pascal
+    pa = pascal.VOC2007()
+    pa.fetch()
+"""    
 
 # caltech 101 of skdata 
 def load_skdata_caltech101(batch_size, n_train_images, n_test_images, n_valid_images,
 						   rand_perm, batch = 1, type_set = 'train', height = 256, width = 256, verbose = False ):
 	# load_batches * batch_size is supplied into batch_size 
-	import skdata
 	from skdata import caltech
 	from scipy.misc import imread
 	cal = caltech.Caltech101()
