@@ -79,7 +79,7 @@ class cnn_mlp(object):
         if verbose is True:
             print "   dumping network"
         if name is None:
-            name = self.network_name
+            name = self.network_save_name
         f = open(name, 'wb')                   
         for obj in [self.params, self.arch, self.data_struct, self.optim_params]:
             cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
