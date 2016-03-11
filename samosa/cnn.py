@@ -75,10 +75,12 @@ class cnn_mlp(object):
         self.ft_learning_rate = self.optim_params["learning_rate"][1] 
         self.learning_rate_decay = self.optim_params["learning_rate"][2]      
                 
-    def save_network( self, verbose = False ):          # for others use only data_params or optimization_params
+    def save_network( self, name = None, verbose = False ):          # for others use only data_params or optimization_params
         if verbose is True:
             print "   dumping network"
-        f = open(self.network_save_name, 'wb')                   
+        if name is None:
+            name = self.network_name
+        f = open(name, 'wb')                   
         for obj in [self.params, self.arch, self.data_struct, self.optim_params]:
             cPickle.dump(obj, f, protocol = cPickle.HIGHEST_PROTOCOL)
         f.close()  
@@ -612,7 +614,7 @@ class cnn_mlp(object):
         f.write("\n")        
         f.write(str(self.this_validation_loss[-1])  + "\t" + str(self.this_training_loss[-1]))
         f.close()
-        self.save_network()  
+        self.save_network('temp.pkl')  
               
     
     def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, patience_epochs = 1, verbose = True):
@@ -648,7 +650,7 @@ class cnn_mlp(object):
 
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
             start_time = time.clock()         
-            if epoch_counter == n_epochs and fine_tune is False:
+            if epoch_counter == n_epochs and fine_tune is False and self.eta.get_value(borrow = True) > self.ft_learning_rate:
                 print "\n\n"
                 print "fine tuning"
                 fine_tune = True
@@ -711,7 +713,8 @@ class cnn_mlp(object):
                     patience = max(patience, iteration* patience_increase)
                     best_iter = iteration
                     nan_insurance = copy.deepcopy(best_params)
-                    best_params = copy.deepcopy(self.params)               
+                    best_params = copy.deepcopy(self.params) 
+                    self.save_network()              
                 self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
                 self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
                 if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
@@ -727,6 +730,7 @@ class cnn_mlp(object):
                     fine_tune = True
                     self.setup_ft(params = best_params, ft_lr = numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX) ,
                                         verbose =verbose )
+                    early_termination = False
                 else:
                     print "\n\n"
                     print "early stopping"
