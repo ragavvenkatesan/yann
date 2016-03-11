@@ -633,13 +633,13 @@ class cnn_mlp(object):
         self.main_img_visual = False
 
         if self.multi_load is True:
-            patience = patience_epochs * validate_after_epochs * self.batches2train * self.n_train_batches + 1
+            patience = patience_epochs * validate_after_epochs * self.batches2train * self.n_train_batches
         else:
-            patience = patience_epochs * validate_after_epochs * self.batches2train + 1
+            patience = patience_epochs * validate_after_epochs * self.batches2train
             
         # wait one validation cycle
         patience_increase = 2  
-        improvement_threshold = 0.995  
+        improvement_threshold = 0.95  
         self.this_validation_loss = []
         self.best_validation_loss = numpy.inf
         
@@ -724,7 +724,8 @@ class cnn_mlp(object):
                     best_iter = iteration
                     nan_insurance = copy.deepcopy(best_params)
                     best_params = copy.deepcopy(self.params) 
-                    self.save_network()              
+                    self.save_network()   
+                    best_iter = epoch_counter           
                 self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
                 self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
                 if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
@@ -732,7 +733,7 @@ class cnn_mlp(object):
             
             print "   early stop : " + str(iteration/ float(patience)) +" ( " + str(iteration) +"/" + str(patience) +")"                          
             self.decay_learning_rate()  
-            if patience <= iteration:
+            if patience < iteration:
                 early_termination = True
                 if fine_tune is False:
                     print "\n\n"
