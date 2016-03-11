@@ -417,7 +417,6 @@ class MLP(object):
 
         self.L1 = theano.shared(numpy.asarray(0., dtype=theano.config.floatX))
         self.L2 = theano.shared(numpy.asarray(0., dtype=theano.config.floatX))
-        
 
         count = 0
         if len(layer_sizes) > 2:
@@ -489,7 +488,7 @@ class MLP(object):
             n_in, n_out = weight_matrix_sizes[-1]
             
         # Again, reuse paramters in the dropout output.
-    
+          
         if svm_flag is False:
             if verbose is True:
                 print "-->   initializing regression layer with " + str(n_out) + " output units and " + str(n_in) + " input units"
@@ -576,11 +575,14 @@ class MLP(object):
         self.predicts = self.layers[-1].y_pred
         
         self.params = []
-        count = 0
+        self.learnable_params = []
+        count = 0        
         for layer in self.dropout_layers:
+            for param in layer.params:
+                self.params.append (param)            
             if freeze[count] is False:
                 for param in layer.params:
-                    self.params.append (param)
+                    self.learnable_params.append (param)
             elif verbose is True:
                 print "-->   freezing post convolutional layer " + str(count + 1)          
                                                             
@@ -1039,10 +1041,12 @@ class ConvolutionalLayers (object):
                 param_counter = param_counter + 1  
                 
         self.params = []
+        self.learnable_params = []
         count = 0
         for layer in self.dropout_conv_layers:
+            self.params = self.params + layer.params
             if freeze_layers[count] is False:
-                self.params = self.params + layer.params
+                self.learnable_params = self.learnable_params + layer.params
             elif verbose is True:
                 print "-->   freezing convolutional layer " + str(count +  1)  
             count = count + 1 

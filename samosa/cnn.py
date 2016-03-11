@@ -48,7 +48,7 @@ class cnn_mlp(object):
         self.cnn_activations                 = arch_params [ "cnn_activations" ]
         self.cnn_dropout                     = arch_params [ "cnn_dropout"  ]
         self.mlp_dropout                     = arch_params [ "mlp_dropout"  ]
-        self.batch_norm                      = arch_params [ "cnn_batch_norm"  ]  
+        self.cnn_batch_norm                  = arch_params [ "cnn_batch_norm"  ]  
         self.mlp_batch_norm                  = arch_params [ "mlp_batch_norm" ]  
         self.mlp_dropout_rates               = arch_params [ "mlp_dropout_rates" ]
         self.cnn_dropout_rates               = arch_params [ "cnn_dropout_rates" ]
@@ -153,7 +153,7 @@ class cnn_mlp(object):
                 
         next_in = mean_sub_input if self.mean_subtract is True else first_layer_input 
         ###########################################
-        # Convolutional layers        
+        # Convolutional layers      
         if not self.nkerns == []: # If there are some convolutional layers             
             self.ConvLayers = core.ConvolutionalLayers (      
                                                     input = next_in,
@@ -169,7 +169,7 @@ class cnn_mlp(object):
                                                     conv_stride_size = self.conv_stride_size,
                                                     cnn_dropout_rates = self.cnn_dropout_rates,
                                                     conv_pad = self.conv_pad,
-                                                    batch_norm = self.batch_norm,         
+                                                    batch_norm = self.cnn_batch_norm,         
                                                     max_out = self.max_out,
                                                     cnn_maxout = self.cnn_maxout,
                                                     retrain_params = self.retrain_params, # default None
@@ -216,9 +216,16 @@ class cnn_mlp(object):
                 self.copy_from_old = []
                 for i in xrange(len(self.nkerns) + len(self.num_nodes) + 1):
                     self.copy_from_old.append ( True ) 
-                                          
-        param_counter = len(self.nkerns) * 2 if self.batch_norm is False else len(self.nkerns) * 3 
-                                       
+
+        if len(self.cnn_batch_norm) == 1:
+            param_counter = len(self.nkerns) * 2 if self.cnn_batch_norm[0] is False else len(self.nkerns) * 3  
+        else:   
+            param_counter = 0         
+            for i in xrange(len(self.nkerns)):
+                if self.cnn_batch_norm[i] is True:
+                    param_counter = param_counter + 3
+                else:
+                    param_counter = param_counter + 2
         self.MLPlayers = core.MLP  ( 
                                     rng = self.rng,
                                     input = (fully_connected_input, dropout_fully_connected_input),
@@ -239,10 +246,12 @@ class cnn_mlp(object):
   
         # Compute cost and gradients of the model wrt parameter   
         if self.nkerns == []: 
-            self.params = self.MLPlayers.params 
+            self.learnable_params = self.MLPlayers.learnable_params
+            self.params           = self.MLPlayers.params 
         else:
-            self.params = self.ConvLayers.params + self.MLPlayers.params      
-
+            self.learnable_params = self.ConvLayers.learnable_params + self.MLPlayers.learnable_params   
+            self.params           = self.ConvLayers.params           + self.MLPlayers.params   
+            
         self.probabilities = self.MLPlayers.probabilities
         self.errors = self.MLPlayers.errors
         self.predicts = self.MLPlayers.predicts  
@@ -281,7 +290,7 @@ class cnn_mlp(object):
        
        
     def build_optimizer(self, verbose):                                    
-        network_optimizer = core.optimizer( params = self.params,
+        network_optimizer = core.optimizer( params = self.learnable_params,
                                     objective = self.output,
                                     optimization_params = self.optim_params,
                                   )                                    
@@ -526,19 +535,21 @@ class cnn_mlp(object):
     def setup_ft ( self, params, ft_lr = 0.001, verbose  = False ):
         if verbose is True:
             print "resetting learning rate to :" +str(ft_lr)
-        self.reset_params (params = params, verbose = verbose)
+        self.reset_params (init_params = params, verbose = verbose)
         self.eta.set_value(ft_lr)
         # self.reset_simple_sgd(verbose =verbose )
         self.remove_momentum(verbose = verbose )
         self.build_optimizer (verbose = verbose)                                                        
         self.build_network_functions(verbose = verbose)
         
-    def reset_params (self, params, verbose = True):
+    def reset_params (self, init_params, verbose = True):
         if verbose is True:
             print "reseting parameters"
              
-        self.init_params = params
-        self.retrain_params = {      
+        self.init_params = init_params
+            
+        if self.retrain_params is None:
+            self.retrain_params = {      
                                     "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1 ),
                                     "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1 )
                                     }  
@@ -640,13 +651,12 @@ class cnn_mlp(object):
         early_termination = False
         self.cost_saved = []
         iteration= 0        
-
+                
         best_params = copy.deepcopy(self.params)
         nan_insurance = copy.deepcopy(self.params)
                             
         nan_flag = False
         fine_tune = False
-        #self.print_net(epoch = 0, display_flag = self.display_flag)
 
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
             start_time = time.clock()         

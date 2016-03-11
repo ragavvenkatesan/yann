@@ -20,15 +20,15 @@ def setup( data_params, outs ):
 if __name__ == '__main__':
     
     data_params = {
-                   "type"               : 'mat',                                   
-                   "loc"                : '../../Convolutional-Neural-Networks/dataset/cifar_100/',                                          
-                   "batch_size"         : 500,                                     
+                   "type"               : 'skdata',                                   
+                   "loc"                : 'caltech101',                                          
+                   "batch_size"         : 36,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 80,                                      
-                   "batches2test"       : 20,                                      
-                   "batches2validate"   : 20,                                        
-                   "height"             : 32,                                       
-                   "width"              : 32,                                       
+                   "batches2train"      : 127,                                      
+                   "batches2test"       : 64,                                      
+                   "batches2validate"   : 63,                                        
+                   "height"             : 224,                                       
+                   "width"              : 224,                                       
                    "channels"           : 3                                       
                   }
                   
@@ -42,7 +42,7 @@ if __name__ == '__main__':
           
     # run and it will create a directory with a random name. 
     # Ensure that _datasets directory exist in the directory from which this is being called from.
-    setup( data_params = data_params, outs = 100 )
+    setup( data_params = data_params, outs = 102 )
     
     """
     # If you want to modify data_params. 

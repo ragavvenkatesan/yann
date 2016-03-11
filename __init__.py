@@ -21,7 +21,7 @@ def run_cnn(
              
     # first things first, initialize the net.
     # This call creates an object net, but also initializes more parameters of the network.
-    
+    """
     net = cnn_mlp(   filename_params = filename_params,
                      arch_params = arch_params,
                      optimization_params = optimization_params,
@@ -35,7 +35,8 @@ def run_cnn(
     model = './dataset/vgg/vgg19.pkl'
     outs = 102
     freeze_layer_params = True
-    from vgg2samosa import load_vgg
+    from samosa.vgg2samosa import load_vgg
+    
     net = load_vgg(   
                             model = model,
                             dataset = dataset[0],
@@ -46,31 +47,36 @@ def run_cnn(
                             outs = arch_params["outs"],
                             verbose = verbose
                            ) 
-    """
+    
     # load the inputs of the net. 
     # This is needed to create variables like batchsizes and input layer sizes.
-    net.init_data ( dataset = dataset , outs = arch_params ["outs"], visual_params = visual_params, verbose = verbose )   
-    
-     
+    net.init_data ( dataset = dataset,
+                    outs = arch_params ["outs"],
+                    visual_params = visual_params,
+                    verbose = verbose
+                  )   
+         
     # Build network.
     # This function creates both the forward and the backward. 
     # It also creates all the functions for training, testing and validation.
     # It establishes all connections and sets up the optimzier. 
     # build network is the important part of the code where all the action happens.                            
-    net.build_network(verbose = verbose)   
+    net.build_network (verbose = verbose)   
     
     # This is needed to build the backprop part of the network
-    net.build_learner(verbose = verbose)    
+    net.build_learner (verbose = verbose)    
     # this function saves the network.  Just so that you don't have to lose everything.                                 
     # net.save_network ()        
-    # This function goes through the epochs             
-    net.train( n_epochs = n_epochs, 
-                ft_epochs = ft_epochs,
+    # This function goes through the epochs 
+                   
+    net.train  ( n_epochs = n_epochs, 
+                 ft_epochs = ft_epochs,
                  validate_after_epochs = validate_after_epochs,
-                 verbose = verbose )  
+                 verbose = verbose
+               )  
     net.save_network ()        
                       
-    # this function tests on the dataset
+    # this function tests on the dataset 
     net.test( verbose = verbose )       
              
     """ 
@@ -78,9 +84,9 @@ def run_cnn(
     params_loaded, arch_params_loaded = load_network (filename_params ["network_save_name"] ,
                                         data_params = False, 
                                         optimization_params = False) 
-    copy_classifier_layer   = True         # also copy the classifer layer too. 
-                                           # Remember if the number of labels are now different from when it was trained, you need to False This.
-    freeze_classifier_layer = False        # if you are going to fine tune or re-train the softmax layer, avoid this.
+    copy_classifier_layer   = True          # also copy the classifer layer too. 
+                                            # Remember if the number of labels are now different from when it was trained, you need to False This.
+    freeze_classifier_layer = False         # if you are going to fine tune or re-train the softmax layer, avoid this.
     
     freeze_layer_params       = False       # setting this to True will mean that layer will not learn. 
                                             # you can still learn classifier layer, but not other layers.                         
@@ -102,6 +108,7 @@ def run_cnn(
     # You still need to init its data and build it like how you did previously.
     # If this is an already trained network, you don't need to retrain it you could directly test also. 
     """
+    
 ## Boiler Plate ## 
 if __name__ == '__main__':
              
@@ -114,19 +121,19 @@ if __name__ == '__main__':
     # run the base CNN as usual.   
                
     filename_params = { 
-                        "results_file_name"     : "../results/results.txt",      
-                        "error_file_name"       : "../results/error.txt",
-                        "cost_file_name"        : "../results/cost.txt",
-                        "confusion_file_name"   : "../results/confusion.txt",
-                        "network_save_name"     : "../results/network.pkl "
+                            "results_file_name"     : "../results/results.txt",      
+                            "error_file_name"       : "../results/error.txt",
+                            "cost_file_name"        : "../results/cost.txt",
+                            "confusion_file_name"   : "../results/confusion.txt",
+                            "network_save_name"     : "../results/network.pkl "
                     }
                     
     visual_params = {
-                        "visualize_flag"        : True,
-                        "visualize_after_epochs": 1,
-                        "n_visual_images"       : 4,
-                        "display_flag"          : False,
-                        "color_filter"          : True         
+                            "visualize_flag"        : True,
+                            "visualize_after_epochs": 1,
+                            "n_visual_images"       : 4,
+                            "display_flag"          : False,
+                            "color_filter"          : True         
                     }   
                                                                                                                             
     optimization_params = {
@@ -168,16 +175,16 @@ if __name__ == '__main__':
                  }                          
 
     # other loose parameters. 
-    n_epochs = 200                    # number of epochs to run unless early terminated
-    validate_after_epochs = 1       # number of epochs after which to validate.    
-    ft_epochs = 200                   # number of epoch to finetune learning with.
-    verbose = True                 # if True makes a lot of prints, if False doesn't. 
+    n_epochs = 75                 # number of epochs to run unless early terminated
+    validate_after_epochs = 1      # number of epochs after which to validate.    
+    ft_epochs = 0                # number of epoch to finetune learning with.
+    verbose = False                 # if True makes a lot of prints, if False doesn't. 
     
     # code to tutor on how to setup and run. 
     run_cnn(
                     arch_params             = arch_params,
                     optimization_params     = optimization_params,
-                    dataset                 = "_datasets/_dataset_99802", 
+                    dataset                 = "_datasets/_dataset_23837", 
                     filename_params         = filename_params,          
                     visual_params           = visual_params, 
                     validate_after_epochs   = validate_after_epochs,
