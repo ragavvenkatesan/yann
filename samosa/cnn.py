@@ -288,7 +288,6 @@ class cnn_mlp(object):
         self.updates = network_optimizer.updates
         self.mom = network_optimizer.mom
     
-        
     def build_network_functions(self, verbose = True):
         # create theano functions for evaluating the graph
         # I don't like the idea of having test model only hooked to the test_set_x variable.
@@ -375,7 +374,8 @@ class cnn_mlp(object):
         self.build_network_functions(verbose = verbose)
         end_time = time.clock()
         print "        time taken is " +str(end_time - start_time) + " seconds"
-                                                                                                                
+                              
+                                                                                                        
     def load_data_base( self, batch = 1, type_set = 'train' ):
         # every dataset will have atleast one batch ..load that.
         
@@ -479,7 +479,8 @@ class cnn_mlp(object):
         if not os.path.exists('../results/'):
             os.makedirs ('../results')        
         assert self.batch_size >= self.n_visual_images
-        
+
+    # following are some functions that deal with wanting to reset the network parameters.        
     def convert2maxpool(self, verbose):
         count = 0
         pool_temp = self.pooling_type    
@@ -505,7 +506,43 @@ class cnn_mlp(object):
         self.build_network(verbose = verbose)
         #reset it back
         self.pooling_type = pool_temp             
-                          
+
+
+    def remove_momentum (self, verbose = False):
+        if verbose is True:
+            print "removing momentum"
+        self.optim_params["mom_type"] = 0
+        curr_lr = self.eta.get_value( borrow = True)
+        ft_lr = self.ft_learning_rate if curr_lr < self.ft_learning_rate else curr_lr
+        self.optim_params["learning_rate"] = (curr_lr, ft_lr, self.optim_params["learning_rate"][2])
+
+    def reset_simple_sgd (self, verbose = False):
+        if verbose is True:
+            print "resetting to sgd"
+        self.optim_params["optim_type"] = 0
+                
+    def setup_ft ( self, params, ft_lr = 0.001, verbose  = False ):
+        if verbose is True:
+            print "resetting learning rate to :" +str(ft_lr)
+        self.reset_params (params = params, verbose = verbose)
+        self.eta.set_value(ft_lr)
+        # self.reset_simple_sgd(verbose =verbose )
+        self.remove_momentum(verbose = verbose )
+        self.build_optimizer (verbose = verbose)                                                        
+        self.build_network_functions(verbose = verbose)
+        
+    def reset_params (self, params, verbose = True):
+        if verbose is True:
+            print "reseting parameters"
+             
+        self.init_params = params
+        self.retrain_params = {      
+                                    "copy_from_old"     : [True] * (len(self.nkerns) + len(self.num_nodes) + 1 ),
+                                    "freeze"            : [False] * (len(self.nkerns) + len(self.num_nodes) + 1 )
+                                    }  
+        self.build_network(verbose = verbose)
+        self.build_learner(verbose = verbose)
+        
     # TRAIN 
     def validate(self, epoch, verbose = True):
         validation_losses = 0.   
@@ -577,10 +614,16 @@ class cnn_mlp(object):
         f.close()
         self.save_network()  
               
+    
     def train(self, n_epochs = 200 , ft_epochs = 200 , validate_after_epochs = 1, patience_epochs = 1, verbose = True):
-
+        start_time_main = time.clock()
         self.main_img_visual = False
-        patience = patience_epochs * validate_after_epochs * self.batches2train * self.n_train_batches + 1
+
+        if self.multi_load is True:
+            patience = patience_epochs * validate_after_epochs * self.batches2train * self.n_train_batches + 1
+        else:
+            patience = patience_epochs * validate_after_epochs * self.batches2train + 1
+            
         # wait one validation cycle
         patience_increase = 2  
         improvement_threshold = 0.995  
@@ -596,16 +639,20 @@ class cnn_mlp(object):
         self.cost_saved = []
         iteration= 0        
 
-        best_params = self.params
+        best_params = copy.deepcopy(self.params)
+        nan_insurance = copy.deepcopy(self.params)
+                            
         nan_flag = False
+        fine_tune = False
         #self.print_net(epoch = 0, display_flag = self.display_flag)
-        start_time_main = time.clock()
+
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
             start_time = time.clock()         
-            if epoch_counter == n_epochs:
+            if epoch_counter == n_epochs and fine_tune is False:
                 print "\n\n"
                 print "fine tuning"
-                self.eta.set_value(self.ft_learning_rate)
+                fine_tune = True
+                self.setup_ft(best_params, ft_lr = self.ft_learning_rate, verbose =verbose )
             epoch_counter = epoch_counter + 1 
             print "\n"
             print "-> epoch: " +str(epoch_counter)     
@@ -628,9 +675,9 @@ class cnn_mlp(object):
                             print "      mini Batch: " + str(minibatch_index + 1) + " out of "    + str(self.n_train_batches)
                         cost_ij = self.train_model( minibatch_index, epoch_counter)
                         if numpy.isnan(cost_ij):
-                            print "NAN !! reducing the learning rate by 10 times and resetting back to last epoch"
-                            self.eta.set_value(numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX))   
-                            self.params = copy.deepcopy(best_params)
+                            print "NAN !! slowing the learning rate by 10 times"
+                            self.setup_ft(params = nan_insurance, ft_lr = numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX),
+                                            verbose =verbose )
                             nan_flag = True     
                             break         
                         self.cost_saved = self.cost_saved + [cost_ij]     
@@ -640,10 +687,10 @@ class cnn_mlp(object):
                     iteration= (epoch_counter - 1) * self.batches2train + batch
                     cost_ij = self.train_model(batch, epoch_counter)
                     if numpy.isnan(cost_ij):
-                        print "NAN !! reducing the learning rate by 10 times and resetting back to last epoch"                     
-                        self.params = copy.deepcopy(best_params)
+                        print "NAN !! slowing the learning rate by 10 times"                     
                         nan_flag = True
-                        self.eta.set_value(numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX))   
+                        self.setup_ft(params = nan_insurance, ft_lr = numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX),
+                                        verbose =verbose ) 
                         break                 
                     self.cost_saved = self.cost_saved +[cost_ij] 
                     if verbose is True:                    
@@ -658,21 +705,32 @@ class cnn_mlp(object):
                     self.validate(epoch = epoch_counter, verbose = verbose)
                     
             # improve patience if loss improvement is good enough
-            if self.this_validation_loss[-1] < self.best_validation_loss *  \
-                improvement_threshold:
-                patience = max(patience, iteration* patience_increase)
-                best_iter = iteration
-                best_params = copy.deepcopy(self.params)
-            self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
-            self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
-            if self.visualize_flag is True and nan_flag is False and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
-                self.print_net (epoch = epoch_counter, display_flag = self.display_flag)            
+            if nan_flag is False:
+                if self.this_validation_loss[-1] < self.best_validation_loss *  \
+                    improvement_threshold:
+                    patience = max(patience, iteration* patience_increase)
+                    best_iter = iteration
+                    nan_insurance = copy.deepcopy(best_params)
+                    best_params = copy.deepcopy(self.params)               
+                self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
+                self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
+                if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
+                    self.print_net (epoch = epoch_counter, display_flag = self.display_flag)            
             
             print "   early stop : " + str(iteration/ float(patience)) +" ( " + str(iteration) +"/" + str(patience) +")"                          
             self.decay_learning_rate()  
             if patience <= iteration:
                 early_termination = True
-                break   
+                if fine_tune is False:
+                    print "\n\n"
+                    print "fine tuning"
+                    fine_tune = True
+                    self.setup_ft(params = best_params, ft_lr = numpy.asarray(self.eta.get_value(borrow = True)*0.1,dtype=theano.config.floatX) ,
+                                        verbose =verbose )
+                else:
+                    print "\n\n"
+                    print "early stopping"
+                    break   
                 end_time = time.clock()
                 print "   total time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
             if nan_flag is True:
@@ -681,7 +739,7 @@ class cnn_mlp(object):
             end_time = time.clock()
             print "   total time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
         
-        self.params = copy.deepcopy(best_params)     
+        self.setup_ft (params = best_params, ft_lr = self.ft_learning_rate, verbose = verbose)     
         end_time_main = time.clock()
         print "   time taken for the entire training is " +str((end_time_main - start_time_main)/3600) + " hours"                
                          
