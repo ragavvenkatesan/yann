@@ -699,6 +699,8 @@ class cnn_mlp(object):
                         self.cost_saved = self.cost_saved + [cost_ij]     
                     if verbose is True:
                         print "      cost: " + str(cost_ij)
+                    if nan_flag is True:
+                        break
                 else:   
                     cost_ij = self.train_model(batch, epoch_counter)
                     if numpy.isnan(cost_ij):
@@ -732,7 +734,7 @@ class cnn_mlp(object):
                 if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
                     self.print_net (epoch = epoch_counter, display_flag = self.display_flag)            
             
-            print "   patience " + str(patience-epoch_counter) + " epochs"                          
+            print "   patience " + str(patience - epoch_counter + 1) + " epochs"                          
             self.decay_learning_rate()  
             if patience < epoch_counter:
                 early_termination = True
