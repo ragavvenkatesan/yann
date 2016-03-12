@@ -651,8 +651,10 @@ class cnn_mlp(object):
         epoch_counter = 0
         early_termination = False
         self.cost_saved = []
-        iteration= 0        
-                
+        iteration= 0    
+            
+        curr_params = copy.deepcopy(self.params)        
+        prev_params = copy.deepcopy(self.params)                
         best_params = copy.deepcopy(self.params)
         nan_insurance = copy.deepcopy(self.params)
                             
@@ -660,7 +662,9 @@ class cnn_mlp(object):
         fine_tune = False
 
         while (epoch_counter < (n_epochs + ft_epochs)) and (not early_termination):
-            start_time = time.clock()         
+            start_time = time.clock()  
+            nan_insurance = copy.deepcopy(prev_params)
+            prev_params = copy.deepcopy(curr_params)       
             if epoch_counter == n_epochs and fine_tune is False and self.eta.get_value(borrow = True) > self.ft_learning_rate:
                 print "\n\n"
                 print "fine tuning"
@@ -747,10 +751,10 @@ class cnn_mlp(object):
                 print "   total time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
             if nan_flag is True:
                 nan_flag = False 
-                                                                                    
+            curr_params = copy.deepcopy(self.params)                                                                        
             end_time = time.clock()
             print "   total time taken for this epoch is " +str((end_time - start_time)/60) + " minutes"
-        
+            
         self.setup_ft (params = best_params, ft_lr = self.ft_learning_rate, verbose = verbose)     
         end_time_main = time.clock()
         print "   time taken for the entire training is " +str((end_time_main - start_time_main)/3600) + " hours"                

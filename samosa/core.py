@@ -422,6 +422,10 @@ class MLP(object):
         if len(layer_sizes) > 2:
             for n_in, n_out in weight_matrix_sizes[:-1]:
                 curr_maxout_size = maxout_rates[layer_counter]
+                if len(batch_norm) == 1:
+                    batch_norm_now = batch_norm[0]
+                else:
+                    batch_norm_now = batch_norm[layer_counter]
                 if verbose is True and max_out > 0:
                     print "--> initializing mlp Layer with " + str(n_out) + " hidden units taking in input size " + str(n_in / prev_maxout_size) + " after maxout this output becomes " + str(n_out / curr_maxout_size)
                 elif verbose is True and max_out == 0:
@@ -433,7 +437,7 @@ class MLP(object):
                                                     n_in=n_in / prev_maxout_size, n_out = n_out,
                                                     use_bias=use_bias, 
                                                     max_out = max_out,
-                                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer_counter],
+                                                    batch_norm = batch_norm_now,
                                                     dropout_rate=dropout_rates[layer_counter + 1],
                                                     maxout_size = maxout_rates[layer_counter]
                                                     )
@@ -444,12 +448,12 @@ class MLP(object):
                                             n_in=n_in / prev_maxout_size , n_out = n_out,
                                             use_bias=use_bias,
                                             max_out = max_out,
-                                            batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer_counter],
+                                            batch_norm = batch_norm_now,
                                             dropout_rate=dropout_rates[layer_counter + 1],
                                             maxout_size = maxout_rates[layer_counter],
                                             W = params[count] if copy_from_old[layer_counter] is True else None,
                                             b = params[count+1] if copy_from_old[layer_counter] is True else None,
-                                            alpha = params[count+2] if batch_norm is True else None)
+                                            alpha = params[count+2] if batch_norm_now is True else None)
     
             
                                                         
@@ -479,7 +483,7 @@ class MLP(object):
                 layer_counter += 1
                 
                 count = count + 2 
-                if batch_norm is True or batch_norm == [True]:
+                if batch_norm_now is True:
                     count = count + 1 
             # Set up the output layer
             n_in, n_out = weight_matrix_sizes[-1] 
@@ -862,6 +866,8 @@ class ConvolutionalLayers (object):
         stride    = conv_stride_size[0]
         pad       = conv_pad[0]
         maxrandp = maxrandpool_p[0] 
+
+        batch_norm_now = batch_norm[0]
         
         if retrain_params is not None:
             curr_copy = copy_from_old[0] 
@@ -870,7 +876,7 @@ class ConvolutionalLayers (object):
                 curr_init_weights = init_params[0]
                 curr_init_bias    = init_params[1]
                 
-                if batch_norm is True or batch_norm == [True]:
+                if batch_norm_now is True:
                     curr_init_alpha    = init_params[2]
                 else:
                     curr_init_alpha    = None
@@ -893,7 +899,7 @@ class ConvolutionalLayers (object):
         next_in = [ input_size[0], input_size[1], input_size[2] ]
         stack_size = 1 
         param_counter = 0 
-
+        
         if len(filt_size) == 2:                        
             self.dropout_conv_layers.append ( 
                             DropoutConv2DPoolLayer(
@@ -911,7 +917,7 @@ class ConvolutionalLayers (object):
                                     activation = cnn_activations[0],
                                     W = None if curr_init_weights is None else curr_init_weights,
                                     b = None if curr_init_bias is None else curr_init_bias, 
-                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[0],
+                                    batch_norm = batch_norm_now,
                                     alpha = None if curr_init_alpha is None else curr_init_alpha,
                                     p = cnn_dropout_rates[0],  
                                     verbose = verbose                               
@@ -932,7 +938,7 @@ class ConvolutionalLayers (object):
                                     activation = cnn_activations[0],
                                     W = self.dropout_conv_layers[-1].params[0],
                                     b = self.dropout_conv_layers[-1].params[1],
-                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[0],
+                                    batch_norm = batch_norm_now,
                                     alpha = self.dropout_conv_layers[-1].alpha,
                                     verbose = False
                                         ) )  
@@ -949,8 +955,9 @@ class ConvolutionalLayers (object):
         
         # Create the rest of the convolutional - pooling layers in a loop
         param_counter = param_counter + 2  
-        if batch_norm is True or batch_norm == [True]:
+        if batch_norm_now is True:
             param_counter = param_counter + 1
+            
         for layer in xrange(len(nkerns)-1):   
             
             filt_size = filter_size[layer+1]
@@ -959,12 +966,19 @@ class ConvolutionalLayers (object):
             maxrandp  = maxrandpool_p[layer+1]            
             stride    = conv_stride_size[layer +1 ]
             pad       = conv_pad[layer + 1]
+            
+            if len(batch_norm) == 1:
+                batch_norm_now = batch_norm[0]
+            else:
+                batch_norm_now = batch_norm[layer+1]
+                
+                
             if retrain_params is not None:
                 curr_copy = copy_from_old[layer + 1] 
                 if curr_copy is True:
                     curr_init_weights = init_params[param_counter]
                     curr_init_bias    = init_params[param_counter + 1]
-                    if batch_norm is True or batch_norm == [True]:
+                    if batch_norm is True:
                         curr_init_alpha = init_params[param_counter + 2]   
                     else:
                         curr_init_alpha = None
@@ -984,7 +998,7 @@ class ConvolutionalLayers (object):
                  
             if cnn_dropout_rates[layer + 1] == 1:
                 print " Don't dropout everything"
-                  
+    
             if len(filt_size) == 2:         
                 self.dropout_conv_layers.append ( 
                                 DropoutConv2DPoolLayer(
@@ -1002,7 +1016,7 @@ class ConvolutionalLayers (object):
                                     activation = cnn_activations[layer+1],
                                     W = None if curr_init_weights is None else curr_init_weights ,
                                     b = None if curr_init_bias is None else curr_init_bias ,
-                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer + 1],
+                                    batch_norm = batch_norm_now,
                                     alpha = None if curr_init_alpha is None else curr_init_alpha ,
                                     p = cnn_dropout_rates[layer],      
                                     verbose = verbose                                                                                                  
@@ -1024,7 +1038,7 @@ class ConvolutionalLayers (object):
                                     activation = cnn_activations[layer+1],
                                     W = self.dropout_conv_layers[-1].params[0] * (1 - cnn_dropout_rates[layer-1]),
                                     b = self.dropout_conv_layers[-1].params[1],
-                                    batch_norm = batch_norm[0] if len(batch_norm) == 1 else batch_norm[layer + 1], 
+                                    batch_norm = batch_norm_now, 
                                     alpha = self.dropout_conv_layers[-1].alpha,
                                     verbose = False
                                         ) )                                                       
@@ -1037,7 +1051,7 @@ class ConvolutionalLayers (object):
             self.activity.append( self.conv_layers[-1].output.dimshuffle(0,2,3,1) )
 
             param_counter = param_counter + 2    
-            if batch_norm is True or batch_norm == [True]:
+            if batch_norm_now is True:
                 param_counter = param_counter + 1  
                 
         self.params = []
