@@ -574,13 +574,13 @@ class cnn_mlp(object):
             for batch in xrange ( self.batches2validate):  
                 self.set_data ( batch = batch , type_set = 'valid' , verbose = verbose)
                 validation_losses = validation_losses + numpy.sum([[self.validate_model(i) for i in xrange(self.n_valid_batches)]])
-                self.this_validation_loss = self.this_validation_loss + [validation_losses]
-                bar.update(batch + 1)
+                bar.update(batch + 1)                
+            self.this_validation_loss = self.this_validation_loss + [validation_losses]
             for batch in xrange (self.batches2train):
                 self.set_data ( batch = batch , type_set = 'train' , verbose = verbose)            
-                training_losses = training_losses + numpy.sum([[self.training_accuracy(i) for i in xrange(self.n_train_batches)]])            
-                self.this_training_loss = self.this_training_loss + [training_losses]
-                bar.update(batch+1 + self.batches2validate)
+                training_losses = training_losses + numpy.sum([[self.training_accuracy(i) for i in xrange(self.n_train_batches)]])
+                bar.update(batch+1 + self.batches2validate)                            
+            self.this_training_loss = self.this_training_loss + [training_losses]
             bar.finish()    
             if self.this_validation_loss[-1] < self.best_validation_loss:
                 print "   validation accuracy : " + str(float( self.batch_size * self.n_valid_batches * self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.n_valid_batches*self.batches2validate)) + " -> best thus far "
@@ -605,7 +605,8 @@ class cnn_mlp(object):
             self.this_validation_loss = self.this_validation_loss + [numpy.sum(validation_losses)]
             
             training_losses = [self.training_accuracy(i) for i in xrange(self.batches2train)]
-            self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]            
+            self.this_training_loss = self.this_training_loss + [numpy.sum(training_losses)]     
+                   
             if self.this_validation_loss[-1] < self.best_validation_loss:
                 print "   validation accuracy : " + str(float(self.batch_size*self.batches2validate - self.this_validation_loss[-1])*100 /(self.batch_size*self.batches2validate)) +  " -> best thus far "
             else:
@@ -633,13 +634,13 @@ class cnn_mlp(object):
         self.main_img_visual = False
 
         if self.multi_load is True:
-            patience = patience_epochs * validate_after_epochs * self.batches2train * self.n_train_batches
+            patience = patience_epochs 
         else:
-            patience = patience_epochs * validate_after_epochs * self.batches2train
+            patience = patience_epochs
             
         # wait one validation cycle
         patience_increase = 2  
-        improvement_threshold = 0.95  
+        improvement_threshold = 0.995 
         self.this_validation_loss = []
         self.best_validation_loss = numpy.inf
         
@@ -679,7 +680,6 @@ class cnn_mlp(object):
                 if verbose is True:
                     print "   batch: " + str(batch+1) + " out of " + str(self.batches2train) + " batches"    
                 if self.multi_load is True:
-                    iteration= (epoch_counter - 1) * self.n_train_batches * self.batches2train + batch
                     # Load data for this batch
                     self.set_data ( batch = batch , type_set = 'train', verbose = verbose)
                     for minibatch_index in xrange(self.n_train_batches):
@@ -696,7 +696,6 @@ class cnn_mlp(object):
                     if verbose is True:
                         print "      cost: " + str(cost_ij)
                 else:   
-                    iteration= (epoch_counter - 1) * self.batches2train + batch
                     cost_ij = self.train_model(batch, epoch_counter)
                     if numpy.isnan(cost_ij):
                         print "NAN !! slowing the learning rate by 10 times"                     
@@ -712,28 +711,26 @@ class cnn_mlp(object):
             if not verbose is True:
                 bar.finish()
 
-            if  epoch_counter % validate_after_epochs == 0:  
-                if nan_flag is False:
-                    self.validate(epoch = epoch_counter, verbose = verbose)
-                    
-            # improve patience if loss improvement is good enough
             if nan_flag is False:
-                if self.this_validation_loss[-1] < self.best_validation_loss *  \
-                    improvement_threshold:
-                    patience = max(patience, iteration* patience_increase)
-                    best_iter = iteration
-                    nan_insurance = copy.deepcopy(best_params)
-                    best_params = copy.deepcopy(self.params) 
-                    self.save_network()   
-                    best_iter = epoch_counter           
-                self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
-                self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
+            
+                if  epoch_counter % validate_after_epochs == 0:              
+                    self.validate(epoch = epoch_counter, verbose = verbose)
+                    if self.this_validation_loss[-1] < self.best_validation_loss * improvement_threshold:
+                        patience = max(patience, epoch_counter* patience_increase)
+                        best_iter = iteration
+                        nan_insurance = copy.deepcopy(best_params)
+                        best_params = copy.deepcopy(self.params) 
+                        self.save_network()   
+                        best_iter = epoch_counter           
+                    self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
+                    self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
+                    
                 if self.visualize_flag is True and epoch_counter % self.visualize_after_epochs == 0 and not self.nkerns == []:            
                     self.print_net (epoch = epoch_counter, display_flag = self.display_flag)            
             
-            print "   early stop : " + str(iteration/ float(patience)) +" ( " + str(iteration) +"/" + str(patience) +")"                          
+            print "   patience " + str(patience-epoch_counter) + " epochs"                          
             self.decay_learning_rate()  
-            if patience < iteration:
+            if patience < epoch_counter:
                 early_termination = True
                 if fine_tune is False:
                     print "\n\n"
