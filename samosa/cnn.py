@@ -538,7 +538,7 @@ class cnn_mlp(object):
         self.reset_params (init_params = params, verbose = verbose)
         self.eta.set_value(ft_lr)
         # self.reset_simple_sgd(verbose =verbose )
-        self.remove_momentum(verbose = verbose )
+        # self.remove_momentum(verbose = verbose )
         self.build_optimizer (verbose = verbose)                                                        
         self.build_network_functions(verbose = verbose)
         
@@ -558,6 +558,7 @@ class cnn_mlp(object):
         
     # TRAIN 
     def validate(self, epoch, verbose = True):
+
         validation_losses = 0.   
         training_losses = 0.
     	f = open('dump.txt', 'a')        
@@ -724,10 +725,11 @@ class cnn_mlp(object):
                     if self.this_validation_loss[-1] < self.best_validation_loss * improvement_threshold:
                         patience = max(patience, epoch_counter* patience_increase)
                         best_iter = iteration
-                        nan_insurance = copy.deepcopy(best_params)
-                        best_params = copy.deepcopy(self.params) 
-                        self.save_network()   
-                        best_iter = epoch_counter           
+                        if self.this_validation_loss[-1] < self.best_validation_loss:
+                            nan_insurance = copy.deepcopy(best_params)
+                            best_params = copy.deepcopy(self.params) 
+                            self.save_network()   
+                            best_iter = epoch_counter           
                     self.best_validation_loss = min(self.best_validation_loss, self.this_validation_loss[-1])
                     self.best_training_loss = min(self.best_training_loss, self.this_training_loss[-1])
                     

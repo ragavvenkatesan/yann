@@ -21,15 +21,15 @@ if __name__ == '__main__':
     
     data_params = {
                    "type"               : 'skdata',                                   
-                   "loc"                : 'caltech101',                                          
-                   "batch_size"         : 36,                                     
+                   "loc"                : 'mnist',                                          
+                   "batch_size"         : 500,                                     
                    "load_batches"       : 1, 
-                   "batches2train"      : 127,                                      
-                   "batches2test"       : 64,                                      
-                   "batches2validate"   : 63,                                        
-                   "height"             : 224,                                       
-                   "width"              : 224,                                       
-                   "channels"           : 3                                       
+                   "batches2train"      : 100,                                      
+                   "batches2test"       : 20,                                      
+                   "batches2validate"   : 20,                                        
+                   "height"             : 28,                                       
+                   "width"              : 28,                                       
+                   "channels"           : 1                                       
                   }
                   
     # parameters relating to preprocessing.
@@ -42,7 +42,7 @@ if __name__ == '__main__':
           
     # run and it will create a directory with a random name. 
     # Ensure that _datasets directory exist in the directory from which this is being called from.
-    setup( data_params = data_params, outs = 102 )
+    setup( data_params = data_params, outs = 10 )
     
     """
     # If you want to modify data_params. 
