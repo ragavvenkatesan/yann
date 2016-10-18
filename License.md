@@ -1,5 +1,5 @@
-Convolutional Neural Network: 
-Release: Samosa V 1.01.01 
+yann
+Release: yann V 0.01.01 
 
 The MIT License (MIT)
 
