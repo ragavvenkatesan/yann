@@ -21,7 +21,7 @@ The [documentation]((http://www.public.asu.edu/~rvenka10/_yann/)) has some rudim
 details on how to run the code and how to use it. I am working on a thorough Sphinx 
 Documentation, but until then, thats all I have. 
 
-Contact me if you had trouble.
-Thanks for using the code, hope you had fun.
+Post in the newly created [yann users group](https://groups.google.com/forum/#!forum/yann-users) 
+if you had trouble. Thanks for using the code, hope you had fun.
 
 [Ragav Venkatesan](http://www.public.asu.edu/~rvenka10)
