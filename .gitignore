@@ -4,3 +4,5 @@
 *.jpg
 *.pkl
 *.mat
+*.zip
+/docs/build
