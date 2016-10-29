@@ -12,10 +12,10 @@ I wrote this code essentially for my labmates, those who are interested in
 starting deep CNNs to make a fast transition into theano. This will also be 
 useful for industry when teting out prototypes.
 
-The [wiki](https://github.com/ragavvenkatesan/Convolutional-Neural-Networks/wiki)
-page has some rudimentary details on how to run the code and how to use it. I 
-am working on a Sphinx Documentation, but until then, thats all I have. 
-Contact me if you had trouble.
+There is a [documentation](http://www.public.asu.edu/~rvenka10/_yann/)
+page that has some rudimentary details on how to run the code and how to use it. I 
+am working on a complete Sphinx Documentation to go on read the docs, but until then, 
+this is all I have. Contact me if you had trouble.
 
 Thanks for using the code, hope you had fun.
 
