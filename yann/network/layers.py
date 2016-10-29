@@ -8,7 +8,68 @@ from yann.core import activations
 from yann.core.conv import convolver_2d
 from yann.core.pool import pooler_2d
 
-def _dropout_from_layer(rng, params, dropout_rate):
+class layer(object):
+    """
+    Prototype for what a layer should look like. Every layer should inherit from this. This is 
+    a template class do not use this directly, you need to use a specific type of layer which 
+    again will be called by ``yann.network.network.add_layer``
+
+    Args:
+        id: String
+        origin: String id
+        type: string- ``'classifier'``, ``'dot-product'``, ``'objective'``, ``'conv_pool'``,
+              ``'input'`` .. .
+
+    Notes:
+        Use ``self.type``, ``self.origin``, self.destination``, ``self.output``, 
+            ``self.output_shape`` for outside calls and purposes.
+    """
+
+    def __init__(self, id, type, verbose = 2):
+        self.id = id
+        self.type = type
+        self.origin = []  # this and destination will be added from outside. 
+        self.destination = [] # only None for now during initialization. 
+        self.output = None
+        self.output_shape = None
+        # Every layer must have these four properties.
+        if verbose >= 3:
+            print "... Initializing a new layer " + self.id + " of type " + self.type        
+
+    def print_layer(self, prefix = " ", nest = True, last = True):
+        """
+        Print information about the layer
+        Args:
+            nest: If True will print the tree from here on. If False it will print only this
+                  layer.
+            prefix: Is what prefix you want to add to the network print command.
+        """       
+        prefix_entry = prefix
+        
+        if last is True:
+            prefix += "         "
+        else:
+            prefix +=  "|        " 
+        prefix_entry +=   "|- " 
+                
+        print prefix_entry + "-----------------"
+        print prefix_entry + " id: " + self.id
+        print prefix_entry + " type: " + self.type
+        print prefix_entry, 
+        print self.output_shape
+        print prefix_entry + "-----------------"
+
+        if nest is False:
+            print prefix_entry + " origin: " + self.origin
+            print prefix_entry + " destination: " + self.destination      
+
+        if self.type == 'conv_pool':
+            self.prefix_entry = prefix_entry
+            self.prefix = prefix
+        
+        return prefix
+
+def _dropout(rng, params, dropout_rate):
     """
     dropout thanks to misha denil 
     https://github.com/mdenil/dropout    
@@ -79,9 +140,8 @@ def _activate (x, activation, input_size, verbose = 2, **kwargs):
 
     return (out, out_shp)
 
-class input_layer (object):
+class input_layer (layer):
     """
-    Creates a new input_layer. The layer doesn't do much except to take the networks' x and 
     reshapes it into images. This is needed because yann dataset module assumes data in 
     vectorized image formats as used in mnist - theano tutorials. 
 
@@ -106,20 +166,24 @@ class input_layer (object):
     def __init__ (  self, 
                     x, 
                     batch_size, 
+                    id = id,                    
                     height=28,
                     width=28,
                     channels=1,
                     mean_subtract = False,
-                    verbose = 2):           
+                    verbose = 2):
+           
         if verbose >=3:
             print "... Creating the input layer"
+
+        super(input_layer,self).__init__(id = id, type = 'input', verbose = verbose)
         data_feeder = x.reshape((batch_size, height, width, channels)).dimshuffle(0,3,1,2)
                                 # the dim shuffle makes it batch_size, channels height width order
         mean_subtracted_data_feeder = data_feeder - data_feeder.mean()
 
         self.output = mean_subtracted_data_feeder if mean_subtract is True else data_feeder    
         self.output_shape = (batch_size, channels, height, width)
-        self.type = 'input'
+        
         if verbose >=3: 
             print "... Input layer is created with output shape " + str(self.output_shape)
 
@@ -150,6 +214,7 @@ class dropout_input_layer (input_layer):
     def __init__ (  self, 
                     x, 
                     batch_size, 
+                    id,
                     dropout_rate = 0.5,
                     height=28,
                     width=28,
@@ -164,6 +229,7 @@ class dropout_input_layer (input_layer):
         super(dropout_input_layer, self).__init__ (
                                             x = x, 
                                             batch_size = batch_size, 
+                                            id = id,
                                             height=height,
                                             width=width,
                                             channels=channels,
@@ -171,14 +237,14 @@ class dropout_input_layer (input_layer):
                                             verbose = verbose
                                         )
         if not dropout_rate == 0:            
-            self.output = _dropout_from_layer(rng = rng,
+            self.output = _dropout(rng = rng,
                                 params = self.output,
                                 dropout_rate = dropout_rate)  
 
         if verbose >=3: 
             print "... Dropped out"
 
-class classifier_layer (object):
+class classifier_layer (layer):
     """
     This class is the typical classifier layer. It should be called 
     by the ``add_layer`` method in network class.
@@ -209,7 +275,8 @@ class classifier_layer (object):
     """
     def __init__ (  self,
                     input,
-                    input_shape,                    
+                    input_shape,     
+                    id,               
                     num_classes = 10,
                     rng = None,
                     input_params = None,
@@ -217,6 +284,9 @@ class classifier_layer (object):
                     activation = 'softmax',
                     verbose = 2
                     ):
+        
+        super(classifier_layer,self).__init__(id = id, type = 'classifier', verbose = verbose)    
+
         if rng is None:
             rng = numpy.random
 
@@ -232,7 +302,8 @@ class classifier_layer (object):
             self.w = theano.shared ( value=numpy.asarray(0.01 * rng.standard_normal( 
                                      size=(input_shape[1], num_classes)), 
                                      dtype=theano.config.floatX), name='w' ,borrow = borrow)                    
-            self.b = theano.shared( value=numpy.zeros((num_classes,), dtype=theano.config.floatX), 
+            self.b = theano.shared( value=numpy.zeros((num_classes,),
+                                        dtype=theano.config.floatX), 
                                      name='b' ,borrow = borrow)
         
         self.fit = T.dot(input, self.w) + self.b
@@ -371,7 +442,7 @@ class classifier_layer (object):
         else:
             raise Exception("Classifier layer does not support " + type + " loss")
 
-class dot_product_layer (object):
+class dot_product_layer (layer):
     """
     This class is the typical neural hidden layer and batch normalization layer. It is called 
     by the ``add_layer`` method in network class.
@@ -403,13 +474,14 @@ class dot_product_layer (object):
                   input,
                   num_neurons,
                   input_shape,
+                  id,
                   rng = None,
                   input_params = None,
                   borrow = True,
                   activation = 'relu',
                   batch_norm = True,
                   verbose = 2 ):
-
+        super(dot_product_layer,self).__init__(id = id, type = 'dot_product', verbose = verbose)
         if verbose >= 3:
             print "... Creating dot product layer"
 
@@ -499,6 +571,7 @@ class dropout_dot_product_layer (dot_product_layer):
                   input,
                   num_neurons,
                   input_shape,
+                  id,
                   dropout_rate = 0.5,
                   rng = None,
                   input_params = None,
@@ -515,6 +588,7 @@ class dropout_dot_product_layer (dot_product_layer):
                                         input = input,
                                         num_neurons = num_neurons,
                                         input_shape = input_shape,
+                                        id = id,
                                         rng = rng,
                                         input_params = input_params,
                                         borrow = borrow,
@@ -523,13 +597,13 @@ class dropout_dot_product_layer (dot_product_layer):
                                         verbose = verbose 
                                         )
         if not dropout_rate == 0:            
-            self.output = _dropout_from_layer(rng = rng,
+            self.output = _dropout(rng = rng,
                                 params = self.output,
                                 dropout_rate = dropout_rate)                                          
         if verbose >=3: 
             print "... Dropped out"
 
-class conv_pool_layer_2d (object):
+class conv_pool_layer_2d (layer):
     """
     This class is the typical 2D convolutional pooling and batch normalizationlayer. It is called 
     by the ``add_layer`` method in network class.
@@ -566,7 +640,8 @@ class conv_pool_layer_2d (object):
     def __init__ ( self,                    
                    input,
                    nkerns,
-                   input_shape,                   
+                   input_shape,   
+                   id,                
                    filter_shape = (3,3),                   
                    poolsize = (2,2),
                    pooltype = 'max',
@@ -579,7 +654,8 @@ class conv_pool_layer_2d (object):
                    input_params = None,                   
                    verbose = 2,
                  ):
-                
+
+        super(conv_pool_layer_2d,self).__init__(id = id, type = 'conv_pool', verbose = verbose)                
         if verbose >=3: 
             print "... Creating conv pool layer"
 
@@ -602,8 +678,8 @@ class conv_pool_layer_2d (object):
         # Initialize the parameters of this layer.
         w_shp = (nkerns, channels, filter_shape[0], filter_shape[1])        
         if input_params is None:
-            # I have no idea what this is all about. Saw this being used in theano tutorials, I am 
-            # doing the same thing.
+            # I have no idea what this is all about. Saw this being used in theano tutorials, 
+            # I am doing the same thing.
             fan_in = filter_shape[0]*filter_shape[1]
             fan_out = filter_shape[0]*filter_shape[1] / numpy.prod(poolsize)        
             w_bound = numpy.sqrt(6. / (fan_in + fan_out))          
@@ -613,7 +689,7 @@ class conv_pool_layer_2d (object):
             self.b = theano.shared(value=numpy.zeros((w_shp[0]), dtype=theano.config.floatX),
                                      name = 'b', borrow=borrow)  
             self.alpha = theano.shared(value=numpy.ones((w_shp[0]), 
-                                    dtype=theano.config.floatX), name = 'alpha', borrow = borrow)                                                                                                                    
+                                 dtype=theano.config.floatX), name = 'alpha', borrow = borrow)                                                                                                                    
         else:
             self.w = init_w
             self.b = init_b
@@ -655,7 +731,7 @@ class conv_pool_layer_2d (object):
             pool_out = pool_out - mean
             # use one bias for both batch norm and regular bias.
             batch_norm_out = pool_out * ( self.alpha.dimshuffle('x', 0, 'x', 'x') / std ) + \
-                                                                 self.b.dimshuffle('x', 0, 'x', 'x')
+                                                        self.b.dimshuffle('x', 0, 'x', 'x')
         else:
             batch_norm_out = pool_out + self.b.dimshuffle('x', 0, 'x', 'x')            
         
@@ -676,16 +752,36 @@ class conv_pool_layer_2d (object):
         self.L2 = (self.w**2).sum() 
         if batch_norm is True: self.L2 = self.L2 + (self.alpha**2).sum()
 
-        self.type = 'convolution'        
-        if verbose >=3:
-            print "... initialized 2D conv-pool layer with " + str(nkerns)  + " kernels"
-            print "...  kernel size [" + str(filter_shape[0]) + " X " + str(filter_shape[1]) +"]"
-            print "...  pooling size [" + str(poolsize[0]) + " X " + str(poolsize[1]) + "]"
-            print "...  stride size [" + str(stride[0]) + " X " + str(stride[1]) + "]"            
-            print "...  input shape ["  + str(input_shape[2]) + " " + str(input_shape[3]) + "]"
-            print "...  input number of feature maps is " +str(input_shape[1]) 
-            print "...  output shape  [" + str(self.output_shape[2] ) + " X " + \
-                                                             str(self.output_shape[3] ) + "]"  
+        # Just doing this for print_layer method to use. 
+        self.nkerns = nkerns
+        self.filter_shape = filter_shape
+        self.poolsize = poolsize
+        self.stride = stride
+        self.input_shape = input_shape
+
+    def print_layer(self, prefix = " " , nest = False, last = True):
+        """
+        Print information about the layer
+        """
+        prefix = super(conv_pool_layer_2d, self).print_layer(prefix = prefix, 
+                                                             nest = nest, 
+                                                             last = last,
+                                                             )
+        print self.prefix_entry + "...  2D conv-pool layer with " + str(self.nkerns)  + \
+                                                                                      " kernels"
+        print self.prefix_entry + "...  kernel size [" + str(self.filter_shape[0]) + " X " + \
+                                                                str(self.filter_shape[1]) +"]"
+        print self.prefix_entry + "...  pooling size [" + str(self.poolsize[0]) + " X " + \
+                                                                    str(self.poolsize[1]) + "]"
+        print self.prefix_entry + "...  stride size [" + str(self.stride[0]) + " X " + \
+                                                                    str(self.stride[1]) + "]"            
+        print self.prefix_entry + "...  input shape ["  + str(self.input_shape[2]) + " " + \
+                                                                str(self.input_shape[3]) + "]"
+        print self.prefix_entry + "...  input number of feature maps is " + \
+                                                                    str(self.input_shape[1]) 
+        print self.prefix_entry + "...  output shape  [" + str(self.output_shape[2] ) + " X "+ \
+                                                            str(self.output_shape[3] ) + "]"  
+        return prefix
 
 class dropout_conv_pool_layer_2d(conv_pool_layer_2d):    
     """
@@ -723,7 +819,8 @@ class dropout_conv_pool_layer_2d(conv_pool_layer_2d):
     def __init__(  self, 
                    input,                   
                    nkerns,
-                   input_shape,       
+                   input_shape,      
+                   id, 
                    dropout_rate = 0.5,            
                    filter_shape = (3,3),                   
                    poolsize = (2,2),
@@ -745,7 +842,8 @@ class dropout_conv_pool_layer_2d(conv_pool_layer_2d):
         super(dropout_conv_pool_layer_2d, self).__init__(
                                                 input = input,
                                                 nkerns = nkerns,
-                                                input_shape = input_shape,                   
+                                                input_shape = input_shape,    
+                                                id = id,               
                                                 filter_shape = filter_shape,                   
                                                 poolsize = poolsize,
                                                 pooltype = pooltype,
@@ -759,13 +857,13 @@ class dropout_conv_pool_layer_2d(conv_pool_layer_2d):
                                                 verbose = verbose
                                                 )
         if not dropout_rate == 0:            
-            self.output = _dropout_from_layer(rng = rng,
+            self.output = _dropout(rng = rng,
                                 params = self.output,
                                 dropout_rate = dropout_rate)  
         if verbose >=3: 
             print "... Dropped out"                                
 
-class objective_layer(object):
+class objective_layer(layer):
     """
     This class is an objective layer. It just has a wrapper for loss function. 
     I need this because I am making objective as a loss layer. 
@@ -773,7 +871,8 @@ class objective_layer(object):
     Args:
         loss: ``yann.network.layers.classifier_layer.loss()`` method.        
         labels: ``theano.shared`` variable of labels. 
-        objective: depends on what is the classifier layer being used. Each have their own options.
+        objective: depends on what is the classifier layer being used. Each have their own 
+                   options.
         input_shape: ``(batch_size, predictions)``
         L1: Symbolic weight of the L1 added together
         L2: Sumbolic L2 of the weights added together
@@ -792,6 +891,7 @@ class objective_layer(object):
                     loss,
                     labels,
                     objective,
+                    id,
                     input_shape,
                     L1 = None,
                     L2 = None,
@@ -801,6 +901,7 @@ class objective_layer(object):
         """
         Refer to the class description
         """        
+        super(objective_layer,self).__init__(id = id, type = 'objective', verbose = verbose)                        
         if verbose >=3:
             print "... creating the objective_layer"
         self.output = loss(y = labels, type = objective)

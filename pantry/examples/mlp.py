@@ -4,8 +4,14 @@ sys.path.insert(0, os.getcwd())
 
 from yann.network import network
 
-def mlp ( verbose = 1 ):            
+def mlp ( dataset, verbose = 1 ):            
+    """
+    This method is a tutorial on building a two layer multi-layer neural network. The built
+    network is mnist->800->800->10 .It optimizes with polyak momentum and rmsprop. 
 
+    Args:
+        dataset: an already created dataset.
+    """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
                                         # false, polyak, nesterov
@@ -19,7 +25,7 @@ def mlp ( verbose = 1 ):
                         }
 
     dataset_params  = {
-                            "dataset"   :  "_datasets/_dataset_71367",
+                            "dataset"   :  dataset,
                             "svm"       :  False, 
                             "n_classes" : 10,
                             "id"        : 'mnist'
@@ -100,7 +106,7 @@ def mlp ( verbose = 1 ):
 
     net.train( epochs = (20, 20), 
                ft_learning_rate = 0.001,
-               validate_after_epochs = 20,
+               validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,
                early_terminate = True,
@@ -112,6 +118,23 @@ def mlp ( verbose = 1 ):
 ## Boiler Plate ## 
 if __name__ == '__main__':
         
+    dataset = None  
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'create_dataset':
+            from yann.utils.dataset import cook_mnist  
+            data = cook_mnist (verbose = 3)
+            dataset = data.dataset_location()
+        else:
+            dataset = sys.argv[1]
+    else:
+        print "provide dataset"
+    
+    if dataset is None:
+        print " creating a new dataset to run through"
+        from yann.utils.dataset import cook_mnist  
+        data = cook_mnist (verbose = 3)
+        dataset = data.dataset_location()
+
     # prepare_dataset (verbose = 3)
-    mlp ( verbose = 2 ) 
+    mlp ( dataset, verbose = 2 ) 
 

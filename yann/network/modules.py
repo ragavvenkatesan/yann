@@ -10,8 +10,20 @@ import theano.tensor as T
 from theano.ifelse import ifelse
 
 from yann.utils.dataset import create_shared_memory_dataset
+from yann.utils.dataset import check_type
 
-class visualizer(object):
+class module(object):
+    """
+    Prototype for what a layer should look like. Every layer should inherit from this.
+    """
+    def __init__(self, id, type, verbose = 2):
+        self.id = id
+        self.type = type
+        # Every layer must have these four properties.
+        if verbose >= 3:
+            print "... Initializing a new module " + self.id + " of type " + self.type        
+
+class visualizer(module):
     """
     Visualizer saves down images to visualize. The initilizer only initializes the directories
     for storing visuals. Three types of visualizations are saved down: 
@@ -40,7 +52,12 @@ class visualizer(object):
     Returns:
         yann.modules.visualizer: A visualizer object.
     """         
-    def __init__( self, visualizer_init_args, verbose = 1 ): 
+    def __init__( self, visualizer_init_args, verbose = 1 ):
+        if "id" in visualizer_init_args.keys(): 
+            id = visualizer_init_args["id"]
+        else:
+            id = '-1'
+        super(visualizer,self).__init__(id = id, type = 'visualizer')
 
         if verbose >= 3:
             print "... Creating visualizer directories"
@@ -88,7 +105,7 @@ class visualizer(object):
         if verbose >= 3:
             print "... Visualizer is initiliazed"
 
-class resultor(object):
+class resultor(module):
     """
     Resultor of the network saves down resultor. The initilizer initializes the directories 
     for storing results.
@@ -117,7 +134,12 @@ class resultor(object):
                                                                                                                                             
     """                    
     def __init__( self, resultor_init_args, verbose = 1):  
-    
+        if "id" in resultor_init_args.keys(): 
+            id = resultor_init_args["id"]
+        else:
+            id = '-1'
+        super(resultor,self).__init__(id = id, type = 'resultor')
+            
         if verbose >= 3:
             print "... Creating resultor directories"
             
@@ -146,7 +168,7 @@ class resultor(object):
         if verbose >= 3:
             print "... Resultor is initiliazed"
   
-class optimizer(object):    
+class optimizer(module):    
     """
 
     TODO:
@@ -218,7 +240,12 @@ class optimizer(object):
         """
         Refer to the class description for inputs
         """
-                    
+        if "id" in optimizer_init_args.keys(): 
+            id = optimizer_init_args["id"]
+        else:
+            id = '-1'
+        super(optimizer,self).__init__(id = id, type = 'optimizer')
+                            
         if "momentum_params" in optimizer_init_args.keys():                
             self.momentum_start     = optimizer_init_args [ "momentum_params" ][0]
             self.momentum_end       = optimizer_init_args [ "momentum_params" ][1]
@@ -247,7 +274,7 @@ class optimizer(object):
         self.epoch = T.scalar('epoch')
         self.momentum = ifelse(self.epoch <= self.momentum_epoch_end,
                         self.momentum_start * (1.0 - self.epoch / self.momentum_epoch_end) +  
-                        self.momentum_end * (self.epoch / self.momentum_epoch_end),
+                        self.momentum_end * (self.epoch / self.momentum_epoch_end),                        
                         self.momentum_end)  
 
         if verbose>=3 :
@@ -282,7 +309,8 @@ class optimizer(object):
 
     def create_updates(self, params, verbose = 1):
         """
-        This basically creates all the updates and update functions which trainers can iterate upon.
+        This basically creates all the updates and update functions which trainers can iterate 
+        upon.
 
         Args:
             params: Supply learnable active parameters of a network.
@@ -327,7 +355,7 @@ class optimizer(object):
             print "... Applying " + self.momentum_type
         self.updates = OrderedDict()
         for velocity, gradient, acc_1 , acc_2, param in zip(velocities, self.gradients, 
-                                                            accumulator_1, accumulator_2, params):        
+                                                        accumulator_1, accumulator_2, params):        
             if self.optimizer_type == 'adagrad':
     
                 """ Adagrad implemented from paper:
@@ -363,23 +391,25 @@ class optimizer(object):
                 self.updates[acc_1] = current_acc_1
                 
             if self.momentum_type == '_adam':
-                self.updates[velocity] = a * current_acc_2 / (T.sqrt(current_acc_1) + fudge_factor)
+                self.updates[velocity] = a * current_acc_2 / (T.sqrt(current_acc_1) +
+                                                                                 fudge_factor)
                 
             elif self.momentum_type == 'false':               # no momentum
                 self.updates[velocity] = - (self.learning_rate / T.sqrt(current_acc_1 + 
-                                                                        fudge_factor)) * gradient                                            
+                                                                     fudge_factor)) * gradient                                            
             elif self.momentum_type == 'polyak':       # if polyak momentum    
                 """ Momentum implemented from paper:  
-                Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of iteration
-                methods."  USSR Computational Mathematics and Mathematical Physics 4.5 (1964): 1-17.
+                Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of 
+                iteration methods."  USSR Computational Mathematics and Mathematical 
+                Physics 4.5 (1964): 1-17.
     
-                Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization and
-                momentum in deep learning.", Proceedings of the 30th international conference on 
-                machine learning (ICML-13). 2013. equation (1) and equation (2)"""   
+                Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization
+                and momentum in deep learning.", Proceedings of the 30th international 
+                conference on machine learning (ICML-13). 2013. equation (1) and equation (2)"""   
     
                 self.updates[velocity] = self.momentum * velocity - (1.- self.momentum) * \
-                                     ( self.learning_rate / T.sqrt(current_acc_1 + fudge_factor)) \
-                                                                                          * gradient                             
+                                 ( self.learning_rate / T.sqrt(current_acc_1 + fudge_factor)) \
+                                                                                    * gradient                             
     
             elif self.momentum_type == 'nesterov':             # Nestrov accelerated gradient 
                 """Nesterov, Yurii. "A method of solving a convex programming problem with 
@@ -392,7 +422,7 @@ class optimizer(object):
       
                 self.updates[velocity] = self.momentum * velocity - (1.-self.momentum) * \
                                 ( self.learning_rate / T.sqrt(current_acc_1 + fudge_factor)) \
-                                                                                         * gradient                                 
+                                                                                    * gradient                                 
                 self.updates[param] = self.momentum * self.updates[velocity] 
     
             else:
@@ -400,7 +430,7 @@ class optimizer(object):
                     print "... Unrecognized mometum type, switching to no momentum."
                 self.momentum_type = 'false'
                 self.updates[velocity] = - (self.learning_rate / T.sqrt(current_acc_1 + 
-                                                                          fudge_factor))  * gradient                 
+                                                                    fudge_factor))  * gradient                 
             stepped_param = param + self.updates[velocity]
             if self.momentum_type == 'nesterov':
                 stepped_param = stepped_param + self.updates[param]
@@ -423,7 +453,7 @@ class optimizer(object):
            self.updates[timestep] = delta_t       
                                                                                
 
-class datastream(object):
+class datastream(module):
     """
     This module initializes the dataset to the network class and provides all dataset related 
     functionalities. It also provides for dynamically loading and caching dataset batches.
@@ -462,6 +492,12 @@ class datastream(object):
                    borrow = True,                                   
                    verbose = 1):
 
+        if "id" in dataset_init_args.keys(): 
+            id = dataset_init_args["id"]
+        else:
+            id = '-1'
+        super(datastream,self).__init__(id = id, type = 'datastream')
+        
         dataset = dataset_init_args ["dataset"]
         self.dataset = dataset
         self.borrow = borrow
@@ -532,9 +568,8 @@ class datastream(object):
         if verbose >= 3:
             print "... data is loaded"  
         
-        # Forgot why this casting was needed.. probably for cache miss ?
-        data_x = numpy.asarray(data_x, dtype = theano.config.floatX)
-        data_y = numpy.asarray(data_y, dtype = 'int32')
+        data_x = check_type (data_x, theano.config.floatX)
+        data_y = check_type (data_y, 'int32')
         return data_x, data_y         
 
     def set_data (self, type = 'train', batch = 0, verbose = 2):
@@ -549,6 +584,7 @@ class datastream(object):
             print "... Setting batch " + str(batch) + " of data of type " + type 
 
         data_x, data_y = self.load_data (batch = batch, type = type, verbose = verbose )
+
         # Doing this just so that I can use set_value instead of set_sub_tensor.
         # Also, I see some elegance in zeroing out stuff.
         if data_x.shape[0] < self.cache_size:
@@ -558,12 +594,12 @@ class datastream(object):
                                                             self.width * self.channels)  
             if not self.cached_zeros_x.shape[0] == data_size_needed[0]:
                 self.cached_zeros_x = numpy.zeros(data_size_needed,
-                                                     dtype = theano.config.floatX)
+                                                     dtype = data_x.dtype)
                 if verbose >= 3:
                     print "... Cache miss in loading data "                  
             if not self.cached_zeros_y.shape[0] == data_size_needed[0]:
                 self.cached_zeros_y =  numpy.zeros((data_size_needed[0],),
-                                                        dtype = 'int32')
+                                                        dtype = data_y.dtype)
                                                         
             data_x = numpy.concatenate((data_x, self.cached_zeros_x), axis=0)
             data_y = numpy.concatenate((data_y, self.cached_zeros_y), axis = 0)
@@ -580,6 +616,7 @@ class datastream(object):
             self.data_one_hot_y.set_value ( y = data_one_hot_y , verbose = verbose )
 
         self.current_type = type
+        
     def one_hot_labels (self, y, verbose = 1):
         """
         Function takes in labels and returns a one-hot encoding. Used for max-margin loss.
@@ -610,7 +647,8 @@ class datastream(object):
 
         # found this technique online somewhere, forgot where couldn't cite.
         y1 = -1 * numpy.ones((y.shape[0], self.n_classes))
-        y1[numpy.arange(y.shape[0]), y] = 1	            
+        y1[numpy.arange(y.shape[0]), y] = 1	   
+        y1 = check_type(y1, theano.config.floatX)         
         return y1
         
 

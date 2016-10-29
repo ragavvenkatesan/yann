@@ -8,133 +8,15 @@ If you are here for the first time you might want to consider doing the :ref:`qu
 of doing the tutorials. The tutorials are meant for those who have some practice or experience with
 the toolbox.
 
+If you'd just want to see the codes or run the examples for testing or other such purposes you 
+could follow this tutorial/API. I recommend going through the tutorial though.
 
-Multi-Layer Neural Network
---------------------------
+.. toctree::
+   :maxdepth: 1
+   :name: tutorials   
 
-
-By virture of being here, it is assumed that you have gone through the :ref:`quick_start`.
-Let us take this one step further and create a neural network with two hidden layers. We begin as
-usual by importing the network class and creating the input layer.
-
-.. code-block:: python
-
-    from yann.network import network
-    net = network()
-    dataset_params  = { "dataset": "_datasets/_dataset_71367", "id": 'mnist', "n_classes" : 10 }
-    net.add_layer(type = "input", id ="input", dataset_init_args = dataset_params)
-
-Instead of connecting this to a classfier as we saw in the :ref:`quick_start` , let us add a couple
-of fully connected hidden layers. Hidden layers can be created using layer ``type = dot_product``.
-
-.. code-block:: python
-
-    net.add_layer (type = "dot_product", 
-                   origin ="input", 
-                   id = "dot_product_1",
-                   num_neurons = 800, 
-                   activation ='relu')                   
-    net.add_layer (type = "dot_product", 
-                   origin ="dot_product_1", 
-                   id = "dot_product_2",
-                   num_neurons = 800, 
-                   activation ='relu')    
-
-Notice the parameters passed. ``num_neurons`` is the number of nodes in the layer. Notice also 
-how we modularized the layers by using the ``id`` parameter. ``origin`` represents which layer
-will be the input to the new layer. By default yann assumes all layers are input serially and 
-chooses the last added layer to be the input. Using ``origin``, one can create various types of
-architectures.
-
-Let us now add a classifier and an objective layer to this. 
-
-.. code-block:: python
-
-    net.add_layer ( type = "classifier",
-                    id = "softmax",
-                    origin = "dot_product_2",
-                    num_classes = 10,
-                    activation = 'softmax',
-                    )
-
-    net.add_layer ( type = "objective",
-                    id = "nll",
-                    origin = "softmax",
-                    )
-
-Let us create our own optimizer module this time instead of using the yann default. For any 
-``module`` in yann, the initialization can be done using the ``add.module`` method. The 
-``add.module`` method typically takes input ``type`` which in this case is ``optimizer`` and a set
-of intitliazation parameters which in our case is ``params = optimizer_params``. 
-Any module params, which in this case is the ``optimizer_params`` is a dictionary of relevant 
-options. A typical ``optimizer setup`` is:
-
-.. code-block:: python 
-
-    optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.9, 0.95, 30),      
-                "regularization"      : (0.0001, 0.0002),       
-                "optimizer_type"      : 'rmsprop',                
-                        }
-    net.add_module ( type = 'optimizer', params = optimizer_params )                        
-
-
-We have now successfully added a Polyak momentum with RmsProp back propagation with some :math:`L_1`
-and :math:`L2` norms. This optimizer will therefore solve the following error:
-
-.. math::
-
-    e(\bf{w_2,w_1,w_{\sigma}}) = \sigma(d_2(d_1(\bf{x}),w_1),w_2)w_{\sigma}) + 
-                               0.0001(\vert w_2\vert + 
-                    \vert w_1\vert + \vert w_{\sigma} \vert) + 0.0002(\vert\vert w_2\vert\vert 
-                     \vert\vert w_1\vert\vert + \vert\vert w_{\sigma} \vert\vert)
-
-where :math:`e` is the error, :math:`\sigma(.)` is the sigmoid layer and :math:`d_i(.)` is the
-ith layer of the network. 
-
-
-Once we are done, we can cook, train and test as usual:
-
-.. code-block:: python
-
-    learning_rates = (0.01, 0.05, 0.001)  
-
-    net.cook( optimizer = 'main',
-              objective_layer = 'nll',
-              datastream = 'mnist',
-              classifier = 'softmax',
-              learning_rates = learning_rates,
-              )
-
-    net.train( epochs = (20, 20), 
-               ft_learning_rate = 0.001,
-               validate_after_epochs = 2,
-               training_accuracy = True,
-               show_progress = True,
-               early_terminate = True)
-
-    net.test()
-
-Some new arguments are introduced here and theyare for the most part easy to understand in context.
-``epoch`` represents a ``tuple`` which is the number of epochs of training and number of epochs of 
-fine tuning. ``ft_learning_rate`` indicates the fine tuning leanring rate. ``show_progress`` will 
-print a progress bar for each epoch. ``validate_after_epochs`` will perform validation after such
-many epochs on a different validation dataset.
-
-The full code for this tutorial with additional commentary can be found in
-``/modelzoo/examples/mlp.py``.
-
-
-
-Convolutional Neural Network
-----------------------------
-.. Todo::
-
-    Code is done, but text needs to be written in. 
-
-The fude for this tutorial with additional commentary can be found in
-``/modelzoo/examples/lenet.py``.
+   pantry/examples/mlp
+   pantry/examples/lenet
 
 
 .. Todo::
@@ -143,4 +25,7 @@ The fude for this tutorial with additional commentary can be found in
         * Check why GPU is not running at 100%
         * LeNet
         * AlexNet
-        * Loading pre-trained VGG-19 net
+        * Loading pre-trained VGG-19 net   
+
+
+

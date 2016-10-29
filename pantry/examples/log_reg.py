@@ -5,8 +5,12 @@ import sys, os
 sys.path.insert(0, os.getcwd())
 from yann.network import network
 
-def log_reg ( verbose ):            
+def log_reg ( dataset, verbose ):            
+    """
+    This function is a demo example of multi-layer neural networks  from the infamous paper by 
+    Yann LeCun. This is an example code. You should study this code rather than merely run it.  
 
+    """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
                                         # false, polyak, nesterov
@@ -20,10 +24,10 @@ def log_reg ( verbose ):
                         }
 
     dataset_params  = {
-                            "dataset"   :  "_datasets/_dataset_71367",
+                            "dataset"   :  dataset,
                             "svm"       :  False, 
                             "n_classes" : 10,
-                            "id"        : 'mnist'
+                            "id"        : 'mnist',
                     }
 
 
@@ -58,8 +62,10 @@ def log_reg ( verbose ):
     net.add_layer ( type = "objective",
                     id = "nll",
                     origin = "softmax",
+                    objective = 'cce',
                     verbose = verbose
                     )
+
     # objective provided by classifier layer               
     # nll-negative log likelihood, 
     # cce-categorical cross entropy, 
@@ -88,7 +94,22 @@ def log_reg ( verbose ):
 
 ## Boiler Plate ## 
 if __name__ == '__main__':
-        
-    # prepare_dataset (verbose = 3)
-    log_reg ( verbose = 2 ) 
+    dataset = None  
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'create_dataset':
+            from yann.utils.dataset import cook_mnist  
+            data = cook_mnist (verbose = 3)
+            dataset = data.dataset_location()
+        else:
+            dataset = sys.argv[1]
+    else:
+        print "provide dataset"
+    
+    if dataset is None:
+        print " creating a new dataset to run through"
+        from yann.utils.dataset import cook_mnist  
+        data = cook_mnist (verbose = 3)
+        dataset = data.dataset_location()
+
+    log_reg ( dataset, verbose = 2 ) 
 

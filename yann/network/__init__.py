@@ -362,6 +362,7 @@ class network(object):
         """
         if not "id" in resultor_params.keys():
             id = len(self.resultor) + 1
+            resultor_params["id"] = id
         else:
             id = resultor_params['id']
         self.resultor[id] = M.resultor ( resultor_init_args = resultor_params, verbose = verbose )
@@ -376,6 +377,7 @@ class network(object):
         """        
         if not "id" in visualizer_params.keys(): 
             id = len(self.visualizer) + 1
+            visualizer_params["id"] = id
         else:
             id = visualizer_params['id']            
         self.visualizer[id] = M.visualizer( visualizer_init_args = visualizer_params, verbose = verbose )
@@ -390,6 +392,7 @@ class network(object):
         """              
         if not "id" in optimizer_params.keys(): 
             id = len(self.optimizer) + 1
+            optimizer_params["id"] = id
         else:
             id = optimizer_params['id']
         self.optimizer[id] = M.optimizer ( optimizer_init_args = optimizer_params, 
@@ -405,6 +408,7 @@ class network(object):
         """              
         if not "id" in dataset_params.keys(): 
             id = len(self.datastream) + 1
+            dataset_params["id"] = id
         else:
             id = dataset_params['id']                                            
         self.datastream[id] = M.datastream ( dataset_init_args = dataset_params, verbose = verbose)                                                                                                   
@@ -469,6 +473,7 @@ class network(object):
                                     x = self.x,
                                     dropout_rate = dropout_rate,
                                     rng = self.rng,
+                                    id = id,
                                     batch_size = self.datastream[datastream_id].batch_size,
                                     height = self.datastream[datastream_id].height,
                                     width = self.datastream[datastream_id].width,
@@ -479,6 +484,7 @@ class network(object):
         self.layers[id] = L.input_layer(
                                     x = self.x,
                                     batch_size = self.datastream[datastream_id].batch_size,
+                                    id = id,
                                     height = self.datastream[datastream_id].height,
                                     width = self.datastream[datastream_id].width,
                                     channels = self.datastream[datastream_id].channels,
@@ -487,7 +493,7 @@ class network(object):
 
         # create a whole new stream, whether used or not.
         # users who do not need dropout need not know about this. muahhahaha 
-
+        self.layers[id].origin.append(datastream_id)
 
     def _add_conv_layer(self, id, options, verbose = 2):
         """
@@ -595,6 +601,7 @@ class network(object):
                                             input = self.dropout_layers[origin].output,
                                             dropout_rate = dropout_rate,
                                             nkerns = nkerns,
+                                            id = id,
                                         input_shape = self.dropout_layers[origin].output_shape,                   
                                             filter_shape = filter_size,                   
                                             poolsize = pool_size,
@@ -621,6 +628,7 @@ class network(object):
         self.layers[id] = L.conv_pool_layer_2d (
                                             input = self.layers[origin].output,
                                             nkerns = nkerns,
+                                            id = id,
                                             input_shape = self.layers[origin].output_shape,                   
                                             filter_shape = filter_size,                   
                                             poolsize = pool_size,
@@ -637,6 +645,11 @@ class network(object):
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2 
+
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
 
     def _add_dot_product_layer(self, id, options, verbose = 2):
         """
@@ -718,6 +731,7 @@ class network(object):
                                             input = dropout_input,
                                             dropout_rate = dropout_rate,
                                             num_neurons = num_neurons,
+                                            id = id,
                                             input_shape = input_shape,
                                             rng = self.rng,
                                             input_params = input_params,
@@ -740,6 +754,7 @@ class network(object):
                                             input = input,
                                             num_neurons = num_neurons,
                                             input_shape = input_shape,
+                                            id = id,
                                             rng = self.rng,
                                             input_params = layer_params,
                                             borrow = self.borrow,
@@ -750,6 +765,11 @@ class network(object):
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2 
+
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
 
     def _add_classifier_layer(self, id, options, verbose = 2): 
         """
@@ -815,7 +835,8 @@ class network(object):
         # Just create a dropout layer no matter what.
 
         self.dropout_layers[id] = L.classifier_layer (
-                                    input = input,
+                                    input = dropout_input,
+                                    id = id,
                                     input_shape = input_shape,                    
                                     num_classes = num_classes,
                                     rng = self.rng,
@@ -827,11 +848,26 @@ class network(object):
         if verbose >=3:
             print "... creating the stable stream"  
 
-        self.layers[id] = self.dropout_layers[id]
+        self.layers[id] = L.classifier_layer (
+                                    input = input,
+                                    id = id,
+                                    input_shape = input_shape,                    
+                                    num_classes = num_classes,
+                                    rng = self.rng,
+                                    input_params = input_params,
+                                    borrow = self.borrow,
+                                    activation = activation,
+                                    verbose = verbose
+                                )
 
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2 
+
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
 
     def _add_objective_layer (self, id, options, verbose = 2):
         """
@@ -865,7 +901,7 @@ class network(object):
                 print "... objective not provided, assuming nll"
             objective = 'nll'
         else:
-            objective = options["nll"]
+            objective = options["objective"]
         
         if objective == 'hinge':
             if not hasattr(self, one_hot_y) is True:
@@ -899,6 +935,7 @@ class network(object):
         self.dropout_layers[id] = L.objective_layer(                    
                                         loss = dropout_loss,
                                         labels = data_y,
+                                        id = id,
                                         objective = objective,
                                         input_shape = self.dropout_layers[origin].output_shape,
                                         L1 = self.L1,
@@ -911,6 +948,7 @@ class network(object):
         self.layers[id] = L.objective_layer(                    
                                 loss = loss,
                                 labels = data_y,
+                                id = id,
                                 objective = objective,
                                 input_shape = self.layers[origin].output_shape,                                
                                 L1 = self.L1,
@@ -919,7 +957,11 @@ class network(object):
                                 l2_coeff = l2_regularizer_coeff,
                                 verbose = verbose )                                                
 
-    
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
+
     def _initialize_test (self, classifier_layer, verbose = 2):
         """
         Internal function to create the ``self.test_batch``  theano function. ``net.cook`` will use
@@ -1177,6 +1219,7 @@ class network(object):
             self.mini_batches_per_batch = 1
     
     def cache_data (self, type = 'train', batch = 0, verbose = 2):
+
         """
         This just calls the datastream's ``set_data`` method and sets the appropriate variables.
         Args:
@@ -1190,6 +1233,10 @@ class network(object):
 
         self.set_data ( batch = batch , type = type, verbose = verbose )
         self.current_data_type = type
+
+    
+
+
 
     def cook(self, verbose = 2, **kwargs):
         """
@@ -1364,6 +1411,46 @@ class network(object):
             print "... Learning Rate       : " + str(self.learning_rate.get_value(borrow=True))
             print "... Momentum            : " + str(self.current_momentum(epoch))  
 
+    
+    
+    def _print_layer (self, id, prefix = " ", nest = True, last = True):
+        """
+        Internal funcrion used for recursion purposes.
+        Args:
+            id: ``id`` of the layer that is to be used as a root to print.
+            prefix : string.. what to print first
+            nest: To print more or not.
+        """        
+        prefix_entry = self.layers[id].print_layer(prefix = prefix, nest=True, last = last)
+        destinations = self.layers[id].destination
+        count = len(destinations) - 1
+        for id in destinations:
+            if count <= 0:
+                prefix = self._print_layer( id = id, 
+                                        prefix = prefix_entry, 
+                                        nest = nest, 
+                                        last = True)
+            else:
+                prefix = self._print_layer( id = id, 
+                                        prefix = prefix_entry, 
+                                        nest = nest, 
+                                        last = False)  
+                count = count - 1
+        return prefix_entry
+
+    def pretty_print (self):
+        """
+        This method is used to pretty print the network's connections
+        """
+        input_layers = []
+        # collect all begining of streams
+        for id, layer in self.layers.iteritems():
+            if layer.type == 'input':
+                input_layers.append(id)
+    
+        for input_layer in input_layers:
+            prefix = self._print_layer(id = input_layer, prefix = " ", nest = True)                                                     
+                        
     def validate(self, training_accuracy = False, show_progress = False, verbose = 2):
         """
         Method is use to run validation. It will also load the validation dataset.

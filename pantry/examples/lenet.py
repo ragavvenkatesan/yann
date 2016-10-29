@@ -1,15 +1,18 @@
 #!/usr/bin/python
 import sys, os
 sys.path.insert(0, os.getcwd())
-
 from yann.network import network
 
-def lenet5 ( verbose = 1 ):             
+def lenet5 ( dataset= None, verbose = 1 ):             
+    """
+    This function is a demo example of lenet5  from the infamous paper by Yann LeCun. 
+    This is an example code. You should study this code rather than merely run it.  
 
+    """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
                                         # false, polyak, nesterov
-                "momentum_params"     : (0.9, 0.95, 30),      
+                "momentum_params"     : (0.5, 0.95, 30),      
                     # (mom_start, momentum_end, momentum_end_epoch)                                                           
                 "regularization"      : (0.0001, 0.0001),       
                         # l1_coeff, l2_coeff, decisiveness (optional)                                
@@ -18,8 +21,9 @@ def lenet5 ( verbose = 1 ):
                 "id"                  : "main"
                         }
 
+
     dataset_params  = {
-                            "dataset"   :  "_datasets/_dataset_71367",
+                            "dataset"   :  dataset,
                             "svm"       :  False, 
                             "n_classes" : 10,
                             "id"        : 'mnist'
@@ -45,7 +49,6 @@ def lenet5 ( verbose = 1 ):
                     verbose = verbose, 
                     datastream_origin = 'mnist', # if you didnt add a dataset module, now is 
                                                  # the time. 
-                    dropout_rate = 0,
                     mean_subtract = True )
     
     # add first convolutional layer
@@ -71,7 +74,7 @@ def lenet5 ( verbose = 1 ):
                     dropout_rate = 0.5,
                     activation = 'relu',
                     verbose = verbose
-                    )
+                    )      
     
     net.add_layer ( type = "dot_product",
                     origin = "conv_pool_2",
@@ -102,10 +105,12 @@ def lenet5 ( verbose = 1 ):
                     )
 
     net.add_layer ( type = "objective",
-                    id = "nll",
+                    id = "obj",
                     origin = "softmax",
+                    objective = "cce",
                     verbose = verbose
                     )
+
     # objective provided by classifier layer               
     # nll-negative log likelihood, 
     # cce-categorical cross entropy, 
@@ -114,19 +119,20 @@ def lenet5 ( verbose = 1 ):
     learning_rates = (0.01, 0.05, 0.001)  
     # (initial_learning_rate, annealing, ft_learnint_rate)
 
+    net.pretty_print()  # this will print out the network.
     net.cook( optimizer = 'main',
-              objective_layer = 'nll',
+              objective_layer = 'obj',
               datastream = 'mnist',
               classifier = 'softmax',
               learning_rates = learning_rates,
               verbose = verbose
               )
 
-    net.train( epochs = (20, 20), 
+    net.train( epochs = (200, 200), 
                ft_learning_rate = 0.001,
-               validate_after_epochs = 20,
+               validate_after_epochs = 1,
                training_accuracy = True,
-               show_progress = True,
+               show_progress = False,
                early_terminate = True,
                verbose = verbose)
 
@@ -135,7 +141,23 @@ def lenet5 ( verbose = 1 ):
 
 ## Boiler Plate ## 
 if __name__ == '__main__':
-        
-    # prepare_dataset (verbose = 3)
-    lenet5 ( verbose = 2 ) 
+    
+    dataset = None  
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'create_dataset':
+            from yann.utils.dataset import cook_mnist  
+            data = cook_mnist (verbose = 3)
+            dataset = data.dataset_location()
+        else:
+            dataset = sys.argv[1]
+    else:
+        print "provide dataset"
+    
+    if dataset is None:
+        print " creating a new dataset to run through"
+        from yann.utils.dataset import cook_mnist  
+        data = cook_mnist (verbose = 3)
+        dataset = data.dataset_location()
+
+    lenet5 ( dataset, verbose = 2 ) 
 

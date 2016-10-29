@@ -185,7 +185,7 @@ generalization performance result.
 
 Congratualations, you now know how to use the yann toolbox successfully. A full-fledge code of the 
 logistic regression that we implemented here can be found in 
-``toolbox/modelzoo/examples/log_reg.py``. That piece of code also has in commentary other options
+``pantry/examples/log_reg.py``. That piece of code also has in commentary other options
 that could be supplied to some of the function calls we made here that explain the processes better.
 
 Hope you liked this quick start guide to the Yann toolbox and have fun!

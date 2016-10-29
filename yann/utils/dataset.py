@@ -415,15 +415,6 @@ def load_skdata_cifar10():
 	rval = [(train_x, train_y, train_y), (valid_x, valid_y, valid_y), (test_x, test_y, test_y)]
 	return rval
 
-"""
-# Pascal 2007
-def load_pascal_2007 (batch_size, n_train_images, n_test_images, n_valid_images, 
-						rand_perm, batch = 1, type_set = 'train', height = 256, width = 256, 
-						verbose = False ):
-	from skdata import pascal
-    pa = pascal.VOC2007()
-    pa.fetch()
-"""    
 
 # caltech 101 of skdata 
 def load_skdata_caltech101(batch_size, 
@@ -435,51 +426,70 @@ def load_skdata_caltech101(batch_size,
 						   height = 256, 
 						   width = 256, 
 						   verbose = False ):
+	"""
+	Function that downloads the dataset from skdata and returns the dataset in part
 
-    # load_batches * batch_size is supplied into batch_size 
-    from skdata import caltech
-    from scipy.misc import imread
-    cal = caltech.Caltech101()
-    cal.fetch()
-    meta = cal._get_meta()
-    img,data_y = cal.img_classification_task()
-    img = numpy.asarray(img.objs[0])
+	Args:
+		batch_size: What is the size of the batch.
+		n_train_images: number of training images.
+		n_test_images: number of testing images.
+		n_valid_images: number of validating images.
+		rand_perm: Create a random permutation list of images to be sampled to batches.
+		type_set: What dataset you need, test, train or valid.
+		height: Height of the image
+		width: Width of the image.
+		verbose: similar to dataset.
+
+	TODO:
+		This is not a finished function.
+
+	Returns:
+		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
+	"""    
+	# load_batches * batch_size is supplied into batch_size 
+	from skdata import caltech
+	from scipy.misc import imread
+	cal = caltech.Caltech101()
+	cal.fetch()
+	meta = cal._get_meta()
+	img,data_y = cal.img_classification_task()
+	img = numpy.asarray(img.objs[0])
 	# Shuffle so that the ordering of classes is changed, 
 	# but use the same shuffle so that loading works consistently.	
-    img = img[rand_perm] 
-    data_y = data_y[rand_perm] 
-    data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
+	img = img[rand_perm] 
+	data_y = data_y[rand_perm] 
+	data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
 
-    if type_set == 'train':
-        push = 0 + batch * batch_size 	
-    elif type_set == 'test':
-        push = n_train_images + batch * batch_size 
-    elif type_set == 'valid':
-        push = n_train_images + n_test_images + batch * batch_size
-        
-    if verbose is True:
-        print "Processing image:  " + str(push)
-    data_y = numpy.asarray(data_y[push : push + batch_size ] , dtype = 'int32' )	
+	if type_set == 'train':
+		push = 0 + batch * batch_size 	
+	elif type_set == 'test':
+		push = n_train_images + batch * batch_size 
+	elif type_set == 'valid':
+		push = n_train_images + n_test_images + batch * batch_size
+		
+	if verbose is True:
+		print "Processing image:  " + str(push)
+	data_y = numpy.asarray(data_y[push : push + batch_size ] , dtype = 'int32' )	
 
-    for i in range(batch_size):
-                    
-        temp_img = imread(img[push + i])
-        temp_img = temp_img.astype('float32')
-        
-        if temp_img.ndim != 3:
-            # This is a temporary solution. 
+	for i in range(batch_size):
+					
+		temp_img = imread(img[push + i])
+		temp_img = temp_img.astype('float32')
+		
+		if temp_img.ndim != 3:
+			# This is a temporary solution. 
 			# I am allocating to all channels the grayscale values... 
-            temp_img = temp_img.astype('float32')
-            temp_img = cv2.resize(temp_img,(height,width))
-            temp_img1 = numpy.zeros((height,width,3))
-            temp_img1 [:,:,0] = temp_img
-            temp_img1 [:,:,1] = temp_img
-            temp_img1 [:,:,2] = temp_img
-            data_x[i] = numpy.reshape(temp_img1,[1,height*width*3] )
-        else:
-            data_x[i] = numpy.reshape(cv2.resize(temp_img,(height,width)), [1,height*width*3])
+			temp_img = temp_img.astype('float32')
+			temp_img = cv2.resize(temp_img,(height,width))
+			temp_img1 = numpy.zeros((height,width,3))
+			temp_img1 [:,:,0] = temp_img
+			temp_img1 [:,:,1] = temp_img
+			temp_img1 [:,:,2] = temp_img
+			data_x[i] = numpy.reshape(temp_img1,[1,height*width*3] )
+		else:
+			data_x[i] = numpy.reshape(cv2.resize(temp_img,(height,width)), [1,height*width*3])
 
-    return (data_x,data_y)
+	return (data_x,data_y)
 
 # caltech 256 of skdata 
 def load_skdata_caltech256(batch_size, 
@@ -492,7 +502,26 @@ def load_skdata_caltech256(batch_size,
 						   height = 256, 
 						   width = 256, 
 						   verbose = False ):
+	"""
+	Function that downloads the dataset from skdata and returns the dataset in part
 
+	Args:
+		batch_size: What is the size of the batch.
+		n_train_images: number of training images.
+		n_test_images: number of testing images.
+		n_valid_images: number of validating images.
+		rand_perm: Create a random permutation list of images to be sampled to batches.
+		type_set: What dataset you need, test, train or valid.
+		height: Height of the image
+		width: Width of the image.
+		verbose: similar to dataset.
+
+	TODO:
+		This is not a finished function.
+
+	Returns:
+		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
+	"""    
 	# load_batches * batch_size is supplied into batch_size 
 	import skdata
 	from skdata import caltech
@@ -638,6 +667,19 @@ def preprocessing( data, height, width, channels, args):
 	# if GCN is True :
 	return data
 	
+def check_type(data, type):
+	"""
+	This checks and sets data as whatever the type is.
+	Args:
+		data: Whatever is the data. Numpy format usually.
+		type: Whichever type to test and set.
+	"""
+	if not data.dtype == type:
+		data = numpy.asarray(data, dtype = type)
+		return data
+	else:
+		return data
+
 def pickle_dataset(loc,batch,data):
 	""" 
 	Function that stores down an object as a pickle file given its filename and obj
@@ -678,12 +720,15 @@ def create_shared_memory_dataset(data_xy,
 
 	if svm is True:
 		data_x, data_y, data_y1 = data_xy
-		shared_y1 = shared(numpy.asarray(data_y1,dtype=theano.config.floatX), borrow=borrow)
+		data_y1 = check_type(data_y1, theano.config.floatX)
+		shared_y1 = shared(data_y1, borrow=borrow)
 	else:
 		data_x, data_y = data_xy
-
-	shared_x = shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
-	shared_y = shared(numpy.asarray(data_y, dtype='int32'),  borrow=borrow)
+	
+	data_x = check_type(data_x, theano.config.floatX)
+	data_y = check_type(data_y, 'int32')
+	shared_x = shared(data_x, borrow=borrow)
+	shared_y = shared(data_y, borrow=borrow)
 
 	if svm is True:
 		return shared_x, shared_y, shared_y1
@@ -804,7 +849,9 @@ class setup_dataset (object):
 				 save_directory = '_datasets', 
 				 verbose = 1,
 				 **kwargs):
-
+		"""
+		Look at the class definition
+		"""
 		if verbose >= 1:
 			print ". Setting up dataset "
 
@@ -861,7 +908,8 @@ class setup_dataset (object):
 
 		# create some directory for storing all this data
 		self.id = str(randint(11111,99999))
-		self.root = save_directory + '/_dataset_' + self.id 	
+		self.key_root = '/_dataset_'
+		self.root = save_directory + self.key_root + self.id 	
 		if not os.path.exists(save_directory):
 			os.mkdir(save_directory)
 
@@ -879,11 +927,23 @@ class setup_dataset (object):
                             "ZCA"           : False,
                             "grayscale"     : True,
                         	}
+		start_time = time.clock()		
 		if self.source == 'skdata':
-			self.create_skdata(verbose = verbose)
+			self._create_skdata(verbose = verbose)
+		end_time = time.clock()
+		if verbose >=1: 
+			print ". Dataset " + self.id + " is created."
+			print ". Time taken is " +str(end_time - start_time) + " seconds"			
 
-	def create_skdata(self,verbose=1):
-		
+	def dataset_location (self):
+		"""
+		Use this function that return the location of dataset.
+		"""
+		return self.root
+	def _create_skdata(self,verbose=1):
+		"""
+		This is an internal function, create any skdata function.
+		"""
 		if verbose >=3: 
 			print ".. setting up skdata"
 		# if hugo larochelle dataset... 
@@ -899,14 +959,16 @@ class setup_dataset (object):
 			self.name == 'mnist_rotated' or
 			self.name == 'mnist_rotated_bg') :
 	
-			self.create_skdata_mnist(verbose = verbose)
+			self._create_skdata_mnist(verbose = verbose)
 
 		elif self.name == 'cifar10':
 			self.create_cifar_10(verbose = verbose)
 			
 	
-	def create_skdata_mnist(self, verbose = 1): 
-		start_time = time.clock()
+	def _create_skdata_mnist(self, verbose = 1): 
+		"""
+		Interal function. Use this to create mnist and cifar image datasets
+		"""
 		if self.mini_batches_per_batch is not self.batches2train:
 			print ". MNIST datasets are small enough that you don't need caching. Setting "+\
 			"mini_batches_per_batch to " + str(self.batches2train)
@@ -920,7 +982,7 @@ class setup_dataset (object):
 			print ".. setting up dataset"
 			print ".. training data"		
 
-		data_x, data_y, data_y1 = data[0]
+		data_x, data_y, data_y1  = data[0]
 		data_x = preprocessing ( data = data_x,
 								 height = self.height,
 								 width = self.width,
@@ -935,14 +997,16 @@ class setup_dataset (object):
 			else: 
 				data_x = data_x[:self.batches2train*self.batch_size]
 				data_y = data_y[:self.batches2train*self.batch_size] 
-		loc = self.root + "/train/"																
+		loc = self.root + "/train/"	
+		data_x = check_type(data_x, theano.config.floatX)
+		data_y = check_type(data_y, 'int32')																	
 		data2save = (data_x, data_y )
 		pickle_dataset(loc = loc,data = data2save,batch=0)	
 		
 		if verbose >=2: 			
 			print ".. validation data "
 
-		data_x, data_y, data_y1 = data[1]
+		data_x, data_y, data_y1  = data[1]
 		data_x = preprocessing ( data = data_x,
 								 height = self.height,
 								 width = self.width,
@@ -957,8 +1021,10 @@ class setup_dataset (object):
 				else: 
 					data_x = data_x[:self.batches2validate*self.batch_size]
 					data_y = data_y[:self.batches2validate*self.batch_size] 
-		loc = self.root + "/valid/"				
-		data2save = (data_x, data_y )
+		loc = self.root + "/valid/"		
+		data_x = check_type(data_x, theano.config.floatX)
+		data_y = check_type(data_y, 'int32')				
+		data2save = (data_x, data_y )		
 		pickle_dataset(loc = loc,data = data2save,batch=0)	
 		
 		if verbose >=2: 						
@@ -978,7 +1044,9 @@ class setup_dataset (object):
 				else: 
 					data_x = data_x[:self.batches2test*self.batch_size]
 					data_y = data_y[:self.batches2test*self.batch_size] 
-		loc = self.root + "/test/"				
+		loc = self.root + "/test/"	
+		data_x = check_type(data_x, theano.config.floatX)
+		data_y = check_type(data_y, 'int32')					
 		data2save = (data_x, data_y )
 		pickle_dataset(loc = loc,data = data2save,batch=0)	
 							
@@ -987,7 +1055,7 @@ class setup_dataset (object):
 		dataset_args = {
 				"location"          		: self.root,                                          
 				"batch_size"        		: self.batch_size,                                    
-				"mini_batches_per_batch"    : self.mini_batches_per_batch,
+				"cache_batches"    			: self.mini_batches_per_batch,
 				"batches2train"     		: self.batches2train,                                      
 				"batches2test"      		: self.batches2test,                                     
 				"batches2validate"  		: self.batches2validate,                                       
@@ -1001,11 +1069,59 @@ class setup_dataset (object):
 		f = open(self.root +  '/data_params.pkl', 'wb')
 		cPickle.dump(dataset_args, f, protocol=2)
 		f.close()	
-		end_time = time.clock()
-		if verbose >=1: 
-			print ". Dataset " + self.id + " is created."
-			print ". Time taken is " +str(end_time - start_time) + " seconds"
-					  	
+
+def cook_mnist(  verbose = 1,
+				 **kwargs):
+	"""
+	Wrapper to cook mnist dataset. Will take as input:
+	Args:
+		save_directory: which directory to save the cooked dataset onto.
+		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
+		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
+	"""
+
+	if not 'data_params' in kwargs.keys():
+
+		data_params = {
+                   "source"             : 'skdata',                                   
+                   "name"               : 'mnist',    
+				   "location"			: '',                                      
+                   "batch_size"         : 500,                                     
+                   "mini_batches_per_batch" : 250, 
+                   "batches2train"      : 100,                                      
+                   "batches2test"       : 20,                                      
+                   "batches2validate"   : 20,                                        
+                   "height"             : 28,                                       
+                   "width"              : 28,                                       
+                   "channels"           : 1,
+				   "cache"			    : True  }    
+				    
+	else:
+		data_params = kwargs['data_params']
+
+	if not 'preprocess_params' in kwargs.keys():
+                  
+    # parameters relating to preprocessing.
+		preprocess_params = { 
+                            "normalize"     : True,
+                            "GCN"           : False,
+                            "ZCA"           : False,
+                            "grayscale"     : False,
+                        }
+	else:
+		preprocess_params = kwargs['preprocess_params']
+
+	if not 'save_directory' in kwargs.keys():
+		save_directory = '_datasets'
+	else:
+		save_directory = kwargs ['save_directory']
+
+	dataset = setup_dataset(dataset_init_args = data_params,
+							save_directory = save_directory,
+							preprocess_params = preprocess_params,
+							verbose = 3)
+	return dataset
+
 if __name__ == '__main__':
     pass  
 
