@@ -1,9 +1,10 @@
 yann:
 version 0.01.01 
  
-* An even easier, simpler and versatile CNN alternative to [Lasagne](https://github.com/Lasagne/Lasagne).
+* An even easier, simpler and versatile CNN alternative to 
+    [Lasagne](https://github.com/Lasagne/Lasagne) and [Keras](https://keras.io/).
 * Promotes easy learnability and practice of theano.
-* Modelling by just entries in the boilerplate.
+* Modelling by just entries in the boilerplate function.
 
 
 ## Who is this code most useful for ?
