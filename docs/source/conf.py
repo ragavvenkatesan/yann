@@ -52,7 +52,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx_fontawesome'
 ]
 
 todo_include_todos = True
