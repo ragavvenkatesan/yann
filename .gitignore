@@ -1,8 +1,8 @@
 *.pyc
-*.txt
 *.pkl.gz
 *.jpg
 *.pkl
 *.mat
 *.zip
 /docs/build
+/_dev

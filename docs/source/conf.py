@@ -14,24 +14,38 @@
 
 import sys
 import os
-import shlex
-import sphinx_fontawesome 
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
 
+# fool rtd into thinking a GPU is available, so all modules are importable
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
+
+import theano
+import theano.sandbox.cuda
+
+theano.config = Mock(device='gpu')
+theano.sandbox.cuda.cuda_enabled = True
+theano.sandbox.cuda.dnn = Mock(dnn_available=lambda: True)
+
 import sys
-from unittest.mock import MagicMock
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
+sys.modules['pylearn2'] = Mock()
+sys.modules['pylearn2.sandbox'] = Mock()
+sys.modules['pylearn2.sandbox.cuda_convnet'] = Mock()
+sys.modules['pylearn2.sandbox.cuda_convnet.filter_acts'] = \
+    Mock(FilterActs=None)
 
-MOCK_MODULES = ['sphinx_fontawesome']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+sys.modules['theano.sandbox.cuda.blas'] = Mock(GpuCorrMM=None)
+sys.modules['sphinx_fontawesome'] = Mock()
+
+import shlex
+import sphinx_fontawesome 
 
 # General configuration
 # ---------------------
@@ -75,6 +89,7 @@ author = 'Ragav Venkatesan'
 version = '0.1'
 # The full version, including alpha/beta/rc tags.
 release = '0.1 alpha'
+copyright = u'2015–2016, Ragav Venkatesan'
 
 
 # There are two options for replacing |today|: either, you set today to some
