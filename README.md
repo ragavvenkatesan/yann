@@ -7,7 +7,7 @@ version 0.0.1a1
 * Modelling by just entries in the boilerplate function.
 
 [![Join the chat at https://gitter.im/yann-users/Lobby](https://badges.gitter.im/yann-users/Lobby.svg)](https://gitter.im/yann-users/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![MIT License https://img.shields.io/badge/license-MIT-blue.svg)](http://yann.readthedocs.io/en/latest/license.html)
+[![MIT License at http://yann.readthedocs.io/en/latest/license.html](https://img.shields.io/badge/license-MIT-blue.svg)](http://yann.readthedocs.io/en/latest/license.html)
 
 ## Who is this code most useful for ?
 
