@@ -1,7 +1,6 @@
 import os
 import numpy
 import cPickle
-import progressbar
 from collections import OrderedDict
 
 import numpy
