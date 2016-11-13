@@ -25,6 +25,7 @@ of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you 
 :ref:`getting_started`. A user base discussion group is setup on `gitter`_.
 
 .. _gitter: https://gitter.im/yann-users/Lobby
+.. _theano: http://theano.readthedocs.io
 
 .. warning ::
 
