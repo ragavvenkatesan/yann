@@ -1,10 +1,10 @@
 yann:
 version 0.0.1a1 
  
-* An even easier, simpler and versatile CNN alternative to 
+* An even easier, simpler and versatile CNN tool alternative to 
     [Lasagne](https://github.com/Lasagne/Lasagne) and [Keras](https://keras.io/).
-* Promotes easy learnability and practice of theano.
-* Modelling by just entries in the boilerplate function.
+* Promotes easy learnability and practice of CNNs using theano.
+* Modular and plug and play modules and layers.
 
 [![Join the chat at https://gitter.im/yann-users/Lobby](https://badges.gitter.im/yann-users/Lobby.svg)](https://gitter.im/yann-users/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![MIT License at http://yann.readthedocs.io/en/latest/license.html](https://img.shields.io/badge/license-MIT-blue.svg)](http://yann.readthedocs.io/en/latest/license.html)
