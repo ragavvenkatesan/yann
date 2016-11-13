@@ -1624,13 +1624,7 @@ class network(object):
 
         nan_flag = False
         fine_tune = False 
-
-        index = T.lscalar()
-        temp_func = theano.function ( inputs = [index],
-                                      outputs = self.layers["conv_pool_1"].conv_out,
-                                      givens = { self.x: self.cooked_datastream.data_x[index * 
-                                                 self.cooked_datastream.batch_size:(index + 1) * 
-                                                             self.cooked_datastream.batch_size]})                                                             
+                                                           
         # main loop
         while (epoch_counter < (num_epochs + num_fine_tuning_epochs)) and (not early_termination):
 

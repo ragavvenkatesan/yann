@@ -12,7 +12,7 @@ Yet Another Neural Network Toolbox
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
    :target: license.html
 
-Welcome to the Yann Toolbox. It is a toolbox for doing convolutional neural networks, built on top 
+Welcome to the Yann Toolbox. It is a toolbox for convolutional neural networks, built on top 
 of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you may start with the 
 :ref:`quick_start` guide or try your hand at the :ref:`tutorial` and the guide to 
 :ref:`getting_started`.
@@ -22,8 +22,7 @@ of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you 
 .. warning ::
 
     Yann is currently under its early phases and is presently undergoing massive development. 
-    Expect a lot of changes. Testing going on at the moment with the ``cook`` function and 
-    therefore some loss functions might not work temporarily.
+    Expect a lot of changes.
 
 .. warning ::
     
@@ -35,9 +34,12 @@ of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you 
     
     While, there are more formal and wholesome toolboxes that are similar and have a much larger 
     userbase such as `Lasagne`_, `Keras`_, `Blocks`_ and `Caffe`_, this toolbox is much more
-    simple and versatile. Yann is a supplement to an upcoming book on Convolutional Neural 
-    Networks. It is also good choice for a toolbox for running pre-trained models and build 
-    complicated, non-vannilla architecture that are not easy to build with the other toolboxes.
+    simple and versatile. Yann is designed as a supplement to an upcoming book on Convolutional 
+    Neural Networks and also the toolbox of choice for a deep learning course. Because of this 
+    reason, Yann is specifically designed to be intuitive and easy to use for beginners. That does 
+    not compromise Yann of any of its features. 
+    It is still a good choice for a toolbox for running pre-trained models and build 
+    complicated, non-vannilla CNN architectures that are not easy to build with the other toolboxes.
 
 .. _Lasagne: https://github.com/Lasagne/Lasagne
 .. _Keras: http://keras.io/

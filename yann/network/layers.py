@@ -41,9 +41,10 @@ class layer(object):
     def print_layer(self, prefix = " ", nest = True, last = True):
         """
         Print information about the layer
+        
         Args:
             nest: If True will print the tree from here on. If False it will print only this
-              layer.
+                layer.
             prefix: Is what prefix you want to add to the network print command.
         """       
         prefix_entry = prefix

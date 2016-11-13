@@ -23,7 +23,7 @@
     vswitch.push('<div class="rst-other-versions">');   
 
     vswitch.push('<dt>Downloads</dt>');
-    var pdf_url = root_url + "doc/build/latex/yann.pdf"
+    var pdf_url = root_url + "/yann.pdf"
     vswitch.push('<dd><a href=\"', pdf_url, '\">', 'PDF', '</a></dd>');
     vswitch.push('</dl>');  
     
@@ -35,8 +35,8 @@
 
     vswitch.push('<dl>');   
     vswitch.push('<dt>Creator</dt>');
-    var git_master = "http://www.public.asu.edu/~rvenka10/"
-    vswitch.push('<dd><a href=\"', "http://www.public.asu.edu/~rvenka10/" + '\">', 'Ragav Venkatesan', '</a></dd>');
+    var git_master = "http://www.ragav.net"
+    vswitch.push('<dd><a href=\"', "http://www.ragav.net" + '\">', 'Ragav Venkatesan', '</a></dd>');
     vswitch.push('</dl>');  
 
     vswitch.push('</div>');    
@@ -50,7 +50,7 @@
 
     // Check server for other doc versions and update switcher.
     if (url.startsWith('http')) {
-      $.getJSON(root_url + 'theano_versions/versions.json', function(data){
+      $.getJSON(root_url + 'yann_versions/versions.json', function(data){
         $.each(data, function(version, dir) {
             versions_dir[version] = dir;
         });
