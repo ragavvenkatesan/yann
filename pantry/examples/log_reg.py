@@ -12,13 +12,13 @@ def log_reg ( dataset, verbose ):
 
     """
     optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
+                "momentum_type"       : 'false',             
                                         # false, polyak, nesterov
-                "momentum_params"     : (0.9, 0.95, 30),      
+                "momentum_params"     : (0.5, 0.95, 30),      
                     # (mom_start, momentum_end, momentum_end_epoch)                                                           
-                "regularization"      : (0.0001, 0.0001),       
+                "regularization"      : (0.000, 0.000),       
                         # l1_coeff, l2_coeff, decisiveness (optional)                                
-                "optimizer_type"      : 'rmsprop',                
+                "optimizer_type"      : 'sgd',                
                                         # sgd, adagrad, rmsprop, adam 
                 "id"                  : "main"
                         }
@@ -62,7 +62,7 @@ def log_reg ( dataset, verbose ):
     net.add_layer ( type = "objective",
                     id = "nll",
                     origin = "softmax",
-                    objective = 'cce',
+                    objective = 'nll',
                     verbose = verbose
                     )
 

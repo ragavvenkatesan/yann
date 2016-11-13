@@ -3,7 +3,9 @@ import numpy
 import theano
 import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-
+# from theano.tensor.shared_randomstreams import RandomStreams
+# The above import is an experimental code. Not sure if it works perfectly, but I have no doubt 
+# yet.
 from yann.core import activations
 from yann.core.conv import convolver_2d
 from yann.core.pool import pooler_2d
@@ -41,7 +43,7 @@ class layer(object):
         Print information about the layer
         Args:
             nest: If True will print the tree from here on. If False it will print only this
-                  layer.
+              layer.
             prefix: Is what prefix you want to add to the network print command.
         """       
         prefix_entry = prefix
@@ -74,8 +76,9 @@ def _dropout(rng, params, dropout_rate):
     dropout thanks to misha denil 
     https://github.com/mdenil/dropout    
     """
-    srng = RandomStreams(rng.randint(1,2147462579),use_cuda = True)
-    # p=1-p because 1's indicate keep and p is prob of dropping
+    srng = RandomStreams(rng.randint(1,2147462468), use_cuda=None)
+    # I have raised this issue with the theano guys, use_cuda = True is creating a duplicate 
+    # process in the GPU.
     mask = srng.binomial(n=1, p=1-dropout_rate, size=params.shape, dtype = theano.config.floatX )
     output = params * mask
     return output
@@ -151,9 +154,12 @@ class input_layer (layer):
 
     Args: 
         x: ``theano.tensor`` variable with rows are vectorized images.
+        y: ``theano.tensor`` variable
+        one_hot_y:``theano.tensor`` variable       
         batch_size: Number of images in the data variable.
         height: Height of each image.
         width: Width of each image.
+        id: Supply a layer id
         channels: Number of channels in each image.
         mean_subtract: Defauly is ``False``.
         verbose: Similar to all of the toolbox.
@@ -161,12 +167,14 @@ class input_layer (layer):
     Notes: 
         Use ``input_layer.output`` to continue onwards with the network
         ``input_layer.output_shape`` will tell you the output size.
+        Use ``input_layer.x``, ``input_layer.y`` and ``input_layer_one_hot_y`` tensors
+        for connections.
 
     """
-    def __init__ (  self, 
-                    x, 
+    def __init__ (  self,                 
                     batch_size, 
-                    id = id,                    
+                    x,
+                    id = -1,                    
                     height=28,
                     width=28,
                     channels=1,
@@ -199,6 +207,7 @@ class dropout_input_layer (input_layer):
 
     Args: 
         x: ``theano.tensor`` variable with rows are vectorized images.
+          if None, will create a new one.
         batch_size: Number of images in the data variable.
         height: Height of each image.
         width: Width of each image.
@@ -212,9 +221,9 @@ class dropout_input_layer (input_layer):
 
     """
     def __init__ (  self, 
-                    x, 
                     batch_size, 
                     id,
+                    x,                    
                     dropout_rate = 0.5,
                     height=28,
                     width=28,
@@ -222,12 +231,13 @@ class dropout_input_layer (input_layer):
                     mean_subtract = False,
                     rng = None,
                     verbose = 2):  
+
         if verbose >= 3:
             print "... set up the dropout input layer"
         if rng is None:
             rng = numpy.random
         super(dropout_input_layer, self).__init__ (
-                                            x = x, 
+                                            x = x,
                                             batch_size = batch_size, 
                                             id = id,
                                             height=height,
@@ -296,8 +306,8 @@ class classifier_layer (layer):
         self.input = input
         # To copy weights previously created or some wierd initializations
         if input_params is not None:
-            init_w = input_params[0]
-            init_b = input_params[1]            
+            self.w = input_params[0]
+            self.b = input_params[1]            
         else:
             self.w = theano.shared ( value=numpy.asarray(0.01 * rng.standard_normal( 
                                      size=(input_shape[1], num_classes)), 
@@ -327,7 +337,7 @@ class classifier_layer (layer):
         if verbose >=3: 
             print "... Classifier layer is created with output shape " + str(self.output_shape)
             
-    def _negative_log_likelihood(self, y ):
+    def _negative_log_likelihood(self, y):
         """
         Negative log-likelihood cost of the classifier layer.
         Do not use this directly, use the ``loss`` method instead.
@@ -389,7 +399,7 @@ class classifier_layer (layer):
                 ('y', target.type, 'predictions', self.predictions.type))
         # check if y is of the correct datatype
         if y.dtype.startswith('int'):
-            return T.sum(T.neq(T.cast(self.predictions,'int32'), T.cast(y,'int32')))   
+            return T.sum(T.neq(self.predictions, y))   
         else:
             raise NotImplementedError()
 
@@ -399,7 +409,7 @@ class classifier_layer (layer):
         """        
         return T.maximum(0, 1 - u)
 
-    def _hinge_loss(self, y1):
+    def _hinge_loss(self, y):
         """
         Hinge loss cost of the classifier layer.
         Do not use this directly, use the ``loss`` method instead.
@@ -413,7 +423,7 @@ class classifier_layer (layer):
 
             theano variable: Hinge loss.
         """        
-        margin = y1 * self.fit
+        margin = y * self.fit
         return self._hinge(margin).mean(axis=0).sum()
 
     def loss(self, y, type):
@@ -674,7 +684,6 @@ class conv_pool_layer_2d (layer):
         width      = input_shape[3]
         height     = input_shape[2]
         # srng = RandomStreams(rng.randint(1,2147462579))
-
         # Initialize the parameters of this layer.
         w_shp = (nkerns, channels, filter_shape[0], filter_shape[1])        
         if input_params is None:
@@ -683,9 +692,9 @@ class conv_pool_layer_2d (layer):
             fan_in = filter_shape[0]*filter_shape[1]
             fan_out = filter_shape[0]*filter_shape[1] / numpy.prod(poolsize)        
             w_bound = numpy.sqrt(6. / (fan_in + fan_out))          
-            self.w = theano.shared(
+            self.w = theano.shared(value=
                    numpy.asarray(rng.uniform(low=-w_bound, high=w_bound, size =w_shp),
-                                    dtype=theano.config.floatX ), name = 'w', borrow=borrow )
+                                    dtype=theano.config.floatX ), borrow=borrow )
             self.b = theano.shared(value=numpy.zeros((w_shp[0]), dtype=theano.config.floatX),
                                      name = 'b', borrow=borrow)  
             self.alpha = theano.shared(value=numpy.ones((w_shp[0]), 
@@ -710,6 +719,7 @@ class conv_pool_layer_2d (layer):
         conv_out = convolver.out
         conv_out_shp = (batch_size, nkerns, convolver.out_shp[0], convolver.out_shp[1])   
 
+        self.conv_out = conv_out
         if not poolsize == (1,1):
              pooler = pooler_2d( 
                                 input = conv_out,
@@ -855,7 +865,7 @@ class dropout_conv_pool_layer_2d(conv_pool_layer_2d):
                                                 activation = activation,
                                                 input_params = input_params,                   
                                                 verbose = verbose
-                                                )
+                                                )                                        
         if not dropout_rate == 0:            
             self.output = _dropout(rng = rng,
                                 params = self.output,

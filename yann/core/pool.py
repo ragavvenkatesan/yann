@@ -69,9 +69,8 @@ class pooler_2d(object):
                         ds,
                         img_shp,                     
                         mode = 'max',  
-                        ignore_border = False,                                                    
+                        ignore_border = True,                                                    
                         verbose = 1
-                        
                 ):
 
         if verbose >=3:
@@ -102,7 +101,7 @@ class pooler_2d(object):
                 ignore_border = ignore_border,
                 mode = 'average_exc_pad'
                 )        
-       
+        # ignore_border has some issue. False seems to pull things off GPU.
         self.out_shp = (img_shp[0], img_shp[1], _out_height, _out_width)          
         
 if __name__ == '__main__':

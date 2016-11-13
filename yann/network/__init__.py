@@ -1,5 +1,4 @@
 """
-
 TODO:
 
     Something is wrong with the svm classifier. Fix it. 
@@ -30,6 +29,7 @@ class network(object):
     TODO:
 
         * Origin to be taken from another network outside of this one.
+        * Need to expand beyond just ``classifier`` type networks.
         
     Class definition for the class :mod:`network`:
 
@@ -123,9 +123,6 @@ class network(object):
         
     Returns:            
         ``yann.network.network``: network object with parameters setup.     
-
-    TODO:
-        Need to expand beyond just ``classifier`` type networks.
     """  
 
     def __init__(  self, verbose = 2, **kwargs ):
@@ -166,8 +163,8 @@ class network(object):
         # for each argument supplied by kwargs, intialize something.
         for argument, value in kwargs.iteritems():
 
-            if (argument == 'resultor' or argument == 'optimizer' or argument == 'datastream' or \
-                argument == 'visualizer'):
+            if (argument == 'resultor' or argument == 'optimizer' or  
+                argument == 'datastream' or argument == 'visualizer'):
                 # add module
                 self.add_module(type = argument, params = value, verbose = verbose)                              
 
@@ -291,11 +288,11 @@ class network(object):
              type == 'convolution':
             self._add_conv_layer(id = id, options = kwargs, verbose = verbose)
             self.params = self.params + self.dropout_layers[id].params
-
+  
         elif type == 'dot_product' or \
              type == 'hidden' or  \
              type == 'mlp' or  \
-             type == 'fully_connected':
+             type == 'fully_connected':          
             self._add_dot_product_layer(id =id, options = kwargs, verbose = verbose)
             self.params = self.params + self.dropout_layers[id].params
 
@@ -380,8 +377,10 @@ class network(object):
             visualizer_params["id"] = id
         else:
             id = visualizer_params['id']            
-        self.visualizer[id] = M.visualizer( visualizer_init_args = visualizer_params, verbose = verbose )
+        self.visualizer[id] = M.visualizer( visualizer_init_args = visualizer_params, 
+                                                                                verbose = verbose )
         self.last_visualizer_created = id
+
     def _add_optimizer(self, optimizer_params, verbose = 2):
         """
         This function is used to add a optimizer to the network.
@@ -398,6 +397,7 @@ class network(object):
         self.optimizer[id] = M.optimizer ( optimizer_init_args = optimizer_params, 
                                                                     verbose = verbose )
         self.last_optimizer_created = id
+
     def _add_datastream(self, dataset_params, verbose = 2):
         """
         This function is used to add a datastream to the network.
@@ -447,13 +447,6 @@ class network(object):
         
         datastream_id = self.last_datastream_created 
         self.svm = self.datastream[datastream_id].svm                    
-        self.x = T.matrix('x')           # the data is presented as rasterized images
-
-        # Right now only classifier works.
-        if self.type == 'classifier':
-            self.y = T.ivector('y')
-            if self.svm is True:
-                self.one_hot_y = T.matrix('one_hot')
         
         if not 'mean_subtract' in options.keys():
             if verbose >=3:
@@ -470,8 +463,8 @@ class network(object):
             dropout_rate = options ["dropout_rate"]
             
         self.dropout_layers[id] = L.dropout_input_layer (
-                                    x = self.x,
                                     dropout_rate = dropout_rate,
+                                    x = self.datastream[datastream_id].x,
                                     rng = self.rng,
                                     id = id,
                                     batch_size = self.datastream[datastream_id].batch_size,
@@ -482,7 +475,7 @@ class network(object):
                                     verbose =verbose)
         
         self.layers[id] = L.input_layer(
-                                    x = self.x,
+                                    x = self.datastream[datastream_id].x,
                                     batch_size = self.datastream[datastream_id].batch_size,
                                     id = id,
                                     height = self.datastream[datastream_id].height,
@@ -602,7 +595,7 @@ class network(object):
                                             dropout_rate = dropout_rate,
                                             nkerns = nkerns,
                                             id = id,
-                                        input_shape = self.dropout_layers[origin].output_shape,                   
+                                            input_shape = self.dropout_layers[origin].output_shape,                   
                                             filter_shape = filter_size,                   
                                             poolsize = pool_size,
                                             pooltype = pool_type,
@@ -616,10 +609,14 @@ class network(object):
                                             verbose = verbose,
                                             )
         # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
-        w = self.dropout_layers[id].w * (1 - dropout_rate)
-        b = self.dropout_layers[id].b * (1 - dropout_rate)
+        if dropout_rate >0:
+            w = self.dropout_layers[id].w * (1 - dropout_rate)
+            b = self.dropout_layers[id].b * (1 - dropout_rate)
+        else:
+            w = self.dropout_layers[id].w
+            b = self.dropout_layers[id].b
+            
         layer_params = [w,b]   
-
         if batch_norm is True:
             alpha = self.dropout_layers[id].alpha * (1 - dropout_rate)
             layer_params.append(alpha)    
@@ -727,6 +724,7 @@ class network(object):
         if verbose >=3:
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what. 
+
         self.dropout_layers[id] = L.dropout_dot_product_layer (
                                             input = dropout_input,
                                             dropout_rate = dropout_rate,
@@ -847,14 +845,14 @@ class network(object):
                                 )
         if verbose >=3:
             print "... creating the stable stream"  
-
+        params = self.dropout_layers[id].params
         self.layers[id] = L.classifier_layer (
                                     input = input,
                                     id = id,
                                     input_shape = input_shape,                    
                                     num_classes = num_classes,
                                     rng = self.rng,
-                                    input_params = input_params,
+                                    input_params = params,
                                     borrow = self.borrow,
                                     activation = activation,
                                     verbose = verbose
@@ -903,17 +901,32 @@ class network(object):
         else:
             objective = options["objective"]
         
-        if objective == 'hinge':
-            if not hasattr(self, one_hot_y) is True:
-                if verbose >=1:
-                    print". Network is not setup for hinge loss " + \
-                                                            "switching to negative log likelihood"
-                objective = 'nll'
-                data_y = self.y
+        if 'dataset_origin' in options.keys():
+            if 'dataset_origin' in self.datastream.keys():
+                datastream_id = options["datset_origin"]
             else:
-                data_y = self.one_hot_y
+                if verbose >= 3:
+                    print "... Invalid datastream id, switching to last created datastream"
+                datastream_id = self.last_datastream_created
         else:
-            data_y = self.y
+            datastream_id = self.last_datastream_created 
+            
+        if self.datastream[datastream_id].svm is True and not objective == 'hinge':
+            if verbose >=2:
+                print ".. Objective should only be hinge if datastream is setup for svm. Beware"
+            self.datastream[datastream_id].svm = False
+
+        if objective == 'hinge':
+            if not hasattr(self.datastream[datastream_id], 'one_hot_y') is True:
+                if verbose >=1:
+                    print". Datastream is not setup for hinge loss " + \
+                                                       "switching to negative log likelihood"
+                objective = 'nll'
+                data_y = self.datastream[datastream_id].y
+            else:
+                data_y = data_y = self.datastream[datastream_id].one_hot_y
+        else:
+            data_y = self.datastream[datastream_id].y
 
         # check if the origin layer is a classifier error.
         loss = getattr(self.layers[origin], "loss", None)
@@ -1063,21 +1076,22 @@ class network(object):
         index = T.lscalar('index')     
         if self.cooked_datastream.svm is False:   
             self.batch_train = theano.function(
-                        inputs = [index, self.cooked_optimizer.epoch],
-                        outputs = objective,
-                        givens={
-                        self.x: self.data_x[index * self.batch_size:(index + 1) * self.batch_size],
-                        self.y: self.data_y[index * self.batch_size:(index + 1) * self.batch_size]},
-                        updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
+                    inputs = [index, self.cooked_optimizer.epoch],
+                    outputs = objective,
+                    givens={
+                    self.x: self.data_x[index * self.batch_size:(index + 1) * self.batch_size],
+                    self.y: self.data_y[index * self.batch_size:(index + 1) * self.batch_size]},
+                    updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
         else:                                                                        
             self.batch_train = theano.function(
-                        inputs = [index, self.cooked_optimizer.epoch],
-                        outputs = objective,
-                        givens={
-                        self.x: self.data_x[ index * self.batch_size:(index + 1) * self.batch_size],
-                        self.one_hot_y: self.data_one_hot_y[index * self.batch_size:(index + 1) * 
-                                                                                self.batch_size]},
-                        updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
+                    inputs = [index, self.cooked_optimizer.epoch],
+                    outputs = objective,
+                    # profile = True, # uncommenting this line will enable profiling
+                    givens={
+                    self.x: self.data_x[ index * self.batch_size:(index + 1) * self.batch_size],
+                    self.one_hot_y: self.data_one_hot_y[index * self.batch_size:(index + 1) * 
+                                                                            self.batch_size]},
+                    updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
 
 
     def _cook_optimizer (self, learning_rates, verbose = 2):
@@ -1151,7 +1165,7 @@ class network(object):
                             self.x: self.cooked_datastream.data_x[index * 
                                                  self.cooked_datastream.batch_size:(index + 1) * 
                                                                 self.cooked_datastream.batch_size],
-                            self.y: self.cooked_datastream.data_one_hot_y[index * 
+                            self.one_hot_y: self.cooked_datastream.data_one_hot_y[index * 
                                                   self.cooked_datastream.batch_size:(index + 1) * 
                                                                 self.cooked_datastream.batch_size]},
                                             on_unused_input = 'ignore')
@@ -1191,9 +1205,11 @@ class network(object):
         self.mini_batches_per_batch = self.cooked_datastream.mini_batches_per_batch
         self.data_x = self.cooked_datastream.data_x
         self.data_y = self.cooked_datastream.data_y
-        if self.svm:
+        if self.cooked_datastream.svm is True:
             self.data_one_hot_y = self.cooked_datastream.data_one_hot_y
-        
+        self.x = self.cooked_datastream.x
+        self.y = self.cooked_datastream.y
+        self.one_hot_y = self.cooked_datastream.one_hot_y             
         self._cook_cache (verbose = verbose)
         self.current_data_type = self.cooked_datastream.current_type
 
@@ -1233,10 +1249,6 @@ class network(object):
 
         self.set_data ( batch = batch , type = type, verbose = verbose )
         self.current_data_type = type
-
-    
-
-
 
     def cook(self, verbose = 2, **kwargs):
         """
@@ -1376,15 +1388,8 @@ class network(object):
         if verbose >= 3:
             print "... Initializing parameters" 
         for param, init_param in zip(self.params, init_params):
-            param.set_value(init_param.get_value(borrow = True))
+            param.set_value(init_param.get_value(borrow = self.borrow))
 
-
-
-        """
-        TODO:
-
-            Write this function. 
-        """
     def print_status (self, epoch , verbose = 2):
         """
         This function prints the cost of the current epoch, learning rate and momentum of the 
@@ -1406,9 +1411,10 @@ class network(object):
                 print ".. Cost                : " + str(self.cost[-1])
             else:
                 print ".. Cost                : " + str(numpy.mean(self.cost[-1 * 
-                                                self.batches2train * self.mini_batches_per_batch:]))                
+                                            self.batches2train * self.mini_batches_per_batch:]))                
         if verbose >= 3:
-            print "... Learning Rate       : " + str(self.learning_rate.get_value(borrow=True))
+            print "... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
+                                                                                 self.borrow))
             print "... Momentum            : " + str(self.current_momentum(epoch))  
 
     
@@ -1475,7 +1481,7 @@ class network(object):
         if show_progress is True:
             bar = progressbar.ProgressBar(maxval=total_batches, \
                   widgets=[progressbar.AnimatedMarker(), \
-                ' validation ', ' ', progressbar.Percentage(), ' ',progressbar.ETA(), ]).start()  
+            ' validation ', ' ', progressbar.Percentage(), ' ',progressbar.ETA(), ]).start()  
         
             batch_counter = 0
 
@@ -1551,6 +1557,8 @@ class network(object):
         """
         Training function of the network. Calling this will begin training.
 
+        TODO:
+            Pre-Fine tuning setup of parameters isn't working. Once I set value, copy doens't work.
         Args:
             epochs: ``(num_epochs, num_fine_tuning_epochs)`` to train Default is ``(20, 20)``
             ft_learning_rate: fine tuning learning rate
@@ -1615,8 +1623,14 @@ class network(object):
         nan_insurance   = copy.deepcopy(self.active_params)
 
         nan_flag = False
-        fine_tune = False        
+        fine_tune = False 
 
+        index = T.lscalar()
+        temp_func = theano.function ( inputs = [index],
+                                      outputs = self.layers["conv_pool_1"].conv_out,
+                                      givens = { self.x: self.cooked_datastream.data_x[index * 
+                                                 self.cooked_datastream.batch_size:(index + 1) * 
+                                                             self.cooked_datastream.batch_size]})                                                             
         # main loop
         while (epoch_counter < (num_epochs + num_fine_tuning_epochs)) and (not early_termination):
 
@@ -1641,8 +1655,9 @@ class network(object):
                     print ".. Epoch: " + str(epoch_counter)  
             if show_progress is True:
                 bar = progressbar.ProgressBar(maxval=self.batches2train * \
-                        self.mini_batches_per_batch, widgets=[ progressbar.AnimatedMarker(), ' ',\
-                        progressbar.Percentage(),' . training ', ' ',progressbar.ETA(), ]).start()
+                        self.mini_batches_per_batch, \
+                        widgets=[progressbar.AnimatedMarker(), \
+                ' training ', ' ', progressbar.Percentage(), ' ',progressbar.ETA(), ]).start() 
 
             total_mini_batches_done = 0 
             # Go through all the large batches
@@ -1660,7 +1675,8 @@ class network(object):
                     if self.cache is True:
                         train_batch = mini_batch
                     else:
-                        train_batch = batch                                           
+                        train_batch = batch           
+                    
                     cost = self.batch_train (train_batch, epoch_counter)
                     if numpy.isnan(cost):
                         if verbose >= 2:
@@ -1709,7 +1725,7 @@ class network(object):
                     fine_tune = True
                     self.cook_fine_tuning(
                         fine_tuning_rate = numpy.asarray ( 
-                             self.learning_rate.get_value(borrow=True) *0.1 ,
+                             self.learning_rate.get_value(borrow=self.borrow) *0.1 ,
                               dtype = theano.config.floatX ) , verbose = verbose )                
 
                     early_termination = False
@@ -1724,8 +1740,6 @@ class network(object):
         end_time = time.clock()
         if verbose >=2 :
             print ".. Training complete.Took " +str((end_time - start_time)/60) + " minutes"                
-                        
-
 
     def test(self, show_progress = True, verbose = 2):
         """

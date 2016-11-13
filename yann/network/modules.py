@@ -533,13 +533,17 @@ class datastream(module):
                 self.n_classes = False
 
         self.initialize_dataset(verbose = verbose)
-        self.batch = 0  # initialize the batch to zero. Changing this will produce a new stream. 
+        self.batch = 0# initialize the batch to zero. Changing this will produce a new stream. 
          
         self.cached_zeros_x = numpy.zeros((1,),dtype = theano.config.floatX)
         self.cached_zeros_y = numpy.zeros((1,),dtype = theano.config.floatX)
 
         if verbose >= 3:
             print "... Datastream is initiliazed"
+        
+        self.x = T.matrix('x')
+        self.y = T.ivector('y')
+        self.one_hot_y = T.matrix('one_hot_y')
 
     def load_data (self, type = 'train', batch = 0, verbose = 2):
         """
@@ -569,7 +573,9 @@ class datastream(module):
             print "... data is loaded"  
         
         data_x = check_type (data_x, theano.config.floatX)
-        data_y = check_type (data_y, 'int32')
+        data_y = check_type (data_y, theano.config.floatX)
+        # Theano recommends storing on gpus only as floatX and casts them to ints during use.
+        # I don't know why, but I am following their recommendations blindly.
         return data_x, data_y         
 
     def set_data (self, type = 'train', batch = 0, verbose = 2):
@@ -584,7 +590,6 @@ class datastream(module):
             print "... Setting batch " + str(batch) + " of data of type " + type 
 
         data_x, data_y = self.load_data (batch = batch, type = type, verbose = verbose )
-
         # Doing this just so that I can use set_value instead of set_sub_tensor.
         # Also, I see some elegance in zeroing out stuff.
         if data_x.shape[0] < self.cache_size:
@@ -610,10 +615,10 @@ class datastream(module):
             data_y = data_y[:self.cache_size,]
 
         self.data_x.set_value (data_x, borrow = self.borrow )
-        self.data_y.set_value (data_y, borrow = self.borrow )                        
+        self.data_y_uncasted.set_value (data_y, borrow = self.borrow )                        
         if self.svm is True:
             data_one_hot_y = self.one_hot_labels( data_y, verbose = verbose )
-            self.data_one_hot_y.set_value ( y = data_one_hot_y , verbose = verbose )
+            self.data_one_hot_y.set_value ( data_one_hot_y , borrow = self.borrow )
 
         self.current_type = type
         
@@ -673,20 +678,22 @@ class datastream(module):
         self.cache_size = data_x.shape[0]
 
         if self.svm is False:
-            self.data_x, self.data_y = create_shared_memory_dataset(
+            self.data_x, self.data_y_uncasted = create_shared_memory_dataset(
                                                            (data_x, data_y),
                                                             borrow = self.borrow,
                                                             verbose = verbose)
         else:
             data_y1 = self.one_hot_labels (data_y, verbose = verbose)
-           
-            self.data_x, self.data_y, self.data_one_hot_y = create_shared_memory_dataset(
+            self.data_x, self.data_y_uncasted, self.data_one_hot_y = create_shared_memory_dataset(
                                                   (data_x, data_y, data_y1),
                                                             borrow = self.borrow,
                                                             svm = True,
                                                             verbose = verbose)
-        if verbose >=3 :
+        self.data_y = T.cast(self.data_y_uncasted, 'int32')
+
+        if verbose >=3:
             print "... dataset is initialized"
+
 
 if __name__ == '__main__':
     pass              

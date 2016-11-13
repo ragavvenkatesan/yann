@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import sys, os
 sys.path.insert(0, os.getcwd())
 from yann.network import network
@@ -10,21 +9,21 @@ def lenet5 ( dataset= None, verbose = 1 ):
 
     """
     optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
+                "momentum_type"       : 'false',             
                                         # false, polyak, nesterov
                 "momentum_params"     : (0.5, 0.95, 30),      
                     # (mom_start, momentum_end, momentum_end_epoch)                                                           
-                "regularization"      : (0.0001, 0.0001),       
+                "regularization"      : (0.00, 0.00),       
                         # l1_coeff, l2_coeff, decisiveness (optional)                                
-                "optimizer_type"      : 'rmsprop',                
+                "optimizer_type"      : 'sgd',                
                                         # sgd, adagrad, rmsprop, adam 
                 "id"                  : "main"
                         }
 
 
     dataset_params  = {
-                            "dataset"   :  dataset,
-                            "svm"       :  False, 
+                            "dataset"   : dataset,
+                            "svm"       : False, 
                             "n_classes" : 10,
                             "id"        : 'mnist'
                     }
@@ -49,17 +48,15 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     verbose = verbose, 
                     datastream_origin = 'mnist', # if you didnt add a dataset module, now is 
                                                  # the time. 
-                    mean_subtract = True )
+                    mean_subtract = False )
     
     # add first convolutional layer
-    
     net.add_layer ( type = "conv_pool",
                     origin = "input",
                     id = "conv_pool_1",
                     num_neurons = 20,
                     filter_size = (5,5),
                     pool_size = (2,2),
-                    batch_norm = True,
                     activation = 'relu',
                     verbose = verbose
                     )
@@ -70,18 +67,14 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     num_neurons = 50,
                     filter_size = (3,3),
                     pool_size = (2,2),
-                    batch_norm = True,
-                    dropout_rate = 0.5,
                     activation = 'relu',
                     verbose = verbose
                     )      
-    
+        
     net.add_layer ( type = "dot_product",
                     origin = "conv_pool_2",
                     id = "dot_product_1",
                     num_neurons = 800,
-                    batch_norm = True,
-                    dropout_rate = 0.5,
                     activation = 'relu',
                     verbose = verbose
                     )
@@ -90,8 +83,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     origin = "dot_product_1",
                     id = "dot_product_2",
                     num_neurons = 800,                    
-                    batch_norm = True,
-                    dropout_rate = 0.5,
                     activation = 'relu',
                     verbose = verbose
                     ) 
@@ -107,7 +98,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "objective",
                     id = "obj",
                     origin = "softmax",
-                    objective = "cce",
+                    objective = "nll",
+                    datastream_origin = 'mnist', 
                     verbose = verbose
                     )
 
@@ -118,8 +110,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
     # hinge-hinge loss 
     learning_rates = (0.01, 0.05, 0.001)  
     # (initial_learning_rate, annealing, ft_learnint_rate)
-
-    net.pretty_print()  # this will print out the network.
+    # net.pretty_print()  # this will print out the network.
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'mnist',
@@ -128,11 +119,11 @@ def lenet5 ( dataset= None, verbose = 1 ):
               verbose = verbose
               )
 
-    net.train( epochs = (200, 200), 
+    net.train( epochs = (20, 20), 
                ft_learning_rate = 0.001,
                validate_after_epochs = 1,
                training_accuracy = True,
-               show_progress = False,
+               show_progress = True,
                early_terminate = True,
                verbose = verbose)
 

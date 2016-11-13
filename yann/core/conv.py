@@ -1,6 +1,7 @@
 """
 ``yann.core.conv.py`` is one file that contains all the convolution operators.
-It contains two functions for performing either 2d convolution (``conv2d``) or 3d convolution (``conv3d``).
+It contains two functions for performing either 2d convolution (``conv2d``) or 3d convolution 
+(``conv3d``).
 
 These functions shall be called by every convolution layer from ``yann.layers.py``
 
@@ -105,7 +106,7 @@ class convolver_2d(object):
 
             from theano.sandbox import cuda 
             if not cuda.dnn.dnn_available():
-                raise Exception ("cuDNN is needed for this operation.")
+                raise Exception ("cuDNN is needed for this type of convolution.")
             
             else:
                 if subsample[0] == 1 and subsample[1] == 1:

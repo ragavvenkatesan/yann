@@ -22,6 +22,7 @@ from random import randint
 import skdata
 
 import theano
+import theano.tensor as T
 from theano import shared 
 
 thismodule = sys.modules[__name__]
@@ -711,7 +712,8 @@ def create_shared_memory_dataset(data_xy,
 		svm: default is ``False``. If ``True``, we also return a ``shared_svm_y`` for 
 				 max-margin type last layer.
 	Returns:
-		theano.shared: ``shared_x, shared_y`` is ``svm`` is ``False``. If not, ``shared_x, shared_y, shared_svm_y`` 
+		theano.shared: ``shared_x, shared_y`` is ``svm`` is ``False``. If not, ``shared_x, 
+		                shared_y, shared_svm_y`` 
 	"""
 	if 'svm' in kwargs.keys():
 		svm = kwargs["svm"]
@@ -724,16 +726,17 @@ def create_shared_memory_dataset(data_xy,
 		shared_y1 = shared(data_y1, borrow=borrow)
 	else:
 		data_x, data_y = data_xy
-	
+	# Theano recommends storing on gpus only as floatX and casts them to ints during use.
+    # I don't know why, but I am following their recommendations blindly.
 	data_x = check_type(data_x, theano.config.floatX)
-	data_y = check_type(data_y, 'int32')
+	data_y = check_type(data_y, theano.config.floatX)
 	shared_x = shared(data_x, borrow=borrow)
 	shared_y = shared(data_y, borrow=borrow)
 
 	if svm is True:
 		return shared_x, shared_y, shared_y1
 	else:
-		return shared_x, shared_y  
+		return shared_x, shared_y 
 
 
 # Load initial data         

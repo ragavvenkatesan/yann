@@ -22,7 +22,8 @@ of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you 
 .. warning ::
 
     Yann is currently under its early phases and is presently undergoing massive development. 
-    Expect a lot of changes.
+    Expect a lot of changes. Testing going on at the moment with the ``cook`` function and 
+    therefore some loss functions might not work temporarily.
 
 .. warning ::
     
@@ -207,6 +208,7 @@ Hope you liked this quick start guide to the Yann toolbox and have fun!
    yann/index
    trailer   
    license   
+   genindex
 
 
 Indices of functions and modules
