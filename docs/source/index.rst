@@ -5,8 +5,6 @@
 Yet Another Neural Network Toolbox       
 ==================================    
 
-:fa:`github` Fork the code from `GitHub`_.
-
 .. _GitHub: https://github.com/ragavvenkatesan/yann
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg

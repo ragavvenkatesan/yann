@@ -1,6 +1,0 @@
-** Test all features and make an alpha release.
-** Parse code for visualizing filters possibly in matlab similar to the other thing ..
-   with GUI options to load choice of epoch. 
-** Provide support for PASCAL VOC and ImageNet. 
-
-
