@@ -48,10 +48,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.napoleon',
-    'sphinx.ext.pngmath',    
+    'sphinx.ext.pngmath',  
+    'sphinx.ext.linkcode',      
     'sphinx.ext.todo',
     'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode',
 ]
 
 todo_include_todos = True
@@ -68,18 +68,21 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General substitutions.
-project = 'Yann'
-copyright = '2016, Ragav Venkatesan'
-author = 'Ragav Venkatesan'
+project = u'Yann'
+copyright = u'2016, Ragav Venkatesan'
+author = u'Ragav Venkatesan'
+
+import yann
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '0.1'
+version = '.'.join(yann.__version__.split('.', 2)[:2])
 # The full version, including alpha/beta/rc tags.
-release = '0.1 alpha'
+release = yann.__version__
+
 copyright = u'2015–2016, Ragav Venkatesan'
 
 
@@ -117,6 +120,30 @@ pygments_style = 'sphinx'
 add_function_parentheses = True
 html_use_smartypants = True
 todo_include_todos = True
+
+def linkcode_resolve(domain, info):
+    def find_source():
+        # try to find the file and line number, based on code from numpy:
+        # https://github.com/numpy/numpy/blob/master/doc/source/conf.py#L286
+        obj = sys.modules[info['module']]
+        for part in info['fullname'].split('.'):
+            obj = getattr(obj, part)
+        import inspect
+        import os
+        fn = inspect.getsourcefile(obj)
+        fn = os.path.relpath(fn, start=os.path.dirname(lasagne.__file__))
+        source, lineno = inspect.getsourcelines(obj)
+        return fn, lineno, lineno + len(source) - 1
+
+    if domain != 'py' or not info['module']:
+        return None
+    try:
+        filename = 'lasagne/%s#L%d-L%d' % find_source()
+    except Exception:
+        filename = info['module'].replace('.', '/') + '.py'
+    tag = 'master' if 'dev' in release else ('v' + release)
+    return "https://github.com/ragavvenkatesan/yann/blob/%s/%s" % (tag, filename)
+
 
 # Options for HTML output
 # -----------------------
