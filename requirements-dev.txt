@@ -3,6 +3,6 @@ mock
 numpy 
 scipy
 numpydoc
-Sphinx==1.2.3
+Sphinx>=1.2.3
 sphinx_rtd_theme
 skdata
