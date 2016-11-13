@@ -5,8 +5,6 @@
 Yet Another Neural Network Toolbox       
 ==================================    
 
-.. _GitHub: https://github.com/ragavvenkatesan/yann
-
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
    :target: license.html
    :alt: MIT License
@@ -18,6 +16,10 @@ Yet Another Neural Network Toolbox
 .. image:: https://badges.gitter.im/yann-users/Lobby.svg
     :target: https://gitter.im/yann-users/Lobby
     :alt: Gitter Lobby
+
+.. image:: https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master
+     :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
+     :alt: Requirements Status
 
 Welcome to the Yann Toolbox. It is a toolbox for convolutional neural networks, built on top 
 of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you may start with the 
