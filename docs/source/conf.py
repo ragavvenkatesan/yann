@@ -140,8 +140,9 @@ def linkcode_resolve(domain, info):
 
     filename = info['module'].replace('.', '/') + '.py'
     tag = 'master' if 'dev' in release else ('v' + release)
-    return "https://github.com/ragavvenkatesan/yann/blob/%s/%s" % (tag, filename)
-
+    return "https://github.com/ragavvenkatesan/yann/blob/master/%s" % (filename)
+    # this is wrong, I mean I am always showing the code only in the master branch.
+    # For some reason, I don't know how to write master here for release candidate.'
 
 # Options for HTML output
 # -----------------------
