@@ -160,9 +160,15 @@ cPickle and gzip
 Yann Toolbox Setup
 ====================
  
-Simply download the toolbox into a directory somewhere by 
+To install the toolbox use, 
 
 .. code-block:: bash
 
     pip install git+git://github.com/ragavvenkatesan/yann.git
+
+If you have already setup the toolbox and want to just update to the bleeding-edge use,
+
+.. code-block:: bash
+
+    pip install --upgrade git+git://github.com/ragavvenkatesan/yann.git
 
