@@ -5,7 +5,7 @@ Installation Guide
 ==================
 
 Yann is built on top of `Theano`_. `Theano`_ and all its pre-requisites are mandatory.
-Once theano and its pre-requisites are setup you may choose to setup and run this toolbox.
+Once theano and its pre-requisites are setup you may setup and run this toolbox.
 Theano setup is documented in the `theano toolbox documentation`_. Yann is built with theanoo 0.8 
 but should be forward compatible unless theano makes a drastic release. 
 
@@ -78,7 +78,7 @@ numpy/scipy
     conda install scipy
   
 
-  to set these up
+  to set these up. If not, yann installer will pip install it anyway.
 
 Theano 
 ------
@@ -164,20 +164,5 @@ Simply download the toolbox into a directory somewhere by
 
 .. code-block:: bash
 
-    git clone https://github.com/ragavvenkatesan/yann
-    
-And add that path to your code by using:
-
-.. code-block:: bash
-
-    import sys
-    sys.path.insert(0,"<path-to-yann-toolbox">
-
-If not, quite simply have the toolbox in the directory where you are running the code so this is 
-included in your codes.
-
-.. Warning ::
-
-    A ``Pypy`` installer will soon be setup. Once the distribution release is made, we can have 
-    a pip install for yann.
+    pip install git+git://github.com/ragavvenkatesan/yann.git
 

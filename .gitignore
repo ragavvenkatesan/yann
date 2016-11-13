@@ -5,4 +5,7 @@
 *.mat
 *.zip
 /docs/build
+/yann.egg-info
+/build
+/dist
 /_dev
