@@ -9,6 +9,8 @@ version 0.01.01
 
 ## Who is this code most useful for ?
 
+[![Join the chat at https://gitter.im/yann-users/Lobby](https://badges.gitter.im/yann-users/Lobby.svg)](https://gitter.im/yann-users/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 I wrote this code essentially for my labmates, those who are interested in 
 starting deep CNNs to make a fast transition into theano. This will also be 
 useful for industry when teting out prototypes.
