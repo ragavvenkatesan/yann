@@ -17,7 +17,7 @@ install:
   - conda info -a
   - pip install .
   - pip install -r requirements.txt
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION theano skdata numpy scipy matplotlib pandas pytest h5py
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib theano skdata pandas pytest h5py
   - source activate test-environment
   - python setup.py install
     
