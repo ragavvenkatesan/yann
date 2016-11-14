@@ -1,4 +1,5 @@
 -r requirements.txt
+python==2.7
 mock
 numpy 
 scipy
