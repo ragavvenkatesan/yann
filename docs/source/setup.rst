@@ -13,7 +13,7 @@ but should be forward compatible unless theano makes a drastic release.
 .. _theano toolbox documentation: http://deeplearning.net/software/theano/install.html
 
 
-Quick fire Isntallation
+Quick fire Installation
 -----------------------
 
 Now before going through the full-fledged installation procedure, you can run through the entire

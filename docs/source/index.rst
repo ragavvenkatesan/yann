@@ -73,7 +73,6 @@ The following will help you get quickly acquinted with Yann.
    organization
 
 .. _quick_start:
-
 Quick Start 
 ===========    
 
