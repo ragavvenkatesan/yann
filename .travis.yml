@@ -9,18 +9,19 @@ before_install:
   - pip install -r requirements.txt   
   - pip install -U travis-sphinx    
   - pip install -U codecov  
+  - pip install pytest 
+  - pip install pytest-cov  
 
 # Install packages
-install:
-  - pip install pytest 
+install:  
   - python setup.py install
 
 # command to run tests
 script: 
-  - coverage 
   - python setup.py test
 
 after_success:
-  - codecov
+  - py.test --cov=./
+  - codecov    
   - bash <(curl -s https://codecov.io/bash)
 
