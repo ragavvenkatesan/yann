@@ -12,22 +12,24 @@ before_install:
     fi
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH  
   - export PATH=/home/travis/miniconda2/bin:$PATH
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
+  - conda update --yes conda  
   - conda create --yes -n condaenv python=$TRAVIS_PYTHON_VERSION      
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib theano
   - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
-  - pip install codecov  
+  - sudo ln -s /run/shm /dev/shm  
   
 # Install packages
 install:
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib theano
+  - pip install codecov  
+  - pip install --user travis-sphinx    
   - pip install -r requirements.txt    
   - python setup.py install
 
 # command to run tests
 script: 
-  - coverage 
+  - coverage
 
 after_success:
   codecov
