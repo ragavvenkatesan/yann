@@ -1,1 +1,11 @@
+python==2.7
+mock
+numpy>=1.11
+scipy>0.18
+numpydoc
+sphinx>=1.2.3
+progressbar>=2
+skdata>=0.0.4
+sphinx_rtd_theme
 theano>=0.8.0
+
