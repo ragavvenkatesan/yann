@@ -10,7 +10,6 @@ version 0.0.1a1
 [![MIT License at http://yann.readthedocs.io/en/latest/license.html](https://img.shields.io/badge/license-MIT-blue.svg)](http://yann.readthedocs.io/en/latest/license.html)
 [![Documentation at http://yann.readthedocs.io/en/latest/](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](http://yann.readthedocs.io/en/latest/)
 [![Requirements Status](https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master)](https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master)
-[![HitCount](https://hitt.herokuapp.com/ragavvenkatesan/yann.svg)](https://github.com/ragavvenkatesan/yann)
 
 ## Who is this code most useful for ?
 
