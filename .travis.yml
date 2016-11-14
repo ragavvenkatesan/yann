@@ -18,7 +18,7 @@ before_install:
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib theano
-  - pip install codecov  
+  - pip install -U codecov  
   - pip install --user travis-sphinx    
   - pip install -r requirements.txt   
   - pip install pytest 
@@ -27,9 +27,9 @@ install:
 # command to run tests
 script: 
   - coverage 
-  - pytest tests
+  - python setup.py test
 
 after_success:
-  - codecov -t f909168e-4b27-4ebe-b49a-670b81635128
+  - codecov
   - bash <(curl -s https://codecov.io/bash)
 

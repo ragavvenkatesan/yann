@@ -11,3 +11,4 @@
 /_dev
 /tests/__pycache__/
 .cache
+.eggs
