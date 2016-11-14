@@ -25,7 +25,6 @@ import layers as L
 
 class network(object):
     """
-
     TODO:
 
         * Origin to be taken from another network outside of this one.

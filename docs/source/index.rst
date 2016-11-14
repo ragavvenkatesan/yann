@@ -17,10 +17,6 @@ Yet Another Neural Network Toolbox
     :target: https://gitter.im/yann-users/Lobby
     :alt: Gitter Lobby
 
-.. image:: https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg
-    :taget: https://codecov.io/gh/ragavvenkatesan/yann
-    :alt: Code Coverage 
-    
 .. image:: https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master
     :target: https://travis-ci.org/ragavvenkatesan/yann
     :alt: Travis Report
