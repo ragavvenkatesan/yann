@@ -37,8 +37,8 @@ you may start with the :`quick_start` guide or try your hand at the :ref:`tutori
 
     Yann is currently under its early phases and is presently undergoing massive development. 
     Expect a lot of changes. Unit tests are only starting to be written. The toolbox will be 
-      formalized in the future but at this moment, the authorship, coverage and maintanence of the 
-      toolbox is under extremely limited manpower.
+    formalized in the future but at this moment, the authorship, coverage and maintanence of the 
+    toolbox is under extremely limited manpower.
 
 .. note ::
     
