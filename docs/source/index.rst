@@ -27,6 +27,9 @@ Yet Another Neural Network Toolbox
 
 .. image:: https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg
 
+.. image:: https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master
+    :target: https://travis-ci.org/ragavvenkatesan/yann
+    :alt: Travis Report
 
 
 Welcome to the Yann Toolbox. It is a toolbox for convolutional neural networks, built on top 
