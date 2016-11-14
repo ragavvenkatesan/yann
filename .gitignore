@@ -4,7 +4,6 @@
 *.pkl
 *.mat
 *.zip
-.coverage
 /docs/build
 /yann.egg-info
 /build
