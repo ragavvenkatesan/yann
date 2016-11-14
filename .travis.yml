@@ -1,4 +1,4 @@
-sudo: false
+sudo: required
 language: python
 python:
   - "2.7"
@@ -12,8 +12,6 @@ before_install:
   - export PATH=/home/travis/miniconda2/bin:$PATH
   - conda update --yes conda  
   - conda create --yes -n condaenv python=$TRAVIS_PYTHON_VERSION      
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm  
   
 # Install packages
 install:
