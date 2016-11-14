@@ -6,7 +6,7 @@ python:
 
 # command to install dependencies copied this from like many github toolboxes out there
 before_install:
-  - if [[ "$TRAVIS_PYTHON_VERSION" <= "2.7" ]]; then
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ] || [ "$TRAVIS_PYTHON_VERSION" == "2.6" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
