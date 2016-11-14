@@ -2,7 +2,6 @@
 TODO:
 
     Something is wrong with the svm classifier. Fix it. 
-
 """
 import time 
 import copy

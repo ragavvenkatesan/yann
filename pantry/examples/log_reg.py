@@ -1,8 +1,3 @@
-#!/usr/bin/python
-import sys, os
-# assuming the the code begins with yann root folder.
-
-sys.path.insert(0, os.getcwd())
 from yann.network import network
 
 def log_reg ( dataset, verbose ):            

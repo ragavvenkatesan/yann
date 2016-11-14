@@ -1,5 +1,3 @@
-import sys, os
-sys.path.insert(0, os.getcwd())
 from yann.network import network
 
 def lenet5 ( dataset= None, verbose = 1 ):             
