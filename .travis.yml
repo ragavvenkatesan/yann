@@ -22,4 +22,11 @@ install:
   - python setup.py install
 
 # command to run tests
-script: pytest
+script: 
+  - coverage run nosetests
+
+before_install:
+  pip install codecov
+after_success:
+  codecov
+
