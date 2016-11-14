@@ -4,7 +4,7 @@ License
 =======
 
 Yann
-Release: Yann V 0.01.01 
+Release: Yann V 0.1.1a1 
 
 .. rubric:: The MIT License
 

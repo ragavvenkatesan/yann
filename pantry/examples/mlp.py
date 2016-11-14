@@ -9,13 +9,13 @@ def mlp ( dataset, verbose = 1 ):
         dataset: an already created dataset.
     """
     optimizer_params =  {        
-                "momentum_type"       : 'false',             
+                "momentum_type"       : 'polyak',             
                                         # false, polyak, nesterov
                 "momentum_params"     : (0.9, 0.95, 30),      
                     # (mom_start, momentum_end, momentum_end_epoch)                                                           
                 "regularization"      : (0.0001, 0.0001),       
                         # l1_coeff, l2_coeff, decisiveness (optional)                                
-                "optimizer_type"      : 'sgd',                
+                "optimizer_type"      : 'rmsprop',                
                                         # sgd, adagrad, rmsprop, adam 
                 "id"                  : "main"
                         }

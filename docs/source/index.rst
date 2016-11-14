@@ -25,9 +25,9 @@ Yet Another Neural Network Toolbox
      :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
      :alt: Requirements Status
 
-Welcome to the Yann Toolbox. It is a toolbox for convolutional neural networks, built on top 
-of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you may start with the 
-:ref:`quick_start` guide or try your hand at the :ref:`tutorial` and the guide to 
+Welcome to the Yann Toolbox. It is a toolbox for building and learning convolutional neural 
+networks, built on top of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup 
+you may start with the :`quick_start` guide or try your hand at the :ref:`tutorial` and the guide to 
 :ref:`getting_started`. A user base discussion group is setup on `gitter`_.
 
 .. _gitter: https://gitter.im/yann-users/Lobby
@@ -36,23 +36,19 @@ of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you 
 .. warning ::
 
     Yann is currently under its early phases and is presently undergoing massive development. 
-    Expect a lot of changes.
-
-.. warning ::
-    
-      As of now, there are no unit-tests. The toolbox will be 
+    Expect a lot of changes. Unit tests are only starting to be written. The toolbox will be 
       formalized in the future but at this moment, the authorship, coverage and maintanence of the 
       toolbox is under extremely limited manpower.
 
 .. note ::
     
     While, there are more formal and wholesome toolboxes that are similar and have a much larger 
-    userbase such as `Lasagne`_, `Keras`_, `Blocks`_ and `Caffe`_, this toolbox is much more
-    simple and versatile. Yann is designed as a supplement to an upcoming book on Convolutional 
+    userbase such as `Lasagne`_, `Keras`_, `Blocks`_ and `Caffe`_, this toolbox is
+    simpler and versatile. Yann is designed as a supplement to an upcoming book on Convolutional 
     Neural Networks and also the toolbox of choice for a deep learning course. Because of this 
     reason, Yann is specifically designed to be intuitive and easy to use for beginners. That does 
-    not compromise Yann of any of its features. 
-    It is still a good choice for a toolbox for running pre-trained models and build 
+    not compromise Yann of any of its core purpose - to be able to build CNNs in a plug and play 
+    fasion. It is still a good choice for a toolbox for running pre-trained models and build 
     complicated, non-vannilla CNN architectures that are not easy to build with the other toolboxes.
 
 .. _Lasagne: https://github.com/Lasagne/Lasagne
@@ -66,7 +62,7 @@ of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you 
 Getting Started
 ===============
 
-The following will help you get acquinted with Yann. 
+The following will help you get quickly acquinted with Yann. 
 
 .. toctree::
    :maxdepth: 1
@@ -75,7 +71,6 @@ The following will help you get acquinted with Yann.
    setup       
    tutorial
    organization
-
 
 .. _quick_start:
 
@@ -86,6 +81,12 @@ The easiest way to get going with Yann is to follow this quick start guide. If y
 satisfied and want a more detailed introduction to the toolbox, you may refer to the 
 :ref:`tutorial` and the :ref:`organization`.  
 
+To install in a quick fashion without much dependencies run the follwing command:
+
+.. code-block:: bash
+
+    pip install git+git://github.com/ragavvenkatesan/yann.git
+
 The start and the end of Yann toolbox is the :mod:`network` module. The :mod:`yann.network`.
 ``network`` object is where all the magic happens. Start by importing :mod:`network` and creating a
 ``network`` object. 
@@ -95,24 +96,36 @@ The start and the end of Yann toolbox is the :mod:`network` module. The :mod:`ya
     from yann.network import network
     net = network()
 
-Voila! We have thus created a new network. The network doesn't have any layers or modules in it. Tte
-proof to can be seen by verifying the ``net.layers`` property of the ``net`` object.
+Voila! We have thus created a new network. The network doesn't have any layers or modules in it.
+It be seen verified by probing into ``net.layers`` property of the ``net`` object.
 
 .. code-block:: python
 
     net.layers
     
 This will produce an output which is essentially an empty dictionary ``{}``. Let's add some layers!
-The toolbox comes with the `MNIST dataset <http://yann.lecun.com/exdb/mnist/>`_ of handwritten 
-characters pre-packaged for this toolbox. The dataset is located at ``_datasets/_dataset_71367``. 
-Refer to the :ref:`tutorial` on how to convert your own dataset for yann.
+The toolbox comes with a port to `skdata <https://github.com/jaberg/skdata>`_ the `MNIST dataset
+<http://yann.lecun.com/exdb/mnist/>`_ of handwritten characters can be built using this port. 
 
-The first layer that we need to add is an ``input`` layer. Every ``input``layer requries a dataset
-to be associated with it. Let us create this layer.
+To cook a mnist dataset for yann run the following code:
 
 .. code-block:: python
 
-    dataset_params  = { "dataset": "_datasets/_dataset_71367", "n_classes" : 10 }
+    from yann.utils.dataset import cook_mnist
+    cook_mnist()
+
+Running this code will print a statement to the following effect ``Dataset xxxxx is created.``
+The five digits marked ``xxxxx`` in the statement is the codeword for the dataset. The actual
+dataset is located now at ``_datasets/_dataset_xxxxx/`` from the directory from where this code 
+was called in. Mnist dataset is created and stored at this dataset in a format that is useful for 
+yann to work with. Refer to the :ref:`tutorial` on how to convert your own dataset for yann.
+
+The first layer that we need to add to our network now is an ``input`` layer. Every ``input``layer 
+requries a dataset to be associated with it. Let us create this layer.
+
+.. code-block:: python
+
+    dataset_params  = { "dataset": "_datasets/_dataset_xxxxx", "n_classes" : 10 }
     net.add_layer(type = "input", dataset_init_args = dataset_params)
 
 This piece of code creates and adds a new ``datastream`` module to the ``net`` and wires up the 
@@ -126,7 +139,7 @@ or :ref:`tutorial` for other types of layers. Let us create a this ``classifier`
     net.add_layer(type = "objective")
 
 The layer ``objective`` creates the loss function from the classifier that can be used as a learning
-metric. It also provides a scope for other moduels such as the :mod:`optimizer` module. Refer
+metric. It also provides a scope for other modules such as the :mod:`optimizer` module. Refer
 :ref:`organization` and :ref:`yann` for more details on modules. Now that our network is created and
 constructed we can see that the ``net`` objects have ``layers`` populated. 
 

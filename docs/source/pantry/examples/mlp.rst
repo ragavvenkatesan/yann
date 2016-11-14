@@ -83,7 +83,6 @@ and :math:`L2` norms. This optimizer will therefore solve the following error:
 where :math:`e` is the error, :math:`\sigma(.)` is the sigmoid layer and :math:`d_i(.)` is the
 ith layer of the network. 
 
-
 Once we are done, we can cook, train and test as usual:
 
 .. code-block:: python

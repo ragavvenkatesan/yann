@@ -8,27 +8,24 @@ in the begining of 2015. I am not that big in c++, so I started looking at `thea
 following and implementing their tutorials. As I started reading new papers and coding new 
 technologies, I slowly integrated them into what was soon developing into a toolbox. My lab mates at
 `Visual Representaiton and Processing Group`_ also started getting into CNN research and started 
-using my toolbox so I formalized it and hosted it on `GitHub`_. This toolbox is also slated to be 
-used with the course CSE 591: Introduction to Deep Learning for Computer Vision at ASU in Spring of 
-2017. With more features being added into the toolbox, I figured I would clean it up, formalize it 
-and write some good documentation so that many people could use it. Thus after being rechristened as
-Yann, this toolbox was born.
+using my toolbox so I formalized it and hosted it on `GitHub`_. Originall it was a completely 
+unstructured and completely demodularized toolbox and went with the name samosa. The codebase 
+still exists in older commits on the git.
+
+After considerable effort being put in to make this toolbox modular, and testing it out in 
+using the toolbox on some of my own research. This began as a pet project and now I am proud to 
+notice that it is a level which I am comfortable sharing with the rest of DL community with.
+
+This toolbox is also slated to be used with the course CSE 591: Introduction to Deep Learning for 
+Computer Vision at ASU in Spring of 2017. With more features being added into the toolbox, I figured
+I would clean it up, formalize it and write some good documentation so that many people could use 
+it. Thus after being rechristened as Yann, this toolbox was born.
 
 .. warning ::
     
-    This is a personal toolbox that I am maintaining. I promise nothing. There are no unit tests 
-    written, although I try to make sure everything is perfectly working. I encourage anyone to use 
-    it and write on top of it with that caveat. 
-    
-.. note ::
-    
-    While, there are more formal and wholesome toolboxes that are similar and have a much larger 
-    userbase such as `Lasagne`_, `Keras`_, `Blocks`_ and `Caffe`_, this toolbox is much more
-    simple and versatile. This toolbox is a supplement to my upcoming book on Convolutional Neural 
-    Networks and it is also a toolbox if one wants to go into a tool and discover theano and deep 
-    convolutional neural networks. It is my personal belief that this toolbox is simpler to use than
-    any other out there and will be very useful for anyone just starting to get into CNNs.
-    I believe this as this toolbox itself manifested as I discovered and started working on CNNs.  
+    This is a personal toolbox that I am maintaining. I promise nothing. There are only now 
+    unit tests being written, although I try to make sure everything is perfectly working. 
+    I encourage anyone to use it, contribute to it and write on top of it with that caveat.  
 
 .. tip ::
 
@@ -37,7 +34,7 @@ Yann, this toolbox was born.
     Neural Neworks. If you are here looking for a tutorial for those and are disappointed with the 
     material here, please read Prof. Yoshua Bengio's book on Deep Learning, or read the examples 
     from `theano tutorials`_. Theano tutorials also will help understand `theano`_ which is the 
-    backend I used for this toolbox. 
+    backend I used for this toolbox.
 
 .. _theano: http://deeplearning.net/software/theano/ 
 .. _GitHub: https://github.com/ragavvenkatesan/yann
@@ -52,25 +49,19 @@ Yann, this toolbox was born.
 What is in the toolbox ? 
 ========================
 
-I started with the beautiful `theano's tutorials <http://deeplearning.net/software/theano/tutorial/>`_
-While I started building on top of the tutorials and started doing research in this material, 
-I started adding features that are published.
+I started with the beautiful `theano's tutorials 
+<http://deeplearning.net/software/theano/tutorial/>`_. While I started building on top of the 
+tutorials and started doing research in this material, I started adding features to it that were 
+published. The code here is still fundamentally the theano tutorials only. 
+The code that is here in yann has the following popular features that all deep net 
+toolboxes seem to have. Among many others there are:
 
-The code that is here in yann has the following popular features that all deep net toolboxes seem to
-have. Among many others there are:
++ **CNNs with easy architecture management:** Because layers can take origins as inputs, pretty much
+  any architecture that can be drawn on a blackboard can be constructed using this toolbox. 
 
-+ **CNNs with easy architecture management:** The code has the ability to change architecture with
-  just small changes in some input parameters and immediately a whole new architecture is created. 
-  One variable changes the number of MLP layers, number of nodes in each layer, activation functions
-  and even dropout probabilities. You can also change number of CNN layers, their pooling and 
-  stride sizes and any structure of networks. Basically any vanilla network that you can draw on a 
-  black board can be set up quite simply using few input statements. I will be adding other layers 
-  including embedding layers, inception layers and LSTM layers soon.
-
-+ **Data handling capabilities:** I have provided features to setup data as simple matlab files that
-  can be loaded in python and run in batches for training. Alternatively, I also have options for 
-  ``pkl.gz`` files if you would like to cPickle and / or zip your data. I have also provided a 
-  wrapper to `skdata's`_ dataset interface and plan on adding the `Fuel`_ interface also.
++ **Dataset handling capabilities:** I have provided features to setup data as simple matlab files 
+  that can be loaded in python and run in batches for training. Alternatively, there is also a 
+  wrapper to `skdata's`_ dataset interface and plans dfor adding the `Fuel`_ interface also.
   As of now, I have cifar10, mnist, extended mnists , caltech101, caltech256. I will add more as I 
   can. 
 
@@ -78,18 +69,18 @@ have. Among many others there are:
   the trainset on each layer after select number of epochs of training. Also view filters after 
   select number of epochs. I find this very effective for my understanding.
 
-+ My personal research papers on CNNs were all written using this toolbox and all the codes are in 
-  modelzoo. 
-
 + **Techniques from recent publications:** This is where things change a lot and for someone who is 
   getting into deep learning fresh without much theoretical machine learning, I am hoping it would 
-  be really helpful. With only a few flags and parameters in the boilerplate of the code, you could 
+  be really helpful. With only a few flags and parameters, you could 
   switch entire optimization methods, including gradient descent, adaGrad, rmsProp add momentums 
   like Polyak Momentum, Nesterov’s accelerated gradients etc. One switch converts the whole networks
-  into a max-margin formulation from a softmax formulation. I intended this for people in my lab, 
-  who wouldn’t now have to spend days reading the theory behind these methods , but just try them 
+  into a max-margin formulation from a softmax formulation. All of these options are plug and play
+  or more like add and cook.
+  
+  I intended this for the scientists in my lab, and students in my class
+  who wouldn’t now have to spend days reading the theory behind these methods, but just try them 
   first and if they work, then think of reading them. Most new methods that are recently published 
-  and that interest me are added including but not limited to: 
+  and are added including but not limited to: 
 
    - Dropouts[1]
    - adaGrad[2]
@@ -101,6 +92,9 @@ have. Among many others there are:
    - FitNets [9]
    - VGG-19 [10]
    - InceptionNet [11]
+
++ My personal research papers on CNNs were all written using this toolbox and all the codes are in 
+  pantry. 
 
 .. _skdata's: https://jaberg.github.io/skdata/
 .. _Fuel: https://github.com/mila-udem/fuel

@@ -9,7 +9,7 @@ of doing the tutorials. The tutorials are meant for those who have some practice
 the toolbox.
 
 If you'd just want to see the codes or run the examples for testing or other such purposes you 
-could follow this tutorial/API. I recommend going through the tutorial though.
+could follow this tutorial/API. I recommend going through the tutorial just in case though.
 
 .. toctree::
    :maxdepth: 1
@@ -22,7 +22,6 @@ could follow this tutorial/API. I recommend going through the tutorial though.
 .. Todo::
 
     Do tutorials for the following:
-        * Check why GPU is not running at 100%
         * LeNet
         * AlexNet
         * Loading pre-trained VGG-19 net   

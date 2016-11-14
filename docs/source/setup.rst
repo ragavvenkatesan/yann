@@ -13,6 +13,22 @@ but should be forward compatible unless theano makes a drastic release.
 .. _theano toolbox documentation: http://deeplearning.net/software/theano/install.html
 
 
+Quick fire Isntallation
+-----------------------
+
+Now before going through the full-fledged installation procedure, you can run through the entire
+installation in one command that will install the basics required to run the toolbox. To install
+the toolbox quickly do the following:
+
+.. code-block:: bash
+
+  pip install skdata scipy git+git://github.com/ragavvenkatesan/yann.git
+
+This will setup the toolbox for all intentions and purposes.
+
+For a full-fledged installation procedure, don't do the above but follow the following set of 
+instructions. 
+
 Prerequisites
 =============
 
@@ -50,12 +66,6 @@ Cuda
   If you didn't install CUDA, you can still run the toolbox, but it will be much slower running on a
   CPU.
 
-  .. Note ::
-
-    Although `libgpuarray <http://deeplearning.net/software/libgpuarray/installation.html>`_  
-    is also supported, it is not tested fully and might not work as well. Cuda Backend is strongly 
-    recommended.
-
 numpy/scipy 
 -----------
 
@@ -80,6 +90,13 @@ numpy/scipy
 
   to set these up. If not, yann installer will pip install it anyway.
 
+Libgpuarray
+-----------
+
+  `libgpuarray <http://deeplearning.net/software/libgpuarray/installation.html>`_  
+  is now fully supported, cuda backend is strongly recommended for macOS, but for the Pascal 
+  architecture of GPUs, libgpuarray seems to be performing much better. 
+
 Theano 
 ------
 
@@ -88,14 +105,13 @@ Once all the pre-requisites are setup, install `theano`_ version 0.8 or higher.
 .. _theano: http://deeplearning.net/software/theano/ 
 
 The following ``.theanorc`` configuration can be used as a sample normally, 
-but you may choose other options.
-
+but you may choose other options. As an example, the following is what I use from time to time.
 
 .. code-block:: bash
 
   [global]
   floatX=float32
-  device=gpu0
+  device=cuda0
   optimizer_including=cudnn
   mode = FAST_RUN
 
@@ -106,11 +122,15 @@ but you may choose other options.
   [cuda]
   root=/usr/local/cuda/
 
+  [blas]
+  ldflags = -lmkl
+
   [lib]
   cnmem = 0.5
 
 If you use the `libgpuarray <http://deeplearning.net/software/libgpuarray/installation.html>`_ 
 backend instead of the CUDA backend, use ``device=cuda0`` or whichever device you want to run on.
+If you are using CUDA backed use ``device=gpu0``. Refer theano documentation for more on this.
 
 
 Addtional Dependencies
@@ -122,6 +142,10 @@ skdata
 ------
 
 Used as a port for datasets. This is Needed if you are using some common benchmark datasets. 
+Although this is an additional dependency, skdata is the core of the datasets module and most 
+datasets in this toolbox are ported through skdata unless you have matlab. Work is on-going in
+integrating with fuel and other ports. 
+
 Install by using the following command:
 
 .. code-block:: bash
@@ -138,13 +162,13 @@ progressbar
 
     pip install progressbar
     
-  If you don't have progressbar, yann will simply ignore it. 
+  If you don't have progressbar, yann will simply ignore it and print progress on terminal.
 
 matplotlib 
 ----------
 
   Not needed now, but might need in future. 
-  Yann will switch from openCV to matplotlib. Install it by 
+  Yann will switch from openCV to matplotlib or browser matplotlib. Install it by 
 
   .. code-block:: bash
 
@@ -160,7 +184,7 @@ cPickle and gzip
 Yann Toolbox Setup
 ====================
  
-To install the toolbox use, 
+Finally to install the toolbox run, 
 
 .. code-block:: bash
 
@@ -171,4 +195,30 @@ If you have already setup the toolbox and want to just update to the bleeding-ed
 .. code-block:: bash
 
     pip install --upgrade git+git://github.com/ragavvenkatesan/yann.git
+
+If you want to build by yourself you may clone from git and then run using setuptools. Ensure that 
+you have setuptools installed first. 
+
+.. code-block:: bash
+
+  pip install git setuptools
+
+Once you are done, you clone the repository from git.
+
+.. code-block:: bash
+
+  git clone http://github.com/ragavvenkatesan/yann
+
+Once cloned, enter the directory and run installer.
+
+.. code-block:: bash
+
+  cd yann
+  python setup.py install
+
+You can run a bunch of tests ( working on it ) by running the following code:
+
+.. code-block:: bash
+
+  python setup.py test
 

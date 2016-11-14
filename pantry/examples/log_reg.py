@@ -44,7 +44,7 @@ def log_reg ( dataset, verbose ):
                     verbose = verbose, 
                     datastream_origin = 'mnist', # if you didnt add a dataset module, now is 
                                                  # the time. 
-                    mean_subtract = True )
+                    mean_subtract = False )
     
     net.add_layer ( type = "classifier",
                     id = "softmax",
@@ -83,6 +83,7 @@ def log_reg ( dataset, verbose ):
                show_progress = True,
                early_terminate = True,
                verbose = verbose)
+               
     net.test( show_progress = True,
                verbose = verbose)
 
