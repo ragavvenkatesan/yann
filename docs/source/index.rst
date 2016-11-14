@@ -26,8 +26,7 @@ Yet Another Neural Network Toolbox
     :alt: Requirements Status
 
 .. image:: https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/ragavvenkatesan/yann
-    :alt: Code Coverage
+
 
 
 Welcome to the Yann Toolbox. It is a toolbox for convolutional neural networks, built on top 
