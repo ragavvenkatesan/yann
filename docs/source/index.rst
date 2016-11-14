@@ -13,20 +13,14 @@ Yet Another Neural Network Toolbox
     :target: http://yann.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status   
 
-.. image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
-    :target: https://github.com/ragavvenkatesan/yann/issues
-    :alt: Raise issues
-    
 .. image:: https://badges.gitter.im/yann-users/Lobby.svg
     :target: https://gitter.im/yann-users/Lobby
     :alt: Gitter Lobby
 
-.. image:: https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master
-    :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
-    :alt: Requirements Status
-
 .. image:: https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg
-
+    :taget: https://codecov.io/gh/ragavvenkatesan/yann
+    :alt: Code Coverage 
+    
 .. image:: https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master
     :target: https://travis-ci.org/ragavvenkatesan/yann
     :alt: Travis Report
