@@ -15,6 +15,7 @@ import time
 import numpy
 import scipy.io
 import cPickle
+import imp
 
 try:
 	imp.find_module('scipy')

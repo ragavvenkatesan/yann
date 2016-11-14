@@ -90,6 +90,7 @@ def log_reg ( dataset, verbose ):
 ## Boiler Plate ## 
 if __name__ == '__main__':
     dataset = None  
+    import sys
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
             from yann.utils.dataset import cook_mnist  

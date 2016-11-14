@@ -130,7 +130,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
 
 ## Boiler Plate ## 
 if __name__ == '__main__':
-    
+    import sys
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
