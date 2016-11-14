@@ -28,5 +28,6 @@ script:
   - coverage
 
 after_success:
-  - codecov
+  - codecov -t f909168e-4b27-4ebe-b49a-670b81635128
+  - bash <(curl -s https://codecov.io/bash)
 
