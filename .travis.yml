@@ -8,19 +8,17 @@ before_install:
   - pip install -U pip  
   - pip install -r requirements.txt   
   - pip install -U travis-sphinx    
-  - pip install -U codecov  
   - pip install pytest 
-  - pip install pytest-cov  
 
 # Install packages
 install:  
   - python setup.py install
+  - pip install python-coveralls  
 
 # command to run tests
 script: 
   - python setup.py test
 
 after_success:
-  - codecov    
-  - bash <(curl -s https://codecov.io/bash)
+  - coeralls
 
