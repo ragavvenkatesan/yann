@@ -15,6 +15,7 @@ except ImportError:
 
 if progressbar_installed is True:
     import progressbar
+    
 import numpy
 import theano
 import theano.tensor as T 

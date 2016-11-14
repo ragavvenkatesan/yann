@@ -15,11 +15,26 @@ import time
 import numpy
 import scipy.io
 import cPickle
-from scipy.misc import imread
-from scipy import linalg
+
+try:
+	imp.find_module('scipy')
+	scipy_installed = True
+except ImportError:
+	scipy_installed = False
+
+if scipy_installed is True:
+	from scipy import linalg
 
 from random import randint
-import skdata
+
+try:
+	imp.find_module('skdata')
+	skdata_installed = True
+except ImportError:
+	skdata_installed = False
+
+if skdata_installed is True:
+	import skdata
 
 import theano
 import theano.tensor as T
@@ -63,6 +78,8 @@ def load_data_mat(classes,
 		
 	"""
 	print "... Loading " + type_set + " batch number " + str(batch)
+	if scipy_installed is False:
+		raise Exception("Scipy needed for cooking this dataset. Please install")
 	mat = scipy.io.loadmat(location  +  type_set + '/batch_' + str(batch) + '.mat')
 	data_x = numpy.asarray(mat['x'], dtype = 'float32')
 	if data_x.max() > 1:
@@ -98,6 +115,8 @@ def load_skdata_mnist ():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")
 	from skdata import mnist
 	mn = mnist.dataset.MNIST()
 	mn.fetch(True)
@@ -121,6 +140,8 @@ def load_skdata_mnist_noise1():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_Noise1()  
 	mn.fetch(True)
@@ -146,6 +167,8 @@ def load_skdata_mnist_noise2():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_Noise2()  
 	mn.fetch(True)
@@ -174,6 +197,8 @@ def load_skdata_mnist_noise3():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_Noise3()  
 	mn.fetch(True)
@@ -202,6 +227,8 @@ def load_skdata_mnist_noise4():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_Noise4()  
 	mn.fetch(True)
@@ -229,6 +256,8 @@ def load_skdata_mnist_noise5():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_Noise5()  
 	mn.fetch(True)
@@ -256,6 +285,8 @@ def load_skdata_mnist_noise6():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y),(test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_Noise6()  
 	mn.fetch(True)
@@ -283,6 +314,8 @@ def load_skdata_mnist_bg_images():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_BackgroundImages()  
 	mn.fetch(True)
@@ -310,6 +343,8 @@ def load_skdata_mnist_bg_rand():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_BackgroundRandom()  
 	mn.fetch(True)
@@ -337,6 +372,8 @@ def load_skdata_mnist_rotated():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_Rotated()  
 	mn.fetch(True)
@@ -364,6 +401,8 @@ def load_skdata_mnist_rotated_bg():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import larochelle_etal_2007
 	mn = larochelle_etal_2007.MNIST_RotatedBackgroundImages()  
 	mn.fetch(True)
@@ -392,6 +431,8 @@ def load_skdata_cifar10():
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    	
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import cifar10
 	ci = cifar10.dataset.CIFAR10()
 	ci.fetch(True)
@@ -448,7 +489,11 @@ def load_skdata_caltech101(batch_size,
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    
 	# load_batches * batch_size is supplied into batch_size 
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import caltech
+	if scipy_installed is False:
+		raise Exception("Scipy needed for cooking this dataset. Please install")
 	from scipy.misc import imread
 	cal = caltech.Caltech101()
 	cal.fetch()
@@ -524,8 +569,12 @@ def load_skdata_caltech256(batch_size,
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    
 	# load_batches * batch_size is supplied into batch_size 
-	import skdata
+	if skdata_installed is False:
+		raise Exception("This dataset cooks from skdata. Please install skdata")	
+	import skdata	
 	from skdata import caltech
+	if scipy_installed is False:
+		raise Exception("Scipy needed for cooking this dataset. Please install")	
 	from scipy.misc import imread
 	cal = caltech.Caltech256()
 	cal.fetch()
@@ -659,6 +708,8 @@ def preprocessing( data, height, width, channels, args):
 	if ZCA is True:		
 
 		sigma = numpy.dot(data.T,data) / data.shape[1]
+		if scipy_installed is False:
+			raise Exception("Scipy needs to be installed for performing ZCA")		
 		U, S, V = linalg.svd(sigma)		
 		# data_rotated = numpy.dot(U.T, data) , full_matrices = True
 		temp = numpy.dot(U, numpy.diag(1/numpy.sqrt(S + 1e-7)))
