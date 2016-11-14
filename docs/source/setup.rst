@@ -14,7 +14,7 @@ but should be forward compatible unless theano makes a drastic release.
 
 
 Quick fire Installation
------------------------
+=======================
 
 Now before going through the full-fledged installation procedure, you can run through the entire
 installation in one command that will install the basics required to run the toolbox. To install
@@ -29,8 +29,8 @@ This will setup the toolbox for all intentions and purposes.
 For a full-fledged installation procedure, don't do the above but follow the following set of 
 instructions. 
 
-Prerequisites
-=============
+Full installation
+=================
 
 Python + pip / conda
 --------------------
