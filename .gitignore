@@ -10,3 +10,4 @@
 /dist
 /_dev
 /tests/__pycache__/
+.cache
