@@ -13,6 +13,9 @@ Yet Another Neural Network Toolbox
     :target: http://yann.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status   
 
+.. image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
+    :target: https://github.com/ragavvenkatesan/yann/issues
+    
 .. image:: https://badges.gitter.im/yann-users/Lobby.svg
     :target: https://gitter.im/yann-users/Lobby
     :alt: Gitter Lobby
@@ -20,6 +23,10 @@ Yet Another Neural Network Toolbox
 .. image:: https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master
      :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
      :alt: Requirements Status
+
+.. image:: https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg
+     :target: https://codecov.io/gh/ragavvenkatesan/yann
+
 
 Welcome to the Yann Toolbox. It is a toolbox for convolutional neural networks, built on top 
 of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you may start with the 
