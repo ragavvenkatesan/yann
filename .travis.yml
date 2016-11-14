@@ -28,5 +28,5 @@ script:
   - coverage
 
 after_success:
-  codecov
+  - codecov
 
