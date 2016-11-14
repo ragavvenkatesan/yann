@@ -22,9 +22,11 @@ the toolbox quickly do the following:
 
 .. code-block:: bash
 
+  pip install numpy
   pip install skdata scipy git+git://github.com/ragavvenkatesan/yann.git
 
-This will setup the toolbox for all intentions and purposes.
+If you use anaconda, just install the numpy and scipy using ``conda install`` instead of ``pip 
+install``. This will setup the toolbox for all intentions and purposes.
 
 For a full-fledged installation procedure, don't do the above but follow the following set of 
 instructions. 
