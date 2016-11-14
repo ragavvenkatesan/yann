@@ -21,6 +21,9 @@ Yet Another Neural Network Toolbox
     :target: https://travis-ci.org/ragavvenkatesan/yann
     :alt: Travis Report
 
+.. image:: https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master
+     :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
+     :alt: Requirements Status
 
 Welcome to the Yann Toolbox. It is a toolbox for convolutional neural networks, built on top 
 of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup you may start with the 
