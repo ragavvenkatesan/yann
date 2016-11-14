@@ -14,8 +14,8 @@ before_install:
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
+  - conda create --yes -n condaenv python=$TRAVIS_PYTHON_VERSION      
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib theano
-  - conda create --yes -n condaenv python=$TRAVIS_PYTHON_VERSION    
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
   - pip install codecov  
