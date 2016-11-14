@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 language: python
 python:
   - "2.7"
@@ -17,6 +17,7 @@ before_install:
   
 # Install packages
 install:
+  - source activate condaenv
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib theano
   - pip install -U codecov  
   - pip install --user travis-sphinx    
