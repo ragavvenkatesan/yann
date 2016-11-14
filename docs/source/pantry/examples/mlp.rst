@@ -11,7 +11,7 @@ usual by importing the network class and creating the input layer.
 
     from yann.network import network
     net = network()
-    dataset_params  = { "dataset": "_datasets/_dataset_71367", "id": 'mnist', "n_classes" : 10 }
+    dataset_params  = { "dataset": "_datasets/_dataset_xxxxxx", "id": 'mnist', "n_classes" : 10 }
     net.add_layer(type = "input", id ="input", dataset_init_args = dataset_params)
 
 Instead of connecting this to a classfier as we saw in the :ref:`quick_start` , let us add a couple

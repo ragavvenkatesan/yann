@@ -208,14 +208,6 @@ that could be supplied to some of the function calls we made here that explain t
 Hope you liked this quick start guide to the Yann toolbox and have fun!
 
 
-
-
-
-
-
-
-
-
 .. toctree::
    :maxdepth: 3
    :name: hidden  
