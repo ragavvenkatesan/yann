@@ -21,7 +21,6 @@ script:
   - python setup.py test
 
 after_success:
-  - py.test --cov=./
   - codecov    
   - bash <(curl -s https://codecov.io/bash)
 
