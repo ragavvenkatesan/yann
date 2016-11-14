@@ -5,21 +5,13 @@ python:
 
 # command to install dependencies copied this from like many github toolboxes out there
 before_install:
-  - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b
-  - export PATH=/home/travis/miniconda/bin:$PATH  
-  - export PATH=/home/travis/miniconda2/bin:$PATH
-  - conda update --yes conda  
-  - conda create --yes -n condaenv python=$TRAVIS_PYTHON_VERSION      
-  
+  - pip install -U pip  
+  - pip install -r requirements.txt   
+  - pip install -U travis-sphinx    
+  - pip install -U codecov  
+
 # Install packages
 install:
-  - source activate condaenv
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib theano
-  - pip install -U codecov  
-  - pip install --user travis-sphinx    
-  - pip install -r requirements.txt   
   - pip install pytest 
   - python setup.py install
 

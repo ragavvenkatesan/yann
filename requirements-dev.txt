@@ -1,9 +1,10 @@
 -r requirements.txt
 python==2.7
 mock
-numpy 
-scipy
+numpy>=1.11
+scipy>0.18
 numpydoc
 Sphinx>=1.2.3
-skdata
+progressbar>=2
+skdata>=0.0.4
 sphinx_rtd_theme
