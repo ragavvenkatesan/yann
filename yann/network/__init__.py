@@ -3,6 +3,8 @@ TODO:
 
     Something is wrong with the svm classifier. Fix it. 
 """
+__all__ = ['network', 'layers', 'modules']
+
 import time 
 import copy
  
@@ -1178,6 +1180,8 @@ class network(object):
                                 if none will use the setup.
             verbose: Just as the rest of the toolbox. 
         """
+        import pdb
+        pdb.set_trace()        
         if verbose >= 3:
             print "... setting up fine tuning"
         if fine_tuning_rate is None:
@@ -1233,6 +1237,22 @@ class network(object):
         else:
             self.mini_batches_per_batch = 1
     
+    def _cook_param_reset(verbose = 2):
+        """
+        This method creates theano functions for resetting the values of parameters.
+        Args:
+            verbose: as always
+        Notes:
+            we create in this method a dictionary of updates called param_reset. These
+            can be called using the param as key and its value is a theano function that 
+            will run the update as necessary.
+        """
+        reset_values = T.matrix('reset_values')
+        self.param_reset = OrderedDict()
+        for param in self.params:
+            self.param_reset[param] = theano.function(inputs = [reset_values],
+                                          updates = (param,reset_values))
+     
     def cache_data (self, type = 'train', batch = 0, verbose = 2):
 
         """
@@ -1367,7 +1387,7 @@ class network(object):
                                  verbose = verbose )   
         self._cook_optimizer( learning_rates = learning_rates,
                                           verbose = verbose )
-        
+        self._cook_param_reset(verbose = verbose)
         self.validation_accuracy = []
         self.best_validation_errors = numpy.inf
         self.best_training_errors = numpy.inf
@@ -1384,10 +1404,11 @@ class network(object):
         Args:
             init_params: params to reinitialize with.
         """
+
         if verbose >= 3:
             print "... Initializing parameters" 
         for param, init_param in zip(self.params, init_params):
-            param.set_value(init_param.get_value(borrow = self.borrow))
+            self.param_reset[param](init_param.get_value(borrow = self.borrow))
 
     def print_status (self, epoch , verbose = 2):
         """
@@ -1636,8 +1657,10 @@ class network(object):
                 and fine_tune is False 
                 and self.learning_rate.get_value(borrow = True) > self.ft_learning_rate ):
                 if verbose >= 2:
-                    print "... Fine tuning"
+                    print ".. Fine tuning"
                 fine_tune = True
+                import pdb
+                pdb.set_trace()                
                 self.cook_fine_tuning(verbose =verbose )                
 
             epoch_counter = epoch_counter + 1
@@ -1714,6 +1737,8 @@ class network(object):
                 early_termination = True
                 if fine_tune is False:
                     if verbose >= 2:
+                        import pdb
+                        pdb.set_trace()
                         print "... Fine tuning"
                     fine_tune = True
                     self.cook_fine_tuning(

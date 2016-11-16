@@ -1,3 +1,7 @@
+"""
+TODO:
+    Need to add elu
+"""
 import theano.tensor as T
 from math import floor
 

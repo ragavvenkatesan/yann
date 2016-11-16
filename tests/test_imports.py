@@ -1,14 +1,7 @@
 import imp 
 
-""""
-These are not really important to test.
 def test_progressbar():
-    try:
-        imp.find_module('progressbar')
-        progressbar_installed = True
-    except ImportError:
-        progressbar_installed = False
-    assert progressbar_installed
+    assert imp.find_module('progressbar')
 
 def test_skdata():
     try:
@@ -26,8 +19,6 @@ def test_scipy():
         scipy_installed = False
     assert scipy_installed
 
-"""
-
 def test_numpy():
     try:
         imp.find_module('numpy')
@@ -37,12 +28,8 @@ def test_numpy():
     assert numpy_installed
 
 def test_theano():
-    try:
-        imp.find_module('theano')
-        theano_installed = True
-    except ImportError:
-        theano_installed = False
-    assert theano_installed
+    assert imp.find_module('theano')
+
 
 def test_yann():
     try:
