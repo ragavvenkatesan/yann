@@ -10,6 +10,7 @@ before_install:
   - pip install -U travis-sphinx   
   - pip install -U codecov    
   - pip install pytest 
+  - pip install python-coveralls
 
 # Install packages
 install:  
