@@ -1,4 +1,14 @@
+"""
+TODO:
 
+    * LSTM / GRN layers
+    * A concatenate layer
+    * A Merge layer that is going to sum / average two layer activations.
+    * An Embed layer that is going to create a new embedding space for two layer's activations to
+      project on to the same space and minimize its distances. 
+    * An error layer that produces the error between two layers. (use errors.py in core.)
+      - This can be used to generate images back such as in the case of auto-encoders.    
+"""
 import numpy
 import theano
 import theano.tensor as T

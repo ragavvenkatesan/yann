@@ -6,7 +6,8 @@ It contains two functions for performing either 2d convolution (``conv2d``) or 3
 These functions shall be called by every convolution layer from ``yann.layers.py``
 
 TODO:
-    * Add 3D convolution support. 
+    * Add 3D convolution support from theano.
+    * Add Masked convolution support.
 """
 from theano.tensor.nnet import conv2d
 

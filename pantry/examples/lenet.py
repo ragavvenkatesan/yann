@@ -1,18 +1,5 @@
-import imp
-try:
-    imp.find_module('yann')
-    yann_installed = True
-except ImportError:
-    yann_installed = False
-
-if yann_installed is False:
-    import os, sys
-    yann_path = os.path.abspath(os.path.join('..',))
-import pdb
-pdb.set_trace()
-sys.path.append(yann_path)
-
 from yann.network import network
+
 def lenet5 ( dataset= None, verbose = 1 ):             
     """
     This function is a demo example of lenet5  from the infamous paper by Yann LeCun. 

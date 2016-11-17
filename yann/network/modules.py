@@ -1,3 +1,13 @@
+"""
+TODO:
+
+    * Visualizer module needs to make use of mathplotlib and print online graphs of outputs of cost
+      and possibly display first layer filters for CNNs
+    * Datastream should include fuel interface and also needs interface for COCO, PASCAL and 
+      IMAGENET. Also consider migrating to hd5 for larger datasets ? Should also be able to create
+      datasets from images in python. Right now its a roundabout way of going via matlab.
+    
+"""
 import os
 import numpy
 import cPickle

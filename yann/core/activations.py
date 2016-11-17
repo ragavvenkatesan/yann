@@ -1,6 +1,6 @@
 """
 TODO:
-    Need to add elu
+    Need to add elu and parameterized relu activations.
 """
 import theano.tensor as T
 from math import floor
