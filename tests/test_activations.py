@@ -1,11 +1,20 @@
-"""
-Just a dummy test so that coverage won't be 100%
-"""
 import unittest
-
 import numpy as np
 import theano.tensor as T
 import yann.core.activations as A
+
+test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']    
+    
+def test_generator (activation):
+    def test(self):
+        theano_input = T.matrix()
+        numpy_input = np.random.uniform(-4, 4, (5, 5))  # Create some 5X5 matrix randomly     
+        theano_test_function = getattr(A,activation)
+        np_test_function = getattr(self, activation) # for every activation write a np version 
+        theano_result = theano_test_function(theano_input).eval({theano_input: numpy_input})    
+        np_result = np_test_function(numpy_input)            
+        self.assertTrue(np.allclose(theano_result, np_result))      
+    return test
 
 class TestActivations(unittest.TestCase):
 
@@ -25,20 +34,14 @@ class TestActivations(unittest.TestCase):
         return (np.exp(x).T / np.exp(x).sum(-1)).T
 
     def Squared(self, x):
-        return x**2
+        return x**2        
 
-    def test_activations(self):
-        test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']        
+    def setUp(self):
         for activation in test_activations:
-            from yann.core.activations import activation            
-            theano_test_function = getattr(yann.core.activations,activation)
-            np_test_function = getattr(self, activation)
-            theano_input = T.matrix()
-            numpy_input = np.random.uniform(-4, 4, (5, 5))  # Create some 5X5 matrix randomly 
-            theano_result = theano_test_function(theano_input).eval({theano_input: numpy_input})
-            np_result = np_test_function(numpy_input)            
-            self.assertTrue(np.allclose(theano_result, np_result))        
-
+            test_name = 'test_' + activation
+            test = test_generator(activation)
+            setattr(self,test_name, test)
+     
 """
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestImports)
