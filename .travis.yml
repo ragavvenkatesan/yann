@@ -6,11 +6,10 @@ python:
 # command to install dependencies copied this from like many github toolboxes out there
 before_install:
   - pip install -U pip  
-  - pip install -r requirements.txt   
+  - pip install -r -U requirements.txt   
   - pip install -U travis-sphinx   
   - pip install -U codecov    
-  - pip install pytest 
-  - pip install python-coveralls
+  - pip install -U python-coveralls
 
 # Install packages
 install:  
