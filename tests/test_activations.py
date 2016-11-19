@@ -42,7 +42,8 @@ class TestActivations(unittest.TestCase):
             test_name = 'test_' + activation
             test = test_generator(activation)
             setattr(self,test_name, test)
-    
+"""  
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestActivations)
     unittest.TextTestRunner(verbosity=2).run(suite)
+"""

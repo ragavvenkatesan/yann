@@ -25,6 +25,8 @@ class TestImports(unittest.TestCase):
     def test_yann(self):
         self.assertTrue(imp.find_module('yann'))
 
+"""
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestImports)
     unittest.TextTestRunner(verbosity=2).run(suite)
+"""
