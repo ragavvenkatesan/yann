@@ -31,5 +31,5 @@ setup(
     },
     # data_files=['_datasets/'],
     setup_requires=['pytest-runner'],
-    tests_require=['coverage', 'python-coveralls', 'codecov', 'pytest'],    
+    tests_require=[ 'coverage','python-coveralls', 'codecov', 'pytest'],    
 )

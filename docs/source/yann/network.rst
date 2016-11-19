@@ -7,5 +7,5 @@
 the most accessible part of this toolbox and forms the structure of the toolbox itself.
 Any experiment using this toolbox will have to begin and end with using the :mod:`network` class:
 
-.. autoclass:: yann.network.network
+.. automodule:: yann.network
    :members:
