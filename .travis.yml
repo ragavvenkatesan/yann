@@ -20,7 +20,7 @@ install:
 
 # command to run tests
 script: 
-  - coverage run ./setup.py test
+  - coverage run python setup.py test
 
 after_success:
   - codecov

@@ -1,10 +1,10 @@
 import unittest
+import pytest
 import numpy as np
 import theano.tensor as T
 import yann.core.activations as A
 
-test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']    
-    
+@pytest.fixture
 def test_generator (activation):
     def test(self):
         theano_input = T.matrix()
@@ -37,13 +37,12 @@ class TestActivations(unittest.TestCase):
         return x**2        
 
     def setUp(self):
+        test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']            
         for activation in test_activations:
             test_name = 'test_' + activation
             test = test_generator(activation)
             setattr(self,test_name, test)
-     
-"""
+    
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestImports)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestActivations)
     unittest.TextTestRunner(verbosity=2).run(suite)
-"""
