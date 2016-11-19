@@ -28,8 +28,9 @@ class TestActivations(unittest.TestCase):
         return x**2
 
     def test_activations(self):
-        test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']
+        test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']        
         for activation in test_activations:
+            from yann.core.activations import activation            
             theano_test_function = getattr(yann.core.activations,activation)
             np_test_function = getattr(self, activation)
             theano_input = T.matrix()
