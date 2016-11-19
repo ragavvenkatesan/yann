@@ -27,9 +27,9 @@ setup(
     install_requires=['theano','numpy'],
     extras_require={
         'dev': ['progressbar', 'skdata', 'scipy', 'sphinx'],
-        'test': ['pytest','mock','sphinx_rtd_theme']
+        'test': ['mock','sphinx_rtd_theme']
     },
     # data_files=['_datasets/'],
-    setup_requires=['pytest-runner'],
-    tests_require=[ 'coverage','python-coveralls', 'codecov', 'pytest'],    
+    setup_requires=[],
+    tests_require=[ 'coverage','python-coveralls', 'codecov'],    
 )
