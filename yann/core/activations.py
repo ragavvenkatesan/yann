@@ -189,16 +189,15 @@ def Maxout(x, maxout_size, input_size, type = 'maxout', dimension = 1):
                                     layer options. the size of the output depends on border
                                     mode and subsample operation performed.  
             
-                                2. ``int``, Number of feature maps after maxout is applied
-        
-    TODO: Implement the second variable output on this.. 
+                                2. ``tuple``, Number of feature maps after maxout is applied
     """   
     if dimension == 1:
         maxing = _max1d_stride
+        output_shape = (input_size[0], input_size[1]/maxout_size)   
     elif dimension == 2:
         maxing = _max2d_stride
+        output_shape = (input_size[0], input_size[1]/maxout_size, input_size[2], input_size[3])
         
-
     if type == 'maxout':  # Do maxout network.
         maxout_out = None        
         for i in xrange(maxout_size):
@@ -235,8 +234,8 @@ def Maxout(x, maxout_size, input_size, type = 'maxout', dimension = 1):
         lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
         maxout_out = lambd * maxout_max + (1 - lambd) * maxout_mean
         output = maxout_out   
-        
-    return (output, int(floor(in_size/maxout_size)))               
+    
+    return (output, output_shape)               
     
 if __name__ == '__main__':
     pass             

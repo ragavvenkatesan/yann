@@ -8,8 +8,7 @@ Release: Yann V 0.1.1a1
 
 .. rubric:: The MIT License
 
-
-Copyright (c) [2016] `Ragav Venkatesan <http://www.public.asu.edu/~rvenka10/>`_
+Copyright (c) [2015 - 2016] `Ragav Venkatesan <http://www.ragav.net>`_
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

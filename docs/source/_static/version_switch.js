@@ -4,7 +4,6 @@
  var url = window.location.href;
 
   // If doc is run localy
-
   var root_url = url.substring(0, url.search('/' + yann_dir)) + '/';
 
   var yann_dir = 'doc'; // directory containing theanodoc
@@ -19,7 +18,6 @@
     vswitch.push(vlabel, '  ');
     vswitch.push('<span class="fa fa-caret-down"></span>');   
     vswitch.push('</span>');
-    
     vswitch.push('<div class="rst-other-versions">');   
 
     vswitch.push('<dt>Downloads</dt>');
@@ -31,12 +29,6 @@
     vswitch.push('<dt>On GitHub</dt>');
     var git_master = "https://github.com/ragavvenkatesan/yann"
     vswitch.push('<dd><a href=\"', git_master + '\">', 'Fork me', '</a></dd>');
-    vswitch.push('</dl>');  
-
-    vswitch.push('<dl>');   
-    vswitch.push('<dt>Creator</dt>');
-    var git_master = "http://www.ragav.net"
-    vswitch.push('<dd><a href=\"', "http://www.ragav.net" + '\">', 'Ragav Venkatesan', '</a></dd>');
     vswitch.push('</dl>');  
 
     vswitch.push('</div>');    

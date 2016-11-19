@@ -460,7 +460,7 @@ def load_skdata_cifar10():
 
 
 # caltech 101 of skdata 
-def load_skdata_caltech101(batch_size, 
+def load_skdata_caltech101(mini_batch_size, 
 						   n_train_images, 
 						   n_test_images, 
 						   n_valid_images,
@@ -473,7 +473,7 @@ def load_skdata_caltech101(batch_size,
 	Function that downloads the dataset from skdata and returns the dataset in part
 
 	Args:
-		batch_size: What is the size of the batch.
+		mini_batch_size: What is the size of the batch.
 		n_train_images: number of training images.
 		n_test_images: number of testing images.
 		n_valid_images: number of validating images.
@@ -489,7 +489,7 @@ def load_skdata_caltech101(batch_size,
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    
-	# load_batches * batch_size is supplied into batch_size 
+	# load_batches * mini_batch_size is supplied into mini_batch_size 
 	if skdata_installed is False:
 		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	from skdata import caltech
@@ -505,20 +505,20 @@ def load_skdata_caltech101(batch_size,
 	# but use the same shuffle so that loading works consistently.	
 	img = img[rand_perm] 
 	data_y = data_y[rand_perm] 
-	data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
+	data_x = numpy.asarray(numpy.zeros((mini_batch_size,height*width *3)), dtype = 'float32' )
 
 	if type_set == 'train':
-		push = 0 + batch * batch_size 	
+		push = 0 + batch * mini_batch_size 	
 	elif type_set == 'test':
-		push = n_train_images + batch * batch_size 
+		push = n_train_images + batch * mini_batch_size 
 	elif type_set == 'valid':
-		push = n_train_images + n_test_images + batch * batch_size
+		push = n_train_images + n_test_images + batch * mini_batch_size
 		
 	if verbose is True:
 		print "Processing image:  " + str(push)
-	data_y = numpy.asarray(data_y[push : push + batch_size ] , dtype = 'int32' )	
+	data_y = numpy.asarray(data_y[push : push + mini_batch_size ] , dtype = 'int32' )	
 
-	for i in range(batch_size):
+	for i in range(mini_batch_size):
 					
 		temp_img = imread(img[push + i])
 		temp_img = temp_img.astype('float32')
@@ -539,7 +539,7 @@ def load_skdata_caltech101(batch_size,
 	return (data_x,data_y)
 
 # caltech 256 of skdata 
-def load_skdata_caltech256(batch_size, 
+def load_skdata_caltech256(mini_batch_size, 
 				           n_train_images, 
 						   n_test_images, 
 						   n_valid_images,
@@ -553,7 +553,7 @@ def load_skdata_caltech256(batch_size,
 	Function that downloads the dataset from skdata and returns the dataset in part
 
 	Args:
-		batch_size: What is the size of the batch.
+		mini_batch_size: What is the size of the batch.
 		n_train_images: number of training images.
 		n_test_images: number of testing images.
 		n_valid_images: number of validating images.
@@ -569,7 +569,7 @@ def load_skdata_caltech256(batch_size,
 	Returns:
 		list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
 	"""    
-	# load_batches * batch_size is supplied into batch_size 
+	# load_batches * mini_batch_size is supplied into mini_batch_size 
 	if skdata_installed is False:
 		raise Exception("This dataset cooks from skdata. Please install skdata")	
 	import skdata	
@@ -586,20 +586,20 @@ def load_skdata_caltech256(batch_size,
 	# but use the same shuffle so that loading works consistently.	
 	img = img[rand_perm]								
 	data_y = data_y[rand_perm] 
-	data_x = numpy.asarray(numpy.zeros((batch_size,height*width *3)), dtype = 'float32' )
+	data_x = numpy.asarray(numpy.zeros((mini_batch_size,height*width *3)), dtype = 'float32' )
 	
 	if type_set == 'train':
-		push = 0 + batch * batch_size 	
+		push = 0 + batch * mini_batch_size 	
 	elif type_set == 'test':
-		push = n_train_images + batch * batch_size 
+		push = n_train_images + batch * mini_batch_size 
 	elif type_set == 'valid':
-		push = n_train_images + n_test_images + batch * batch_size
+		push = n_train_images + n_test_images + batch * mini_batch_size
 		
 	if verbose is True:
 		print "Processing image:  " + str(push)
-	data_y = numpy.asarray(data_y[push : push + batch_size ] , dtype = 'int32' )	
+	data_y = numpy.asarray(data_y[push : push + mini_batch_size ] , dtype = 'int32' )	
 	
-	for i in range(batch_size):
+	for i in range(mini_batch_size):
 					
 		temp_img = imread(img[push + i])
 		temp_img = temp_img.astype('float32')
@@ -747,7 +747,6 @@ def pickle_dataset(loc,batch,data):
 	cPickle.dump(data, f, protocol=2)
 	f.close()	
 
-
 # From the Theano Tutorials
 def create_shared_memory_dataset(data_xy, 
 								 borrow=True,
@@ -819,15 +818,15 @@ class setup_dataset (object):
 						     'mnist_bg_rand', 'mnist_rotated', 'mnist_rotated_bg'. Refer to 
 						     original paper by Hugo Larochelle [1] for these dataset details.
 					"location"           		: #necessary for 'pkl' and 'matlab'                  
-					"batch_size"         		: 500,                                     
-					"mini_batches_per_batch"    : 1, 
-					"batches2train"      		: 2,                                      
-					"batches2test"       		: 2,                                      
-					"batches2validate"   		: 2,                                        
+					"mini_batch_size"         		: 500,                                     
+					"mini_batches_per_batch"    : (100, 20, 20), # trianing, testing, validation 
+					"batches2train"      		: 1,                                      
+					"batches2test"       		: 1,                                      
+					"batches2validate"   		: 1,                                        
 					"height"             		: 28,                                       
 					"width"              		: 28,                                       
-					"channels"           		: 1  
-														
+					"channels"           		: 1 ,
+
 						}
 
 		preprocess_init_args: provide preprocessing arguments. This is a dictionary:
@@ -885,15 +884,14 @@ class setup_dataset (object):
 
 			dataset_args = {
 					"location"           		: <location>,                                          
-					"batch_size"         		: <int>,                                    
-					"mini_batches_per_batch"    : <int>,
+					"mini_batch_size"         		: <int>,                                    
+					"mini_batches_per_batch"    : (<int>,<int>,<int>),
 					"batches2train"      		: <int>,                                      
 					"batches2test"       		: <int>,                                     
 					"batches2validate"   		: <int>,                                       
 					"height"             		: <int>,                                      
 					"width"              		: <int>,                                       
 					"channels"           		: <int>,
-					"cache"              		: <bool>, 						                                       
 				}
 
 		This variable is used to load up the dataset.  
@@ -931,27 +929,25 @@ class setup_dataset (object):
 		else:
 			self.channesl = 1
 		
-		if "batch_size" in dataset_init_args.keys():
-			self.batch_size          = dataset_init_args [ "batch_size" ]
+		if "mini_batch_size" in dataset_init_args.keys():
+			self.mini_batch_size          = dataset_init_args [ "mini_batch_size" ]
 		else:
-			self.batch_size = 20
+			self.mini_batch_size = 20
 		
 		if "mini_batches_per_batch" in dataset_init_args.keys():		
 			self.mini_batches_per_batch       = dataset_init_args [ "mini_batches_per_batch" ]
 		else:
-			self.mini_batches_per_batch = 1
-
-		self.cache_images        = self.mini_batches_per_batch * self.batch_size
-
-		# Forgot why I wrote this checker, but remember that this is to make 
-		# something happy later on.
+			self.mini_batches_per_batch = (100, 20, 20)
+		self.cache_images        = (self.mini_batches_per_batch[0] * self.mini_batch_size,
+									self.mini_batches_per_batch[1] * self.mini_batch_size,
+									self.mini_batches_per_batch[2] * self.mini_batch_size)
 
 		if "batches2train" in dataset_init_args.keys():			
 			self.batches2train       = dataset_init_args [ "batches2train"]
 		else:
 			self.batches2train = 1
 
-		if "batch2test" in dataset_init_args.keys():		
+		if "batches2test" in dataset_init_args.keys():		
 			self.batches2test        = dataset_init_args [ "batches2test" ]
 		else:
 			self.batches2test = 1
@@ -961,6 +957,10 @@ class setup_dataset (object):
 		else:
 			self.batches2validate = 1
 
+		self.cache =  not( self.batches2train == 1 and 
+		                   self.batches2test == 1 and
+						   self.batches2validate == 1 )
+		
 		# create some directory for storing all this data
 		self.id = str(randint(11111,99999))
 		self.key_root = '/_dataset_'
@@ -995,6 +995,7 @@ class setup_dataset (object):
 		Use this function that return the location of dataset.
 		"""
 		return self.root
+
 	def _create_skdata(self,verbose=1):
 		"""
 		This is an internal function, create any skdata function.
@@ -1024,13 +1025,8 @@ class setup_dataset (object):
 		"""
 		Interal function. Use this to create mnist and cifar image datasets
 		"""
-		if self.mini_batches_per_batch is not self.batches2train:
-			print ". MNIST datasets are small enough that you don't need caching. Setting "+\
-			"mini_batches_per_batch to " + str(self.batches2train)
-			self.mini_batches_per_batch = self.batches2train
-
 		if verbose >=3:												
-			print "... importing " + self.name + " from skdata"
+			print "... Importing " + self.name + " from skdata"
 		data = getattr(thismodule, 'load_skdata_' + self.name)() 
 
 		if verbose >=2:               
@@ -1044,19 +1040,24 @@ class setup_dataset (object):
 								 channels = self.channels,
 								 args = self.preprocessor )			
 		training_sample_size = data_x.shape[0]
-		training_batches_available  = training_sample_size / self.batch_size
+		training_batches_available  = training_sample_size / self.mini_batch_size
 
-		if not self.batches2train == training_batches_available:
-			if training_batches_available < self.batches2train:
+		if not self.batches2train * self.mini_batches_per_batch[0] == training_batches_available:
+			if training_batches_available < self.batches2train * self.mini_batches_per_batch[0]:
 				raise Exception("Not as many training batches available")
 			else: 
-				data_x = data_x[:self.batches2train*self.batch_size]
-				data_y = data_y[:self.batches2train*self.batch_size] 
+				data_x = data_x[:self.batches2train * self.cache_images[0]]
+				data_y = data_y[:self.batches2train * self.cache_images[0]] 
 		loc = self.root + "/train/"	
 		data_x = check_type(data_x, theano.config.floatX)
-		data_y = check_type(data_y, 'int32')																	
-		data2save = (data_x, data_y )
-		pickle_dataset(loc = loc,data = data2save,batch=0)	
+		data_y = check_type(data_y, theano.config.floatX)	
+		
+
+		for batch in xrange(self.batches2train):
+			start_index = batch * self.cache_images[0]
+			end_index = start_index + self.cache_images[0]
+			data2save = (data_x [start_index:end_index,], data_y[start_index:end_index,] )
+			pickle_dataset(loc = loc, data = data2save, batch=batch)	
 		
 		if verbose >=2: 			
 			print ".. validation data "
@@ -1068,19 +1069,25 @@ class setup_dataset (object):
 								 channels = self.channels,
 								 args = self.preprocessor )	
 		validation_sample_size = data_x.shape[0]
-		validation_batches_available = validation_sample_size / self.batch_size 
+		validation_batches_available = validation_sample_size / self.mini_batch_size 
 
-		if not self.batches2validate == validation_batches_available:
-				if validation_batches_available < self.batches2validate: 
-					 raise Exception("Not as many validation batches available")
-				else: 
-					data_x = data_x[:self.batches2validate*self.batch_size]
-					data_y = data_y[:self.batches2validate*self.batch_size] 
+		if not self.batches2validate * self.mini_batches_per_batch[1] == \
+		                                                 validation_batches_available:
+			if validation_batches_available < self.batches2validate * \
+			                                           self.mini_batches_per_batch[1]: 
+				raise Exception("Not as many validation batches available")
+			else: 
+				data_x = data_x[:self.batches2validate * self.cache_images[1]]
+				data_y = data_y[:self.batches2validate * self.cache_images[1]] 
 		loc = self.root + "/valid/"		
 		data_x = check_type(data_x, theano.config.floatX)
-		data_y = check_type(data_y, 'int32')				
-		data2save = (data_x, data_y )		
-		pickle_dataset(loc = loc,data = data2save,batch=0)	
+		data_y = check_type(data_y, theano.config.floatX)				
+
+		for batch in xrange(self.batches2validate):
+			start_index = batch * self.cache_images[1]
+			end_index = start_index + self.cache_images[1]
+			data2save = (data_x [start_index:end_index,], data_y[start_index:end_index,] )
+			pickle_dataset(loc = loc, data = data2save, batch=batch)
 		
 		if verbose >=2: 						
 			print ".. testing data "			
@@ -1091,25 +1098,27 @@ class setup_dataset (object):
 								 channels = self.channels,
 								 args = self.preprocessor )	
 		testing_sample_size = data_x.shape[0]
-		testing_batches_available = testing_sample_size / self.batch_size 
+		testing_batches_available = testing_sample_size / self.mini_batch_size 
 		
-		if not self.batches2test == testing_batches_available:
-				if testing_batches_available < self.batches2test: 
-					raise Exception("Not as many testing batches available")
-				else: 
-					data_x = data_x[:self.batches2test*self.batch_size]
-					data_y = data_y[:self.batches2test*self.batch_size] 
+		if not self.batches2test * self.mini_batches_per_batch[2] == testing_batches_available:		
+			if testing_batches_available < self.batches2test * self.mini_batches_per_batch[2]: 
+				raise Exception("Not as many testing batches available")
+			else: 
+				data_x = data_x[:self.batches2test * self.cache_images[2]]
+				data_y = data_y[:self.batches2test * self.cache_images[2]] 
 		loc = self.root + "/test/"	
 		data_x = check_type(data_x, theano.config.floatX)
-		data_y = check_type(data_y, 'int32')					
-		data2save = (data_x, data_y )
-		pickle_dataset(loc = loc,data = data2save,batch=0)	
-							
-		self.cache = False
-			
+		data_y = check_type(data_y, theano.config.floatX)	
+
+		for batch in xrange(self.batches2test):
+    			start_index = batch * self.cache_images[2]
+			end_index = start_index + self.cache_images[2]
+			data2save = (data_x [start_index:end_index,], data_y[start_index:end_index,] )
+			pickle_dataset(loc = loc, data = data2save, batch=batch)
+										
 		dataset_args = {
 				"location"          		: self.root,                                          
-				"batch_size"        		: self.batch_size,                                    
+				"mini_batch_size"           : self.mini_batch_size,                                    
 				"cache_batches"    			: self.mini_batches_per_batch,
 				"batches2train"     		: self.batches2train,                                      
 				"batches2test"      		: self.batches2test,                                     
@@ -1141,15 +1150,14 @@ def cook_mnist(  verbose = 1,
                    "source"             : 'skdata',                                   
                    "name"               : 'mnist',    
 				   "location"			: '',                                      
-                   "batch_size"         : 500,                                     
-                   "mini_batches_per_batch" : 250, 
-                   "batches2train"      : 100,                                      
-                   "batches2test"       : 20,                                      
-                   "batches2validate"   : 20,                                        
+                   "mini_batch_size"    : 500,                                     
+                   "mini_batches_per_batch" : (100, 20, 20), 
+                   "batches2train"      : 1,                                      
+                   "batches2test"       : 1,                                      
+                   "batches2validate"   : 1,                                        
                    "height"             : 28,                                       
                    "width"              : 28,                                       
-                   "channels"           : 1,
-				   "cache"			    : True  }    
+                   "channels"           : 1  }    
 				    
 	else:
 		data_params = kwargs['data_params']
@@ -1177,8 +1185,62 @@ def cook_mnist(  verbose = 1,
 							verbose = 3)
 	return dataset
 
+def cook_mnist_multi_load(  verbose = 1, **kwargs):
+	"""
+	Testing code, mainly.
+	Wrapper to cook mnist dataset. Will take as input:
+	Args:
+		save_directory: which directory to save the cooked dataset onto.
+		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
+		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
+
+	Notes: 
+		This just creates a ``data_params`` that loads multiple batches without cache. I use this 
+		to test the cahcing working on datastream module.
+	"""
+
+	if not 'data_params' in kwargs.keys():
+
+		data_params = {
+                   "source"             : 'skdata',                                   
+                   "name"               : 'mnist',    
+				   "location"			: '',                                      
+                   "mini_batch_size"    : 500,                                     
+                   "mini_batches_per_batch" : (20, 5, 5), 
+                   "batches2train"      : 5,                                      
+                   "batches2test"       : 4,                                      
+                   "batches2validate"   : 4,                                        
+                   "height"             : 28,                                       
+                   "width"              : 28,                                       
+                   "channels"           : 1 }    
+				    
+	else:
+		data_params = kwargs['data_params']
+
+	if not 'preprocess_params' in kwargs.keys():                  
+    	# parameters relating to preprocessing.
+		preprocess_params = { 
+                            "normalize"     : True,
+                            "GCN"           : False,
+                            "ZCA"           : False,
+                            "grayscale"     : False,
+                        }
+	else:
+		preprocess_params = kwargs['preprocess_params']
+
+	if not 'save_directory' in kwargs.keys():
+		save_directory = '_datasets'
+	else:
+		save_directory = kwargs ['save_directory']
+
+	dataset = setup_dataset(dataset_init_args = data_params,
+							save_directory = save_directory,
+							preprocess_params = preprocess_params,
+							verbose = 3)
+	return dataset	
+
 if __name__ == '__main__':
-    pass  
+    cook_mnist()  
 
 
 """
@@ -1190,8 +1252,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[0]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_train_images = data_x.shape[0]
-			n_train_batches_all = n_train_images / self.batch_size 
-			self.n_train_batches = data_x.shape[0] / self.batch_size			
+			n_train_batches_all = n_train_images / self.mini_batch_size 
+			self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1201,8 +1263,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[1]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_valid_images = data_x.shape[0]
-			n_valid_batches_all = n_valid_images / self.batch_size 
-			self.n_valid_batches = data_x.shape[0] / self.batch_size			
+			n_valid_batches_all = n_valid_images / self.mini_batch_size 
+			self.n_valid_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1212,8 +1274,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[2]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_test_images = data_x.shape[0]
-			n_test_batches_all = n_test_images / self.batch_size 
-			self.n_test_batches = data_x.shape[0] / self.batch_size			
+			n_test_batches_all = n_test_images / self.mini_batch_size 
+			self.n_test_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1231,7 +1293,7 @@ elif self.name == 'cifar10':
 			new_data_params = {
 				"type"               : 'base',                                   
 				"loc"                : temp_dir,                                          
-				"batch_size"         : self.batch_size,                                    
+				"mini_batch_size"         : self.mini_batch_size,                                    
 				"load_batches"       : -1,
 				"batches2train"      : self.batches2train,                                      
 				"batches2test"       : self.batches2test,                                     
@@ -1254,9 +1316,9 @@ elif self.name == 'cifar10':
 			self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
 			# create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
 			
-			n_train_images = self.batch_size * self.batches2train
-			n_test_images = self.batch_size * self.batches2test
-			n_valid_images = self.batch_size * self.batches2validate
+			n_train_images = self.mini_batch_size * self.batches2train
+			n_test_images = self.mini_batch_size * self.batches2test
+			n_valid_images = self.mini_batch_size * self.batches2validate
 			
 			assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
 			
@@ -1268,7 +1330,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'train' ,
@@ -1277,14 +1339,14 @@ elif self.name == 'cifar10':
 												verbose = verbose )  													
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()
 		
 				
-			self.n_train_batches = data_x.shape[0] / self.batch_size											
+			self.n_train_batches = data_x.shape[0] / self.mini_batch_size											
 			print "... 		--> testing data "				
 			looper = n_test_images / self.load_batches		
 			for i in xrange(looper):		# for each batch_i file.... 
@@ -1292,7 +1354,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'test' ,
@@ -1301,12 +1363,12 @@ elif self.name == 'cifar10':
 												verbose = verbose )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_test_batches = data_x.shape[0] / self.batch_size																
+			self.n_test_batches = data_x.shape[0] / self.mini_batch_size																
 			
 			print "... 		--> validation data "	
 			looper = n_valid_images / self.load_batches									
@@ -1315,7 +1377,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'valid' ,
@@ -1324,22 +1386,22 @@ elif self.name == 'cifar10':
 												verbose = verbose  )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_valid_batches = data_x.shape[0] / self.batch_size																	
+			self.n_valid_batches = data_x.shape[0] / self.mini_batch_size																	
 			self.multi_load = True
 			
 			new_data_params = {
 				"type"               : 'base',                                   
 				"loc"                : temp_dir,                                          
-				"batch_size"         : self.batch_size,                                    
-				"load_batches"       : self.load_batches / self.batch_size,
-				"batches2train"      : self.batches2train / (self.load_batches / self.batch_size) ,                                      
-				"batches2test"       : self.batches2test / (self.load_batches / self.batch_size),                                     
-				"batches2validate"   : self.batches2validate / (self.load_batches / self.batch_size),                                       
+				"mini_batch_size"         : self.mini_batch_size,                                    
+				"load_batches"       : self.load_batches / self.mini_batch_size,
+				"batches2train"      : self.batches2train / (self.load_batches / self.mini_batch_size) ,                                      
+				"batches2test"       : self.batches2test / (self.load_batches / self.mini_batch_size),                                     
+				"batches2validate"   : self.batches2validate / (self.load_batches / self.mini_batch_size),                                       
 				"height"             : self.height,                                      
 				"width"              : self.width,                                       
 				"channels"           : self.channels,
@@ -1357,9 +1419,9 @@ elif self.name == 'cifar10':
 			self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
 			# create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
 			
-			n_train_images = self.batch_size * self.batches2train
-			n_test_images = self.batch_size * self.batches2test
-			n_valid_images = self.batch_size * self.batches2validate
+			n_train_images = self.mini_batch_size * self.batches2train
+			n_test_images = self.mini_batch_size * self.batches2test
+			n_valid_images = self.mini_batch_size * self.batches2validate
 			
 			
 			assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
@@ -1371,8 +1433,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[0]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_train_images = data_x.shape[0]
-			n_train_batches_all = n_train_images / self.batch_size 
-			self.n_train_batches = data_x.shape[0] / self.batch_size			
+			n_train_batches_all = n_train_images / self.mini_batch_size 
+			self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1382,8 +1444,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[1]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_valid_images = data_x.shape[0]
-			n_valid_batches_all = n_valid_images / self.batch_size 
-			self.n_valid_batches = data_x.shape[0] / self.batch_size			
+			n_valid_batches_all = n_valid_images / self.mini_batch_size 
+			self.n_valid_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1393,8 +1455,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[2]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_test_images = data_x.shape[0]
-			n_test_batches_all = n_test_images / self.batch_size 
-			self.n_test_batches = data_x.shape[0] / self.batch_size			
+			n_test_batches_all = n_test_images / self.mini_batch_size 
+			self.n_test_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1412,7 +1474,7 @@ elif self.name == 'cifar10':
 			new_data_params = {
 				"type"               : 'base',                                   
 				"loc"                : temp_dir,                                          
-				"batch_size"         : self.batch_size,                                    
+				"mini_batch_size"         : self.mini_batch_size,                                    
 				"load_batches"       : -1,
 				"batches2train"      : self.batches2train,                                      
 				"batches2test"       : self.batches2test,                                     
@@ -1435,9 +1497,9 @@ elif self.name == 'cifar10':
 			self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
 			# create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
 			
-			n_train_images = self.batch_size * self.batches2train
-			n_test_images = self.batch_size * self.batches2test
-			n_valid_images = self.batch_size * self.batches2validate
+			n_train_images = self.mini_batch_size * self.batches2train
+			n_test_images = self.mini_batch_size * self.batches2test
+			n_valid_images = self.mini_batch_size * self.batches2validate
 			
 			assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
 			
@@ -1449,7 +1511,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'train' ,
@@ -1458,14 +1520,14 @@ elif self.name == 'cifar10':
 												verbose = verbose )  													
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()
 		
 				
-			self.n_train_batches = data_x.shape[0] / self.batch_size											
+			self.n_train_batches = data_x.shape[0] / self.mini_batch_size											
 			print "... 		--> testing data "				
 			looper = n_test_images / self.load_batches		
 			for i in xrange(looper):		# for each batch_i file.... 
@@ -1473,7 +1535,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'test' ,
@@ -1482,12 +1544,12 @@ elif self.name == 'cifar10':
 												verbose = verbose )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_test_batches = data_x.shape[0] / self.batch_size																
+			self.n_test_batches = data_x.shape[0] / self.mini_batch_size																
 			
 			print "... 		--> validation data "	
 			looper = n_valid_images / self.load_batches									
@@ -1496,7 +1558,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'valid' ,
@@ -1505,22 +1567,22 @@ elif self.name == 'cifar10':
 												verbose = verbose  )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_valid_batches = data_x.shape[0] / self.batch_size																	
+			self.n_valid_batches = data_x.shape[0] / self.mini_batch_size																	
 			self.multi_load = True
 			
 			new_data_params = {
 				"type"               : 'base',                                   
 				"loc"                : temp_dir,                                          
-				"batch_size"         : self.batch_size,                                    
-				"load_batches"       : self.load_batches / self.batch_size,
-				"batches2train"      : self.batches2train / (self.load_batches / self.batch_size) ,                                      
-				"batches2test"       : self.batches2test / (self.load_batches / self.batch_size),                                     
-				"batches2validate"   : self.batches2validate / (self.load_batches / self.batch_size),                                       
+				"mini_batch_size"         : self.mini_batch_size,                                    
+				"load_batches"       : self.load_batches / self.mini_batch_size,
+				"batches2train"      : self.batches2train / (self.load_batches / self.mini_batch_size) ,                                      
+				"batches2test"       : self.batches2test / (self.load_batches / self.mini_batch_size),                                     
+				"batches2validate"   : self.batches2validate / (self.load_batches / self.mini_batch_size),                                       
 				"height"             : self.height,                                      
 				"width"              : self.width,                                       
 				"channels"           : self.channels,
@@ -1538,9 +1600,9 @@ elif self.name == 'cifar10':
 			self.rand_perm = numpy.random.permutation(total_images_in_dataset)  
 			# create a constant shuffle, so that data can be loaded in batchmode with the same random shuffle
 			
-			n_train_images = self.batch_size * self.batches2train
-			n_test_images = self.batch_size * self.batches2test
-			n_valid_images = self.batch_size * self.batches2validate
+			n_train_images = self.mini_batch_size * self.batches2train
+			n_test_images = self.mini_batch_size * self.batches2test
+			n_valid_images = self.mini_batch_size * self.batches2validate
 			
 			
 			assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
@@ -1553,7 +1615,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'train' ,
@@ -1562,14 +1624,14 @@ elif self.name == 'cifar10':
 												verbose = verbose )  													
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()
 			
 				
-			self.n_train_batches = data_x.shape[0] / self.batch_size											
+			self.n_train_batches = data_x.shape[0] / self.mini_batch_size											
 			print "... 		--> testing data "				
 			looper = n_test_images / self.load_batches		
 			for i in xrange(looper):		# for each batch_i file.... 
@@ -1577,7 +1639,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'test' ,
@@ -1586,12 +1648,12 @@ elif self.name == 'cifar10':
 												verbose = verbose )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_test_batches = data_x.shape[0] / self.batch_size																
+			self.n_test_batches = data_x.shape[0] / self.mini_batch_size																
 			
 			print "... 		--> validation data "	
 			looper = n_valid_images / self.load_batches									
@@ -1600,7 +1662,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'valid' ,
@@ -1609,23 +1671,23 @@ elif self.name == 'cifar10':
 												verbose = verbose  )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_valid_batches = data_x.shape[0] / self.batch_size																	
+			self.n_valid_batches = data_x.shape[0] / self.mini_batch_size																	
 			self.multi_load = True
 			
 			
 			new_data_params = {
 				"type"               : 'base',                                   
 				"loc"                : temp_dir,                                          
-				"batch_size"         : self.batch_size,                                    
-				"load_batches"       : self.load_batches / self.batch_size,
-				"batches2train"      : self.batches2train / (self.load_batches / self.batch_size),                                      
-				"batches2test"       : self.batches2test / (self.load_batches / self.batch_size),                                     
-				"batches2validate"   : self.batches2validate / (self.load_batches / self.batch_size),                                       
+				"mini_batch_size"         : self.mini_batch_size,                                    
+				"load_batches"       : self.load_batches / self.mini_batch_size,
+				"batches2train"      : self.batches2train / (self.load_batches / self.mini_batch_size),                                      
+				"batches2test"       : self.batches2test / (self.load_batches / self.mini_batch_size),                                     
+				"batches2validate"   : self.batches2validate / (self.load_batches / self.mini_batch_size),                                       
 				"height"             : self.height,                                      
 				"width"              : self.width,                                       
 				"channels"           : self.channels,
@@ -1656,7 +1718,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'train' ,
@@ -1665,14 +1727,14 @@ elif self.name == 'cifar10':
 												verbose = verbose )  													
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()
 			
 				
-			self.n_train_batches = data_x.shape[0] / self.batch_size											
+			self.n_train_batches = data_x.shape[0] / self.mini_batch_size											
 			print "... 		--> testing data "				
 			looper = n_test_images / self.load_batches		
 			for i in xrange(looper):		# for each batch_i file.... 
@@ -1680,7 +1742,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'test' ,
@@ -1689,12 +1751,12 @@ elif self.name == 'cifar10':
 												verbose = verbose )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_test_batches = data_x.shape[0] / self.batch_size																
+			self.n_test_batches = data_x.shape[0] / self.mini_batch_size																
 			
 			print "... 		--> validation data "	
 			looper = n_valid_images / self.load_batches									
@@ -1703,7 +1765,7 @@ elif self.name == 'cifar10':
 												n_train_images = n_train_images,
 												n_test_images = n_test_images,
 												n_valid_images = n_valid_images,
-												batch_size = self.load_batches, 
+												mini_batch_size = self.load_batches, 
 												rand_perm = self.rand_perm, 
 												batch = i , 
 												type_set = 'valid' ,
@@ -1712,23 +1774,23 @@ elif self.name == 'cifar10':
 												verbose = verbose  )  
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
 				f.close()							  
-			self.n_valid_batches = data_x.shape[0] / self.batch_size																	
+			self.n_valid_batches = data_x.shape[0] / self.mini_batch_size																	
 			self.multi_load = True
 			
 			
 			new_data_params = {
 				"type"               : 'base',                                   
 				"loc"                : temp_dir,                                          
-				"batch_size"         : self.batch_size,                                    
-				"load_batches"       : self.load_batches / self.batch_size,
-				"batches2train"      : self.batches2train / (self.load_batches / self.batch_size),                                      
-				"batches2test"       : self.batches2test / (self.load_batches / self.batch_size),                                     
-				"batches2validate"   : self.batches2validate / (self.load_batches / self.batch_size),                                       
+				"mini_batch_size"         : self.mini_batch_size,                                    
+				"load_batches"       : self.load_batches / self.mini_batch_size,
+				"batches2train"      : self.batches2train / (self.load_batches / self.mini_batch_size),                                      
+				"batches2test"       : self.batches2test / (self.load_batches / self.mini_batch_size),                                     
+				"batches2validate"   : self.batches2validate / (self.load_batches / self.mini_batch_size),                                       
 				"height"             : self.height,                                      
 				"width"              : self.width,                                       
 				"channels"           : self.channels,
@@ -1759,7 +1821,7 @@ elif self.name == 'cifar10':
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )
 				
 				# compute number of minibatches for training, validation and testing
-				self.n_train_batches = data_x.shape[0] / self.batch_size			
+				self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
@@ -1771,7 +1833,7 @@ elif self.name == 'cifar10':
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )
 				
 				# compute number of minibatches for training, validation and testing
-				self.n_test_batches = data_x.shape[0] / self.batch_size			
+				self.n_test_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
@@ -1783,7 +1845,7 @@ elif self.name == 'cifar10':
 				data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )
 				
 				# compute number of minibatches for training, validation and testing
-				self.n_valid_batches = data_x.shape[0] / self.batch_size			
+				self.n_valid_batches = data_x.shape[0] / self.mini_batch_size			
 				f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
 				obj = (data_x, data_y )
 				cPickle.dump(obj, f, protocol=2)
@@ -1793,7 +1855,7 @@ elif self.name == 'cifar10':
 			new_data_params = {
 					"type"               : 'base',                                   
 					"loc"                : temp_dir,                                          
-					"batch_size"         : self.batch_size,                                    
+					"mini_batch_size"         : self.mini_batch_size,                                    
 					"load_batches"       : -1,
 					"batches2train"      : self.batches2train,                                      
 					"batches2test"       : self.batches2test,                                     
@@ -1816,8 +1878,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[0]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_train_images = data_x.shape[0]
-			n_train_batches_all = n_train_images / self.batch_size 
-			self.n_train_batches = data_x.shape[0] / self.batch_size			
+			n_train_batches_all = n_train_images / self.mini_batch_size 
+			self.n_train_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/train/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1827,8 +1889,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[1]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_valid_images = data_x.shape[0]
-			n_valid_batches_all = n_valid_images / self.batch_size 
-			self.n_valid_batches = data_x.shape[0] / self.batch_size			
+			n_valid_batches_all = n_valid_images / self.mini_batch_size 
+			self.n_valid_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/valid/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1838,8 +1900,8 @@ elif self.name == 'cifar10':
 			data_x, data_y, data_y1 = data[2]
 			data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )			
 			n_test_images = data_x.shape[0]
-			n_test_batches_all = n_test_images / self.batch_size 
-			self.n_test_batches = data_x.shape[0] / self.batch_size			
+			n_test_batches_all = n_test_images / self.mini_batch_size 
+			self.n_test_batches = data_x.shape[0] / self.mini_batch_size			
 			f = open(temp_dir + "/test/" + 'batch_' + str(0) + '.pkl', 'wb')
 			obj = (data_x, data_y )
 			cPickle.dump(obj, f, protocol=2)
@@ -1857,7 +1919,7 @@ elif self.name == 'cifar10':
 			new_data_params = {
 					"type"               : 'base',                                   
 					"loc"                : temp_dir,                                          
-					"batch_size"         : self.batch_size,                                    
+					"mini_batch_size"         : self.mini_batch_size,                                    
 					"load_batches"       : -1,
 					"batches2train"      : self.batches2train,                                      
 					"batches2test"       : self.batches2test,                                     

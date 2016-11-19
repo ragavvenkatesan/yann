@@ -21,14 +21,14 @@ installation in one command that will install the basics required to run the too
 the toolbox quickly do the following:
 
 .. code-block:: bash
+  
+  pip install git+git://github.com/ragavvenkatesan/yann.git
 
-  pip install numpy
-  pip install skdata scipy git+git://github.com/ragavvenkatesan/yann.git
+If it showed any errors, install ``numpy`` first. ``skdata`` has some issue that requires ``numpy``
+installed first. If you use anaconda, just install the numpy and scipy using ``conda install`` 
+instead of ``pip install``. This will setup the toolbox for all intentions and purposes.
 
-If you use anaconda, just install the numpy and scipy using ``conda install`` instead of ``pip 
-install``. This will setup the toolbox for all intentions and purposes.
-
-For a full-fledged installation procedure, don't do the above but follow the following set of 
+For a full-fledged installation procedure, don't do the above but run through the following set of 
 instructions. 
 
 Full installation
@@ -107,7 +107,7 @@ Once all the pre-requisites are setup, install `theano`_ version 0.8 or higher.
 .. _theano: http://deeplearning.net/software/theano/ 
 
 The following ``.theanorc`` configuration can be used as a sample normally, 
-but you may choose other options. As an example, the following is what I use from time to time.
+but you may choose other options. As an example one can use the following:
 
 .. code-block:: bash
 

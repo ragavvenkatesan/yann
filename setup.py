@@ -1,10 +1,3 @@
-"""A setuptools based setup module.
-
-See:
-https://packaging.python.org/en/latest/distributing.html
-https://github.com/pypa/sampleproject
-"""
-
 from setuptools import setup, find_packages
 from codecs import open
 from os import path
@@ -33,10 +26,10 @@ setup(
     packages=find_packages(exclude=['docs', 'tests']),
     install_requires=['theano','numpy'],
     extras_require={
-        'dev': ['progressbar'],
-        'test': ['coverage'],
+        'dev': ['progressbar', 'skdata', 'scipy', 'sphinx'],
+        'test': ['pytest','mock','sphinx_rtd_theme']
     },
-    data_files=[],
+    # data_files=['_datasets/'],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest'],    
+    tests_require=['coverage', 'python-coveralls', 'codecov', 'pytest'],    
 )

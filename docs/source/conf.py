@@ -69,8 +69,9 @@ master_doc = 'index'
 
 # General substitutions.
 project = u'Yann'
-copyright = u'2016, Ragav Venkatesan'
+copyright = u'2015-2016, Ragav Venkatesan'
 author = u'Ragav Venkatesan'
+license = u'MIT License'
 
 import yann
 
@@ -79,7 +80,7 @@ import yann
 # built documents.
 #
 # The short X.Y version.
-version = '.'.join(yann.__version__.split('.', 2)[:2])
+version = yann.__version__
 # The full version, including alpha/beta/rc tags.
 release = yann.__version__
 
@@ -104,11 +105,11 @@ exclude_dirs = ['logos']
 #default_role = None
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
@@ -117,7 +118,6 @@ show_authors = True
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-add_function_parentheses = True
 html_use_smartypants = True
 todo_include_todos = True
 
@@ -183,8 +183,6 @@ html_last_updated_fmt = '%b %d, %Y'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
-add_function_parentheses = True
-html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
