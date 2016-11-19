@@ -11,6 +11,7 @@ you may start with the :ref:`quick_start` guide or try your hand at the :ref:`tu
 :ref:`getting_started`. A user base discussion group is setup on `gitter`_ and also on 
 `google groups`_.
 
+
 .. image:: https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master
     :target: https://travis-ci.org/ragavvenkatesan/yann
     :alt: Travis Report

@@ -4,7 +4,6 @@ language: python
 python:
   - "2.7"
 
-# command to install dependencies copied this from like many github toolboxes out there
 before_install:
   - pip install pip  
   - pip install -r requirements.txt   
@@ -14,13 +13,11 @@ before_install:
   - pip install setuptools
   - pip install python-coveralls  
 
-# Install packages
 install:  
   - python setup.py install
 
-# command to run tests
 script: 
-  - coverage run./setup.py test
+  - coverage run ./setup.py test
 
 after_success:
   - codecov
