@@ -18,8 +18,8 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Students, Researchers and Developers',
-        'Topic :: Software Development :: Build Tools',
-        'License :: OSI Approved :: MIT License',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence :: Computer Vision :: Deep Learning :: Convolutional Neural Network'
+        'License :: MIT License',
         'Programming Language :: Python :: 2.7',
     ],
     keywords='convolutional neural networks deep learning',
@@ -27,7 +27,7 @@ setup(
     install_requires=['theano','numpy'],
     extras_require={
         'dev': ['progressbar', 'skdata', 'scipy', 'sphinx'],
-        'test': ['mock','sphinx_rtd_theme', 'pytest']
+        'test': ['mock','sphinx_rtd_theme','pytest-cov','pytest-pep8','pytest']
     },
     # data_files=['_datasets/'],
     setup_requires=[],
