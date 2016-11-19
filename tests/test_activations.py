@@ -39,7 +39,7 @@ class TestActivations(unittest.TestCase):
         numpy_input = np.random.uniform(-4, 4, (5, 5))  # Create some 5X5 matrix randomly 
         theano_result = theano_test_function(theano_input).eval({theano_input: numpy_input})
         np_result = np_test_function(X0)
-        self.assertTrue np.allclose(theano_result, np_result)
+        self.assertTrue(np.allclose(theano_result, np_result))
 
 """
 if __name__ == '__main__':
