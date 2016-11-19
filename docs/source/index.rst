@@ -7,7 +7,7 @@ Yet Another Neural Network Toolbox
  
 Welcome to the Yann Toolbox. It is a toolbox for building and learning convolutional neural 
 networks, built on top of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup, 
-you may start with the :`quick_start` guide or try your hand at the :ref:`tutorial` and the guide to 
+you may start with the :ref:`quick_start` guide or try your hand at the :ref:`tutorial` and the guide to 
 :ref:`getting_started`. A user base discussion group is setup on `gitter`_ and also on 
 `google groups`_.
 

@@ -12,7 +12,7 @@ class TestActivations(unittest.TestCase):
     def setUp(self):
         run_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']
         for activation in run_activations:
-            setattr(TestPreReqs, 'test_activation_%d' % k, test_activation(activation))
+            setattr(TestActivations, 'test_activation_%d' % k, test_activation(activation))
 
     def Abs(self, x):
         return np.abs(x)
