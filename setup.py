@@ -18,7 +18,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Students, Researchers and Developers',
-        'Topic :: Scientific/Engineering :: Artificial Intelligence :: Computer Vision :: Deep Learning :: Convolutional Neural Network'
+        'Topic :: Scientific/Engineering :: Computer Vision :: Deep Learning'
         'License :: MIT License',
         'Programming Language :: Python :: 2.7',
     ],
@@ -30,6 +30,6 @@ setup(
         'test': ['mock','sphinx_rtd_theme','pytest-cov','pytest-pep8','pytest']
     },
     # data_files=['_datasets/'],
-    setup_requires=['pytest'],
-    tests_require=['pytest-runner', 'coverage','python-coveralls', 'codecov'],    
+    setup_requires=['pytest', 'pytest-runner'],
+    tests_require=['pytest', 'pytest-runner', 'coverage','python-coveralls', 'codecov'],    
 )
