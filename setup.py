@@ -30,6 +30,6 @@ setup(
         'test': ['mock','sphinx_rtd_theme','pytest-cov','pytest-pep8','pytest']
     },
     # data_files=['_datasets/'],
-    setup_requires=[],
+    setup_requires=['pytest'],
     tests_require=['pytest-runner', 'coverage','python-coveralls', 'codecov'],    
 )
