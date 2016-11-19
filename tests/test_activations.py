@@ -8,11 +8,6 @@ import theano.tensor as T
 import yann.core.activations as A
 
 class TestActivations(unittest.TestCase):
-    
-    def setUp(self):
-        run_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']
-        for activation in run_activations:
-            setattr(TestActivations, 'test_activation_%d' % k, test_activation(activation))
 
     def Abs(self, x):
         return np.abs(x)
@@ -32,14 +27,16 @@ class TestActivations(unittest.TestCase):
     def Squared(self, x):
         return x**2
 
-    def test_activation(self, activiation):
-        theano_test_function = getattr(yann.core.activations,activation)
-        np_test_function = getattr(self, activation)
-        theano_input = T.matrix()
-        numpy_input = np.random.uniform(-4, 4, (5, 5))  # Create some 5X5 matrix randomly 
-        theano_result = theano_test_function(theano_input).eval({theano_input: numpy_input})
-        np_result = np_test_function(X0)
-        self.assertTrue(np.allclose(theano_result, np_result))
+    def test_activations(self):
+        test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']
+        for activation in test_activations:
+            theano_test_function = getattr(yann.core.activations,activation)
+            np_test_function = getattr(self, activation)
+            theano_input = T.matrix()
+            numpy_input = np.random.uniform(-4, 4, (5, 5))  # Create some 5X5 matrix randomly 
+            theano_result = theano_test_function(theano_input).eval({theano_input: numpy_input})
+            np_result = np_test_function(numpy_input)            
+            self.assertTrue(np.allclose(theano_result, np_result))        
 
 """
 if __name__ == '__main__':
