@@ -11,7 +11,11 @@ class TestActivations:
         self.numpy_input = np.asarray(np.random.uniform(-4, 4, (5,5)),dtype=theano.config.floatX)  
         # Create some 5X5 matrix randomly     
 
-    def Elu(self, x, alpha = 1): return x if x > 0 else alpha * (np.exp(x) - 1) 
+    def Elu(self, x, alpha = 1):
+        if x > 0: 
+            return x
+        else:
+            return alpha * (np.exp(x) - 1) 
     def Abs(self, x): return np.abs(x)
     def ReLU(self, x): return x * (x > 0)
     def Sigmoid(self, x): return 1 / (1 + np.exp(-x))
