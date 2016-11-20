@@ -1,5 +1,5 @@
 """
-TODO:
+Todo:
 
 	* None of the PASCAL dataset retrievers from ``skdata`` is working. This need to be coded
       in.
@@ -74,7 +74,7 @@ def load_data_mat(classes,
 	Returns:
 		float32 tuple: Tuple `(data_x, data_y)` if requested, also `(data_x,data_y,data_z)`
 
-	TODO:
+	Todo:
 		Need to add preprocessing in this.			
 		
 	"""
@@ -483,7 +483,7 @@ def load_skdata_caltech101(mini_batch_size,
 		width: Width of the image.
 		verbose: similar to dataset.
 
-	TODO:
+	Todo:
 		This is not a finished function.
 
 	Returns:
@@ -563,7 +563,7 @@ def load_skdata_caltech256(mini_batch_size,
 		width: Width of the image.
 		verbose: similar to dataset.
 
-	TODO:
+	Todo:
 		This is not a finished function.
 
 	Returns:
@@ -797,7 +797,7 @@ class setup_dataset (object):
 	The setup_dataset class is used to create and assemble datasets that are friendly to the 
 	Yann toolbox.
 
-	TODO:
+	Todo:
 		``images`` option for the ``source``.
 		``skdata pascal`` isn't working
 		``imagenet`` dataset and ``coco`` needs to be setup.
