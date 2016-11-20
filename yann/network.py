@@ -1250,10 +1250,12 @@ class network(object):
         for src, dst in zip(source, destination):
             dst.set_value ( src.get_value (borrow = self.borrow))
 
-    def _cook_visualizer(self, verbose = 2):
+    def _cook_visualizer(self, cook_all = False, verbose = 2):
         """
         This is an internal function that cooks a visualizer
         Args:
+            cook_all: <bool> True will print all layer activities and stuff. False only prints  
+                     test and train. 
             verbose: as always
         """
         if verbose >= 2:
@@ -1261,19 +1263,22 @@ class network(object):
 
         if hasattr(self,'cooked_optimizer'):
             if verbose >= 3:
-                print "... Saving down visualizations of optimizer"            
-            self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_posterior, 
-                                                                                verbose = verbose)
-            self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_predictions,
-                                                                                verbose = verbose)
+                print "... Saving down visualizations of optimizer"    
             self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_test, 
                                                                                 verbose = verbose)
             self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_train, 
                                                                                 verbose = verbose)
-            if self.layer_activities_created is True:
-                for layer in self.layers:
-                    self.cooked_visualizer.theano_function_visualizer(
-                                                        function = self.layer_activities[layer], 
+            if cool_all is True:
+                self.cooked_visualizer.theano_function_visualizer(
+                                                            function = self.mini_batch_posterior, 
+                                                            verbose = verbose)
+                self.cooked_visualizer.theano_function_visualizer(
+                                                            function = self.mini_batch_predictions,
+                                                            verbose = verbose)
+                if self.layer_activities_created is True:
+                    for layer in self.layers:
+                        self.cooked_visualizer.theano_function_visualizer(
+                                                            function = self.layer_activities[layer], 
                                                                                 verbose = verbose)
                     
     def cook(self, verbose = 2, **kwargs):

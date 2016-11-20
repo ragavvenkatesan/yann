@@ -128,7 +128,7 @@ class visualizer(module):
         if verbose >= 3:
             print "... Visualizer is initiliazed"
 
-    def theano_function_visualizer(self,function, verbose = 2):
+    def theano_function_visualizer(self,function,verbose = 2):
         """
         This basically prints a visualization of any theano function using the in-built theano
         visualizer. It will save both a interactive html file and a plain old png file. This is 
