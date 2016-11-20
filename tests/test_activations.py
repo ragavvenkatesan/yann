@@ -13,7 +13,9 @@ class TestActivations:
     def Sigmoid(self, x): return 1 / (1 + np.exp(-x))
     def Tanh(self, x): return np.tanh(x)
     def Softmax(self, x): return (np.exp(x).T / np.exp(x).sum(-1)).T
-    def Squared(self, x): return x**2       
+    def Squared(self, x): return x**2
+    def TemperatureSoftmax(self, x, t): return (np.exp(float(x)/t).T / np.exp(float(x)/t).sum(-1)).T
+           
 
     def test_abs(self):         
         theano_result = A.Abs(self.theano_input).eval({self.theano_input: self.numpy_input})
@@ -38,7 +40,12 @@ class TestActivations:
     def test_softmax(self):         
         theano_result = A.Softmax(self.theano_input).eval({self.theano_input: self.numpy_input})
         np_result = self.Softmax(self.numpy_input)
-        assert np.allclose(theano_result, np_result)                            
+        assert np.allclose(theano_result, np_result)  
+
+    def test_temperature_softmax(self):         
+        theano_result = A.Softmax(self.theano_input, temp = 2 ).eval({self.theano_input: self.numpy_input})
+        np_result = self.TemperatereSoftmax(self.numpy_input, t = 2)
+        assert np.allclose(theano_result, np_result)                                     
 
     def test_squared(self):         
         theano_result = A.Squared(self.theano_input).eval({self.theano_input: self.numpy_input})
