@@ -67,16 +67,8 @@ you may start with the :ref:`quick_start` guide or try your hand at the :ref:`tu
     models and build complicated, non-vannilla CNN architectures that are not easy to build with 
     the other toolboxes.
 
-.. _Lasagne: https://github.com/Lasagne/Lasagne
-.. _Keras: http://keras.io/
-.. _Caffe: http://caffe.berkeleyvision.org/
-.. _Blocks: https://blocks.readthedocs.io/en/latest/
-.. _Installation Guide: _setup
-.. _gitter: https://gitter.im/yann-users/Lobby
-.. _google groups: https://groups.google.com/forum/#!forum/yann-users
-.. _theano: http://theano.readthedocs.io
-
 .. _getting_started: 
+
 Getting Started
 ===============
 
@@ -91,6 +83,7 @@ The following will help you get quickly acquinted with Yann.
    organization
 
 .. _quick_start:
+
 Quick Start 
 ===========    
 
@@ -256,3 +249,12 @@ Indices of functions and modules
 
 * :ref:`genindex`
 * :ref:`modindex`
+
+.. _Lasagne: https://github.com/Lasagne/Lasagne
+.. _Keras: http://keras.io/
+.. _Caffe: http://caffe.berkeleyvision.org/
+.. _Blocks: https://blocks.readthedocs.io/en/latest/
+.. _Installation Guide: _setup
+.. _gitter: https://gitter.im/yann-users/Lobby
+.. _google groups: https://groups.google.com/forum/#!forum/yann-users
+.. _theano: http://theano.readthedocs.io
