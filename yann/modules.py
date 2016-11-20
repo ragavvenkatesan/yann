@@ -141,9 +141,15 @@ class visualizer(module):
         if verbose >=3:
             print "... creating visualizations of computational graph"   
         filename = self.root + '/computational_graphs/static/' + function.name 
-        static_theano_print(function, filename + '.png')
-        # dynamic_theano_print(function, filename + '.html') # this is not working for something is 
+        # this try and except is bad coding, but this seems to be OS dependent and I don't want to 
+        # bother with this.
+        try:
+            static_theano_print(function, filename + '.png')
+            dynamic_theano_print(function, filename + '.html') # this is not working for something is 
                                                 # wrong with path. Refer todo on top of the code.
+        except:
+            if verbose >= 3:
+                print "... Something is wrong with the setup of installers for pydot and d3viz"
 
 class resultor(module):
     """
