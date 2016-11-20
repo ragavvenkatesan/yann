@@ -15,29 +15,17 @@ def generator (activation):
         assert np.allclose(theano_result, np_result)       
     return test
 
-class TestActivations():
-    
-    def Abs(self, x):
-        return np.abs(x)
-
-    def ReLU(self, x):
-        return x * (x > 0)
-
-    def Sigmoid(self, x):
-        return 1 / (1 + np.exp(-x))
-
-    def Tanh(self, x):
-        return np.tanh(x)
-
-    def Softmax(self, x):
-        return (np.exp(x).T / np.exp(x).sum(-1)).T
-
-    def Squared(self, x):
-        return x**2        
-
+class TestActivations:
     def setup_method(self):
         test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']            
         for activation in test_activations:
             test_name = 'test_' + activation
             test = generator(activation)
-            setattr(self,test_name, test)
+            setattr(self,test_name, test)    
+    def Abs(self, x): return np.abs(x)
+    def ReLU(self, x): return x * (x > 0)
+    def Sigmoid(self, x): return 1 / (1 + np.exp(-x))
+    def Tanh(self, x): return np.tanh(x)
+    def Softmax(self, x): return (np.exp(x).T / np.exp(x).sum(-1)).T
+    def Squared(self, x): return x**2        
+
