@@ -26,37 +26,43 @@ class TestActivations:
     def test_abs(self):         
         theano_result = A.Abs(self.theano_input).eval({self.theano_input: self.numpy_input})
         np_result = self.Abs(self.numpy_input)
+        assert theano_result.shape() == np_result.shape()                
         assert np.allclose(theano_result, np_result)
 
     def test_relu(self):         
         theano_result = A.ReLU(self.theano_input).eval({self.theano_input: self.numpy_input})
         np_result = self.ReLU(self.numpy_input)
+        assert theano_result.shape() == np_result.shape()                
         assert np.allclose(theano_result, np_result)      
 
     def test_sigmoid(self):         
         theano_result = A.Sigmoid(self.theano_input).eval({self.theano_input: self.numpy_input})
         np_result = self.Sigmoid(self.numpy_input)
+        assert theano_result.shape() == np_result.shape()                
         assert np.allclose(theano_result, np_result)        
 
     def test_tanh(self):         
         theano_result = A.Tanh(self.theano_input).eval({self.theano_input: self.numpy_input})
         np_result = self.Tanh(self.numpy_input)
+        assert theano_result.shape() == np_result.shape()                
         assert np.allclose(theano_result, np_result)    
 
     def test_softmax(self):         
         theano_result = A.Softmax(self.theano_input).eval({self.theano_input: self.numpy_input})
         np_result = self.Softmax(self.numpy_input)
+        assert theano_result.shape() == np_result.shape()        
         assert np.allclose(theano_result, np_result)  
 
     def test_temperature_softmax(self):   
         t = np.asarray(np.random.uniform(2, 10, 1),dtype = theano.config.floatX)     
         theano_result = A.Softmax(self.theano_input, 
                                           temp = t ).eval({self.theano_input: self.numpy_input})
-        np_result = self.Softmax(self.numpy_input, t = t)
-        assert thenao_result.shape() == np_result.shape()
+        np_result = self.Softmax(self.numpy_input, temp = t)
+        assert theano_result.shape() == np_result.shape()
         assert np.allclose(theano_result, np_result)                                     
 
     def test_squared(self):         
         theano_result = A.Squared(self.theano_input).eval({self.theano_input: self.numpy_input})
         np_result = self.Squared(self.numpy_input)
+        assert theano_result.shape() == np_result.shape()                
         assert np.allclose(theano_result, np_result)     
