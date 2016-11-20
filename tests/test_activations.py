@@ -49,10 +49,11 @@ class TestActivations:
         assert np.allclose(theano_result, np_result)  
 
     def test_temperature_softmax(self):   
-        t = np.asarray(np.random.uniform(2, 10, 1),dtype = theano.tensor.floatX)     
+        t = np.asarray(np.random.uniform(2, 10, 1),dtype = theano.config.floatX)     
         theano_result = A.Softmax(self.theano_input, 
                                           temp = t ).eval({self.theano_input: self.numpy_input})
         np_result = self.Softmax(self.numpy_input, t = t)
+        assert thenao_result.shape() == np_result.shape()
         assert np.allclose(theano_result, np_result)                                     
 
     def test_squared(self):         
