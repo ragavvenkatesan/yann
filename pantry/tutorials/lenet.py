@@ -87,7 +87,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "softmax",
                     origin = "dot_product_2",
                     num_classes = 10,
-                    activation = 'softmax',
+                    activation = ('softmax' , 2),
                     verbose = verbose
                     )
 
@@ -98,7 +98,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     datastream_origin = 'data', 
                     verbose = verbose
                     )
-
     # objective provided by classifier layer               
     # nll-negative log likelihood, 
     # cce-categorical cross entropy, 

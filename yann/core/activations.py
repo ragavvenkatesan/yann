@@ -79,7 +79,7 @@ def Softmax(x, temp = 1):
     """
     if temp != 1:
         expo = T.exp(x / float(temp))
-        return expo / T.addbroadcast(expo.sum(axis=1),1)
+        return expo / expo.sum(axis=-1)
     else:
         return T.nnet.softmax(x)               
    
