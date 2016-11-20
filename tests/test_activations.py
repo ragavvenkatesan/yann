@@ -4,7 +4,6 @@ import numpy as np
 import theano.tensor as T
 import yann.core.activations as A
 
-@pytest.fixture
 def test_generator (activation):
     def test(self):
         theano_input = T.matrix()
