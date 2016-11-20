@@ -144,8 +144,11 @@ class visualizer(module):
         # this try and except is bad coding, but this seems to be OS dependent and I don't want to 
         # bother with this.
         try:
-            static_theano_print(function, filename + '.png')
-            dynamic_theano_print(function, filename + '.html') # this is not working for something is 
+            static_theano_print(fct = function, outfile = filename + '.png', 
+                                                            print_output_file = False,
+                                                            var_with_name_simple = True)
+            dynamic_theano_print(fct = function, outfile = filename + '.html') 
+                                                # this is not working for something is 
                                                 # wrong with path. Refer todo on top of the code.
         except:
             if verbose >= 3:
@@ -205,7 +208,6 @@ class resultor(module):
 
         if not hasattr(self, 'root'): raise Exception('root variable has not been provided. \
                                             Without a root folder, no save can be performed')
-
         if not os.path.exists(self.root):
             if verbose >= 3:
                 print "... Creating a root directory for save files"
