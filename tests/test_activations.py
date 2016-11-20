@@ -3,6 +3,7 @@ import numpy as np
 import theano.tensor as T
 import yann.core.activations as A
 
+@pytest.fixture(scope='module')
 def generator (activation):
     def test(self):
         theano_input = T.matrix()
@@ -14,32 +15,29 @@ def generator (activation):
         assert np.allclose(theano_result, np_result)       
     return test
 
-def Abs(self, x):
-    return np.abs(x)
+class TestActivations():
+    
+    def Abs(self, x):
+        return np.abs(x)
 
-def ReLU(self, x):
-    return x * (x > 0)
+    def ReLU(self, x):
+        return x * (x > 0)
 
-def Sigmoid(self, x):
-    return 1 / (1 + np.exp(-x))
+    def Sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
 
-def Tanh(self, x):
-    return np.tanh(x)
+    def Tanh(self, x):
+        return np.tanh(x)
 
-def Softmax(self, x):
-    return (np.exp(x).T / np.exp(x).sum(-1)).T
+    def Softmax(self, x):
+        return (np.exp(x).T / np.exp(x).sum(-1)).T
 
-def Squared(self, x):
-    return x**2        
+    def Squared(self, x):
+        return x**2        
 
-def setUp():
-    test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']            
-    for activation in test_activations:
-        test_name = 'test_' + activation
-        test = test_generator(activation)
-        setattr(__globals__,test_name, test)
-"""  
-if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestActivations)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-"""
+    def setup_method(self):
+        test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']            
+        for activation in test_activations:
+            test_name = 'test_' + activation
+            test = generator(activation)
+            setattr(self,test_name, test)
