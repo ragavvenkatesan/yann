@@ -7,7 +7,9 @@ class TestActivations:
     @classmethod
     def setup_class(self):
         self.theano_input = T.matrix()
-        self.numpy_input = np.random.uniform(-4, 4, (5,5))  # Create some 5X1 matrix randomly     
+        self.numpy_input = np.random.uniform(-4, 4, (5,5))  # Create some 5X5 matrix randomly
+        self.softmax_input = np.random.uniform(-4, 4, (5,1))  # Create some 5X1 matrix randomly     
+             
     def Abs(self, x): return np.abs(x)
     def ReLU(self, x): return x * (x > 0)
     def Sigmoid(self, x): return 1 / (1 + np.exp(-x))
@@ -15,7 +17,7 @@ class TestActivations:
     def Softmax(self, x, temp = 1):
         if temp != 1:
             expo = np.exp(x / float(temp))
-            return expo / expo.sum(axis=1),1)
+            return expo / expo.sum(axis=1)
         else:
             return (np.exp(x).T / np.exp(x).sum(-1)).T   
     def Squared(self, x): return x**2
@@ -54,6 +56,6 @@ class TestActivations:
         assert np.allclose(theano_result, np_result)                                     
 
     def test_squared(self):         
-        theano_result = A.Squared(self.theano_input).eval({self.theano_input: self.numpy_input})
-        np_result = self.Squared(self.numpy_input)
+        theano_result = A.Squared(self.theano_input).eval({self.theano_input: self.softmax_input})
+        np_result = self.Squared(self.softmax_input)
         assert np.allclose(theano_result, np_result)     
