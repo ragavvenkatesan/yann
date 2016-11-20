@@ -11,11 +11,7 @@ class TestActivations:
         self.numpy_input = np.asarray(np.random.uniform(-4, 4, (5,5)),dtype=theano.config.floatX)  
         # Create some 5X5 matrix randomly     
 
-    def Elu(self, x, alpha = 1):
-        if x > 0: 
-            return x
-        else:
-            return alpha * (np.exp(x) - 1) 
+    def Elu(self, x, alpha = 1): return np.where(x > 0, x, alpha * (np.exp(x) - 1)) 
     def Abs(self, x): return np.abs(x)
     def ReLU(self, x): return x * (x > 0)
     def Sigmoid(self, x): return 1 / (1 + np.exp(-x))
@@ -78,4 +74,3 @@ class TestActivations:
         np_result = self.Squared(self.numpy_input)
         assert theano_result.shape == np_result.shape                
         assert np.allclose(theano_result, np_result)     
-
