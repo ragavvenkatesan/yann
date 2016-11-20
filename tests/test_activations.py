@@ -18,9 +18,9 @@ class TestActivations:
     def Softmax(self, x, temp = 1):
         if temp != 1:
             expo = np.exp(x / float(temp))
-            return expo / expo.sum(axis = 1)
+            return expo / expo.sum(axis = 1, keepdims=True)
         else:
-            return np.exp(x) / np.exp(x).sum(axis = 1)  
+            return np.exp(x) / np.exp(x).sum(axis = 1, keepdims=True)  
     def Squared(self, x): return x**2
 
     def test_abs(self):         
