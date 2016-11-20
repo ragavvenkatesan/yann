@@ -7,12 +7,17 @@ class TestActivations:
     @classmethod
     def setup_class(self):
         self.theano_input = T.matrix()
-        self.numpy_input = np.random.uniform(-4, 4, (5,))  # Create some 5X1 matrix randomly     
+        self.numpy_input = np.random.uniform(-4, 4, (5,5))  # Create some 5X1 matrix randomly     
     def Abs(self, x): return np.abs(x)
     def ReLU(self, x): return x * (x > 0)
     def Sigmoid(self, x): return 1 / (1 + np.exp(-x))
     def Tanh(self, x): return np.tanh(x)
-    def Softmax(self, x): return (np.exp(x).T / np.exp(x).sum(-1)).T
+    def Softmax(self, x, temp = 1):
+        if temp != 1:
+            expo = np.exp(x / float(temp))
+            return expo / expo.sum(axis=1),1)
+        else:
+            return (np.exp(x).T / np.exp(x).sum(-1)).T   
     def Squared(self, x): return x**2
     def TemperatureSoftmax(self, x, t): return (np.exp(float(x)/t).T / np.exp(float(x)/t).sum(-1)).T           
 
@@ -41,9 +46,11 @@ class TestActivations:
         np_result = self.Softmax(self.numpy_input)
         assert np.allclose(theano_result, np_result)  
 
-    def test_temperature_softmax(self):         
-        theano_result = A.Softmax(self.theano_input, temp = 2 ).eval({self.theano_input: self.numpy_input})
-        np_result = self.TemperatereSoftmax(self.numpy_input, t = 2)
+    def test_temperature_softmax(self):   
+        t = np.random.uniform(2, 10, 1)     
+        theano_result = A.Softmax(self.theano_input, 
+                                          temp = t ).eval({self.theano_input: self.numpy_input})
+        np_result = self.Softmax(self.numpy_input, t = t)
         assert np.allclose(theano_result, np_result)                                     
 
     def test_squared(self):         
