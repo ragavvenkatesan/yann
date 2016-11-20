@@ -1,9 +1,25 @@
-"""
-TODO:
-    Need to add elu and parameterized relu activations.
-"""
+
 import theano.tensor as T
 from math import floor
+    
+#### Exponential linear unit
+def Elu(x, alpha = 1):
+    """ 
+    Exponential Linear Units. 
+    
+    Applies point-wise ela to the input supplied. ``alpha`` is defualt to ``0``. 
+    Supplying a value to ``alpha`` would make this a leay Elu. 
+    
+    Args:
+        x: could be a ``theano.tensor`` or a ``theano.shared`` or ``numpy`` arrays or 
+            ``python lists``.             
+        alpha: should be a ``float``. Default is ``1``.
+        
+    Returns: 
+        same as input: returns a point-wise rectified output.        
+    """ 
+    y = T.nnet.elu(x,alpha = alpha)
+    return(y)
 
 #### rectified linear unit
 def ReLU(x, alpha = 0):
