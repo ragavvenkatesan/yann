@@ -27,9 +27,9 @@ That does not compromise Yann of any of its features. It is still a good choice 
 running pre-trained models and build complicated, non-vannilla CNN architectures that are not easy 
 to build with the other toolboxes.This will also be useful for industry when teting out prototypes.
 
-There is a [documentation](http://yann.readthedocs.io/en/latest/) page that has some details on how
+There is a [documentation](http://www.yann.network) page that has some details on how
 to run the code and how to use it. For a quick start into the toolbox, you can use this 
-[guide](http://yann.readthedocs.io/en/latest/#quick-start).
+[guide](http://www.yann.network/en/latest/#quick-start).
 
 Thanks for using the code, hope you had fun.
 Ragav Venkatesan
