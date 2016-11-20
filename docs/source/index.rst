@@ -44,6 +44,8 @@ you may start with the :ref:`quick_start` guide or try your hand at the :ref:`tu
     :target: https://groups.google.com/forum/#!forum/yann-users
     :alt: Google Groups        
 
+.. image:: https://badges.frapsoft.com/os/v1/open-source.svg?v=103
+
 .. warning ::
 
     Yann is currently under its early phases and is presently undergoing massive development. 
