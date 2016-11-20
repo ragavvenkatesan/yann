@@ -7,7 +7,7 @@ class TestActivations:
     @classmethod
     def setup_class(self):
         self.theano_input = T.matrix()
-        self.numpy_input = np.random.uniform(-4, 4, (5, 1))  # Create some 5X5 matrix randomly     
+        self.numpy_input = np.random.uniform(-4, 4, (5,))  # Create some 5X1 matrix randomly     
     def Abs(self, x): return np.abs(x)
     def ReLU(self, x): return x * (x > 0)
     def Sigmoid(self, x): return 1 / (1 + np.exp(-x))
