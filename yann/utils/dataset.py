@@ -723,6 +723,7 @@ def preprocessing( data, height, width, channels, args):
 def check_type(data, type):
 	"""
 	This checks and sets data as whatever the type is.
+
 	Args:
 		data: Whatever is the data. Numpy format usually.
 		type: Whichever type to test and set.
@@ -1137,7 +1138,8 @@ class setup_dataset (object):
 def cook_mnist(  verbose = 1,
 				 **kwargs):
 	"""
-	Wrapper to cook mnist dataset. Will take as input:
+	Wrapper to cook mnist dataset. Will take as input,
+
 	Args:
 		save_directory: which directory to save the cooked dataset onto.
 		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
@@ -1188,7 +1190,8 @@ def cook_mnist(  verbose = 1,
 def cook_mnist_multi_load(  verbose = 1, **kwargs):
 	"""
 	Testing code, mainly.
-	Wrapper to cook mnist dataset. Will take as input:
+	Wrapper to cook mnist dataset. Will take as input,
+	
 	Args:
 		save_directory: which directory to save the cooked dataset onto.
 		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
