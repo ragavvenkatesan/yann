@@ -8,6 +8,8 @@ class TestActivations:
     def setup_class(self):
         self.theano_input = T.matrix()
         self.numpy_input = np.random.uniform(-4, 4, (5,5))  # Create some 5X5 matrix randomly
+        self.softmax_input = np.random.uniform(-4, 4, (5,5))  # Create some 5X5 matrix randomly
+        
 
     def Abs(self, x): return np.abs(x)
     def ReLU(self, x): return x * (x > 0)
@@ -50,8 +52,8 @@ class TestActivations:
     def test_temperature_softmax(self):   
         t = np.random.uniform(2, 10, 1)     
         theano_result = A.Softmax(self.theano_input, 
-                                          temp = t ).eval({self.theano_input: self.numpy_input})
-        np_result = self.Softmax(self.numpy_input, t = t)
+                                          temp = t ).eval({self.theano_input: self.softmax_input})
+        np_result = self.Softmax(self.softmax_input, t = t)
         assert np.allclose(theano_result, np_result)                                     
 
     def test_squared(self):         
