@@ -10,13 +10,9 @@ def mlp ( dataset, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                                        # false, polyak, nesterov
                 "momentum_params"     : (0.9, 0.95, 30),      
-                    # (mom_start, momentum_end, momentum_end_epoch)                                                           
                 "regularization"      : (0.0001, 0.0001),       
-                        # l1_coeff, l2_coeff, decisiveness (optional)                                
                 "optimizer_type"      : 'adagrad',                
-                                        # sgd, adagrad, rmsprop, adam 
                 "id"                  : "main"
                         }
 
@@ -27,12 +23,9 @@ def mlp ( dataset, verbose = 1 ):
                             "id"        : 'data'
                     }
 
-
-    # intitialize the network
     net = network(   borrow = True,
                      verbose = verbose )                       
     
-    # or you can add modules after you create the net.
     net.add_module ( type = 'optimizer',
                      params = optimizer_params, 
                      verbose = verbose )
@@ -41,7 +34,6 @@ def mlp ( dataset, verbose = 1 ):
                      params = dataset_params,
                      verbose = verbose )
 
-    # add an input layer 
     net.add_layer ( type = "input",
                     id = "input",
                     verbose = verbose, 
@@ -49,7 +41,6 @@ def mlp ( dataset, verbose = 1 ):
                                                  # the time. 
                     mean_subtract = True )
     
-    # add first convolutional laye
     net.add_layer ( type = "dot_product",
                     origin = "input",
                     id = "dot_product_1",
@@ -79,13 +70,8 @@ def mlp ( dataset, verbose = 1 ):
                     origin = "softmax",
                     verbose = verbose
                     )
-    # objective provided by classifier layer               
-    # nll-negative log likelihood, 
-    # cce-categorical cross entropy, 
-    # bce-binary cross entropy,
-    # hinge-hinge loss 
+
     learning_rates = (0.05, 0.01, 0.001)  
-    # (annealing, initial_learning_rate, ft_learnint_rate)
 
     net.cook( optimizer = 'main',
               objective_layer = 'nll',

@@ -2,9 +2,15 @@ from yann.network import network
 
 def lenet5 ( dataset= None, verbose = 1 ):             
     """
-    This function is a demo example of lenet5  from the infamous paper by Yann LeCun. 
+    This function is a demo example of lenet5 from the infamous paper by Yann LeCun. 
     This is an example code. You should study this code rather than merely run it.  
+    
+    Warning:
+        This is not the exact implementation but a modern re-incarnation.
 
+    Args: 
+        dataset: Supply a dataset.    
+        verbose: Similar to the rest of the dataset.
     """
     optimizer_params =  {        
                 "momentum_type"       : 'false',             
@@ -124,21 +130,25 @@ def lenet5 ( dataset= None, verbose = 1 ):
     net.test(verbose = verbose)
 
 # Advaned version of the CNN
-def lenet_advanced ( dataset= None, verbose = 1 ):             
+def lenet_on_steroids ( dataset= None, verbose = 1 ):             
     """
-    This function is a demo example of lenet5  from the infamous paper by Yann LeCun. 
+    This function is a demo example of lenet5 from the infamous paper by Yann LeCun. 
     This is an example code. You should study this code rather than merely run it.  
+    This is a version with nesterov momentum and rmsprop instead of the typical sgd. 
+    This also has maxout activations for convolutional layers, dropouts on the last
+    convolutional layer and the other dropout layers and this also applies batch norm
+    to all the layers.  So we just spice things up and add a bit of steroids to 
+    :func:`lenet5`. 
 
+    Args: 
+        dataset: Supply a dataset.    
+        verbose: Similar to the rest of the dataset.    
     """
     optimizer_params =  {        
                 "momentum_type"       : 'nesterov',             
-                                        # false, polyak, nesterov
                 "momentum_params"     : (0.5, 0.95, 30),      
-                    # (mom_start, momentum_end, momentum_end_epoch)                                                           
                 "regularization"      : (0.0001, 0.0001),       
-                        # l1_coeff, l2_coeff, decisiveness (optional)                                
                 "optimizer_type"      : 'rmsprop',                
-                                        # sgd, adagrad, rmsprop, adam 
                 "id"                  : "main"
                         }
 
@@ -149,11 +159,9 @@ def lenet_advanced ( dataset= None, verbose = 1 ):
                             "id"        : 'data'
                     }
 
-    # intitialize the network
     net = network(   borrow = True,
                      verbose = verbose )                       
     
-    # or you can add modules after you create the net.
     net.add_module ( type = 'optimizer',
                      params = optimizer_params, 
                      verbose = verbose )
@@ -162,7 +170,6 @@ def lenet_advanced ( dataset= None, verbose = 1 ):
                      params = dataset_params,
                      verbose = verbose )
 
-    # add an input layer 
     net.add_layer ( type = "input",
                     id = "input",
                     verbose = verbose, 
@@ -170,7 +177,6 @@ def lenet_advanced ( dataset= None, verbose = 1 ):
                                                  # the time. 
                     mean_subtract = False )
     
-    # add first convolutional layer
     net.add_layer ( type = "conv_pool",
                     origin = "input",
                     id = "conv_pool_1",
@@ -230,13 +236,8 @@ def lenet_advanced ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
 
-    # objective provided by classifier layer               
-    # nll-negative log likelihood, 
-    # cce-categorical cross entropy, 
-    # bce-binary cross entropy,
-    # hinge-hinge loss 
     learning_rates = (0.001, 0.01, 0.001, 0.0001, 0.00001)  
-    # (annealing, initial_learning_rate, ... )
+
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',
@@ -274,6 +275,7 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    # lenet_advanced (dataset, verbose = 2)
-    lenet5 ( dataset, verbose = 2 ) 
+    lenet5 ( dataset, verbose = 2 )
+    lenet_on_steroids (dataset, verbose = 2)
+     
 
