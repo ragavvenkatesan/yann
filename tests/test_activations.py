@@ -16,7 +16,8 @@ def generator (activation):
     return test
 
 class TestActivations:
-    def setup_method(self):
+    @classmethod
+    def setup_class(cls):
         test_activations = ['Abs','ReLU','Sigmoid','Tanh','Softmax','Squared']            
         for activation in test_activations:
             test_name = 'test_' + activation
