@@ -87,7 +87,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "softmax",
                     origin = "dot_product_2",
                     num_classes = 10,
-                    activation = ('softmax' , 2),
+                    activation = 'softmax',
                     verbose = verbose
                     )
 

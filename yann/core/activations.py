@@ -78,8 +78,10 @@ def Softmax(x, temp = 1):
         same as input: returns a row-wise softmax output of the same shape as the input.
     """
     if temp != 1:
-        expo = T.exp(x / float(temp))
-        return expo / expo.sum(axis=-1)
+        expo = T.exp(x / float(temp)) # at this moment this is mini_batch_size X num_classes.
+        normalizer = T.sum(expo,axis=1,keepdims=True)  # at this moment this is mini_batch_size X 1.
+        T.addbroadcast(normalizer,1)    
+        return expo / normalizer
     else:
         return T.nnet.softmax(x)               
    
