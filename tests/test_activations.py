@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import theano
 import theano.tensor as T
 import yann.core.activations as A
 
