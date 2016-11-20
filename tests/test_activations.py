@@ -1,10 +1,9 @@
-import unittest
 import pytest
 import numpy as np
 import theano.tensor as T
 import yann.core.activations as A
 
-def test_generator (activation):
+def generator (activation):
     def test(self):
         theano_input = T.matrix()
         numpy_input = np.random.uniform(-4, 4, (5, 5))  # Create some 5X5 matrix randomly     
@@ -12,10 +11,10 @@ def test_generator (activation):
         np_test_function = getattr(self, activation) # for every activation write a np version 
         theano_result = theano_test_function(theano_input).eval({theano_input: numpy_input})    
         np_result = np_test_function(numpy_input)            
-        self.assertTrue(np.allclose(theano_result, np_result))      
+        assert np.allclose(theano_result, np_result)       
     return test
 
-class TestActivations(unittest.TestCase):
+class TestActivations():
 
     def Abs(self, x):
         return np.abs(x)

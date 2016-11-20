@@ -14,7 +14,7 @@ version 0.0.1a1
 [![Build Status](https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master)](https://travis-ci.org/ragavvenkatesan/yann)
 [![Codecov Coverage](https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg)](https://codecov.io/gh/ragavvenkatesan/yann)
 [![Requirements Status](https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master)](https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master)
-[Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)]    
+[Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)] 
 
 Originally written for personal research, this toolbox will be most useful for those who are 
 interested in starting deep CNNs to make a fast transition into theano and developing CNNs. It was 
