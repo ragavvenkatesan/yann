@@ -111,7 +111,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
     # hinge-hinge loss 
     learning_rates = (0, 0.1, 0.01, 0.001, 0.0001)  
     # (annealing, initial_learning_rate, ... )
-    net.pretty_print()  # this will print out the network.
+    # net.pretty_print()  # this will print out the network.
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',
