@@ -95,10 +95,12 @@ To install in a quick fashion without much dependencies run the follwing command
 
 .. code-block:: bash
 
-    pip install scipy git+git://github.com/ragavvenkatesan/yann.git
+    pip install git+git://github.com/ragavvenkatesan/yann.git
 
-If there was an error with installing ``skdata``, you might want to install ``numpy`` first and then
-run the above command. 
+If there was an error with installing ``skdata``, you might want to install ``numpy`` and ``scipy``
+independenyly first and then run the above command. Note that this installer, does not enable a lot
+of options of the toolbox for which you need to go through the complete install described at
+:ref:`setup`.
 
 The start and the end of Yann toolbox is the :mod:`network` module. The :mod:`yann.network`.
 ``network`` object is where all the magic happens. Start by importing :mod:`network` and creating a

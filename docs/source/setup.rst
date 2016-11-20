@@ -99,6 +99,17 @@ Libgpuarray
   is now fully supported, cuda backend is strongly recommended for macOS, but for the Pascal 
   architecture of GPUs, libgpuarray seems to be performing much better. 
 
+Theano dependencies for visualization
+-------------------------------------
+
+  Theano needs pydot and graphviz for visualization. So install them using the following commands:
+
+  .. code-block:: bash
+
+    apt-get install graphviz
+    pip install graphviz
+    pip install pydot pydot-ng
+
 Theano 
 ------
 

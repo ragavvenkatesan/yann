@@ -1,6 +1,6 @@
 """
 TODO:
-
+    * Something is wrong with the d3viz visualizer for html printing. The path is weird.
     * Visualizer module needs to make use of mathplotlib and print online graphs of outputs of cost
       and possibly display first layer filters for CNNs
     * Datastream should include fuel interface and also needs interface for COCO, PASCAL and 
@@ -17,6 +17,10 @@ import numpy
 import theano
 import theano.tensor as T
 from theano.ifelse import ifelse
+
+from theano.printing import pydotprint as static_theano_print
+from theano.d3viz import d3viz as dynamic_theano_print # refer todo on top.
+
 
 from utils.dataset import create_shared_memory_dataset
 from utils.dataset import check_type
@@ -61,25 +65,31 @@ class visualizer(module):
     Returns:
         yann.modules.visualizer: A visualizer object.
     """         
-    def __init__( self, visualizer_init_args, verbose = 1 ):
+    def __init__( self, visualizer_init_args, verbose = 2 ):
         if "id" in visualizer_init_args.keys(): 
             id = visualizer_init_args["id"]
         else:
-            id = '-1'
+            id = 'main'
         super(visualizer,self).__init__(id = id, type = 'visualizer')
 
         if verbose >= 3:
             print "... Creating visualizer directories"
 
-        self.root         = visualizer_init_args ["root"]
+        if "root" in visualizer_init_args.keys():            
+            self.root         = visualizer_init_args ["root"] + "/visualizer"
+        else:
+            self.root   = os.getcwd() + '/visualizer'
+
         if "frequency" in visualizer_init_args.keys():
             self.frequency    = visualizer_init_args ["frequency" ]
         else:
             self.frequency    = 1
+
         if "sample_size" in visualizer_init_args.keys():            
             self.sample_size  = visualizer_init_args ["sample_size" ]
         else: 
             self.sample_size  = 16
+
         if "rgb_filters" in visualizer_init_args.keys():
             self.rgb_filters  = visualizer_init_args ["rgb_filters" ]
         else: 
@@ -94,11 +104,10 @@ class visualizer(module):
 
             # loop around and make folders for kernels and layers for visualizer
             for i in xrange(len(self.nkerns)):
-                os.makedirs('../visuals/filters/layer_'+str(i))     
-            
+                os.makedirs('../visuals/filters/layer_'+str(i))                 
         """ 
 
-    # create all directories required for saving visuals
+        # create all directories required for saving visuals
         if not os.path.exists(self.root):
             os.makedirs(self.root)                
 
@@ -110,9 +119,31 @@ class visualizer(module):
 
         if not os.path.exists(self.root + '/data'):
             os.makedirs(self.root + '/data')
+        
+        if not os.path.exists(self.root + '/computational_graphs'):
+            os.makedirs(self.root + '/computational_graphs')
+            os.makedirs(self.root + '/computational_graphs/static')
+            os.makedirs(self.root + '/computational_graphs/dynamic') # refer the todo on top.
     
         if verbose >= 3:
             print "... Visualizer is initiliazed"
+
+    def theano_function_visualizer(self,function, verbose = 2):
+        """
+        This basically prints a visualization of any theano function using the in-built theano
+        visualizer. It will save both a interactive html file and a plain old png file. This is 
+        just a wrapper to theano's visualization tools.
+
+        Args:
+            function: theano function to print
+            verbose: As usual.
+        """
+        if verbose >=3:
+            print "... creating visualizations of computational graph"   
+        filename = self.root + '/computational_graphs/static/' + function.name 
+        static_theano_print(function, filename + '.png')
+        # dynamic_theano_print(function, filename + '.html') # this is not working for something is 
+                                                # wrong with path. Refer todo on top of the code.
 
 class resultor(module):
     """

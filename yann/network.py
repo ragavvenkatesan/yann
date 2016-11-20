@@ -146,6 +146,7 @@ class network(object):
         self.last_optimizer_created = None   
         self.last_objective_layer_created = None
         self.last_classifier_layer_created = None
+        self.layer_activities_created = True        
 
         # create empty dictionary of modules. 
         self.visualizer = {}
@@ -174,6 +175,9 @@ class network(object):
             if argument == 'borrow':
                 self.borrow = value
 
+        if self.last_visualizer_created is None:
+            visualizer_init_args = { }              
+            self.add_module(type = 'visualizer', params=visualizer_init_args, verbose = verbose)
     
     def layer_activity(self, id, index=0, verbose = 2):
         """
@@ -998,6 +1002,7 @@ class network(object):
         self.mini_batch_test = theano.function(
                 inputs = [index],
                 outputs = _errors(self.y),
+                name = 'test',
                 givens={
             self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
             self.y: self.data_y[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})    
@@ -1025,6 +1030,7 @@ class network(object):
         self.mini_batch_predictions = theano.function(
                 inputs = [index],
                 outputs = _predictions,
+                name = 'predict',
                 givens={
             self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]}) 
 
@@ -1052,6 +1058,7 @@ class network(object):
         self.mini_batch_posterior = theano.function(
                 inputs = [index],
                 outputs = _probabilities,
+                name = 'posterior',
                 givens={
             self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})
 
@@ -1078,6 +1085,7 @@ class network(object):
             self.mini_batch_train = theano.function(
                     inputs = [index, self.cooked_optimizer.epoch],
                     outputs = objective,
+                    name = 'train',
                     givens={
             self.x: self.data_x[index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
             self.y: self.data_y[index * self.mini_batch_size:(index + 1) * self.mini_batch_size]},
@@ -1086,6 +1094,7 @@ class network(object):
             self.mini_batch_train = theano.function(
                     inputs = [index, self.cooked_optimizer.epoch],
                     outputs = objective,
+                    name = 'train',                    
                     # profile = True, # uncommenting this line will enable profiling
                     givens={
             self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
@@ -1112,10 +1121,12 @@ class network(object):
         anneal_rate = T.scalar('annealing_rate')
         self.decay_learning_rate = theano.function(
                         inputs=[anneal_rate],          # Just updates the learning rates. 
+                        name = 'annealing',
                         updates={self.learning_rate: self.learning_rate - self.learning_rate * 
                                                                             anneal_rate })
         self.current_momentum = theano.function ( inputs =[self.cooked_optimizer.epoch],
-                                                         outputs = self.cooked_optimizer.momentum ) 
+                                                         outputs = self.cooked_optimizer.momentum,
+                                                         name = 'momentum' ) 
 
     def _create_layer_activities(self, datastream = None, verbose = 2):
         """
@@ -1137,6 +1148,7 @@ class network(object):
            raise Exception ("This needs to be run only after network is cooked")
 
         index = T.lscalar('index')     
+        self.layer_activities_created = True
 
         for id, _layer in self.layers.iteritems():
             if len(_layer.output_shape) == 4:
@@ -1145,6 +1157,7 @@ class network(object):
                     activity = _layer.output
             if self.cooked_datastream.svm is False:   
                 self.layer_activities[id] = theano.function(
+                            name = 'layer_activity_' + id,
                             inputs = [index],
                             outputs = activity,
                             givens={
@@ -1157,6 +1170,7 @@ class network(object):
                                             on_unused_input = 'ignore')
             else:                                                                        
                 self.layer_activities[id] = theano.function(
+                            name = 'layer_activity_' + id,                    
                             inputs = [index],
                             outputs = activity,
                             givens={
@@ -1236,6 +1250,32 @@ class network(object):
         for src, dst in zip(source, destination):
             dst.set_value ( src.get_value (borrow = self.borrow))
 
+    def _cook_visualizer(self, verbose = 2):
+        """
+        This is an internal function that cooks a visualizer
+        Args:
+            verbose: as always
+        """
+        if verbose >= 2:
+            print ".. Cooking visualizer"
+
+        if hasattr(self,'cooked_optimizer'):
+            if verbose >= 3:
+                print "... Saving down visualizations of optimizer"            
+            self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_posterior, 
+                                                                                verbose = verbose)
+            self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_predictions,
+                                                                                verbose = verbose)
+            self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_test, 
+                                                                                verbose = verbose)
+            self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_train, 
+                                                                                verbose = verbose)
+            if self.layer_activities_created is True:
+                for layer in self.layers:
+                    self.cooked_visualizer.theano_function_visualizer(
+                                                        function = self.layer_activities[layer], 
+                                                                                verbose = verbose)
+                    
     def cook(self, verbose = 2, **kwargs):
         """
         This function builds the backprop network, and makes the trainer, tester and validator
@@ -1247,6 +1287,8 @@ class network(object):
                           Default is last optimizer created.
             datastream: Supply which datastream to use.
                             Default is the last datastream created.
+            visualizer: Supply a visualizer to cook with.
+
             objective_layer: Supply the layer id of layer that has the objective function.
                           Default is last objective layer created.
             classifier_layer: supply the layer of classifier.  
@@ -1259,7 +1301,7 @@ class network(object):
 
         """
         if verbose >= 2:
-            print ".. cooking the network"
+            print ".. Cooking the network"
         if verbose >= 3:
             print "... Building the network's objectives, gradients and backprop network"            
 
@@ -1268,6 +1310,11 @@ class network(object):
         else: 
             optimizer = kwargs['optimizer']
 
+        if not 'visualizer' in kwargs.keys():
+            visualizer = self.last_visualizer_created
+        else:
+            visualizer = kwargs['visualizer']
+            
         if not 'datastream' in kwargs.keys():
             datastream = None
         else:
@@ -1357,6 +1404,8 @@ class network(object):
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 
         self.cost = []  
+        self.cooked_visualizer = self.visualizer[visualizer]
+        self._cook_visualizer(verbose = verbose)
         # Cook Resultor.
         # Cook Visualizer.
 
@@ -1415,10 +1464,13 @@ class network(object):
                 count = count - 1
         return prefix_entry
 
-    def pretty_print (self):
+    def pretty_print (self, verbose = 2):
         """
         This method is used to pretty print the network's connections
+        This is going to be deprecated with the use of visualizer module.
         """
+        if verbose >=2:
+            print ".. This method will be deprecated with the implementation of a visualizer"
         input_layers = []
         # collect all begining of streams
         for id, layer in self.layers.iteritems():
