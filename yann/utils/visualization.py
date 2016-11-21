@@ -31,12 +31,14 @@ def draw_network(graph, filename = 'network.pdf', show = False):
         labels [ node ] = node    
         node_size.append ( len(node) * 1000 )
         node_list.append ( node ) 
+        succ_list = []        
         for succ in graph.successors(node):
-            succ_list = []
+            succ_list = []            
             if not _search_list(shells, succ) is True: 
                 succ_list.append(succ)      
         shells.append(succ_list) 
-
+    import pdb
+    pdb.set_trace()
     pos=nx.shell_layout(graph,shells)
     nx.draw_networkx_nodes( G = graph, 
                             pos = pos,
