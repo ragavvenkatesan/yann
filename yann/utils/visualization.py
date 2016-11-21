@@ -10,10 +10,9 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     Nots:
         Takes any format that networkx matplotlib plotter takes.
     """
-    pos=nx.spectral_layout(graph)
+    pos=nx.fruchterman_reingold_layout(graph)
     labels = {}
     node_size = []
-    pos = nx.graphviz_layout(g, prog="dot")
     node_list = []
     for node in graph.nodes(): 
         labels [ node ] = node    
@@ -30,15 +29,5 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     nx.draw_networkx_labels(G = graph, pos = pos , labels = labels)
     plt.savefig(filename)
 
-    """"
-    nx.draw(    graph,
-                pos = pos,
-                node_size = 1000,
-                node_color = 'g',
-                node_shape = 'o',
-                width = 1.0,
-                labels = labels )    
-    """
-    plt.savefig(filename)
     if show == True:
         plt.show()
