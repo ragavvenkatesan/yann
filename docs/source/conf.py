@@ -133,7 +133,7 @@ def linkcode_resolve(domain, info):
         fn = inspect.getsourcefile(obj)
         fn = os.path.relpath(fn, start=os.path.dirname(lasagne.__file__))
         source, lineno = inspect.getsourcelines(obj)
-        return fn, lineno, lineno + len(source) - 1
+        return (fn, lineno, lineno + len(source) - 1)
 
     if domain != 'py' or not info['module']:
         return None
