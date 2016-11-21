@@ -39,10 +39,9 @@ def draw_network(graph, filename = 'network.pdf', show = False):
         if not len(succ_list) == 0:
             shells.append(succ_list) 
 
-    #pos=nx.shell_layout(graph,shells)
-
+    pos=nx.spectral_layout(graph,shells)
     nx.draw_networkx_nodes( G = graph, 
-                            #pos = pos,
+                            pos = pos,
                             node_list = node_list,
                             node_size = node_size,
                             node_color = 'g',
