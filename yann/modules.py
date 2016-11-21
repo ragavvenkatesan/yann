@@ -18,9 +18,16 @@ import theano
 import theano.tensor as T
 from theano.ifelse import ifelse
 
-from theano.printing import pydotprint as static_theano_print
-from theano.d3viz import d3viz as dynamic_theano_print # refer todo on top.
-
+static_printer_import = True
+dynamic_printer_import = True
+try:
+    from theano.printing import pydotprint as static_theano_print
+except:
+    static_printer_import = False
+try:
+    from theano.d3viz import d3viz as dynamic_theano_print # refer todo on top.
+except:
+    dynamic_printer_import = False
 
 from utils.dataset import create_shared_memory_dataset
 from utils.dataset import check_type
@@ -60,6 +67,8 @@ class visualizer(module):
                                     same images also. Default value is 16
                     "rgb_filters": <bool> flag. if True a 3D-RGB rendition of the CNN 
                                     filters is rendered. Default value is False.
+                    "debug_functions" : <bool> visualize train and test and other theano functions.
+                                        default is False. Needs pydot and dv2viz to be installed.
                     "id"         : id of the visualizer
                                 }  
     Returns:
@@ -94,6 +103,11 @@ class visualizer(module):
             self.rgb_filters  = visualizer_init_args ["rgb_filters" ]
         else: 
             self.rgb_filters  = False
+
+        if "debug_functions" in visualizer_init_args.keys():
+            self.debug_functions = visualizer_init_args ["debug_functions"]
+        else:
+            self.debug_functions = False
 
         """ Needs to be done after mini_batch_size is setup. 
             self.shuffle_batch_ind = numpy.arange(self.mini_batch_size)
@@ -149,17 +163,24 @@ class visualizer(module):
         filename = self.root + '/computational_graphs/static/' + function.name 
         # this try and except is bad coding, but this seems to be OS dependent and I don't want to 
         # bother with this.
-        try:
-            static_theano_print(fct = function, outfile = filename + '.' + format, 
-                                                            print_output_file = False,
-                                                            format = format,
+        if static_printer_import is True:
+            try:
+                static_theano_print(fct = function, outfile = filename + '.' + format, 
+                                                                print_output_file = False,
+                                                                format = format,
                                                         var_with_name_simple = short_variable_names)
-            dynamic_theano_print(fct = function, outfile = filename + '.html') 
+            except:
+                if verbose >= 3:
+                    print "... Something is wrong with the setup of installers for pydot"
+        
+        if dynamic_printer_import is True:
+            try:
+                dynamic_theano_print(fct = function, outfile = filename + '.html') 
                                                 # this is not working for something is 
                                                 # wrong with path. Refer todo on top of the code.
-        except:
-            if verbose >= 3:
-                print "... Something is wrong with the setup of installers for pydot and d3viz"
+            except:
+                if verbose >= 3:
+                    print "... Something is wrong with the setup of installers for dv3viz"
 
 class resultor(module):
     """

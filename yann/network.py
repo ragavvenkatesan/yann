@@ -1261,20 +1261,21 @@ class network(object):
         if verbose >= 2:
             print ".. Cooking visualizer"
 
+        if self.cooked_visualizer.
         if hasattr(self,'cooked_optimizer'):
             if verbose >= 3:
                 print "... Saving down visualizations of optimizer"    
+
             self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_test, 
                                                                                 verbose = verbose)
             self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_train, 
                                                                                 verbose = verbose)
-            if print_all is True:
-                self.cooked_visualizer.theano_function_visualizer(
-                                                            function = self.mini_batch_posterior, 
-                                                            verbose = verbose)
-                self.cooked_visualizer.theano_function_visualizer(
-                                                            function = self.mini_batch_predictions,
-                                                            verbose = verbose)
+            self.cooked_visualizer.theano_function_visualizer(
+                                                        function = self.mini_batch_posterior, 
+                                                        verbose = verbose)
+            self.cooked_visualizer.theano_function_visualizer(
+                                                        function = self.mini_batch_predictions,
+                                                        verbose = verbose)
                 if self.layer_activities_created is True:
                     for layer in self.layers:
                         self.cooked_visualizer.theano_function_visualizer(
@@ -1297,7 +1298,7 @@ class network(object):
             objective_layer: Supply the layer id of layer that has the objective function.
                           Default is last objective layer created.
             classifier_layer: supply the layer of classifier.  
-                          Default is the last classifier layer created.      
+                          Default is the last classifier layer created.              
             verbose: Similar to the rest of the toolbox.
 
         TODO: 
