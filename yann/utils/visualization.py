@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import networkx as nx
+from nxpd import draw 
 
 def draw_network(graph, filename = 'network.pdf', show = False):
     """
@@ -14,13 +14,13 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     labels = {}
     for node in graph.nodes(): 
         labels[node] = node
-    nx.draw(    graph,
-                pos = pos,
-                node_size = 1000,
-                node_color = 'g',
-                node_shape = 'o',
-                width = 1.0,
-                labels = labels )
+    draw(   graph,
+            pos = pos,
+            node_size = 1000,
+            node_color = 'g',
+            node_shape = 'o',
+            width = 1.0,
+            labels = labels )
     plt.savefig(filename)
     if show == True:
         plt.show()
