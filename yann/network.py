@@ -333,7 +333,6 @@ class network(object):
                     self.graph.add_node(origin)
                 self.graph.add_edge(origin,id)
 
-        
     def add_module (self, type, params, verbose = 2):
         """
         Use this function to add a module to the net.
