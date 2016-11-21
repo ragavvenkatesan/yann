@@ -1,0 +1,9 @@
+-r requirements.txt
+mock
+scipy>=0.18
+progressbar>=2
+skdata>=0.0.4
+pydot
+pydot-ng
+graphviz
+networkx

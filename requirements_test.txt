@@ -1,0 +1,6 @@
+-r requirements_dev.txt
+pytest
+pytest-cov
+pytest-runner
+coverage
+codecov

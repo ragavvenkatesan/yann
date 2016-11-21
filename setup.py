@@ -23,11 +23,12 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     keywords='convolutional neural networks deep learning',
-    packages=find_packages(exclude=['docs', 'tests']),
+    packages=find_packages(exclude=['docs', 'tests', 'pantry']),
     install_requires=['theano','numpy'],
     extras_require={
-        'dev': ['progressbar', 'skdata', 'scipy', 'sphinx'],
-        'test': ['mock','sphinx_rtd_theme','pytest-cov','pytest-pep8','pytest']
+        'dev': ['progressbar', 'skdata', 'scipy', 'sphinx', 'sphinx_rtd_theme', 'pydot',
+                    'pydot-ng','graphviz','networkx'],
+        'test': ['mock','pytest-cov','pytest-pep8','pytest'],
     },
     # data_files=['_datasets/'],
     setup_requires=['pytest', 'pytest-runner'],
