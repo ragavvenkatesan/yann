@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from nxpd import draw 
 import networkx as nx
 
 def draw_network(graph, filename = 'network.pdf', show = False):
@@ -14,8 +13,8 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     pos=nx.spectral_layout(graph)
     labels = {}
     for node in graph.nodes(): 
-        labels[node] = node
-        
+        labels[node] = node    
+        node_size[node] = len(node) * 1000        
     draw(   graph,
             pos = pos,
             node_size = 1000,
@@ -23,7 +22,7 @@ def draw_network(graph, filename = 'network.pdf', show = False):
             node_shape = 'o',
             width = 1.0,
             labels = labels )    
-    draw ( graph )
+
     plt.savefig(filename)
     if show == True:
         plt.show()

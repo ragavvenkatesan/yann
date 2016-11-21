@@ -6,4 +6,3 @@ pydot
 pydot-ng
 graphviz
 networkx
-nxpd
