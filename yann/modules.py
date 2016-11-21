@@ -171,6 +171,7 @@ class visualizer(module):
         filename = self.root + '/computational_graphs/static/' + function.name 
         # this try and except is bad coding, but this seems to be OS dependent and I don't want to 
         # bother with this.
+
         if static_printer_import is True:
             try:
                 static_theano_print(fct = function, outfile = filename + '.' + format, 

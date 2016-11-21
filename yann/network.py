@@ -174,10 +174,6 @@ class network(object):
 
             if argument == 'borrow':
                 self.borrow = value
-
-        if self.last_visualizer_created is None:
-            visualizer_init_args = { }              
-            self.add_module(type = 'visualizer', params=visualizer_init_args, verbose = verbose)
     
     def layer_activity(self, id, index=0, verbose = 2):
         """
@@ -1315,6 +1311,10 @@ class network(object):
             optimizer = None
         else: 
             optimizer = kwargs['optimizer']
+
+        if self.last_visualizer_created is None:
+            visualizer_init_args = { }              
+            self.add_module(type = 'visualizer', params=visualizer_init_args, verbose = verbose)
 
         if not 'visualizer' in kwargs.keys():
             visualizer = self.last_visualizer_created

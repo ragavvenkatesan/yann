@@ -165,7 +165,7 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
                     "sample_size": 32,
                     "rgb_filters": False,
                     "debug_functions" : True,
-                    "debug_layers": True,   # Since we are on steroids this time, print everything.
+                    "debug_layers": True,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
                         }                      
 
