@@ -21,7 +21,8 @@ installation in one command that will install the basics required to run the too
 the toolbox quickly do the following:
 
 .. code-block:: bash
-  
+
+  pip install -r requirements.txt
   pip install git+git://github.com/ragavvenkatesan/yann.git
 
 If it showed any errors, install ``numpy`` first. ``skdata`` has some issue that requires ``numpy``
@@ -29,7 +30,13 @@ installed first. If you use anaconda, just install the numpy and scipy using ``c
 instead of ``pip install``. This will setup the toolbox for all intentions and purposes.
 
 For a full-fledged installation procedure, don't do the above but run through the following set of 
-instructions. 
+instructions. If you want to install all other supporting features like datasets, visualizers and 
+others, do the following: 
+
+.. code-block:: bash
+
+  pip install -r requirements_full.txt
+  pip install git+git://github.com/ragavvenkatesan/yann.git
 
 Full installation
 =================

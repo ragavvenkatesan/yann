@@ -1,9 +1,4 @@
--r requirements.txt
+-r requirements_full.txt
 mock
-scipy>=0.18
-progressbar>=2
-skdata>=0.0.4
-pydot
-pydot-ng
-graphviz
-networkx
+sphinx
+sphinx_rtd_theme
