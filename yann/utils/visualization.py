@@ -10,10 +10,12 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     Nots:
         Takes any format that networkx matplotlib plotter takes.
     """
+    pos=nx.graphviz_layout(graph,prog='dot')
     labels = {}
     for node in graph.nodes(): 
         labels[node] = node
     nx.draw(    graph,
+                pos = pos,
                 node_size = 1000,
                 node_color = 'g',
                 node_shape = 'o',
