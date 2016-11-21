@@ -326,7 +326,7 @@ class network(object):
         self.last_layer_created = id
 
         if not self.graph is None:
-            attributes = sef.layers[id]._graph_attributes()
+            attributes = self.layers[id]._graph_attributes()
             self.graph.add_node(id,attributes)
             for origin in attributes["origin"]:
                 if not origin in self.graph.nodes():
