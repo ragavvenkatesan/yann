@@ -152,6 +152,7 @@ class visualizer(module):
         try:
             static_theano_print(fct = function, outfile = filename + '.' + format, 
                                                             print_output_file = False,
+                                                            format = format,
                                                         var_with_name_simple = short_variable_names)
             dynamic_theano_print(fct = function, outfile = filename + '.html') 
                                                 # this is not working for something is 
