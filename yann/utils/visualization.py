@@ -12,7 +12,7 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     """
     pos=nx.spectral_layout(graph)
     labels = {}
-    
+    node_size = {}
     for node in graph.nodes(): 
         labels[node] = node    
         node_size[node] = len(node) * 1000       
