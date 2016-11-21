@@ -16,7 +16,7 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     nx.draw(    graph,
                 node_size = 1000,
                 node_color = 'g',
-                node_shape = 'egg'
+                node_shape = 'egg',
                 width = 1.0,
                 labels = labels )
     plt.savefig(filename)
