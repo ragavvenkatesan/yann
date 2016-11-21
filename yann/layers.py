@@ -818,7 +818,7 @@ class conv_pool_layer_2d (layer):
         self.poolsize = poolsize
         self.stride = stride
         self.input_shape = input_shape
-        self.num_neurons = num_neurons
+        self.num_neurons = nkerns
         self.activation = activation
         self.batch_norm = batch_norm
 
