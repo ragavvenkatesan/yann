@@ -2,14 +2,14 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 def draw_network(graph, filename = 'network.pdf', show = False):
-"""
-This is a simple wrapper to the networkx_draw.
-Args:
-    filename: what file to save down as.
-    show: will display the graph on a window. 
-Nots:
-    Takes any format that networkx matplotlib plotter takes.
-"""
+    """
+    This is a simple wrapper to the networkx_draw.
+    Args:
+        filename: what file to save down as.
+        show: will display the graph on a window. 
+    Nots:
+        Takes any format that networkx matplotlib plotter takes.
+    """
     labels = {}
     for node in graph.nodes(): 
         labels[node] = node
