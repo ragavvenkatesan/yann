@@ -1,6 +1,3 @@
-import time 
-from collections import OrderedDict
-
 import imp
 try:
     imp.find_module('progressbar')
@@ -18,6 +15,8 @@ except ImportError:
 if nx_installed is True:
     import networkx as nx
 
+import time 
+from collections import OrderedDict
 
 import numpy
 import theano
@@ -28,7 +27,7 @@ import layers as L
 
 class network(object):
     """
-    TODO:
+    Todo:
 
         * Origin to be taken from another network outside of this one.
         * Need to expand beyond just ``classifier`` type networks.
@@ -196,7 +195,8 @@ class network(object):
 
     def add_layer(self, type, verbose = 2, **kwargs):
         """
-        TODO:
+
+        Todo:
             Need to add the following:
             * Merge Layer
                 - Concatenate
@@ -367,6 +367,7 @@ class network(object):
     def _add_resultor(self, resultor_params, verbose = 2):
         """
         This function is used to add a resultor to the network.
+
         Args:
             resultor_params: parameters for resultor_init_args for resultor modele.
                              Refer to the network or resultor class for details.
@@ -382,6 +383,7 @@ class network(object):
     def _add_visualizer(self, visualizer_params, verbose = 2):
         """
         This function is used to add a visualizer to the network.
+
         Args:
             visualizer_params: parameters for resultor_init_args for visualizer.
                                Refer to the network or visualizer class for details.
@@ -399,6 +401,7 @@ class network(object):
     def _add_optimizer(self, optimizer_params, verbose = 2):
         """
         This function is used to add a optimizer to the network.
+
         Args:
             optimizer_params: parameters for optimizer_init_args for visualizer.
                                Refer to the network or optimizer class for details.
@@ -416,6 +419,7 @@ class network(object):
     def _add_datastream(self, dataset_params, verbose = 2):
         """
         This function is used to add a datastream to the network.
+
         Args:
             visualizer_params: parameters for dataset_init_args for datastream.
                                Refer to the network or datastream class for details.
@@ -432,6 +436,7 @@ class network(object):
     def _add_input_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
         Args:
             options: Basically kwargs supplied to the add_layer function.
             verbose: simiar to everywhere on the toolbox.
@@ -505,6 +510,7 @@ class network(object):
     def _add_conv_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
         Args:
             options: Basically kwargs supplied to the add_layer function.
             verbose: same as everywhere else on the toolbox
@@ -665,6 +671,7 @@ class network(object):
     def _add_dot_product_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
         Args:
             options: Basically kwargs supplied to the add_layer function.
             verbose: simiar to everywhere on the toolbox.
@@ -786,6 +793,7 @@ class network(object):
     def _add_classifier_layer(self, id, options, verbose = 2): 
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
         Args:
             options: Basically kwargs supplied to the add_layer function.
             verbose: simiar to everywhere on the toolbox.
@@ -1209,6 +1217,7 @@ class network(object):
     def _cook_datastream (self, verbose = 2):
         """
         Drag details from datastream to the network.add_layer
+
         Args:
             verbose: Just as always
         """
@@ -1233,6 +1242,7 @@ class network(object):
     def _cache_data (self, type = 'train', batch = 0, verbose = 2):
         """
         This just calls the datastream's ``set_data`` method and sets the appropriate variables.
+
         Args:
             type: ``'train'``, ``'test'``, ``'valid'``
             batch: Batch number
@@ -1250,6 +1260,7 @@ class network(object):
     def _copy_params (self, source, destination):
         """
         Internal function that copies paramters maintaining theano shared nature. 
+
         Args:
             source: Source
             destination: destination
@@ -1263,6 +1274,7 @@ class network(object):
     def _cook_visualizer(self, verbose = 2):
         """
         This is an internal function that cooks a visualizer
+
         Args:
             cook_all: <bool> True will print all layer activities and stuff. False only prints  
                      test and train. 
@@ -1311,8 +1323,8 @@ class network(object):
                           Default is the last classifier layer created.              
             verbose: Similar to the rest of the toolbox.
 
-        TODO: 
-            * This is going to be tricky to build, when I am building non-classifier networks.
+        Todo: 
+            This is going to be tricky to build, when I am building non-classifier networks.
 
 
         """
@@ -1435,7 +1447,7 @@ class network(object):
         This function prints the cost of the current epoch, learning rate and momentum of the 
         network at the moment. 
         
-        TODO:
+        Todo:
             This needs to to go to visualizer.
 
         Args:
@@ -1462,6 +1474,7 @@ class network(object):
     def _print_layer (self, id, prefix = " ", nest = True, last = True):
         """
         Internal funcrion used for recursion purposes.
+
         Args:
             id: ``id`` of the layer that is to be used as a root to print.
             prefix : string.. what to print first
@@ -1777,6 +1790,7 @@ class network(object):
     def test(self, show_progress = True, verbose = 2):
         """
         This function is used for producing the testing accuracy.
+
         Args:
             verbose: As usual
         """
