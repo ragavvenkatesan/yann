@@ -128,7 +128,11 @@ class visualizer(module):
         if verbose >= 3:
             print "... Visualizer is initiliazed"
 
-    def theano_function_visualizer(self,function,short_variable_names = False,verbose = 2):
+    def theano_function_visualizer( self,
+                                    function,
+                                    short_variable_names = False,
+                                    format ='pdf',
+                                    verbose = 2):
         """
         This basically prints a visualization of any theano function using the in-built theano
         visualizer. It will save both a interactive html file and a plain old png file. This is 
@@ -136,6 +140,8 @@ class visualizer(module):
 
         Args:
             function: theano function to print
+            short_variable_names: If True will print variables in short.
+            format: Any pydot supported format. Default is 'pdf'
             verbose: As usual.
         """
         if verbose >=3:
@@ -144,7 +150,7 @@ class visualizer(module):
         # this try and except is bad coding, but this seems to be OS dependent and I don't want to 
         # bother with this.
         try:
-            static_theano_print(fct = function, outfile = filename + '.png', 
+            static_theano_print(fct = function, outfile = filename + '.' + format, 
                                                             print_output_file = False,
                                                         var_with_name_simple = short_variable_names)
             dynamic_theano_print(fct = function, outfile = filename + '.html') 
