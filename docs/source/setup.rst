@@ -175,9 +175,8 @@ Networkx
   
   You can install ``networkx`` as follows:
 
-
-  ..code-block:: bash
-
+  .. code-block:: bash
+   
     pip install networkx
 
 

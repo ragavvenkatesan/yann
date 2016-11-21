@@ -19,8 +19,10 @@ def draw_network(graph, filename = 'network.pdf', show = False):
         graph: Supply a networkx graph object. NNs are all DiGraphs. 
         filename: what file to save down as.
         show: will display the graph on a window. 
-    Nots:
-        Takes any format that networkx matplotlib plotter takes.
+    Notes:
+        Takes any format that networkx plotter takes. This is not ready to be used. Still buggy 
+        sometimes.
+        Rudra is working on developing this further internally.
     """
 
     labels = {}
