@@ -104,7 +104,7 @@ class layer(object):
             out["num_neurons"] = str(self.num_neurons)
         else:
             out["num_neurons"] = "N/A"
-        if type(activation) is tuple:            
+        if type(self.activation) is tuple:            
             out["activation"] = self.activation[0]
         else:
             out["activation"] = self.activation
