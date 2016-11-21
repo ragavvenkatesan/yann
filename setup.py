@@ -27,7 +27,7 @@ setup(
     install_requires=['theano','numpy'],
     extras_require={
         'dev': ['progressbar', 'skdata', 'scipy', 'sphinx', 'sphinx_rtd_theme', 'pydot',
-                    'pydot-ng','graphviz','networkx'],
+                    'pydot-ng','graphviz','networkx','matplotlib'],
         'test': ['mock','pytest-cov','pytest-pep8','pytest'],
     },
     # data_files=['_datasets/'],

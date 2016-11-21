@@ -44,6 +44,10 @@ class layer(object):
         self.destination = [] # only None for now during initialization. 
         self.output = None
         self.output_shape = None
+        self.num_neurons = None
+        self.activation = 'identity'
+        self.dropout_rate = 0
+        self.batch_norm = False
         # Every layer must have these four properties.
         if verbose >= 3:
             print "... Initializing a new layer " + self.id + " of type " + self.type        
@@ -84,6 +88,30 @@ class layer(object):
             self.prefix = prefix
         
         return prefix
+
+    def _graph_attributes(self):
+        """
+        This is an internal function that returns attributes as a dictionary so that I can add
+        it to the networkx graph output.
+        """ 
+        out = {}
+        out["id"] = self.id
+        if not self.output_shape is None:
+            out["output_shape"] = str(self.output_shape)
+        else:
+            out["output_shape"] = "N/A"
+        if not self.num_neurons is None:
+            out["num_neurons"] = str(self.num_neurons)
+        else:
+            out["num_neurons"] = "N/A"
+        if type(activation) is tuple:            
+            out["activation"] = self.activation[0]
+        else:
+            out["activation"] = self.activation
+        out["dropout_rate"] = str(self.dropout_rate)
+        out["batch_norm"] = str(self.batch_norm)
+        out["origin"] = self.origin
+        return out
 
 def _dropout(rng, params, dropout_rate):
     """
@@ -206,6 +234,7 @@ class input_layer (layer):
         
         if verbose >=3: 
             print "... Input layer is created with output shape " + str(self.output_shape)
+
 
 class dropout_input_layer (input_layer):
     """
@@ -345,6 +374,10 @@ class classifier_layer (layer):
         self.probabilities = T.log(self.p_y_given_x)
         self.output = self.p_y_given_x 
         self.output_shape = (input_shape[0], num_classes)
+        self.num_neurons = num_classes
+        self.activation = activation
+        self.dropout_rate = 0
+        self.batch_norm = False
 
         if verbose >=3: 
             print "... Classifier layer is created with output shape " + str(self.output_shape)
@@ -561,6 +594,10 @@ class dot_product_layer (layer):
         if verbose >=3: 
             print "... Dot Product layer is created with output shape " + str(self.output_shape)        
 
+        self.num_neurons = num_neurons
+        self.activation = activation
+        self.batch_norm = batch_norm
+
 class dropout_dot_product_layer (dot_product_layer):
     """
     This class is the typical dropout neural hidden layer and batch normalization layer. Called 
@@ -622,6 +659,7 @@ class dropout_dot_product_layer (dot_product_layer):
             self.output = _dropout(rng = rng,
                                 params = self.output,
                                 dropout_rate = dropout_rate)                                          
+        self.dropout_rate = dropout_rate
         if verbose >=3: 
             print "... Dropped out"
 
@@ -780,6 +818,9 @@ class conv_pool_layer_2d (layer):
         self.poolsize = poolsize
         self.stride = stride
         self.input_shape = input_shape
+        self.num_neurons = num_neurons
+        self.activation = activation
+        self.batch_norm = batch_norm
 
     def print_layer(self, prefix = " " , nest = False, last = True):
         """
@@ -880,7 +921,9 @@ class dropout_conv_pool_layer_2d(conv_pool_layer_2d):
                                 params = self.output,
                                 dropout_rate = dropout_rate)  
         if verbose >=3: 
-            print "... Dropped out"                                
+            print "... Dropped out" 
+        self.dropout_rate = dropout_rate
+
 
 class objective_layer(layer):
     """

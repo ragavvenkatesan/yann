@@ -20,6 +20,7 @@ from theano.ifelse import ifelse
 
 static_printer_import = True
 dynamic_printer_import = True
+
 try:
     from theano.printing import pydotprint as static_theano_print
 except:

@@ -1,9 +1,3 @@
-"""
-TODO:
-
-    Something is wrong with finetune cook.
-"""
-
 import time 
 from collections import OrderedDict
 
@@ -13,10 +7,18 @@ try:
     progressbar_installed = True
 except ImportError:
     progressbar_installed = False
-
 if progressbar_installed is True:
     import progressbar
     
+try:
+    imp.find_module('networkx')
+    nx_installed = True
+except ImportError:
+    nx_installed = False
+if nx_installed is True:
+    import networkx as nx
+
+
 import numpy
 import theano
 import theano.tensor as T 
@@ -131,6 +133,10 @@ class network(object):
         if verbose >= 1:
             print ". Initializing the network"
 
+        if nx_installed is True:
+            self.graph = nx.DiGraph()
+        else:
+            self.graph = None  
 
         self.layers = {} # create an empty dictionary that we can populate later.
         self.active_params = []
@@ -192,16 +198,17 @@ class network(object):
         """
         TODO:
             Need to add the following:
+            * Merge Layer
+                - Concatenate
+                - Embed
+                - Add, max, mean
             * Inception Layer.
             * LSTM layer.
             * MaskedConvPool Layer.
             * ...
-
-        TODO:
             * when ``type`` is ``'objective'``, I need to allow taking a loss between two layers to
               be propagated. Right now ``origin`` has to be a classifier layer only. This needs to 
               change to be able to implement generality and mentor networks.
-
             * basically objective has to be a flag for an error function if origin is a tuple.
               
 
@@ -316,8 +323,17 @@ class network(object):
             self.active_params = self.active_params + self.dropout_layers[id].params 
             # .. Note :: using append is troublesome here.
 
-        self.last_layer_created = id            
+        self.last_layer_created = id
 
+        if not self.graph is None:
+            attributes = sef.layers[id]._graph_attributes()
+            self.graph.add_node(id,attributes)
+            for origin in attributes["origin"]:
+                if not origin in self.graph.nodes():
+                    self.graph.add_node(origin)
+                self.graph.add_edge(origin,id)
+
+        
     def add_module (self, type, params, verbose = 2):
         """
         Use this function to add a module to the net.
@@ -487,7 +503,6 @@ class network(object):
         # create a whole new stream, whether used or not.
         # users who do not need dropout need not know about this. muahhahaha 
         self.layers[id].origin.append(datastream_id)
-
     def _add_conv_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
