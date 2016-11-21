@@ -15,10 +15,12 @@ def _search_list(list, search):
 def draw_network(graph, filename = 'network.pdf', show = False):
     """
     This is a simple wrapper to the networkx_draw.
+
     Args:
         graph: Supply a networkx graph object. NNs are all DiGraphs. 
         filename: what file to save down as.
         show: will display the graph on a window. 
+        
     Notes:
         Takes any format that networkx plotter takes. This is not ready to be used. Still buggy 
         sometimes.

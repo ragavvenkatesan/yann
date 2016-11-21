@@ -89,7 +89,7 @@ numpy/scipy
     conda install numpy
     conda install scipy
 
-  to set these up. If not, yann installer will ``pip install numpy scipy`` it anyway as part of its 
+  to set these up. If not, yann installer will ``pip install numpy scipy`` anyway as part of its 
   requirements.
 
 Theano
@@ -211,11 +211,10 @@ Dependencies for visualization
 
   Theano needs pydot and graphviz for visualization. We use theano's visualization for printing
   theano functions as shown 
-  `here <https://github.com/ragavvenkatesan/yann/blob/master/docs/source/pantry/samples/train.pdf>`_
-   .
+  `here <https://github.com/ragavvenkatesan/yann/blob/master/docs/source/pantry/samples/train.pdf>`_.
    
-  These visualizations are highly useful during debugging. If you the capability of producing these
-  for your network, install the dependencises using the following commands:
+  These visualizations are highly useful during debugging. If you want the capability of producing 
+  these for your networks, install the dependencises using the following commands:
 
   .. code-block:: bash
 
