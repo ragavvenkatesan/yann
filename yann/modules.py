@@ -1,5 +1,5 @@
 """
-TODO:
+Todo:
     * Something is wrong with the d3viz visualizer for html printing. The path is weird.
     * Visualizer module needs to make use of mathplotlib and print online graphs of outputs of cost
       and possibly display first layer filters for CNNs
@@ -17,6 +17,8 @@ import numpy
 import theano
 import theano.tensor as T
 from theano.ifelse import ifelse
+from utils.dataset import create_shared_memory_dataset
+from utils.dataset import check_type
 
 static_printer_import = True
 dynamic_printer_import = True
@@ -29,9 +31,6 @@ try:
     from theano.d3viz import d3viz as dynamic_theano_print # refer todo on top.
 except:
     dynamic_printer_import = False
-
-from utils.dataset import create_shared_memory_dataset
-from utils.dataset import check_type
 
 class module(object):
     """
@@ -75,6 +74,7 @@ class visualizer(module):
                                      function will combine all these layers and print directly.)
                     "id"         : id of the visualizer
                                 }  
+
     Returns:
         yann.modules.visualizer: A visualizer object.
     """         
@@ -257,11 +257,11 @@ class resultor(module):
 class optimizer(module):    
     """
 
-    TODO:
+    Todo:
 
         * AdaDelta
 
-    WARNING:
+    Warning:
         Adam is not fully tested.
         
     Optimizer is an important module of the toolbox. Optimizer creates the protocols required 
@@ -567,7 +567,7 @@ class datastream(module):
     Returns: 
         dataset: A dataset module object that has the details of loader and other things.
 
-    TODO:
+    Todo:
         * Datastream should work with Fuel perhaps ?
         * Support HDf5 perhaps
 
@@ -749,7 +749,7 @@ class datastream(module):
         Load the initial training batch of data on to ``data_x`` and ``data_y`` variables
         and create shared memories. 
         
-        TODO:
+        Todo:
             I am assuming that training has the largest number of data. This is immaterial when
             caching but during set_data routine, I need to be careful. 
         Args:

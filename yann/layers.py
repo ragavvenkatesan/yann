@@ -1,5 +1,5 @@
 """
-TODO:
+Todo:
 
     * LSTM / GRN layers
     * A concatenate layer
@@ -943,8 +943,7 @@ class objective_layer(layer):
         l2_coeff: Coefficient to weight L2 by.
         verbose: Similar to the rest of the toolbox.
 
-    TODO:
-
+    Todo:
         The loss method needs to change in input. 
 
     Notes:

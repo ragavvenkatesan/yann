@@ -763,6 +763,7 @@ def create_shared_memory_dataset(data_xy,
 		verbose: Similar to verbose everywhere else.
 		svm: default is ``False``. If ``True``, we also return a ``shared_svm_y`` for 
 				 max-margin type last layer.
+				 
 	Returns:
 		theano.shared: ``shared_x, shared_y`` is ``svm`` is ``False``. If not, ``shared_x, 
 		                shared_y, shared_svm_y`` 
