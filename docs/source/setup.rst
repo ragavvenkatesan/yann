@@ -12,7 +12,7 @@ but should be forward compatible unless theano makes a drastic release.
 .. _Theano: http://deeplearning.net/software/theano/ 
 .. _theano toolbox documentation: http://deeplearning.net/software/theano/install.html
 
-
+***********************
 Quick fire Installation
 =======================
 
@@ -38,8 +38,13 @@ others, do the following:
   pip install -r requirements_full.txt
   pip install git+git://github.com/ragavvenkatesan/yann.git
 
+*****************
 Full installation
 =================
+
+Dependencies
+============
+
 
 Python + pip / conda
 --------------------
@@ -62,19 +67,6 @@ C compiler
   writing this documentation. You can download older versions of xcode and command line tools 
   `here <https://developer.apple.com/download/more/>`_.
 
-Cuda 
-----
-
-  If you need the capability of a Nvidia GPU, you will need a suitable `CUDA toolkit and drivers
-  <https://developer.nvidia.com/cuda-toolkit>`_. Some compoenents of the code depend
-  on `cuDNN <https://developer.nvidia.com/cudnn>`_, so `cuDNN <https://developer.nvidia.com/cudnn>`_
-  is highly recommended.
-  
-  Nvidia has the awesome cuDNN library that is free as long as you
-  register as a `developer <https://developer.nvidia.com/cudnn>`_. I highly recommend using this.
-  If you didn't install CUDA, you can still run the toolbox, but it will be much slower running on a
-  CPU.
-
 numpy/scipy 
 -----------
 
@@ -92,32 +84,15 @@ numpy/scipy
   to install these. If you use anaconda, use
 
   .. code-block:: bash
- 
+
+    conda install mkl
     conda install numpy
     conda install scipy
-  
 
-  to set these up. If not, yann installer will pip install it anyway.
+  to set these up. If not, yann installer will ``pip install numpy scipy`` it anyway as part of its 
+  requirements.
 
-Libgpuarray
------------
-
-  `libgpuarray <http://deeplearning.net/software/libgpuarray/installation.html>`_  
-  is now fully supported, cuda backend is strongly recommended for macOS, but for the Pascal 
-  architecture of GPUs, libgpuarray seems to be performing much better. 
-
-Theano dependencies for visualization
--------------------------------------
-
-  Theano needs pydot and graphviz for visualization. So install them using the following commands:
-
-  .. code-block:: bash
-
-    apt-get install graphviz
-    pip install graphviz
-    pip install pydot pydot-ng
-
-Theano 
+Theano
 ------
 
 Once all the pre-requisites are setup, install `theano`_ version 0.8 or higher.
@@ -152,11 +127,59 @@ If you use the `libgpuarray <http://deeplearning.net/software/libgpuarray/instal
 backend instead of the CUDA backend, use ``device=cuda0`` or whichever device you want to run on.
 If you are using CUDA backed use ``device=gpu0``. Refer theano documentation for more on this.
 
+Optional Dependencies
+=====================
 
-Addtional Dependencies
-======================
+These are some optional dependencies that yann doesn't use directly but are used by yann's 
+dependencies like theano. I highly recommend these before installing theano.
+
+Cuda 
+----
+
+  This is an optional dependency. If you need the capability of a Nvidia GPU, you will need a 
+  suitable `CUDA toolkit and drivers <https://developer.nvidia.com/cuda-toolkit>`_. If you do not  
+  have this dependency installed, you won't be able to run the code on Nvidia GPUs.Some compoenents
+  of the code depend on `cuDNN <https://developer.nvidia.com/cudnn>`_ for speeding things up, so 
+  `cuDNN <https://developer.nvidia.com/cudnn>`_ is highly recommended although optional.
+  Nvidia has the awesome cuDNN library that is free as long as you
+  register as a `developer <https://developer.nvidia.com/cudnn>`_. 
+  If you didn't install CUDA, you can still run the toolbox, but it will be much slower running on a
+  CPU.
+
+
+Libgpuarray
+-----------
+
+  `libgpuarray <http://deeplearning.net/software/libgpuarray/installation.html>`_  
+  is now fully supported, cuda backend is strongly recommended for macOS, but for the Pascal 
+  architecture of GPUs, ``libgpuarray`` seems to be performing much better. This is also an 
+  optional but highly recommended tool 
+
+
+Additional Dependencies
+==============================
 
 Yann also needs the following as additional dependencies that opens up additional features. 
+
+Networkx
+--------
+
+  For those who are networking geeks, a neural network is a directed acyclic graph. So Yann 
+  internally has the ability for every network to create a ``networkx`` style graph and do things 
+  with it if you need. `Networkx <https://networkx.github.io/>`_ is a tremendously popular 
+  tool for network realted tasks and we are still exploring and testing its capabilities. This might 
+  only ever be used for visualization of network purposes, but some researcher somewhere might 
+  use this once in the future networks get sophisticated, we never know. This is an optional 
+  dependency, not having this dependency doesn't affect the toolbox, except for the purposes it is 
+  needed for. 
+  
+  You can install ``networkx`` as follows:
+
+
+  ..code-block:: bash
+
+    pip install networkx
+
 
 skdata
 ------
@@ -184,11 +207,24 @@ progressbar
     
   If you don't have progressbar, yann will simply ignore it and print progress on terminal.
 
-matplotlib 
-----------
+Dependencies for visualization
+------------------------------
+
+  Theano needs pydot and graphviz for visualization. We use theano's visualization for printing
+  theano functions as shown 
+  `here <https://github.com/ragavvenkatesan/yann/blob/master/docs/source/pantry/samples/train.pdf>`_
+   .
+   These visualizations are highly useful during debugging. If you the capability of producing these
+   for your network, install the dependencises using the following commands:
+
+  .. code-block:: bash
+
+    apt-get install graphviz
+    pip install graphviz
+    pip install pydot pydot-ng
 
   Not needed now, but might need in future. 
-  Yann will switch from openCV to matplotlib or browser matplotlib. Install it by 
+  Yann will switch from openCV to matplotlib or browser matplotlib for visualization. Install it by 
 
   .. code-block:: bash
 
@@ -198,7 +234,7 @@ cPickle and gzip
 ----------------
 
   Most often the case is that these come with the python installation, 
-  if not please install them. 
+  if not please install them.  Yann uses these for saving down models and such.
 
 
 Yann Toolbox Setup

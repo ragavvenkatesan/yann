@@ -6,3 +6,4 @@ pydot
 pydot-ng
 graphviz
 networkx
+matplotlib
