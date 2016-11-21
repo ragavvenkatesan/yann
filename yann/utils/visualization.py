@@ -11,7 +11,7 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     Nots:
         Takes any format that networkx matplotlib plotter takes.
     """
-    pos=pydot_layout(graph,prog='neato')
+    pos=graphviz_layout(graph,prog='neato')
 
     labels = {}
     node_size = []
