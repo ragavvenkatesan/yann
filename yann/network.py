@@ -1250,7 +1250,7 @@ class network(object):
         for src, dst in zip(source, destination):
             dst.set_value ( src.get_value (borrow = self.borrow))
 
-    def _cook_visualizer(self, cook_all = False, verbose = 2):
+    def _cook_visualizer(self, print_all = False, verbose = 2):
         """
         This is an internal function that cooks a visualizer
         Args:
@@ -1268,7 +1268,7 @@ class network(object):
                                                                                 verbose = verbose)
             self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_train, 
                                                                                 verbose = verbose)
-            if cool_all is True:
+            if print_all is True:
                 self.cooked_visualizer.theano_function_visualizer(
                                                             function = self.mini_batch_posterior, 
                                                             verbose = verbose)
