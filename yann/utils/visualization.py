@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
 
 def draw_network(graph, filename = 'network.pdf', show = False):
     """
@@ -11,7 +10,6 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     Nots:
         Takes any format that networkx matplotlib plotter takes.
     """
-    pos=graphviz_layout(graph,prog='neato')
 
     labels = {}
     node_size = []
@@ -20,7 +18,7 @@ def draw_network(graph, filename = 'network.pdf', show = False):
         labels [ node ] = node    
         node_size.append ( len(node) * 1000 )
         node_list.append ( node )       
-
+    pos=nx.shell_layout(graph,node_list)
     nx.draw_networkx_nodes( G = graph, 
                             pos = pos,
                             node_list = node_list,
