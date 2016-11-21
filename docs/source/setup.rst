@@ -213,8 +213,9 @@ Dependencies for visualization
   theano functions as shown 
   `here <https://github.com/ragavvenkatesan/yann/blob/master/docs/source/pantry/samples/train.pdf>`_
    .
-   These visualizations are highly useful during debugging. If you the capability of producing these
-   for your network, install the dependencises using the following commands:
+   
+  These visualizations are highly useful during debugging. If you the capability of producing these
+  for your network, install the dependencises using the following commands:
 
   .. code-block:: bash
 
