@@ -10,7 +10,7 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     Nots:
         Takes any format that networkx matplotlib plotter takes.
     """
-    pos=nx.fruchterman_reingold_layout(graph)
+    pos=nx.pydot_layout(graph,prog='neato')
     labels = {}
     node_size = []
     node_list = []
