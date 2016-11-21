@@ -133,15 +133,15 @@ def linkcode_resolve(domain, info):
         fn = inspect.getsourcefile(obj)
         fn = os.path.relpath(fn, start=os.path.dirname(lasagne.__file__))
         source, lineno = inspect.getsourcelines(obj)
-        return (fn, lineno, lineno + len(source) - 1)
+        linespec = "#L%d-L%d" % (lineno, len(surce)-1)        
+        return fnlineno + linespec
 
     if domain != 'py' or not info['module']:
-        return (None, None, None)
+        return None
 
-    filename, lineno_begin, lineno_end = info['module'].replace('.', '/') + '.py'
-    linespec = "#L%d-L%d" % (lineno_begin, lineno_end)    
+    conca = info['module'].replace('.', '/') + '.py'
     tag = 'master' if 'dev' in release else ('v' + release)
-    return "https://github.com/ragavvenkatesan/yann/blob/master/%s" % (filename + linespec) 
+    return "https://github.com/ragavvenkatesan/yann/blob/master/%s" % (conca) 
     # this is wrong, I mean I am always showing the code only in the master branch.
     # For some reason, I don't know how to write master here for release candidate.'
 
