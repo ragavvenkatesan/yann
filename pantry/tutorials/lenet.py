@@ -112,8 +112,10 @@ def lenet5 ( dataset= None, verbose = 1 ):
     learning_rates = (0, 0.1, 0.01, 0.001, 0.0001)  
     # (annealing, initial_learning_rate, ... )
     # net.pretty_print()  # this will print out the network.
-    import pdb
-    pdb.set_trace()    
+    
+    from yann.utils.visualization import draw_network    
+    draw_network(net.graph)   
+
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',
