@@ -136,7 +136,7 @@ def linkcode_resolve(domain, info):
         return (fn, lineno, lineno + len(source) - 1)
 
     if domain != 'py' or not info['module']:
-        return None
+        return (None, None, None)
 
     filename, lineno_begin, lineno_end = info['module'].replace('.', '/') + '.py'
     linespec = "#L%d-L%d" % (lineno_begin, lineno_end)    
