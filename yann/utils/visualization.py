@@ -15,7 +15,7 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     node_size = {}
     for node in graph.nodes(): 
         labels[node] = node    
-        node_size[node] = len(node) * 1000       
+        node_size[node] = len(node) * 10       
 
     nx.draw(    graph,
                 pos = pos,
