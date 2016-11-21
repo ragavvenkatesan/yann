@@ -138,7 +138,7 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
     This also has maxout activations for convolutional layers, dropouts on the last
     convolutional layer and the other dropout layers and this also applies batch norm
     to all the layers.  So we just spice things up and add a bit of steroids to 
-    :func:`lenet5`. 
+    :func:`lenet5`.  This also introduces a visualizer module usage.
 
     Args: 
         dataset: Supply a dataset.    
@@ -159,6 +159,16 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
                             "id"        : 'data'
                     }
 
+    visualizer_params = {
+                    "root"       : '.',
+                    "frequency"  : 1,
+                    "sample_size": 32,
+                    "rgb_filters": False,
+                    "debug_functions" : True,
+                    "debug_layers": True,   # Since we are on steroids this time, print everything.
+                    "id"         : 'main'
+                        }                      
+
     net = network(   borrow = True,
                      verbose = verbose )                       
     
@@ -168,6 +178,10 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
 
     net.add_module ( type = 'datastream', 
                      params = dataset_params,
+                     verbose = verbose )
+
+    net.add_module ( type = 'visualizer',
+                     params = visualizer_params,
                      verbose = verbose )
 
     net.add_layer ( type = "input",
@@ -184,7 +198,7 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
-                    batch_norm = True,                    
+                    batch_norm = True,                                        
                     verbose = verbose
                     )
 
@@ -275,7 +289,7 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    lenet5 ( dataset, verbose = 2 )
+    #lenet5 ( dataset, verbose = 2 )
     lenet_on_steroids (dataset, verbose = 2)
      
 

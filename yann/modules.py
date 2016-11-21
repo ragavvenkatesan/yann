@@ -69,6 +69,9 @@ class visualizer(module):
                                     filters is rendered. Default value is False.
                     "debug_functions" : <bool> visualize train and test and other theano functions.
                                         default is False. Needs pydot and dv2viz to be installed.
+                    "debug_layers" : <bool> Will print layer activities from input to that layer
+                                     output. ( this is almost always useless because test debug 
+                                     function will combine all these layers and print directly.)
                     "id"         : id of the visualizer
                                 }  
     Returns:
@@ -108,6 +111,11 @@ class visualizer(module):
             self.debug_functions = visualizer_init_args ["debug_functions"]
         else:
             self.debug_functions = False
+
+        if "debug_layers" in visualizer_init_args.keys():
+            self.debug_layers = visualizer_init_args ["debug_layers"]
+        else:
+            self.debug_layers = False            
 
         """ Needs to be done after mini_batch_size is setup. 
             self.shuffle_batch_ind = numpy.arange(self.mini_batch_size)
