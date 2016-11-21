@@ -17,8 +17,10 @@ def draw_network(graph, filename = 'network.pdf', show = False):
     for node in graph.nodes(): 
         labels [ node ] = node    
         node_size.append ( len(node) * 1000 )
-        node_list.append ( node )       
+        node_list.append ( node )               
     pos=nx.shell_layout(graph,node_list)
+    import pdb
+    pdb.set_trace()
     nx.draw_networkx_nodes( G = graph, 
                             pos = pos,
                             node_list = node_list,
