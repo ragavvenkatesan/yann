@@ -112,6 +112,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
     learning_rates = (0, 0.1, 0.01, 0.001, 0.0001)  
     # (annealing, initial_learning_rate, ... )
     # net.pretty_print()  # this will print out the network.
+    import pdb
+    pdb.set_trace()    
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',
@@ -164,8 +166,8 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
                     "frequency"  : 1,
                     "sample_size": 32,
                     "rgb_filters": False,
-                    "debug_functions" : True,
-                    "debug_layers": True,  # Since we are on steroids this time, print everything.
+                    "debug_functions" : False,
+                    "debug_layers": False,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
                         }                      
 
@@ -289,7 +291,7 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    #lenet5 ( dataset, verbose = 2 )
-    lenet_on_steroids (dataset, verbose = 2)
+    lenet5 ( dataset, verbose = 2 )
+    #lenet_on_steroids (dataset, verbose = 2)
      
 

@@ -111,6 +111,7 @@ class layer(object):
         out["dropout_rate"] = str(self.dropout_rate)
         out["batch_norm"] = str(self.batch_norm)
         out["origin"] = self.origin
+        out["type"] = self.type
         return out
 
 def _dropout(rng, params, dropout_rate):
