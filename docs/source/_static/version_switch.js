@@ -4,9 +4,7 @@
  var url = window.location.href;
 
   // If doc is run localy
-  var root_url = url.substring(0, url.search('/' + yann_dir)) + '/';
-
-  var yann_dir = 'doc'; // directory containing theanodoc
+  var yann_dir = 'doc'; // directory containing  
   var root_url = url.substring(0, url.search('/' + yann_dir)) + '/';
 
   function build_vswitch() {
