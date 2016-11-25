@@ -22,8 +22,7 @@ the toolbox quickly do the following:
 
 .. code-block:: bash
 
-  pip install -r requirements.txt
-  pip install git+git://github.com/ragavvenkatesan/yann.git
+   pip install git+git://github.com/ragavvenkatesan/yann.git
 
 If it showed any errors, install ``numpy`` first. ``skdata`` has some issue that requires ``numpy``
 installed first. If you use anaconda, just install the numpy and scipy using ``conda install`` 

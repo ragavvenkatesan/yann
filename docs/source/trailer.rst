@@ -57,7 +57,7 @@ it after. Thus after being rechristened as Yann, this toolbox was born.
 What is in the toolbox ? 
 ========================
 
-This toolbox started with the beautiful `theanos tutorials`_. 
+This toolbox started with the beautiful `theano tutorials`_. 
 The code that is here in yann has the following popular features that all deep net 
 toolboxes seem to have. Among many others there are:
 
@@ -88,11 +88,15 @@ toolboxes seem to have. Among many others there are:
    - Polyak Momentum[3]
    - Nesterov's Accelerated Gradients [4]
    - rmsProp [5]
-   - Adam [8]   
+   - *Adam [8]   
    - Maxout and Mixed out Networks [6]
-   - FitNets [9]
+   - *FitNets and MentorNets[9,15]
    - VGG-19 [10]
-   - InceptionNet [11]
+   - *Inception Module [11]
+   - Batch Normalization [12]
+   - ReLU / ELU and other activations supported through theano [13,14]
+
+Those marked * are not fully tested yet. 
 
 .. rubric:: References
 
@@ -122,3 +126,15 @@ toolboxes seem to have. Among many others there are:
 .. [#]   Szegedy, C., Liu, W., Jia, Y., Sermanet, P., Reed, S., Anguelov, D., Erhan, D., Vanhoucke, 
          V. and Rabinovich, A., 2015. Going deeper with convolutions. In Proceedings of the IEEE 
          Conference on Computer Vision and Pattern Recognition (pp. 1-9).
+.. [#]   Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network 
+         training by reducing internal covariate shift." arXiv preprint arXiv:1502.03167 (2015).
+.. [#]   Nair, Vinod, and Geoffrey E. Hinton. "Rectified linear units improve restricted boltzmann 
+         machines." Proceedings of the 27th International Conference on Machine Learning (ICML-10). 
+         2010.
+.. [#]   Clevert, Djork-Arné, Thomas Unterthiner, and Sepp Hochreiter. "Fast and accurate deep 
+         network learning by exponential linear units (elus)." arXiv preprint arXiv:1511.07289 
+         (2015).
+.. [#]   Venkatesan, Ragav, and Baoxin Li. "Diving deeper into mentee networks." arXiv preprint 
+         arXiv:1604.08220 (2016).
+         
+
