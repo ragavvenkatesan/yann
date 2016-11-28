@@ -10,7 +10,7 @@ Structure of the Yann network
 The core of the yann toolbox and its operations are built around the :mod:`yann.network.network`
 class, which is present in the file ``yann/network.py``. The above figure shows the organization of 
 the :mod:`yann.network.network` class. The :func:`add_xxxx` methods add either a layer or module as 
-nomenclature. The network class can hold various layers and modules in various connections and 
+nomenclature states. The network class can hold various layers and modules in various connections and 
 architecture that are added using the ``add_`` methods. 
 
 
@@ -34,11 +34,6 @@ A :mod:`network` pbject can quite simply be initialized by calling
 
     from yann.network import network
     net = network()
-
-
-
-
-
 
 Each layer takes in as argument While prepping the network for learning, we 
 can (or may) need only certain modules and layers. The process of preparing the network by selecting 
