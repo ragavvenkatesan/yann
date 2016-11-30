@@ -31,6 +31,6 @@ setup(
         'test': ['mock','pytest-cov','pytest-pep8','pytest'],
     },
     # data_files=['_datasets/'],
-    setup_requires=['pytest', 'pytest-runner'],
-    tests_require=['pytest', 'pytest-runner', 'coverage', 'codecov'],    
+    setup_requires=[],
+    tests_require=['pytest', 'pytest-runner','pytest', 'pytest-runner', 'coverage', 'codecov'],    
 )
