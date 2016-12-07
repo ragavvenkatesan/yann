@@ -6,10 +6,11 @@ Yet Another Neural Network Toolbox
 ==================================    
  
 Welcome to the Yann Toolbox. It is a toolbox for building and learning convolutional neural 
-networks, built on top of `theano`_. To setup the toolbox refer the :ref:`setup` guide. Once setup, 
-you may start with the :ref:`quick_start` guide or try your hand at the :ref:`tutorial` and the 
-guide to :ref:`getting_started`. A user base discussion group is setup on `gitter`_ and also on 
-`google groups`_.
+networks, built on top of `theano`_. This toolbox is a homage to Prof. 
+`Yann LeCun <http://yann.lecun.com/>`_, one of the earliest poineers of CNNs. To setup the toolbox 
+refer the :ref:`setup` guide. Once setup, you may start with the :ref:`quick_start` guide or try 
+your hand at the :ref:`tutorial` and the guide to :ref:`getting_started`. A user base discussion 
+group is setup on `gitter`_ and also on `google groups`_.
 
 
 .. image:: https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master
@@ -50,7 +51,7 @@ guide to :ref:`getting_started`. A user base discussion group is setup on `gitte
 
     Yann is currently under its early phases and is presently undergoing massive development. 
     Expect a lot of changes. Unittests are only starting to be written, therefore the 
-    coverage and travis builds are not to be completely trusted. The toolbox will be 
+    coverage and travis build passes are not to be completely trusted. The toolbox will be 
     formalized in the future but at this moment, the authorship, coverage and maintanence of the 
     toolbox is under extremely limited manpower.
 
@@ -58,14 +59,16 @@ guide to :ref:`getting_started`. A user base discussion group is setup on `gitte
     
     While, there are more formal and wholesome toolboxes that are similar and have a much larger 
     userbase such as `Lasagne`_, `Keras`_, `Blocks`_ and `Caffe`_, this toolbox is designed 
-    differently, simpler and versatile. Yann is designed as a supplement to an upcoming book on 
-    Convolutional Neural Networks and also the toolbox of choice for a deep learning course. 
+    differently. This is much simpler and versatile. Yann is designed as a supplement to an 
+    upcoming beginner's book on Convolutional Neural Networks and also the toolbox of choice for a 
+    introductory course on deep learning for computer vision. 
     
     Because of this reason, Yann is specifically designed to be intuitive and easy to use for 
     beginners. That does not compromise Yann of any of its core purpose - to be able to build CNNs 
     in a plug and play fashion. It is still a good choice for a toolbox for running pre-trained 
     models and build complicated, non-vannilla CNN architectures that are not easy to build with 
-    the other toolboxes.
+    the other toolboxes. It is also a good choice for researchers and industrial scientists, who 
+    want to quickly prototype networks and test them before developing production scale models.
 
 .. _getting_started: 
 

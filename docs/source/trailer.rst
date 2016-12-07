@@ -3,14 +3,14 @@
 The story behind Yann 
 =====================
 
-I am `Ragav Venkatesan`_, the author of Yann. I started doing convolutional neural networks
-in the begining of 2015. I am not that big in c++, so I started looking at `theano`_ and started 
+I am `Ragav Venkatesan`_, the creator of Yann. I started building convolutional neural networks
+in early 2015. I began with `theano`_ and started 
 following and implementing their tutorials. As I started reading new papers and coding new 
 technologies, I slowly integrated them into what was soon developing into a toolbox. My lab mates at
 `Visual Representaiton and Processing Group`_ also started getting into CNN research and started 
 using my toolbox so I formalized it and hosted it on `GitHub`_. Originally it was a completely 
-unstructured and completely demodularized toolbox and went with the name samosa. The original 
-codebase still exists in older commits on the git. This toolbox still at its core is the 
+unstructured and completely demodularized toolbox and went with the name 'samosa'. The original 
+codebase still exists in older commits on the git. This toolbox still at its core is still the 
 theano tutorials from which it was built.
 
 After considerable effort being put in to make this toolbox modular, and testing it out and after 
@@ -19,8 +19,8 @@ something that I am now proud to share with the rest of DL community with.
 
 This toolbox is also slated to be used with the course CSE 591: Introduction to Deep Learning for 
 Computer Vision at ASU in Spring of 2017. With more features being added into the toolbox, I figured
-I would clean it up, formalize it and write some good documentation so that interested people could use 
-it after. Thus after being rechristened as Yann, this toolbox was born.
+I would clean it up, formalize it and write some good documentation so that interested people could 
+use it after. Thus after being rechristened as Yann, this toolbox was born.
 
 .. warning ::
     
@@ -39,20 +39,6 @@ it after. Thus after being rechristened as Yann, this toolbox was born.
     from `theano tutorials`_. Theano tutorials also will help understand `theano`_ which is the 
     backend I used for this toolbox. As the course begins, I will add more tutorials with notes that
     will make this more useful and interactive.
-
-.. _theano: http://deeplearning.net/software/theano/ 
-.. _GitHub: https://github.com/ragavvenkatesan/yann
-.. _Ragav Venkatesan: http://www.public.asu.edu/~rvenka10/
-.. _Visual Representaiton and Processing Group: http://www.public.asu.edu/~bli24/Research.html
-.. _Lasagne: https://github.com/Lasagne/Lasagne
-.. _Keras: http://keras.io/
-.. _Caffe: http://caffe.berkeleyvision.org/
-.. _Blocks: https://blocks.readthedocs.io/en/latest/
-.. _theano tutorials: http://deeplearning.net/software/theano/tutorial/examples.html 
-.. _skdata's: https://jaberg.github.io/skdata/
-.. _Fuel: https://github.com/mila-udem/fuel
-.. _Sebastien Bubeck's: https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/
-
 
 What is in the toolbox ? 
 ========================
@@ -136,5 +122,18 @@ Those marked * are not fully tested yet.
          (2015).
 .. [#]   Venkatesan, Ragav, and Baoxin Li. "Diving deeper into mentee networks." arXiv preprint 
          arXiv:1604.08220 (2016).
+         
+.. _theano: http://deeplearning.net/software/theano/ 
+.. _GitHub: https://github.com/ragavvenkatesan/yann
+.. _Ragav Venkatesan: http://www.public.asu.edu/~rvenka10/
+.. _Visual Representaiton and Processing Group: http://www.public.asu.edu/~bli24/Research.html
+.. _Lasagne: https://github.com/Lasagne/Lasagne
+.. _Keras: http://keras.io/
+.. _Caffe: http://caffe.berkeleyvision.org/
+.. _Blocks: https://blocks.readthedocs.io/en/latest/
+.. _theano tutorials: http://deeplearning.net/software/theano/tutorial/examples.html 
+.. _skdata's: https://jaberg.github.io/skdata/
+.. _Fuel: https://github.com/mila-udem/fuel
+.. _Sebastien Bubeck's: https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/
          
 

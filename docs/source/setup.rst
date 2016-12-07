@@ -226,11 +226,22 @@ Dependencies for visualization
 
     pip insall matplotlib
   
-cPickle and gzip
-----------------
+cPickle, gzip and hdf5py 
+------------------------
 
-  Most often the case is that these come with the python installation, 
+  Most often the case is that `cPickle` and `gzip` these come with the python installation, 
   if not please install them.  Yann uses these for saving down models and such.
+
+  For datasets, at the moment, yann uses cpickle. In the future, yann will migrate to hdf5 for 
+  datasets. Install hdf5py by running either,
+
+  .. code-block:: bash
+    conda install h5py
+
+  or, 
+
+  .. code-block:: bash
+    pip install h5py
 
 
 Yann Toolbox Setup

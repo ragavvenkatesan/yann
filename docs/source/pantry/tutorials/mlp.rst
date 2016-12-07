@@ -112,12 +112,12 @@ term 'era' to represent each set of epochs running with one learning rate.
 annealing parameter. ``learning_rates`` is naturally of length that is one higher than ``epochs``.
 ``show_progress`` will print a progress bar for each epoch. ``validate_after_epochs`` will perform 
 validation after such many epochs on a different validation dataset. The full code for this tutorial
-with additional commentary can be found in the file ``pantry.tutorials.mlp.py``. Run the code as 
-following:
+with additional commentary can be found in the file ``pantry.tutorials.mlp.py``. If you have 
+toolbox cloned or downloaded or just the tutorials downloaded, Run the code as,
 
 .. code-block:: python
 
-    from pantry.examples.mlp import mlp
+    from pantry.tutorials.mlp import mlp
     mlp(dataset = 'some dataset created')
 
 or simply,
