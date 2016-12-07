@@ -22,8 +22,8 @@ import numpy
 import theano
 import theano.tensor as T 
 
-from yann import modules as M
-from yann import layers as L
+import yann
+from yann import modules as M 
 
 class network(object):
     """
@@ -427,7 +427,8 @@ class network(object):
             dataset_params["id"] = id
         else:
             id = dataset_params['id']                                            
-        self.datastream[id] = M.datastream ( dataset_init_args = dataset_params, verbose = verbose)                                                                                                   
+        self.datastream[id] = M.datastream ( dataset_init_args = dataset_params, 
+                                                                                  verbose = verbose)                                                                                                   
         self.last_datastream_created = id
 
     def _add_input_layer(self, id, options, verbose = 2):
@@ -479,7 +480,7 @@ class network(object):
         else:
             dropout_rate = options ["dropout_rate"]
     
-        self.dropout_layers[id] = L.input.dropout_input_layer (
+        self.dropout_layers[id] = yann.layers.input.dropout_input_layer (
                             dropout_rate = dropout_rate,
                             x = self.datastream[datastream_id].x,
                             rng = self.rng,
@@ -491,7 +492,7 @@ class network(object):
                             mean_subtract = mean_subtract,
                             verbose =verbose)
         
-        self.layers[id] = L.input.input_layer(
+        self.layers[id] = yann.layers.input.input_layer(
                             x = self.datastream[datastream_id].x,
                             mini_batch_size = self.datastream[datastream_id].mini_batch_size,
                             id = id,
@@ -615,7 +616,7 @@ class network(object):
         if verbose >=3:
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what. 
-        self.dropout_layers[id] = L.conv_pool.dropout_conv_pool_layer_2d (
+        self.dropout_layers[id] = yann.layers.conv_pool.dropout_conv_pool_layer_2d (
                                             input = self.dropout_layers[origin].output,
                                             dropout_rate = dropout_rate,
                                             nkerns = nkerns,
@@ -647,7 +648,7 @@ class network(object):
             layer_params.append(alpha)    
         if verbose >=3:
             print "... creating the stable stream"                
-        self.layers[id] = L.conv_pool.conv_pool_layer_2d (
+        self.layers[id] = yann.layers.conv_pool.conv_pool_layer_2d (
                                             input = self.layers[origin].output,
                                             nkerns = nkerns,
                                             id = id,
@@ -751,7 +752,7 @@ class network(object):
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what. 
 
-        self.dropout_layers[id] = L.fully_connected.dropout_dot_product_layer (
+        self.dropout_layers[id] = yann.layers.fully_connected.dropout_dot_product_layer (
                                             input = dropout_input,
                                             dropout_rate = dropout_rate,
                                             num_neurons = num_neurons,
@@ -774,7 +775,7 @@ class network(object):
             layer_params.append(alpha)    
         if verbose >=3:
             print "... creating the stable stream"                
-        self.layers[id] = L.fully_connected.dot_product_layer (
+        self.layers[id] = yann.layers.fully_connected.dot_product_layer (
                                             input = input,
                                             num_neurons = num_neurons,
                                             input_shape = input_shape,
@@ -859,7 +860,7 @@ class network(object):
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what.
 
-        self.dropout_layers[id] = L.output.classifier_layer (
+        self.dropout_layers[id] = yann.layers.output.classifier_layer (
                                     input = dropout_input,
                                     id = id,
                                     input_shape = input_shape,                    
@@ -873,7 +874,7 @@ class network(object):
         if verbose >=3:
             print "... creating the stable stream"  
         params = self.dropout_layers[id].params
-        self.layers[id] = L.output.classifier_layer (
+        self.layers[id] = yann.layers.output.classifier_layer (
                                     input = input,
                                     id = id,
                                     input_shape = input_shape,                    
@@ -972,7 +973,7 @@ class network(object):
         if verbose >=3:
             print "... creating the dropout stream"
 
-        self.dropout_layers[id] = L.output.objective_layer(                    
+        self.dropout_layers[id] = yann.layers.output.objective_layer(                    
                                         loss = dropout_loss,
                                         labels = data_y,
                                         id = id,
@@ -985,7 +986,7 @@ class network(object):
                                         verbose = verbose )
         if verbose >=3:
             print "... creating the stable stream"
-        self.layers[id] = L.output.objective_layer(                    
+        self.layers[id] = yann.layers.output.objective_layer(                    
                                 loss = loss,
                                 labels = data_y,
                                 id = id,

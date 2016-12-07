@@ -1,1 +1,0 @@
-__all__ = ['abstract', 'conv_pool','fully_connected','input','output','_dropout','_activate']
