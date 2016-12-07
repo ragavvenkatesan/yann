@@ -1,4 +1,7 @@
-from abstract import layer 
+from abstract import layer, _activate, _dropout
+import numpy
+import theano
+import theano.tensor as T
 
 class classifier_layer (layer):
     """

@@ -1,4 +1,9 @@
-from abstract import layer 
+from abstract import layer, _activate, _dropout
+import numpy
+import theano
+import theano.tensor as T
+from yann.core.conv import convolver_2d
+from yann.core.pool import pooler_2d
 
 class conv_pool_layer_2d (layer):
     """

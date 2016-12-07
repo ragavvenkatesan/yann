@@ -10,16 +10,12 @@ Todo:
       - This can be used to generate images back such as in the case of auto-encoders.    
 """
 
-import numpy
 import theano
-import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 # from theano.tensor.shared_randomstreams import RandomStreams
 # The above import is an experimental code. Not sure if it works perfectly, but I have no doubt 
 # yet.
 from yann.core import activations
-from yann.core.conv import convolver_2d
-from yann.core.pool import pooler_2d
 
 class layer(object):
     """

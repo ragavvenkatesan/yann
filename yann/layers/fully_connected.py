@@ -1,4 +1,7 @@
-from abstract import layer 
+from abstract import layer, _activate, _dropout
+import numpy
+import theano
+import theano.tensor as T
 
 class dot_product_layer (layer):
     """
@@ -45,7 +48,6 @@ class dot_product_layer (layer):
 
         if rng is None:
             rng = numpy.random
-        srng = RandomStreams(rng.randint(1,2147462579))
 
         if input_params is None:
             w_values = numpy.asarray(0.01 * rng.standard_normal(

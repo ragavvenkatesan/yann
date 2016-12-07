@@ -479,8 +479,11 @@ class network(object):
             dropout_rate = 0
         else:
             dropout_rate = options ["dropout_rate"]
-    
-        self.dropout_layers[id] = yann.layers.input.dropout_input_layer (
+
+        from yann.layers.input import dropout_input_layer as dil
+        from yann.layers.input import input_layer as il
+
+        self.dropout_layers[id] = dil (
                             dropout_rate = dropout_rate,
                             x = self.datastream[datastream_id].x,
                             rng = self.rng,
@@ -492,7 +495,7 @@ class network(object):
                             mean_subtract = mean_subtract,
                             verbose =verbose)
         
-        self.layers[id] = yann.layers.input.input_layer(
+        self.layers[id] = il(
                             x = self.datastream[datastream_id].x,
                             mini_batch_size = self.datastream[datastream_id].mini_batch_size,
                             id = id,
@@ -506,7 +509,7 @@ class network(object):
         # users who do not need dropout need not know about this. muahhahaha 
         self.layers[id].origin.append(datastream_id)
 
-    def _add_conv_layer(id, options, verbose = 2):
+    def _add_conv_layer(self, id, options, verbose = 2):
         """
         At the moment is a wrapper to conv2d. Once conv 1d is implemented this will run
         through some checks an call other methods accordingly. 
@@ -616,24 +619,28 @@ class network(object):
         if verbose >=3:
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what. 
-        self.dropout_layers[id] = yann.layers.conv_pool.dropout_conv_pool_layer_2d (
-                                            input = self.dropout_layers[origin].output,
-                                            dropout_rate = dropout_rate,
-                                            nkerns = nkerns,
-                                            id = id,
-                                            input_shape = self.dropout_layers[origin].output_shape,                   
-                                            filter_shape = filter_size,                   
-                                            poolsize = pool_size,
-                                            pooltype = pool_type,
-                                            batch_norm = batch_norm,                   
-                                            border_mode = border_mode,  
-                                            stride = stride,
-                                            rng = self.rng,
-                                            borrow = self.borrow,
-                                            activation = activation,
-                                            input_params = input_params,                   
-                                            verbose = verbose,
-                                            )
+
+        from yann.layers.conv_pool import dropout_conv_pool_layer_2d as dcpl2d
+        from yann.layers.conv_pool import conv_pool_layer_2d as cpl2d
+
+        self.dropout_layers[id] = dcpl2d (
+                                        input = self.dropout_layers[origin].output,
+                                        dropout_rate = dropout_rate,
+                                        nkerns = nkerns,
+                                        id = id,
+                                        input_shape = self.dropout_layers[origin].output_shape,                   
+                                        filter_shape = filter_size,                   
+                                        poolsize = pool_size,
+                                        pooltype = pool_type,
+                                        batch_norm = batch_norm,                   
+                                        border_mode = border_mode,  
+                                        stride = stride,
+                                        rng = self.rng,
+                                        borrow = self.borrow,
+                                        activation = activation,
+                                        input_params = input_params,                   
+                                        verbose = verbose,
+                                        )
         # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
         if dropout_rate >0:
             w = self.dropout_layers[id].w * (1 - dropout_rate)
@@ -648,23 +655,23 @@ class network(object):
             layer_params.append(alpha)    
         if verbose >=3:
             print "... creating the stable stream"                
-        self.layers[id] = yann.layers.conv_pool.conv_pool_layer_2d (
-                                            input = self.layers[origin].output,
-                                            nkerns = nkerns,
-                                            id = id,
-                                            input_shape = self.layers[origin].output_shape,                   
-                                            filter_shape = filter_size,                   
-                                            poolsize = pool_size,
-                                            pooltype = pool_type,
-                                            batch_norm = batch_norm,                   
-                                            border_mode = border_mode,  
-                                            stride = stride,
-                                            rng = self.rng,
-                                            borrow = self.borrow,
-                                            activation = activation,
-                                            input_params = layer_params,                   
-                                            verbose = verbose,
-                                                )
+        self.layers[id] = cpl2d (
+                            input = self.layers[origin].output,
+                            nkerns = nkerns,
+                            id = id,
+                            input_shape = self.layers[origin].output_shape,                   
+                            filter_shape = filter_size,                   
+                            poolsize = pool_size,
+                            pooltype = pool_type,
+                            batch_norm = batch_norm,                   
+                            border_mode = border_mode,  
+                            stride = stride,
+                            rng = self.rng,
+                            borrow = self.borrow,
+                            activation = activation,
+                            input_params = layer_params,                   
+                            verbose = verbose,
+                                )
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2 
@@ -752,19 +759,22 @@ class network(object):
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what. 
 
-        self.dropout_layers[id] = yann.layers.fully_connected.dropout_dot_product_layer (
-                                            input = dropout_input,
-                                            dropout_rate = dropout_rate,
-                                            num_neurons = num_neurons,
-                                            id = id,
-                                            input_shape = input_shape,
-                                            rng = self.rng,
-                                            input_params = input_params,
-                                            borrow = self.borrow,
-                                            activation = activation,
-                                            batch_norm = batch_norm,
-                                            verbose = verbose 
-                                            )
+        from yann.layers.fully_connected import dropout_dot_product_layer as ddpl
+        from yann.layers.fully_connected import dot_product_layer as dpl
+        
+        self.dropout_layers[id] = ddpl (
+                                input = dropout_input,
+                                dropout_rate = dropout_rate,
+                                num_neurons = num_neurons,
+                                id = id,
+                                input_shape = input_shape,
+                                rng = self.rng,
+                                input_params = input_params,
+                                borrow = self.borrow,
+                                activation = activation,
+                                batch_norm = batch_norm,
+                                verbose = verbose 
+                                )
         # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
         w = self.dropout_layers[id].w * (1 - dropout_rate)
         b = self.dropout_layers[id].b * (1 - dropout_rate)
@@ -775,18 +785,18 @@ class network(object):
             layer_params.append(alpha)    
         if verbose >=3:
             print "... creating the stable stream"                
-        self.layers[id] = yann.layers.fully_connected.dot_product_layer (
-                                            input = input,
-                                            num_neurons = num_neurons,
-                                            input_shape = input_shape,
-                                            id = id,
-                                            rng = self.rng,
-                                            input_params = layer_params,
-                                            borrow = self.borrow,
-                                            activation = activation,
-                                            batch_norm = batch_norm,
-                                            verbose = verbose
-                                                )
+        self.layers[id] = dpl (
+                            input = input,
+                            num_neurons = num_neurons,
+                            input_shape = input_shape,
+                            id = id,
+                            rng = self.rng,
+                            input_params = layer_params,
+                            borrow = self.borrow,
+                            activation = activation,
+                            batch_norm = batch_norm,
+                            verbose = verbose
+                                )
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2 
@@ -860,7 +870,9 @@ class network(object):
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what.
 
-        self.dropout_layers[id] = yann.layers.output.classifier_layer (
+        from yann.layers.output import classifier_layer as classifier
+
+        self.dropout_layers[id] = classifier (
                                     input = dropout_input,
                                     id = id,
                                     input_shape = input_shape,                    
@@ -874,7 +886,7 @@ class network(object):
         if verbose >=3:
             print "... creating the stable stream"  
         params = self.dropout_layers[id].params
-        self.layers[id] = yann.layers.output.classifier_layer (
+        self.layers[id] = classifier (
                                     input = input,
                                     id = id,
                                     input_shape = input_shape,                    
@@ -973,30 +985,32 @@ class network(object):
         if verbose >=3:
             print "... creating the dropout stream"
 
-        self.dropout_layers[id] = yann.layers.output.objective_layer(                    
-                                        loss = dropout_loss,
-                                        labels = data_y,
-                                        id = id,
-                                        objective = objective,
-                                        input_shape = self.dropout_layers[origin].output_shape,
-                                        L1 = self.L1,
-                                        L2 = self.L2,
-                                        l1_coeff = l1_regularizer_coeff,
-                                        l2_coeff = l2_regularizer_coeff,
-                                        verbose = verbose )
+        from yann.layers.output import objective_layer as obj
+
+        self.dropout_layers[id] = obj(                    
+                                    loss = dropout_loss,
+                                    labels = data_y,
+                                    id = id,
+                                    objective = objective,
+                                    input_shape = self.dropout_layers[origin].output_shape,
+                                    L1 = self.L1,
+                                    L2 = self.L2,
+                                    l1_coeff = l1_regularizer_coeff,
+                                    l2_coeff = l2_regularizer_coeff,
+                                    verbose = verbose )
         if verbose >=3:
             print "... creating the stable stream"
-        self.layers[id] = yann.layers.output.objective_layer(                    
-                                loss = loss,
-                                labels = data_y,
-                                id = id,
-                                objective = objective,
-                                input_shape = self.layers[origin].output_shape,                                
-                                L1 = self.L1,
-                                L2 = self.L2,
-                                l1_coeff = l1_regularizer_coeff,
-                                l2_coeff = l2_regularizer_coeff,
-                                verbose = verbose )                                                
+        self.layers[id] = obj(                    
+                            loss = loss,
+                            labels = data_y,
+                            id = id,
+                            objective = objective,
+                            input_shape = self.layers[origin].output_shape,                                
+                            L1 = self.L1,
+                            L2 = self.L2,
+                            l1_coeff = l1_regularizer_coeff,
+                            l2_coeff = l2_regularizer_coeff,
+                            verbose = verbose )                                                
 
         self.dropout_layers[id].origin.append(origin)
         self.dropout_layers[origin].destination.append(id)
