@@ -1,7 +1,7 @@
 .. _input_layer:
 
-:mod:`input` - Input layers
-===========================
+:mod:`input` - input layer classes
+==================================
 
 The file ``yann.layers.input.py`` contains the definition for the input lyer modules. 
 

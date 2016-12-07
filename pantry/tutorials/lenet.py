@@ -115,7 +115,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
 
     # visualization of the network.
     """
-    from yann.utils.visualization import draw_network    
+    from yann.utils.networkx import draw_network    
     draw_network(net.graph)   
     """
     net.cook( optimizer = 'main',

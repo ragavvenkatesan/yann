@@ -3,7 +3,7 @@
 :mod:`modules` - Modules that are external to the network but the network can use
 ==================================================================================
 
-The file ``yann.modules.py`` contains the definition for the network modules. It contains 
+The module :mod:`yann.modules` contains the definition for the network modules. It contains 
     various modules including:
 
     * :mod:`visualizer` is used to produce network visualizations. It will take the activities, 
@@ -12,5 +12,13 @@ The file ``yann.modules.py`` contains the definition for the network modules. It
     * :mod:`optimizer` is the backbone of the SGD and optimization.
     * :mod:`dataset` is the module that creates, loads, caches and feeds data to the network.    
 
-.. automodule:: yann.modules
-   :members:
+
+.. toctree::
+   :maxdepth: 3
+   :name: Yann Modules     
+
+   optimizer
+   datastream
+   visualizer
+   resultor
+   

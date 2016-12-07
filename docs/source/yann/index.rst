@@ -12,7 +12,7 @@ files and the API documentations.
 
    network
    layers/index
-   modules
+   modules/index
    core/index
    utils/index
    

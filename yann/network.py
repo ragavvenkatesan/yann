@@ -23,7 +23,6 @@ import theano
 import theano.tensor as T 
 
 import yann
-from yann import modules as M 
 
 class network(object):
     """
@@ -374,7 +373,8 @@ class network(object):
             resultor_params["id"] = id
         else:
             id = resultor_params['id']
-        self.resultor[id] = M.resultor ( resultor_init_args = resultor_params, verbose = verbose )
+        from yann.modules.resultor import resultor
+        self.resultor[id] = resultor ( resultor_init_args = resultor_params, verbose = verbose )
         self.last_resultor_created = id
 
     def _add_visualizer(self, visualizer_params, verbose = 2):
@@ -390,9 +390,10 @@ class network(object):
             id = len(self.visualizer) + 1
             visualizer_params["id"] = id
         else:
-            id = visualizer_params['id']            
-        self.visualizer[id] = M.visualizer( visualizer_init_args = visualizer_params, 
-                                                                                verbose = verbose )
+            id = visualizer_params['id']    
+        from yann.modules.visualizer import visualizer        
+        self.visualizer[id] = visualizer( visualizer_init_args = visualizer_params, 
+                                                                                 verbose = verbose )
         self.last_visualizer_created = id
 
     def _add_optimizer(self, optimizer_params, verbose = 2):
@@ -409,8 +410,8 @@ class network(object):
             optimizer_params["id"] = id
         else:
             id = optimizer_params['id']
-        self.optimizer[id] = M.optimizer ( optimizer_init_args = optimizer_params, 
-                                                                    verbose = verbose )
+        from yann.modules.optimizer import optimizer
+        self.optimizer[id] = optimizer ( optimizer_init_args = optimizer_params, verbose = verbose )
         self.last_optimizer_created = id
 
     def _add_datastream(self, dataset_params, verbose = 2):
@@ -426,9 +427,10 @@ class network(object):
             id = len(self.datastream) + 1
             dataset_params["id"] = id
         else:
-            id = dataset_params['id']                                            
-        self.datastream[id] = M.datastream ( dataset_init_args = dataset_params, 
-                                                                                  verbose = verbose)                                                                                                   
+            id = dataset_params['id']   
+              
+        from yann.modules.datastream import datastream                                                   
+        self.datastream[id] = datastream ( dataset_init_args = dataset_params, verbose = verbose)                                                                                                   
         self.last_datastream_created = id
 
     def _add_input_layer(self, id, options, verbose = 2):

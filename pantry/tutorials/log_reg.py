@@ -76,7 +76,11 @@ def log_reg ( dataset, verbose ):
               learning_rates = learning_rates,
               verbose = verbose
               )
-
+    # visualization of the network.
+    """
+    from yann.utils.networkx import draw_network    
+    draw_network(net.graph)   
+    """
     net.train( epochs = (10, 5), 
                validate_after_epochs = 1,
                training_accuracy = True,
