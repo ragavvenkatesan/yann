@@ -12,9 +12,8 @@ but should be forward compatible unless theano makes a drastic release.
 .. _Theano: http://deeplearning.net/software/theano/ 
 .. _theano toolbox documentation: http://deeplearning.net/software/theano/install.html
 
-***********************
 Quick fire Installation
-=======================
+***********************
 
 Now before going through the full-fledged installation procedure, you can run through the entire
 installation in one command that will install the basics required to run the toolbox. To install
@@ -37,9 +36,8 @@ others, do the following:
   pip install -r requirements_full.txt
   pip install git+git://github.com/ragavvenkatesan/yann.git
 
-*****************
 Full installation
-=================
+*****************
 
 Dependencies
 ============
