@@ -1,7 +1,7 @@
 .. _modules:
 
-:mod:`modules` - Modules that are external to the network but the network can use
-==================================================================================
+:mod:`modules` - Modules that are external to the network which the network uses
+================================================================================
 
 The module :mod:`yann.modules` contains the definition for the network modules. It contains 
     various modules including:
