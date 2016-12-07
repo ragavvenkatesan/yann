@@ -203,8 +203,8 @@ class network(object):
             * MaskedConvPool Layer.
             * ...
             * when ``type`` is ``'objective'``, I need to allow taking a loss between two layers to
-              be propagated. Right now ``origin`` has to be a classifier layer only. This needs to 
-              change to be able to implement generality and mentor networks.
+            be propagated. Right now ``origin`` has to be a classifier layer only. This needs to 
+            change to be able to implement generality and mentor networks.
             * basically objective has to be a flag for an error function if origin is a tuple.
               
 
