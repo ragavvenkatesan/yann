@@ -11,7 +11,7 @@ files and the API documentations.
    :name: Yann Toolbox     
 
    network
-   layers
+   layers/index
    modules
    core/index
    utils/index

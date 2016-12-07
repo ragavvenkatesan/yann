@@ -22,8 +22,8 @@ import numpy
 import theano
 import theano.tensor as T 
 
-import modules as M
-import layers as L
+from yann import modules as M
+from yann import layers as L
 
 class network(object):
     """
@@ -380,6 +380,7 @@ class network(object):
             id = resultor_params['id']
         self.resultor[id] = M.resultor ( resultor_init_args = resultor_params, verbose = verbose )
         self.last_resultor_created = id
+
     def _add_visualizer(self, visualizer_params, verbose = 2):
         """
         This function is used to add a visualizer to the network.
@@ -481,8 +482,8 @@ class network(object):
             dropout_rate = 0
         else:
             dropout_rate = options ["dropout_rate"]
-            
-        self.dropout_layers[id] = L.dropout_input_layer (
+    
+        self.dropout_layers[id] = L.input.dropout_input_layer (
                             dropout_rate = dropout_rate,
                             x = self.datastream[datastream_id].x,
                             rng = self.rng,
@@ -494,7 +495,7 @@ class network(object):
                             mean_subtract = mean_subtract,
                             verbose =verbose)
         
-        self.layers[id] = L.input_layer(
+        self.layers[id] = L.input.input_layer(
                             x = self.datastream[datastream_id].x,
                             mini_batch_size = self.datastream[datastream_id].mini_batch_size,
                             id = id,
@@ -507,7 +508,15 @@ class network(object):
         # create a whole new stream, whether used or not.
         # users who do not need dropout need not know about this. muahhahaha 
         self.layers[id].origin.append(datastream_id)
-    def _add_conv_layer(self, id, options, verbose = 2):
+
+    def _add_conv_layer(id, options, verbose = 2):
+        """
+        At the moment is a wrapper to conv2d. Once conv 1d is implemented this will run
+        through some checks an call other methods accordingly. 
+        """
+        self._add_conv_2d_layer(id =id, options = options, verbose = verbose )
+
+    def _add_conv_2d_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
 
@@ -610,7 +619,7 @@ class network(object):
         if verbose >=3:
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what. 
-        self.dropout_layers[id] = L.dropout_conv_pool_layer_2d (
+        self.dropout_layers[id] = L.conv_pool.dropout_conv_pool_layer_2d (
                                             input = self.dropout_layers[origin].output,
                                             dropout_rate = dropout_rate,
                                             nkerns = nkerns,
@@ -642,7 +651,7 @@ class network(object):
             layer_params.append(alpha)    
         if verbose >=3:
             print "... creating the stable stream"                
-        self.layers[id] = L.conv_pool_layer_2d (
+        self.layers[id] = L.conv_pool.conv_pool_layer_2d (
                                             input = self.layers[origin].output,
                                             nkerns = nkerns,
                                             id = id,
@@ -746,7 +755,7 @@ class network(object):
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what. 
 
-        self.dropout_layers[id] = L.dropout_dot_product_layer (
+        self.dropout_layers[id] = L.fully_connected.dropout_dot_product_layer (
                                             input = dropout_input,
                                             dropout_rate = dropout_rate,
                                             num_neurons = num_neurons,
@@ -769,7 +778,7 @@ class network(object):
             layer_params.append(alpha)    
         if verbose >=3:
             print "... creating the stable stream"                
-        self.layers[id] = L.dot_product_layer (
+        self.layers[id] = L.fully_connected.dot_product_layer (
                                             input = input,
                                             num_neurons = num_neurons,
                                             input_shape = input_shape,
@@ -854,7 +863,7 @@ class network(object):
             print "... creating the dropout stream"
         # Just create a dropout layer no matter what.
 
-        self.dropout_layers[id] = L.classifier_layer (
+        self.dropout_layers[id] = L.output.classifier_layer (
                                     input = dropout_input,
                                     id = id,
                                     input_shape = input_shape,                    
@@ -868,7 +877,7 @@ class network(object):
         if verbose >=3:
             print "... creating the stable stream"  
         params = self.dropout_layers[id].params
-        self.layers[id] = L.classifier_layer (
+        self.layers[id] = L.output.classifier_layer (
                                     input = input,
                                     id = id,
                                     input_shape = input_shape,                    
@@ -967,7 +976,7 @@ class network(object):
         if verbose >=3:
             print "... creating the dropout stream"
 
-        self.dropout_layers[id] = L.objective_layer(                    
+        self.dropout_layers[id] = L.output.objective_layer(                    
                                         loss = dropout_loss,
                                         labels = data_y,
                                         id = id,
@@ -980,7 +989,7 @@ class network(object):
                                         verbose = verbose )
         if verbose >=3:
             print "... creating the stable stream"
-        self.layers[id] = L.objective_layer(                    
+        self.layers[id] = L.output.objective_layer(                    
                                 loss = loss,
                                 labels = data_y,
                                 id = id,
