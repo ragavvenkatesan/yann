@@ -236,12 +236,14 @@ cPickle, gzip and hdf5py
   datasets. Install hdf5py by running either,
 
   .. code-block:: bash
-    conda install h5py
+
+      conda install h5py
 
   or, 
 
   .. code-block:: bash
-    pip install h5py
+
+      pip install h5py
 
 
 Yann Toolbox Setup
