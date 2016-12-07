@@ -195,13 +195,9 @@ class network(object):
 
     def add_layer(self, type, verbose = 2, **kwargs):
         """
-
         Todo:
             Need to add the following:
-            * Merge Layer
-                - Concatenate
-                - Embed
-                - Add, max, mean
+            * Merge Layer: Concatenate, Embed, Add, max, mean
             * Inception Layer.
             * LSTM layer.
             * MaskedConvPool Layer.
