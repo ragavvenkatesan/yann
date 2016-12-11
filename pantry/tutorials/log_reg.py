@@ -1,4 +1,5 @@
 from yann.network import network
+from yann.utils.graph import draw_network    
 
 def log_reg ( dataset, verbose ):            
     """
@@ -76,11 +77,8 @@ def log_reg ( dataset, verbose ):
               learning_rates = learning_rates,
               verbose = verbose
               )
-    # visualization of the network.
-    """
-    from yann.utils.networkx import draw_network    
-    draw_network(net.graph)   
-    """
+    # visualization of the network.  
+    draw_network(net.graph, filename = 'log_reg.pdf')     
     net.train( epochs = (10, 5), 
                validate_after_epochs = 1,
                training_accuracy = True,

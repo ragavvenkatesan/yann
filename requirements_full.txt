@@ -4,6 +4,7 @@ progressbar>=2
 skdata>=0.0.4
 pydot
 pydot-ng
+pyparsing
 graphviz
 networkx
 matplotlib

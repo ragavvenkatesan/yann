@@ -24,6 +24,8 @@ import theano.tensor as T
 
 import yann
 
+max_neurons_to_display = 7
+
 class network(object):
     """
     Todo:
@@ -320,14 +322,47 @@ class network(object):
 
         self.last_layer_created = id
 
-        if not self.graph is None:
-            attributes = self.layers[id]._graph_attributes()
-            self.graph.add_node(id,attributes)
-            for origin in attributes["origin"]:
-                if not origin in self.graph.nodes():
-                    self.graph.add_node(origin)
-                self.graph.add_edge(origin,id)
 
+        # addlayer to self.graph if it exists.
+        if not self.graph is None: # graph is being created
+            attributes = self.layers[id]._graph_attributes()  # collect all attributes of layer
+
+            if len(attributes["output_shape"]) == 4:  # output is an image
+                node_shape = 'square'
+                num_neurons = attributes["output_shape"][1]  # number of kernels output
+                node_size = attributes["output_shape"][2] * attributes["output_shape"][3]
+            else:
+                node_shape = 'circle'
+                num_neurons = attributes['output_shape'][-1]
+                node_size = 300   # why ? default. 
+
+            if num_neurons > max_neurons_to_display:
+                neurons = range(0,max_neurons_to_display - 2) + range(num_neurons - 2,num_neurons)
+            else:
+                neurons = range(num_neurons)
+            
+            for i in neurons:                
+                self.graph.add_node(id + "-" + str(i) ,attributes, shape = node_shape, 
+                                                                            size = node_size)                                                                           
+            for origin in attributes["origin"]:
+                if origin in self.layers.keys():
+                    origin_attr = self.layers[origin]._graph_attributes()           
+                    origin_num_neurons = origin_attr["output_shape"][1]
+
+                    if origin_num_neurons > max_neurons_to_display:
+                        origin_neurons = range(0,max_neurons_to_display - 2) + \
+                                                 range(origin_num_neurons - 2, origin_num_neurons) 
+                    else:
+                        origin_neurons = range(origin_num_neurons)     
+
+                    for edge_from in origin_neurons:
+                        for edge_to in neurons:
+                            self.graph.add_edge(origin + "-" + str(edge_from),
+                                                               id + "-" + str(edge_to))
+                else:
+                    for edge_to in neurons:
+                        self.graph.add_edge(origin , id + "-" + str(edge_to))                    
+            
     def add_module (self, type, params, verbose = 2):
         """
         Use this function to add a module to the net.
@@ -432,6 +467,9 @@ class network(object):
         from yann.modules.datastream import datastream                                                   
         self.datastream[id] = datastream ( dataset_init_args = dataset_params, verbose = verbose)                                                                                                   
         self.last_datastream_created = id
+
+        if not self.graph is None: # graph is being created
+            self.graph.add_node(id,shape = 'square', size = 1000, style='filled',fillcolor='red')
 
     def _add_input_layer(self, id, options, verbose = 2):
         """

@@ -94,19 +94,19 @@ class layer(object):
         out = {}
         out["id"] = self.id
         if not self.output_shape is None:
-            out["output_shape"] = str(self.output_shape)
+            out["output_shape"] = self.output_shape
         else:
             out["output_shape"] = "N/A"
         if not self.num_neurons is None:
-            out["num_neurons"] = str(self.num_neurons)
+            out["num_neurons"] = self.num_neurons
         else:
             out["num_neurons"] = "N/A"
         if type(self.activation) is tuple:            
             out["activation"] = self.activation[0]
         else:
             out["activation"] = self.activation
-        out["dropout_rate"] = str(self.dropout_rate)
-        out["batch_norm"] = str(self.batch_norm)
+        out["dropout_rate"] = self.dropout_rate
+        out["batch_norm"] = self.batch_norm
         out["origin"] = self.origin
         out["type"] = self.type
         return out

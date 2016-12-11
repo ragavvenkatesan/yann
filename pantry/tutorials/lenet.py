@@ -1,4 +1,5 @@
 from yann.network import network
+from yann.utils.graph import draw_network
 
 def lenet5 ( dataset= None, verbose = 1 ):             
     """
@@ -114,10 +115,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
     # net.pretty_print()  # this will print out the network.
 
     # visualization of the network.
-    """
-    from yann.utils.networkx import draw_network    
-    draw_network(net.graph)   
-    """
+    net.pretty_print()  
+    draw_network(net.graph, filename = 'lenet.png')     
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',

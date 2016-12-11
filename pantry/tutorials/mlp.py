@@ -1,4 +1,5 @@
 from yann.network import network
+from yann.utils.graph import draw_network
 
 def mlp ( dataset, verbose = 1 ):            
     """
@@ -79,7 +80,7 @@ def mlp ( dataset, verbose = 1 ):
               classifier = 'softmax',
               verbose = verbose
               )
-
+    draw_network(net.graph, filename = 'mlp.png')     
     net.train( epochs = (20, 20), 
                validate_after_epochs = 1,
                training_accuracy = True,
