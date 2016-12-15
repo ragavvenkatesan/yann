@@ -354,7 +354,7 @@ class network(object):
                                                  range(origin_num_neurons - 2, origin_num_neurons) 
                     else:
                         origin_neurons = range(origin_num_neurons)     
-
+                    
                     for edge_from in origin_neurons:
                         for edge_to in neurons:
                             self.graph.add_edge(origin + "-" + str(edge_from),

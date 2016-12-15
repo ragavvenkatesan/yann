@@ -1,4 +1,4 @@
-from networkx.drawing.nx_pydot import to_pydot 
+from networkx.drawing.nx_agraph import to_agraph
 
 def draw_network(graph, filename = 'network.png', show = False, verbose = 2 ):
     """
@@ -17,12 +17,11 @@ def draw_network(graph, filename = 'network.png', show = False, verbose = 2 ):
     """
     if verbose >=2:
         print ".. Saving the network down as an image"
+
     # convert from networkx -> pydot
     if verbose >=3 :
         print "... Coverting to dot"
-    dot= to_pydot(graph)
-    dot.set_node_defaults(style="filled", fillcolor="grey")
-    dot.set_edge_defaults(color="blue", arrowhead="vee", weight="0")    
-    if verbose >=3 :
-        print "... Writing down"
-    dot.write_png(filename)
+    agraph = to_agraph(graph)
+    # Need to work on putting a box around nodes of the same layer.
+    agraph.layout(prog = 'dot')
+    agraph.draw(filename)

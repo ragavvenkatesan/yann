@@ -73,7 +73,28 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     activation = 'tanh',
                     verbose = verbose
                     )      
-        
+
+ ######
+    net.add_layer ( type = "conv_pool",
+                    origin = "conv_pool_1",
+                    id = "conv_pool_3",
+                    num_neurons = 50,
+                    filter_size = (3,3),
+                    pool_size = (2,2),
+                    activation = 'tanh',
+                    verbose = verbose
+                    )       
+
+    net.add_layer ( type = "dot_product",
+                    origin = "conv_pool_3",
+                    id = "dot_product_3",
+                    num_neurons = 800,                    
+                    activation = 'tanh',
+                    verbose = verbose
+                    )                                     
+####### 
+
+
     net.add_layer ( type = "dot_product",
                     origin = "conv_pool_2",
                     id = "dot_product_1",
