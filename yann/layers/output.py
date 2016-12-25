@@ -234,6 +234,7 @@ class objective_layer(layer):
                     objective,
                     id,
                     input_shape,
+                    type = 'discriminator',
                     L1 = None,
                     L2 = None,
                     l1_coeff = 0.001,
@@ -245,7 +246,10 @@ class objective_layer(layer):
         super(objective_layer,self).__init__(id = id, type = 'objective', verbose = verbose)                        
         if verbose >=3:
             print "... creating the objective_layer"
-        self.output = loss(y = labels, type = objective)
+        if type == 'discriminator':
+            self.output = loss(y = labels, type = objective)
+        elif type == 'generator':            
+            self.output = loss(type = objective)
         if L1 is not None:            
             self.output = self.output + l1_coeff * L1 
         if L2 is not None:

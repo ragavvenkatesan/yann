@@ -1,6 +1,6 @@
 import theano.tensor as T
 
-def cross_entropy_cost ( a , b ):
+def cross_entropy ( a , b ):
     """
     This function produces a point-wise cross entropy error between ``a`` and ``b``
     
@@ -13,7 +13,7 @@ def cross_entropy_cost ( a , b ):
     """
     return T.mean(T.nnet.categorical_crossentropy(a.flatten(2),b.flatten(2)))
 
-def l2_error ( a,  b ): 
+def l2 ( a,  b ): 
     """
     This function produces a point-wise L2 error between ``a`` and ``b``
     
@@ -26,7 +26,7 @@ def l2_error ( a,  b ):
     """    
     return T.sqrt(T.sum((a - b) ** 2 ))
     
-def l1_error ( a, b ):
+def l1 ( a, b ):
     """
     This function produces a point-wise L1 error between ``a`` and ``b``
     

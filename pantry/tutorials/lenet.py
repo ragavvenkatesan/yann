@@ -74,26 +74,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )      
 
- ######
-    net.add_layer ( type = "conv_pool",
-                    origin = "conv_pool_1",
-                    id = "conv_pool_3",
-                    num_neurons = 50,
-                    filter_size = (3,3),
-                    pool_size = (2,2),
-                    activation = 'tanh',
-                    verbose = verbose
-                    )       
-
-    net.add_layer ( type = "dot_product",
-                    origin = "conv_pool_3",
-                    id = "dot_product_3",
-                    num_neurons = 800,                    
-                    activation = 'tanh',
-                    verbose = verbose
-                    )                                     
-####### 
-
 
     net.add_layer ( type = "dot_product",
                     origin = "conv_pool_2",
@@ -126,6 +106,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     datastream_origin = 'data', 
                     verbose = verbose
                     )
+                    
     # objective provided by classifier layer               
     # nll-negative log likelihood, 
     # cce-categorical cross entropy, 
@@ -137,7 +118,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
 
     # visualization of the network.
     net.pretty_print()  
-    draw_network(net.graph, filename = 'lenet.png')     
+    # draw_network(net.graph, filename = 'lenet.png')    
+
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',

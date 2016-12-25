@@ -78,7 +78,7 @@ def log_reg ( dataset, verbose ):
               verbose = verbose
               )
     # visualization of the network.  
-    draw_network(net.graph, filename = 'log_reg.pdf')     
+    # draw_network(net.graph, filename = 'log_reg.pdf')     
     net.train( epochs = (10, 5), 
                validate_after_epochs = 1,
                training_accuracy = True,

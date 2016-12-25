@@ -135,6 +135,7 @@ class network(object):
 
         if nx_installed is True:
             self.graph = nx.DiGraph()
+            self.layer_graph = {}
         else:
             self.graph = None  
 
@@ -151,7 +152,7 @@ class network(object):
         self.last_visualizer_created = None
         self.last_optimizer_created = None   
         self.last_objective_layer_created = None
-        self.last_classifier_layer_created = None
+        self.last_classifier_created = None
         self.layer_activities_created = True        
 
         # create empty dictionary of modules. 
@@ -217,12 +218,14 @@ class network(object):
                   connected layer
                   'classifier' or 'softmax' or 'output' or 'label' - indicates a classifier layer
                   'objective' or 'loss' - a layer that creates a loss function
+                  'merge' - a layer that merges two layers.
+                  'flatten' - a layer tha produces a flattened output of a block data.
                   From now on everything is optional args.. 
             id: <string> how to identify the layer by.
                 Default is just layer number that starts with ``0``.
             origin: ``id`` will use the output of that layer as input to the new layer.
                      Default is the last layer created. This variable is not needed for 
-                     ``input`` type of layers.                     
+                     ``input`` type of layers. For some layers like ``merge``, this is a tuple.                     
             verbose: similar to the rest of the toolbox.
             mean_subtract: if ``True`` we will subtract the mean from each image, else not.
             num_neurons: number of neurons in the layer
@@ -241,6 +244,8 @@ class network(object):
             pool_type: Refer to :mod:`pool` for details. {'max', 'sum', 'mean', 'max_same_size'}
             learnable: Default is ``True``, if ``True`` we backprop on that layer. If ``False``
                        Layer is obstinate.
+            shape: tuple of shape to unflatten to ( height, width, channels ) in case layer was an
+                    unflatten layer                   
             input_params: Supply params or initializations from a pre-trained system.
             dropout_rate: If you want to dropout this layer's output provide the output.  
             regularize: ``True`` is you want to apply regularization, ``False`` if not.  
@@ -256,6 +261,9 @@ class network(object):
                            which datastream to take data from. 
             regularizer: Default is ``(0.001, 0.001)`` coeffients for L1, L2 regulaizer 
                             coefficients. 
+            error: ``merge`` layers take an option called ``'error'`` which can be None or others
+                    which are methods in ``yann.core.errors``.
+            layer_type                                                
 
         """
         if not 'id' in kwargs.keys():
@@ -273,6 +281,9 @@ class network(object):
             if type == 'input' or \
                type == 'data' or \
                type == 'objective' or  \
+               type == 'merge' or \
+               type == 'flatten' or \
+               type == 'unflatten' or \
                type == 'loss':            
                 if verbose >= 3:
                     print "... Making learnable False as it is not provided"
@@ -304,14 +315,26 @@ class network(object):
              type ==  'softmax' or \
              type ==  'output' or \
              type == 'label':
-            self._add_classifier_layer(id =id, options = kwargs, verbose = verbose)
-            self.last_classifier_layer_created = id
+            self._add_classifier(id =id, options = kwargs, verbose = verbose)
+            self.last_classifier_created = id
             self.params = self.params + self.dropout_layers[id].params
 
         elif type == 'objective' or  \
              type == 'loss': 
             self._add_objective_layer(id =id, options = kwargs, verbose = verbose)
             self.last_objective_layer_created = id
+        
+        elif type == 'merge':
+            self._add_merge_layer(id = id, options = kwargs, verbose = verbose) 
+            self.last_layer_created = id
+
+        elif type == 'flatten':
+            self._add_flatten_layer( id = id, options = kwargs, verbose = verbose)
+            self.last_layer_created = id
+
+        elif type == 'unflatten':
+            self._add_unflatten_layer( id = id, options = kwargs, verbose = verbose)
+            self.last_layer_created = id
 
         else:
             raise Exception('No layer called ' + type + ' exists in yann')
@@ -341,13 +364,20 @@ class network(object):
             else:
                 neurons = range(num_neurons)
             
-            for i in neurons:                
-                self.graph.add_node(id + "-" + str(i) ,attributes, shape = node_shape, 
+            self.layer_graph[id] = nx.DiGraph()
+            self.layer_graph[id].name = id
+            for i in neurons:                             
+                self.layer_graph[id].add_node(id + "-" + str(i) ,attributes, shape = node_shape, 
                                                                             size = node_size)                                                                           
+            self.graph.subgraph(self.layer_graph[id])
             for origin in attributes["origin"]:
                 if origin in self.layers.keys():
                     origin_attr = self.layers[origin]._graph_attributes()           
-                    origin_num_neurons = origin_attr["output_shape"][1]
+                    origin_num_neurons = origin_attr["output_shape"]
+                    if len(origin_num_neurons) == 1:
+                        origin_num_neurons = origin_num_neurons[0] # for layers like merge and obj
+                    else:
+                        origin_num_neurons = origin_num_neurons[1]
 
                     if origin_num_neurons > max_neurons_to_display:
                         origin_neurons = range(0,max_neurons_to_display - 2) + \
@@ -721,6 +751,80 @@ class network(object):
         self.layers[id].origin.append(origin)
         self.layers[origin].destination.append(id)
 
+    def _add_flatten_layer( self, id, options, verbose = 2):
+        """
+        Internal function that adds a flattening layer.
+        
+        Args: 
+            id: id of the layer
+            options: basically kwargs supplied to add_layer
+            verbose: as usual
+        """
+        if verbose >= 3:
+            print "... Adding a flatten layer"
+        if not 'origin' in options.keys():
+            if self.last_layer_created is None:
+                raise Exception("You can't create a flatten without a layer to flatten.")
+            if verbose >=3: 
+                print "... origin layer is not supplied, assuming the last layer created is."
+            origin = self.last_layer_created 
+        else:
+            origin = options ["origin"]      
+                  
+        input = self.layers[origin].output
+        dropout_input = self.dropout_layers[origin].output
+        input_shape = self.layers[origin].output_shape
+
+        from yann.layers.flatten import flatten_layer as flt        
+        self.dropout_layers[id] = flt(input = dropout_input, id = id, input_shape = input_shape)
+        self.layers[id] = flt(input = input, id = id, input_shape = input_shape)        
+
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
+
+    def _add_unflatten_layer( self, id, options, verbose = 2):
+        """
+        Internal function that adds an unflattening layer.
+        
+        Args: 
+            id: id of the layer
+            options: basically kwargs supplied to add_layer
+            verbose: as usual
+        """
+        if verbose >= 3:
+            print "... Adding a flatten layer"
+        if not 'origin' in options.keys():
+            if self.last_layer_created is None:
+                raise Exception("You can't create a flatten without a layer to flatten.")
+            if verbose >=3: 
+                print "... origin layer is not supplied, assuming the last layer created is."
+            origin = self.last_layer_created 
+        else:
+            origin = options ["origin"]      
+                  
+        if not 'shape' in options.keys():
+            raise Exception ('This type of layer needs a shape variable to unflatten to')
+        else:
+            shape = options["shape"]
+
+        input = self.layers[origin].output
+        dropout_input = self.dropout_layers[origin].output
+        input_shape = self.layers[origin].output_shape
+
+        from yann.layers.flatten import unflatten_layer as flt        
+        self.dropout_layers[id] = flt(input = dropout_input, id = id, shape = shape,
+                                                                    input_shape = input_shape)
+        self.layers[id] = flt(input = input, id = id, shape = shape,
+                                                                    input_shape = input_shape)        
+
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
+
+
     def _add_dot_product_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
@@ -743,16 +847,15 @@ class network(object):
 
         # If the last layer was not a MLP layer, flatten the output signal from there.
         if not len(self.layers[origin].output_shape) == 2:  
-            input = self.layers[origin].output.flatten(2)
-            dropout_input = self.dropout_layers[origin].output.flatten(2)
-            input_shape = (self.layers[origin].output_shape[0], \
-                                self.layers[origin].output_shape[1] *\
-                                    self.layers[origin].output_shape[2]*\
-                                            self.layers[origin].output_shape[3])
-        else:
-            input = self.layers[origin].output
-            dropout_input = self.dropout_layers[origin].output
-            input_shape = self.layers[origin].output_shape
+            if verbose >= 3:
+                print "... Can't add a fully connected layer to a 2D image, flattening the" + \
+                                                                                  " layer output."
+            self.add_layer(type = 'flatten', origin = origin, verbose = verbose)
+            origin = self.last_layer_created          
+
+        input = self.layers[origin].output
+        dropout_input = self.dropout_layers[origin].output
+        input_shape = self.layers[origin].output_shape
 
         if not 'num_neurons' in options.keys():
             if verbose >=3:
@@ -846,7 +949,7 @@ class network(object):
         self.layers[id].origin.append(origin)
         self.layers[origin].destination.append(id)
 
-    def _add_classifier_layer(self, id, options, verbose = 2): 
+    def _add_classifier(self, id, options, verbose = 2): 
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
 
@@ -960,23 +1063,32 @@ class network(object):
             print "... Adding an objective layer"           
 
         if not 'origin' in options.keys():
-            if self.last_classifier_layer_created is None:
+            if self.last_classifier_created is None:
                 raise Exception("You can't create an objective layer without a" + \
                                     " classifier layer.")
             if verbose >=3: 
                 print "... origin layer is not supplied, assuming the last classifier layer" + \
                                    " created is the origin."
-            origin = self.last_classifier_layer_created 
+            origin = self.last_classifier_created 
         else:
             origin = options["origin"]
-            if type(origin) is tuple:
-                raise Exception ( "layer-layer loss is not supported at the moment.")
+            import types
+            if isinstance(origin, types.ListType):
+                raise Exception ( "layer-layer loss is not supported by the objective layer, use \
+                                  merge layer for it .")
             else:
                 origin = options ["origin"]
 
+        if not 'layer_type' in options.keys():
+            if verbose >= 3:
+                print "... type is not provided, assuming discriminator"
+            type = 'discriminator'
+        else:
+            type = options['layer_type']
+
         if not 'objective' in options.keys():
             if verbose >= 3:
-                print "... objective not provided, assuming nll"
+                print "... objective not provided, assuming nll"            
             objective = 'nll'
         else:
             objective = options["objective"]
@@ -1007,7 +1119,7 @@ class network(object):
                 data_y = data_y = self.datastream[datastream_id].one_hot_y
         else:
             data_y = self.datastream[datastream_id].y
-
+            
         # check if the origin layer is a classifier error.
         loss = getattr(self.layers[origin], "loss", None)
         dropout_loss = getattr(self.dropout_layers[origin], "loss", None)  
@@ -1032,6 +1144,7 @@ class network(object):
                                     labels = data_y,
                                     id = id,
                                     objective = objective,
+                                    type = type,
                                     input_shape = self.dropout_layers[origin].output_shape,
                                     L1 = self.L1,
                                     L2 = self.L2,
@@ -1045,6 +1158,7 @@ class network(object):
                             labels = data_y,
                             id = id,
                             objective = objective,
+                            type = type,
                             input_shape = self.layers[origin].output_shape,                                
                             L1 = self.L1,
                             L2 = self.L2,
@@ -1057,14 +1171,125 @@ class network(object):
         self.layers[id].origin.append(origin)
         self.layers[origin].destination.append(id)
 
-    def _initialize_test (self, classifier_layer, verbose = 2):
+    def _add_merge_layer(self, id, options, verbose = 2):
+        """
+        This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
+        Args:
+            options: Basically kwargs supplied to the add_layer function.
+            verbose: simiar to everywhere on the toolbox.
+        
+        """
+        if verbose >=3:
+            print "... Adding a merge layer"           
+
+        if not 'origin' in options.keys():
+            raise Exception("You can't create an merge layer without atleast two" + \
+                                    "layer ids as input.")
+        else:
+            origin = options["origin"]
+            if not type(origin) is tuple:
+                raise Exception ( "layer-layer loss needs a tuple as origin")
+            else:
+                origin = options ["origin"]        
+        
+        if not 'error' in options.keys():
+            error = 'rmse'
+        else:
+            error = options ["error"]
+        
+        if not 'layer_type' in options.keys():
+            layer_type = 'error'
+        else:
+            layer_type = options['layer_type']
+
+        if verbose >=3:
+            print "... creating the dropout stream"
+        
+        from yann.layers.merge import merge_layer as mrg
+        inputs = []
+        input_shape = []
+
+        for lyr in origin:
+            inputs.append ( self.dropout_layers[lyr].output )
+            input_shape.append (self.dropout_layers[lyr].output_shape)
+
+        self.dropout_layers[id] = mrg(                    
+                                    id = id,                                   
+                                    x = inputs,
+                                    type = layer_type,
+                                    error = error,
+                                    input_shape = input_shape,
+                                    verbose = verbose )
+        if verbose >=3:
+            print "... creating the stable stream"
+
+        inputs = [] # input_shape is going to remain the same from dropout to this.            
+        for lyr in origin:
+            inputs.append(self.layers[lyr].output)
+
+        self.layers[id] = mrg( id = id,                                   
+                               x = inputs,
+                               error = error,
+                               type = layer_type,
+                               input_shape = input_shape,
+                               verbose = verbose )                                                
+
+        for lyr in origin:
+            self.dropout_layers[id].origin.append(lyr)
+            self.dropout_layers[lyr].destination.append(id)
+            self.layers[id].origin.append(lyr)
+            self.layers[lyr].destination.append(id)
+        
+
+    def _initialize_test_classifier(self, errors, verbose):
+        """
+        Internal function that creates a test method for a classifier network
+
+        Args:
+            errors: a function that returns the error when supplied with y data.
+        """
+        if verbose >=3:
+            print "... creating the classifier testing theano function "
+
+        index = T.lscalar('index')    
+
+        self.mini_batch_test = theano.function(
+            inputs = [index],
+            outputs = errors(self.y),
+            name = 'test',
+            givens={
+            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
+            self.y: self.data_y[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})
+
+    def _initialize_test_generator(self, errors, verbose):
+        """
+        Internal function that creates a test method for a classifier network
+
+        Args:
+            errors: a function that returns the errors
+        """
+        if verbose >=3:
+            print "... creating the generator testing theano function "
+
+        index = T.lscalar('index')    
+
+        self.mini_batch_test = theano.function(
+            inputs = [index],
+            outputs = errors(),
+            name = 'test',
+            givens={
+            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})            
+
+    def _initialize_test (self, classifier = None, generator = None, verbose = 2):
         """
         Internal function to create the ``self.test_batch``  theano function. ``net.cook`` will use
         this function.
 
         Args:
             datastream: as always
-            classifier_layer: the classifier layer to test out of.
+            classifier: the classifier layer to test out of.
+            generator: if generator network, generator layer to test out of.
             verbose: as always
 
         """
@@ -1073,26 +1298,29 @@ class network(object):
 
         if self.cooked_datastream is None:
                raise Exception ("This needs to be run only after datastream is cooked")
-
-        _errors = self.layers[classifier_layer].errors
-
-        index = T.lscalar('index')     
-        self.mini_batch_test = theano.function(
-                inputs = [index],
-                outputs = _errors(self.y),
-                name = 'test',
-                givens={
-            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
-            self.y: self.data_y[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})    
         
-    def _initialize_predict (self, classifier_layer, verbose = 2):
+        if not classifier is None:
+            _errors = self.layers[classifier].errors
+        elif not generator is None:
+            _errors = self.layers[generator].loss
+        else:
+            raise Exception('Cannot cook a network that is neither generator nor classifier')
+
+        if not classifier is None: 
+            self._initialize_test_classifier(errors = _errors, verbose = verbose)
+
+        elif not generator is None:
+            self._initialize_test_generator(errors = _errors, verbose = verbose)
+
+    def _initialize_predict (self, classifier = None, generator = None, verbose = 2):
         """
         Internal function to create the ``self.predict_batch``  theano function. 
         ``net.cook`` will use this function.
 
         Args:
             datastream: as always
-            classifier_layer: the classifier layer whose predictions are needed.
+            classifier: the classifier layer whose predictions are needed.
+            generator: if generator network, generator layer to test out of.            
             verbose: as always
 
         """
@@ -1102,9 +1330,13 @@ class network(object):
         if verbose>=3 :
             print "... initializing predict function"
 
-        _predictions = self.layers[classifier_layer].predictions
+        if not classifier is None:    
+            _predictions = self.layers[classifier].predictions
+        elif not generator is None:
+            _predictions = self.layers[generator].generation
 
         index = T.lscalar('index')     
+
         self.mini_batch_predictions = theano.function(
                 inputs = [index],
                 outputs = _predictions,
@@ -1112,51 +1344,50 @@ class network(object):
                 givens={
             self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]}) 
 
-    def _initialize_posterior (self, classifier_layer, verbose = 2):
+    def _initialize_posterior (self, classifier = None, generator = None, verbose = 2):
         """
         Internal function to create the ``self.probabilities_batch``  theano function. 
         ``net.cook`` will use this function.
 
         Args:
             datastream: as always
-            classifier_layer_id: the classifier layer whose predictions are needed.
+            classifier: the classifier layer whose predictions are needed.
+            generator: if generator network, generator layer to test out of.
+            
             verbose: as always
 
         """
+        if not classifier is None:
+    
+            if self.cooked_datastream is None:
+                raise Exception ("This needs to be run only after network is cooked")
 
-        if self.cooked_datastream is None:
-               raise Exception ("This needs to be run only after network is cooked")
+            if verbose>=3 :
+                print "... initializing probability output functions"
 
-        if verbose>=3 :
-            print "... initializing probability output functions"
+            _probabilities = self.layers[classifier].probabilities
 
-        _probabilities = self.layers[classifier_layer].probabilities
+            index = T.lscalar('index')     
+            self.mini_batch_posterior = theano.function(
+                    inputs = [index],
+                    outputs = _probabilities,
+                    name = 'posterior',
+                    givens={
+                self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * \
+                                                                             self.mini_batch_size]})
+        else:
+            if verbose >=3:
+                print "... This network does not need a posterior"
 
-        index = T.lscalar('index')     
-        self.mini_batch_posterior = theano.function(
-                inputs = [index],
-                outputs = _probabilities,
-                name = 'posterior',
-                givens={
-            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})
-
-    def _initialize_train (self, objective, verbose = 2):
+    def _initialize_train_classifier(self, objective = None, verbose = 2):
         """
-        Internal function to create the ``self.train_batch``  theano function. 
-        ``net.cook`` will use this function.
+        Internal function that creates a train method for a classifier network
 
         Args:
-            datastream: an id
-            optimizer: an id
-            objective: a graph that connects to loss
-            verbose: as always
+            objective: a function that returns the objective when supplied with y data.
         """
-
-        if self.cooked_datastream is None:
-               raise Exception ("This needs to be run only after network is cooked")
-
-        if verbose >= 3:
-            print "... initializing trainer functions"
+        if verbose >=3:
+            print "... creating the classifier training theano function "
 
         index = T.lscalar('index')     
         if self.cooked_datastream.svm is False:   
@@ -1180,6 +1411,61 @@ class network(object):
                                                                     self.mini_batch_size]},
                     updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
 
+    def _initialize_train_generator(self, objective = None, verbose = 2):
+        """
+        Internal function that creates a train method for a generator network
+
+        Args:
+            objective: a function that returns the objective when supplied with y data.
+        """
+        if verbose >=3:
+            print "... creating the generator training theano function "
+            
+        index = T.lscalar('index')     
+        if self.cooked_datastream.svm is False:   
+            self.mini_batch_train = theano.function(
+                    inputs = [index, self.cooked_optimizer.epoch],
+                    outputs = objective,
+                    name = 'train',
+                    givens={
+            self.x: self.data_x[index * self.mini_batch_size:(index + 1) * self.mini_batch_size]},
+                    updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
+        else:                                                                        
+            self.mini_batch_train = theano.function(
+                    inputs = [index, self.cooked_optimizer.epoch],
+                    outputs = objective,
+                    name = 'train',                    
+                    # profile = True, # uncommenting this line will enable profiling
+                    givens={
+            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]},
+                    updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
+    
+    def _initialize_train (self,objective = None, verbose = 2):
+        """
+        Internal function to create the ``self.train_batch``  theano function. 
+        ``net.cook`` will use this function.
+
+        Args:
+            datastream: an id
+            optimizer: an id
+            objective: a graph that connects to loss or None, use self.dropout_cost
+            verbose: as always
+        """
+
+        if self.cooked_datastream is None:
+               raise Exception ("This needs to be run only after network is cooked")
+
+        if verbose >= 3:
+            print "... initializing trainer functions"
+
+        if objective == None:
+            objective = self.dropout_cost
+
+        if self.network_type == 'classifier':
+            self._initialize_train_classifier(objective = objective, verbose = verbose)
+
+        elif self.network_type == 'generator':
+            self._initialize_train_generator(objective = objective, verbose = verbose)
 
     def _cook_optimizer (self, verbose = 2):
         """
@@ -1191,6 +1477,9 @@ class network(object):
             optimizer: an id
             verbose: as always
         """
+
+        if verbose >=3:
+            print "... Cooking Optimizer"
 
         if self.cooked_optimizer is None:
                raise Exception ("This needs to be run only after network is cooked")
@@ -1205,6 +1494,71 @@ class network(object):
         self.current_momentum = theano.function ( inputs =[self.cooked_optimizer.epoch],
                                                          outputs = self.cooked_optimizer.momentum,
                                                          name = 'momentum' ) 
+
+        self.cooked_optimizer.calculate_gradients(params = self.active_params,
+                                       objective = self.dropout_cost,
+                                       verbose = verbose) 
+        self.cooked_optimizer.create_updates (params = self.active_params, verbose = verbose)
+
+    def _create_layer_activity_classifier(self, id, activity, verbose = 2):
+        
+        """
+        This is an internal method to create activity of one classifier layer.
+
+        Args:
+            id: id of layer to calcualte activity of.
+            activity: Supply the activity to output to produce activity of.
+            verbose: as always
+
+        """
+        index = T.lscalar('index')             
+        if self.cooked_datastream.svm is False:   
+            self.layer_activities[id] = theano.function(
+                        name = 'layer_activity_' + id,
+                        inputs = [index],
+                        outputs = activity,
+                        givens={
+                        self.x: self.cooked_datastream.data_x[index * 
+                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                    self.cooked_datastream.mini_batch_size],
+                        self.y: self.cooked_datastream.data_y[index * 
+                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                    self.cooked_datastream.mini_batch_size]},
+                                        on_unused_input = 'ignore')
+        else:                                                                        
+            self.layer_activities[id] = theano.function(
+                        name = 'layer_activity_' + id,                    
+                        inputs = [index],
+                        outputs = activity,
+                        givens={
+                        self.x: self.cooked_datastream.data_x[index * 
+                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                    self.cooked_datastream.mini_batch_size],
+                        self.one_hot_y: self.cooked_datastream.data_one_hot_y[index * 
+                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                self.cooked_datastream.mini_batch_size]},
+                                        on_unused_input = 'ignore')     
+
+    def _create_layer_activity_generator(self, id, activity, verbose = 2):
+        """
+        This is an internal method to create activity of one generator layer.
+
+        Args:
+            id : id of the layer to calcualte activity of.
+            activity: Supply the activity to output to produce activity of.
+            verbose: as always
+
+        """
+        index = T.lscalar('index')             
+        self.layer_activities[id] = theano.function(
+                    name = 'layer_activity_' + id,                    
+                    inputs = [index],
+                    outputs = activity,
+                    givens={
+                    self.x: self.cooked_datastream.data_x[index * 
+                                    self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                self.cooked_datastream.mini_batch_size]},
+                                    on_unused_input = 'ignore')  
 
     def _create_layer_activities(self, datastream = None, verbose = 2):
         """
@@ -1225,40 +1579,22 @@ class network(object):
         if self.cooked_datastream is None:
            raise Exception ("This needs to be run only after network is cooked")
 
-        index = T.lscalar('index')     
         self.layer_activities_created = True
-
         for id, _layer in self.layers.iteritems():
             if len(_layer.output_shape) == 4:
-                    activity = _layer.output.dimshuffle(0,2,3,1)  
+                if verbose >=3 :
+                    print "... collecting the activities of layer " + id
+                activity = _layer.output.dimshuffle(0,2,3,1)  
             else:
-                    activity = _layer.output
-            if self.cooked_datastream.svm is False:   
-                self.layer_activities[id] = theano.function(
-                            name = 'layer_activity_' + id,
-                            inputs = [index],
-                            outputs = activity,
-                            givens={
-                            self.x: self.cooked_datastream.data_x[index * 
-                                            self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                            self.cooked_datastream.mini_batch_size],
-                            self.y: self.cooked_datastream.data_y[index * 
-                                            self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                        self.cooked_datastream.mini_batch_size]},
-                                            on_unused_input = 'ignore')
-            else:                                                                        
-                self.layer_activities[id] = theano.function(
-                            name = 'layer_activity_' + id,                    
-                            inputs = [index],
-                            outputs = activity,
-                            givens={
-                            self.x: self.cooked_datastream.data_x[index * 
-                                                self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                        self.cooked_datastream.mini_batch_size],
-                            self.one_hot_y: self.cooked_datastream.data_one_hot_y[index * 
-                                                self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                        self.cooked_datastream.mini_batch_size]},
-                                            on_unused_input = 'ignore')
+                activity = _layer.output
+
+            if self.network_type == 'classifier':
+                self._create_layer_activity_classifier(id =id, activity = activity, 
+                                                                                verbose = verbose)
+
+            elif self.network_type == 'generator':
+                self._create_layer_activity_generator(id = id, 
+                                                             activity = activity, verbose = verbose)              
                                             
     def _new_era (self, new_learning_rate = 0.01, verbose = 2):
         """
@@ -1291,12 +1627,14 @@ class network(object):
         self.cache = self.cooked_datastream.cache
         self.mini_batches_per_batch = self.cooked_datastream.mini_batches_per_batch
         self.data_x = self.cooked_datastream.data_x
-        self.data_y = self.cooked_datastream.data_y
-        if self.cooked_datastream.svm is True:
-            self.data_one_hot_y = self.cooked_datastream.data_one_hot_y
+        if self.network_type == 'classifier':
+            self.data_y = self.cooked_datastream.data_y
+            if self.cooked_datastream.svm is True:
+                self.data_one_hot_y = self.cooked_datastream.data_one_hot_y
         self.x = self.cooked_datastream.x
-        self.y = self.cooked_datastream.y
-        self.one_hot_y = self.cooked_datastream.one_hot_y             
+        if self.network_type == 'classifier':            
+            self.y = self.cooked_datastream.y
+            self.one_hot_y = self.cooked_datastream.one_hot_y             
         self.current_data_type = self.cooked_datastream.current_type
 
     def _cache_data (self, type = 'train', batch = 0, verbose = 2):
@@ -1340,8 +1678,10 @@ class network(object):
                      test and train. 
             verbose: as always
         """
-        if verbose >= 2:
-            print ".. Cooking visualizer"
+        if verbose >= 3:
+            print "... Cooking visualizer"
+
+        self._create_layer_activities ( verbose = verbose )
 
         if self.cooked_visualizer.debug_functions is True:
             if hasattr(self,'cooked_optimizer'):
@@ -1379,12 +1719,9 @@ class network(object):
 
             objective_layer: Supply the layer id of layer that has the objective function.
                           Default is last objective layer created.
-            classifier_layer: supply the layer of classifier.  
+            classifier: supply the layer of classifier.  
                           Default is the last classifier layer created.              
             verbose: Similar to the rest of the toolbox.
-
-        Todo: 
-            This is going to be tricky to build, when I am building non-classifier networks.
 
 
         """
@@ -1417,10 +1754,25 @@ class network(object):
         else:
             objective_layer = kwargs['objective_layer']
 
-        if not 'classifier_layer' in kwargs.keys():
-            classifier_layer = None
+        self.network_type = None
+        if not 'classifier' in kwargs.keys():
+            classifier = None
         else:
-            classifier_layer = kwargs['classifier_layer']
+            classifier = kwargs['classifier']
+            self.network_type = 'classifier'
+
+        if not 'generator' in kwargs.keys():
+            generator = None
+        else:
+            generator = kwargs['generator']
+            self.network_type = 'generator'
+
+        if generator is None and classifier is None:
+            if verbose >= 3:
+                print "... assuming classifier because it is not specified what network we are \
+                        cooking "
+            classifier = self.last_classifier_created
+            self.network_type = 'classifier'
 
         if optimizer is None:
             if self.last_optimizer_created is None:
@@ -1460,33 +1812,24 @@ class network(object):
             if self.last_objective_layer_created is None:
                 raise Exception ("Cannot build trainer without having an objective layer created")
             else:
-                objective_layer = self.last_objective_layer_created
+                objective_layer = self.last_objective_layer_created              
 
-        if classifier_layer is None:
-            if self.last_classifier_layer_created is None:
-                raise Exception ("Cannot build trainer without having a classifier layer created")
-            else:
-                classifier_layer = self.last_classifier_layer_created                
-
-        cost = self.layers[objective_layer].output
-        dropout_cost = self.dropout_layers[objective_layer].output
-
-        self.cooked_optimizer.calculate_gradients(params = self.active_params,
-                                       objective = dropout_cost,
-                                       verbose = verbose) 
-        self.cooked_optimizer.create_updates (params = self.active_params, verbose = verbose)
+        self.cost = self.layers[objective_layer].output
+        self.dropout_cost = self.dropout_layers[objective_layer].output
 
         self._cook_datastream(verbose = verbose)
-        self._initialize_test (classifier_layer = classifier_layer,
-                               verbose = verbose)
-        self._initialize_predict ( classifier_layer = classifier_layer,
-                                 verbose = verbose)
-        self._initialize_posterior (classifier_layer = classifier_layer,
-                                   verbose = verbose)
-        self._create_layer_activities ( verbose = verbose )
-        self._initialize_train ( objective = dropout_cost,                               
-                                 verbose = verbose )   
         self._cook_optimizer(verbose = verbose )
+        
+        self._initialize_test (classifier = classifier,
+                               generator = generator,
+                               verbose = verbose)
+        self._initialize_predict ( classifier = classifier,
+                                 generator = generator,
+                                 verbose = verbose)
+        self._initialize_posterior (classifier = classifier,
+                                  generator = generator,        
+                                   verbose = verbose)
+        self._initialize_train ( verbose = verbose )   
         self.validation_accuracy = []
         self.best_validation_errors = numpy.inf
         self.best_training_errors = numpy.inf
@@ -1599,7 +1942,7 @@ class network(object):
             bar = progressbar.ProgressBar(maxval=total_mini_batches, \
                   widgets=[progressbar.AnimatedMarker(), \
                 ' validation ', ' ', progressbar.Percentage(), ' ',progressbar.ETA(), ]).start()  
-
+            
         batch_counter = 0
         for batch in xrange (self.batches2validate):      
             if verbose >= 3:
@@ -1614,7 +1957,9 @@ class network(object):
                 if show_progress is True:
                     bar.update(batch_counter)
 
+
         batch_counter = 0 
+        
         if training_accuracy is True:
             if verbose >= 3:
                 print "... training accuracy of batch " + str(batch)            
@@ -1633,29 +1978,59 @@ class network(object):
         if show_progress is True:
             bar.finish()    
 
-        total_samples = (self.batches2validate*self.mini_batches_per_batch[1]*self.mini_batch_size)
-        validation_accuracy = (total_samples - validation_errors)*100. / total_samples
-        self.validation_accuracy = self.validation_accuracy + [validation_accuracy]
-        if verbose >=2 :
-            print ".. Validation accuracy : " +str(validation_accuracy)
-        
-        if training_accuracy is True:
-            total_samples = (self.batches2train*self.mini_batches_per_batch[0]*self.mini_batch_size)
-            training_accuracy = (total_samples - training_errors)*100. / total_samples
-            self.training_accuracy = self.training_accuracy + [training_accuracy]
+        total_valid_samples = (self.batches2validate*self.mini_batches_per_batch[1]* \
+                                                                            self.mini_batch_size)
+        total_train_samples = (self.batches2train*self.mini_batches_per_batch[0]* \
+                                                                              self.mini_batch_size)                                                                            
+        if self.network_type == 'classifier':
+            validation_accuracy = (total_valid_samples -  \
+                                                    validation_errors)*100. / total_valid_samples        
+            self.validation_accuracy = self.validation_accuracy + [validation_accuracy]
             if verbose >=2 :
-                print ".. Training accuracy : " +str(training_accuracy)
-                
-            if training_errors < self.best_training_errors:
-                self.best_training_errors = training_errors
-                if verbose >= 2:
-                    print ".. Best training accuracy" 
+                print ".. Validation accuracy : " +str(validation_accuracy)
+        
+            if training_accuracy is True:
+                training_accuracy = (total_train_samples - \
+                                                        training_errors)*100. / total_train_samples
+                self.training_accuracy = self.training_accuracy + [training_accuracy]
+                if verbose >=2 :
+                    print ".. Training accuracy : " +str(training_accuracy)
+                    
+                if training_errors < self.best_training_errors:
+                    self.best_training_errors = training_errors
+                    if verbose >= 2:
+                        print ".. Best training accuracy" 
 
-        if validation_errors < self.best_validation_errors:
-            self.best_validation_errors = validation_errors
-            best = True
+            if validation_errors < self.best_validation_errors:
+                self.best_validation_errors = validation_errors
+                best = True
+                if verbose >= 2:
+                    print ".. Best validation accuracy" 
+        
+        elif self.network_type == 'generator':
+            validation_accuracy = validation_errors / total_valid_samples
+            self.validation_accuracy = self.validation_accuracy + [validation_accuracy]
+            
             if verbose >= 2:
-                print ".. Best validation accuracy" 
+                print ".. Mean Validation Error : " + str(validation_accuracy)
+
+            if training_accuracy is True:
+                training_accuracy = training_errors / total_train_samples
+                self.training_accuracy = self.training_accuracy + [training_accuracy]
+
+                if verbose >=2:
+                    print".. Mean Trianing Error : " + str(training_accuracy)
+
+                if training_errors < self.best_training_errors:
+                    self.best_training_errors = training_errors
+                    if verbose >= 2:
+                        print ".. Best training error" 
+
+            if validation_errors < self.best_validation_errors:
+                self.best_validation_errors = validation_errors
+                best = True
+                if verbose >= 2:
+                    print ".. Best validation error"                             
                         
         return best
      

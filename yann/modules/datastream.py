@@ -76,11 +76,20 @@ class datastream(module):
         self.cache               = data_params [ "cache" ]
 
         self.current_type = 'train'       
-        if 'svm' in dataset_init_args.keys():
-            self.svm = dataset_init_args["svm"]
+        if 'type' in dataset_init_args.keys():
+            self.type = dataset_init_args['type']
         else:
-            self.svm = False
+            self.type = 'xy'
 
+        if self.type == 'xy':
+            if 'svm' in dataset_init_args.keys():    
+                self.svm = dataset_init_args["svm"]
+            else:
+                self.svm = False
+        elif self.type == 'x':
+            self.svm = False
+        
+        
         if self.svm is True:
             if "n_classes" in dataset_init_args.keys():
                 self.n_classes = dataset_init_args ["n_classes"]            
@@ -91,14 +100,18 @@ class datastream(module):
         self.batch = 0# initialize the batch to zero. Changing this will produce a new stream. 
          
         self.cached_zeros_x = numpy.zeros((1,),dtype = theano.config.floatX)
-        self.cached_zeros_y = numpy.zeros((1,),dtype = theano.config.floatX)
+        if self.type == 'xy':
+            self.cached_zeros_y = numpy.zeros((1,),dtype = theano.config.floatX)
 
         if verbose >= 3:
             print "... Datastream is initiliazed"
         
         self.x = T.matrix('x')
-        self.y = T.ivector('y')
-        self.one_hot_y = T.matrix('one_hot_y')
+        if self.type == 'xy':
+            self.y = T.ivector('y')
+            self.one_hot_y = T.matrix('one_hot_y')        
+        elif self.type == 'x':
+            self.y = self.x
 
     def load_data (self, type = 'train', batch = 0, verbose = 2):
         """
@@ -113,6 +126,9 @@ class datastream(module):
             batch: Supply an integer
                    
             verbose: Simliar to verbose in toolbox.
+        
+        Todo:
+            Create and load dataset for type = 'x'
 
         Returns:
             numpy.ndarray: ``data_x, data_y`` 
@@ -121,6 +137,7 @@ class datastream(module):
             print "... loading " + type + " data batch " + str(batch) 
 
         f = open(self.dataset + '/' + type + '/batch_' + str(batch) +'.pkl', 'rb')
+        
         data_x, data_y = cPickle.load(f)
         f.close()   
 
@@ -128,7 +145,8 @@ class datastream(module):
             print "... data is loaded"  
         
         data_x = check_type (data_x, theano.config.floatX)
-        data_y = check_type (data_y, theano.config.floatX)
+        if self.type == 'xy':
+            data_y = check_type (data_y, theano.config.floatX)
         # Theano recommends storing on gpus only as floatX and casts them to ints during use.
         # I don't know why, but I am following their recommendations blindly.
         return data_x, data_y         
@@ -156,13 +174,15 @@ class datastream(module):
                 self.cached_zeros_x = numpy.zeros(data_size_needed,
                                                      dtype = data_x.dtype)
                 if verbose >= 3:
-                    print "... Cache miss in loading data "                  
-            if not self.cached_zeros_y.shape[0] == data_size_needed[0]:
-                self.cached_zeros_y =  numpy.zeros((data_size_needed[0],),
-                                                        dtype = data_y.dtype)
+                    print "... Cache miss in loading data "   
+
+            if self.type == 'xy':                           
+                if not self.cached_zeros_y.shape[0] == data_size_needed[0]:
+                    self.cached_zeros_y =  numpy.zeros((data_size_needed[0],), dtype = data_y.dtype)
                                                         
             data_x = numpy.concatenate((data_x, self.cached_zeros_x), axis=0)
-            data_y = numpy.concatenate((data_y, self.cached_zeros_y), axis = 0)
+            if self.type == 'xy':  # if its only x, data_y is useless anyway.          
+                data_y = numpy.concatenate((data_y, self.cached_zeros_y), axis = 0)
     
         elif data_x.shape[0] > self.data_cache_size:
             # don't know if this case will ever be used.
@@ -170,8 +190,10 @@ class datastream(module):
             data_y = data_y[:self.data_cache_size,]
 
         self.data_x.set_value (data_x, borrow = self.borrow )
-        self.data_y_uncasted.set_value (data_y, borrow = self.borrow )                        
-        if self.svm is True:
+        if self.type == 'xy':            
+            self.data_y_uncasted.set_value (data_y, borrow = self.borrow )
+
+        if self.svm is True and self.type == 'xy':
             data_one_hot_y = self.one_hot_labels( data_y, verbose = verbose )
             self.data_one_hot_y.set_value ( data_one_hot_y , borrow = self.borrow )
 
@@ -244,7 +266,8 @@ class datastream(module):
                                                             borrow = self.borrow,
                                                             svm = True,
                                                             verbose = verbose)
-        self.data_y = T.cast(self.data_y_uncasted, 'int32')
+        if self.type == 'xy':                                                            
+            self.data_y = T.cast(self.data_y_uncasted, 'int32')
 
         if verbose >=3:
             print "... dataset is initialized"
