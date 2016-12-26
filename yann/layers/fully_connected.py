@@ -95,7 +95,10 @@ class dot_product_layer (layer):
         if batch_norm is True: self.L1 = self.L1 + abs(self.alpha).sum()
         self.L2 = (self.w**2).sum()  
         if batch_norm is True: self.L2 = self.L2 + (self.alpha**2).sum()
-        
+        """
+        Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network 
+        training by reducing internal covariate shift." arXiv preprint arXiv:1502.03167 (2015). """
+                
         if verbose >=3: 
             print "... Dot Product layer is created with output shape " + str(self.output_shape)        
 

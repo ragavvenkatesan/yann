@@ -166,7 +166,11 @@ class classifier_layer (layer):
         """
         Hinge loss cost of the classifier layer.
         Do not use this directly, use the ``loss`` method instead.
-
+        
+        Notes:
+            Reference: Cortes, Corinna, and Vladimir Vapnik. "Support-vector networks." Machine 
+            learning 20.3  (1995): 273-297.
+            
         Args:
 
             y1: datastreamer's ``y1`` variable, that has the lables.  Use ``svm_flag`` in 
@@ -175,7 +179,7 @@ class classifier_layer (layer):
         Returns:
 
             theano variable: Hinge loss.
-        """        
+        """                
         margin = y * self.fit
         return self._hinge(margin).mean(axis=0).sum()
 

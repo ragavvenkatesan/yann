@@ -3,6 +3,9 @@ dynamic_printer_import = True
 
 import os
 from abstract import module
+from yann.utils.dataset import rgb2gray, gray2rgb_image
+from matplotlib.image import imsave
+import numpy as np
 
 try:
     from theano.printing import pydotprint as static_theano_print
@@ -12,6 +15,54 @@ try:
     from theano.d3viz import d3viz as dynamic_theano_print # refer todo on top.
 except:
     dynamic_printer_import = False
+
+def save_images(imgs, prefix, is_color, verbose = 2):   
+    """
+    This functions produces a visualiation of the filters.
+    
+    This function requires the ``pylearn2`` package to be installed. Otherwise,
+    it will throw an exception.
+        
+     
+    Args:
+        imgs: images of shape .. [num_imgs, height, width, channels] Note the change in order. 
+        prefix: address to save the image to
+        is_color: If the image is color or not.
+        verbose: As Always
+    """
+    try:  
+        # Pylearn2 pylearn_visualization
+        from pylearn2.gui.patch_viewer import make_viewer
+        
+    except ImportError: 
+        print "Install pylearn2 before using visualize"
+        raise exc
+            
+    if verbose >= 3:
+        print "... Rasterizing"
+
+    raster = []
+    count = 0 
+    if is_color is True and imgs.shape[3] % 3 != 0:
+        filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
+        imgs = imgs[:,:,:,0:filts]          
+    
+    for i in xrange (imgs.shape[3]):
+        curr_image = imgs[:,:,:,i]
+        if is_color is True:
+            raster.append(rgb2gray(np.array(make_viewer( 
+                            curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                             curr_image.shape[2])), is_color = False ).get_img())))
+            if count == 2:          
+                imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
+                count = -1                            
+        else:   
+            raster.append(np.array(make_viewer( curr_image.reshape(
+                                 (curr_image.shape[0],curr_image.shape[1] * curr_image.shape[2])), 
+                                                                is_color = False ).get_img()))             
+            imsave(prefix + str(i) + ".jpg",raster[i])
+        count = count + 1
+    return raster
 
 class visualizer(module):
     """
@@ -89,8 +140,8 @@ class visualizer(module):
             self.debug_layers = False            
 
         """ Needs to be done after mini_batch_size is setup. 
-            self.shuffle_batch_ind = numpy.arange(self.mini_batch_size)
-            numpy.random.shuffle(self.shuffle_batch_ind)
+            self.shuffle_batch_ind = np.arange(self.mini_batch_size)
+            np.random.shuffle(self.shuffle_batch_ind)
             self.visualize_ind = self.shuffle_batch_ind[0:self.n_visual_images] 
 
             assert self.mini_batch_size >= self.n_visual_images   
@@ -116,10 +167,23 @@ class visualizer(module):
         if not os.path.exists(self.root + '/computational_graphs'):
             os.makedirs(self.root + '/computational_graphs')
             os.makedirs(self.root + '/computational_graphs/static')
-            os.makedirs(self.root + '/computational_graphs/dynamic') # refer the todo on top.
+            os.makedirs(self.root + '/computational_graphs/dynamic') # refer the todo on top. 
     
         if verbose >= 3:
             print "... Visualizer is initiliazed"
+
+    def initialize (self, batch_size, verbose = 2):
+        """
+        Function that cooks the visualizer for some dataset. 
+
+        Args:
+            batch_size: form dataset
+            verbose: as always
+        """
+        self.batch_size = batch_size
+        shuffle_batch_ind = np.arange(self.batch_size)
+        np.random.shuffle(shuffle_batch_ind)    
+        self.indices = shuffle_batch_ind[0:self.sample_size]
 
     def theano_function_visualizer( self,
                                     function,
@@ -161,6 +225,91 @@ class visualizer(module):
             except:
                 if verbose >= 3:
                     print "... Something is wrong with the setup of installers for dv3viz"
+
+    
+
+    def visualize_images(self, imgs, loc = None, verbose = 2):
+        """
+        Visualize the images in the dataset. Assumes that the data in the tensor variable imgs is 
+        in shape (batch_size, height, width, channels). Assumes that batchsize does not change.
+
+        Args:
+            imgs: tensor of data
+            verbose: as usual.
+        """
+        if verbose >=3 :
+            print "... saving down images"
+        if imgs.shape[0] == self.batch_size:
+            imgs = imgs[self.indices]
+
+        if loc is None:
+            loc = self.root + '/data/image_'            
+        else:
+            loc = loc + '/image_'
+        imgs = save_images(   imgs = imgs,
+                            prefix = loc, 
+                            is_color = self.rgb_filters if imgs.shape[-1] == 3 else False)    
+        
+    def visualize_activities(self, layer_activities, epoch, index = 0, verbose = 2):
+        """
+        This method saves down all activities.
+
+        Args:
+            layer_activities: network's layer_activities as created
+            epoch: what epoch are we running currently.
+            verbose: as always
+        """
+        if verbose >= 3:
+            print "... Visualizing Activities"
+
+        loc = self.root + '/activities/epoch_' + str(epoch)
+        if not os.path.exists(loc):            
+            os.makedirs(loc)
+        for id, activity in layer_activities.iteritems():            
+            imgs = activity(index)
+            if len(imgs.shape) == 2:
+                imgs = imgs[:,np.newaxis,:,np.newaxis]            
+            if len(imgs.shape) == 4:
+                if not os.path.exists(loc + '/layer_' + id):                
+                    os.makedirs(loc + '/layer_' + id)
+                self.visualize_images(imgs, loc = loc + '/layer_' + id ,verbose = verbose)
+    
+    def visualize_filters(self, layers, epoch, index = 0, verbose = 2):
+        """
+        This method saves down all activities.
+
+        Args:
+            layers: network's layer dictionary
+            epoch: what epoch are we running currently.
+            verbose: as always
+        """
+        if verbose >= 3:
+            print "... Visualizing Layers"
+
+        loc = self.root + '/filters/epoch_' + str(epoch)
+        if not os.path.exists(loc):            
+            os.makedirs(loc)
+        for id, layer in layers.iteritems():  
+            if layer.params is not None:    
+                if verbose >= 3:
+                    print "... saving down visualization of layer " + id      
+                imgs = layer.w.get_value(borrow = True)
+                if len(imgs.shape) == 4:
+                    if not os.path.exists(loc + '/layer_' + id):                
+                        os.makedirs(loc + '/layer_' + id)
+                    imgs = imgs.transpose(0,2,3,1)                    
+                    self.visualize_images(   imgs = imgs,
+                                             loc = loc + '/layer_' + id , 
+                                             verbose = verbose )   
+                elif len(imgs.shape) == 2:
+                    if not os.path.exists(loc + '/layer_' + id):                
+                        os.makedirs(loc + '/layer_' + id)
+                    imgs = imgs[:,np.newaxis,:,np.newaxis]
+                    imgs = imgs.transpose(0,2,3,1)                                        
+                    self.visualize_images(   imgs = imgs,
+                                             loc = loc + '/layer_' + id , 
+                                             verbose = verbose )                     
+                    
 
 if __name__ == '__main__':
     pass  

@@ -67,7 +67,7 @@ def log_reg ( dataset, verbose ):
     # cce-categorical cross entropy, 
     # bce-binary cross entropy,
     # hinge-hinge loss 
-    learning_rates = (1, 0.01, 0.001)  
+    learning_rates = (0.05, 0.01, 0.001)  
     # (initial_learning_rate, annealing, ft_learnint_rate)
 
     net.cook( optimizer = 'main',
@@ -78,7 +78,7 @@ def log_reg ( dataset, verbose ):
               verbose = verbose
               )
     # visualization of the network.  
-    # draw_network(net.graph, filename = 'log_reg.pdf')     
+    draw_network(net.graph, filename = 'log_reg.png')     
     net.train( epochs = (10, 5), 
                validate_after_epochs = 1,
                training_accuracy = True,

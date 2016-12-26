@@ -9,6 +9,11 @@ def Elu(x, alpha = 1):
     
     Applies point-wise ela to the input supplied. ``alpha`` is defualt to ``0``. 
     Supplying a value to ``alpha`` would make this a leay Elu. 
+
+    Notes: 
+        Reference :Clevert, Djork-Arné, Thomas Unterthiner, and Sepp Hochreiter. "Fast and accurate 
+         deep network learning by exponential linear units (elus)." arXiv preprint arXiv:1511.07289 
+         (2015).
     
     Args:
         x: could be a ``theano.tensor`` or a ``theano.shared`` or ``numpy`` arrays or 
@@ -28,6 +33,11 @@ def ReLU(x, alpha = 0):
     
     Applies point-wise rectification to the input supplied. ``alpha`` is defualt to ``0``. 
     Supplying a value to ``alpha`` would make this a leay ReLU. 
+
+    Notes:
+        Reference: Nair, Vinod, and Geoffrey E. Hinton. "Rectified linear units improve restricted
+         boltzmann machines." Proceedings of the 27th International Conference on Machine Learning 
+         (ICML-10). 2010.
     
     Args:
         x: could be a ``theano.tensor`` or a ``theano.shared`` or ``numpy`` arrays or 

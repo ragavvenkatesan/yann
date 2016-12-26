@@ -40,6 +40,7 @@ class layer(object):
         self.origin = []  # this and destination will be added from outside. 
         self.destination = [] # only None for now during initialization. 
         self.output = None
+        self.params = None
         self.output_shape = None
         self.num_neurons = None
         self.activation = 'identity'

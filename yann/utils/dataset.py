@@ -640,6 +640,31 @@ def rgb2gray(rgb):
 	gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
 	return gray
 			
+# Concatenate three (height, width)s into one (height, width, 3).
+def gray2rgb_image(r, g, b, channels_dim = 3):
+	""" 
+	Concatenates ``r, g ,b``, three two dimensional arrays into one rgb image.   
+				
+	Args:
+		r:  Red channel pixels
+		g:  Green channel pixels
+		b:  Blue channel pixels 
+		channels_dim: Which channel to concatenate to.
+						All inputs must have the same shape.
+				
+	Returns:
+		rgb: Concatenated image.            
+	"""
+
+	assert r.ndim == 2 and g.ndim == 2 and b.ndim == 2
+	rgb = (r[..., numpy.newaxis], g[..., numpy.newaxis], b[..., numpy.newaxis])
+	out = numpy.concatenate(rgb, axis=-1)
+	if channels_dim == 3:
+		return out	
+	elif channels_dim == 1:
+		return out.transpose((0,3,1,2))
+    		
+
 def preprocessing( data, height, width, channels, args): 
 	"""
 	This function does some basic image processing and preprocessing work on loaded data. Its 

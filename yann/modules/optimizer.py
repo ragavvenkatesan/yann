@@ -150,6 +150,10 @@ class optimizer(module):
         This basically creates all the updates and update functions which trainers can iterate 
         upon.
 
+        Todo:
+            Need to modularize this method more. I need to split these into many methods one for
+            each type of optimizer. if-then breaks are fine for now.
+
         Args:
             params: Supply learnable active parameters of a network.
             objective: supply a theano graph connecting the params to a loss        

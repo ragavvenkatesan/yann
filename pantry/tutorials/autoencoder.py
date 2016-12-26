@@ -21,7 +21,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                                         # false, polyak, nesterov
                 "momentum_params"     : (0.5, 0.95, 30),      
                     # (mom_start, momentum_end, momentum_end_epoch)                                                           
-                "regularization"      : (0.001, 0.001),       
+                "regularization"      : (0.000, 0.001),       
                         # l1_coeff, l2_coeff, decisiveness (optional)                                
                 "optimizer_type"      : 'rmsprop',                
                                         # sgd, adagrad, rmsprop, adam 
@@ -65,22 +65,46 @@ def autoencoder ( dataset= None, verbose = 1 ):
 
     net.add_layer ( type = "dot_product",
                     origin = "flatten",
-                    id = "encoder",
+                    id = "encoder_1",
                     num_neurons = 128,
-                    activation = 'sigmoid',
+                    activation = 'relu',
+                    batch_norm = True,
+                    dropout_rate = 0.5,
                     verbose = verbose
                     )
 
     net.add_layer ( type = "dot_product",
-                    origin = "encoder",
-                    id = "decoder",
-                    num_neurons = 784,
-                    activation = 'sigmoid',
+                    origin = "encoder_1",
+                    id = "encoder_2",
+                    num_neurons = 32,
+                    activation = 'relu',
+                    batch_norm = True,
+                    dropout_rate = 0.5,
+                    verbose = verbose
+                    )                    
+
+    net.add_layer ( type = "dot_product",
+                    origin = "encoder_2",
+                    id = "decoder_1",
+                    num_neurons = 64,
+                    activation = 'relu',
+                    batch_norm = True,
+                    dropout_rate = 0.5,
                     verbose = verbose
                     )
 
+    net.add_layer ( type = "dot_product",
+                    origin = "decoder_1",
+                    id = "decoder_2",
+                    num_neurons = 784,
+                    activation = 'relu',
+                    batch_norm = True,
+                    dropout_rate = 0.5,                    
+                    verbose = verbose
+                    )                    
+
     net.add_layer ( type = "unflatten",
-                    origin = "decoder",
+                    origin = "decoder_2",
                     id = "unflatten",
                     shape = (28,28,1),
                     verbose = verbose
@@ -90,7 +114,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     origin = ("input","unflatten"),
                     id = "merge",
                     layer_type = "error",
-                    error = "rmse",
+                    error = "l2",
                     verbose = verbose)
 
     net.add_layer ( type = "objective",
@@ -101,7 +125,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
 
-    learning_rates = (1, 0.1, 0.01)  
+    learning_rates = (0.05, 0.1, 0.01)  
 
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
@@ -111,17 +135,20 @@ def autoencoder ( dataset= None, verbose = 1 ):
               verbose = verbose
               )
 
-    #from yann.utils.graph import draw_network
-    #draw_network(net.graph, filename = 'autoencoder.png')    
+    from yann.utils.graph import draw_network
+    draw_network(net.graph, filename = 'autoencoder.png')    
+    net.pretty_print()
 
-    net.train( epochs = (10, 5), 
+    net.train( epochs = (70, 30), 
                validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,
                early_terminate = True,
                verbose = verbose)
                
-
+    net.test( show_progress = True,
+               verbose = verbose)
+                           
 if __name__ == '__main__':
     import sys
     dataset = None  

@@ -23,6 +23,7 @@ import theano
 import theano.tensor as T 
 
 import yann
+from yann.core.operators import copy_params
 
 max_neurons_to_display = 7
 
@@ -326,15 +327,12 @@ class network(object):
         
         elif type == 'merge':
             self._add_merge_layer(id = id, options = kwargs, verbose = verbose) 
-            self.last_layer_created = id
 
         elif type == 'flatten':
             self._add_flatten_layer( id = id, options = kwargs, verbose = verbose)
-            self.last_layer_created = id
 
         elif type == 'unflatten':
             self._add_unflatten_layer( id = id, options = kwargs, verbose = verbose)
-            self.last_layer_created = id
 
         else:
             raise Exception('No layer called ' + type + ' exists in yann')
@@ -409,22 +407,22 @@ class network(object):
 
         # input parameter `viualizer` is used  
         if type == 'visualizer':
-            self._add_visualizer(visualizer_params = params, verbose = verbose)
+            self.add_visualizer(visualizer_params = params, verbose = verbose)
 
         # input parameter `optimizer` is used             
         elif type == 'optimizer':
-            self._add_optimizer(optimizer_params = params, verbose = verbose)
+            self.add_optimizer(optimizer_params = params, verbose = verbose)
 
         elif type == 'datastream':
-            self._add_datastream(dataset_params = params, verbose = verbose)
+            self.add_datastream(dataset_params = params, verbose = verbose)
         
         elif type == 'resultor':
-            self._add_resultor(resultor_params = params, verbose = verbose)
+            self.add_resultor(resultor_params = params, verbose = verbose)
 
         else:
             raise Exception ('No module called ' + type)
 
-    def _add_resultor(self, resultor_params, verbose = 2):
+    def add_resultor(self, resultor_params, verbose = 2):
         """
         This function is used to add a resultor to the network.
 
@@ -442,7 +440,7 @@ class network(object):
         self.resultor[id] = resultor ( resultor_init_args = resultor_params, verbose = verbose )
         self.last_resultor_created = id
 
-    def _add_visualizer(self, visualizer_params, verbose = 2):
+    def add_visualizer(self, visualizer_params, verbose = 2):
         """
         This function is used to add a visualizer to the network.
 
@@ -461,7 +459,7 @@ class network(object):
                                                                                  verbose = verbose )
         self.last_visualizer_created = id
 
-    def _add_optimizer(self, optimizer_params, verbose = 2):
+    def add_optimizer(self, optimizer_params, verbose = 2):
         """
         This function is used to add a optimizer to the network.
 
@@ -479,7 +477,7 @@ class network(object):
         self.optimizer[id] = optimizer ( optimizer_init_args = optimizer_params, verbose = verbose )
         self.last_optimizer_created = id
 
-    def _add_datastream(self, dataset_params, verbose = 2):
+    def add_datastream(self, dataset_params, verbose = 2):
         """
         This function is used to add a datastream to the network.
 
@@ -519,7 +517,7 @@ class network(object):
             else:
                 datastream_id = '-1'  # this is temp datastream will initialize a new id.                     
             if not datastream_id in self.datastream.keys():               
-                self._add_datastream(dataset_params = dataset_params, verbose = 2)
+                self.add_datastream(dataset_params = dataset_params, verbose = 2)
                 if verbose >= 3:
                     print "... Created a new datastream module also"
             else:
@@ -1584,7 +1582,8 @@ class network(object):
             if len(_layer.output_shape) == 4:
                 if verbose >=3 :
                     print "... collecting the activities of layer " + id
-                activity = _layer.output.dimshuffle(0,2,3,1)  
+                activity = _layer.output.dimshuffle(0,2,3,1)  # activities are dimshuffled for 
+                                                            # help with visualizers
             else:
                 activity = _layer.output
 
@@ -1608,7 +1607,7 @@ class network(object):
         if verbose >= 3:
             print "... setting up new era"
         self.learning_rate.set_value(numpy.asarray(new_learning_rate,dtype = theano.config.floatX))
-        self._copy_params ( source = self.best_params, destination = self.params )
+        copy_params ( source = self.best_params, destination = self.params , borrow = self.borrow)
 
     def _cook_datastream (self, verbose = 2):
         """
@@ -1620,6 +1619,9 @@ class network(object):
         if verbose >= 3:
             print "... Cooking datastream"
         self.mini_batch_size = self.cooked_datastream.mini_batch_size
+        self.height = self.cooked_datastream.height
+        self.width = self.cooked_datastream.width
+        self.channels = self.cooked_datastream.channels
         self.batches2train = self.cooked_datastream.batches2train
         self.batches2test = self.cooked_datastream.batches2test
         self.batches2validate = self.cooked_datastream.batches2validate
@@ -1655,19 +1657,7 @@ class network(object):
         self.set_data ( batch = batch , type = type, verbose = verbose )
         self.current_data_type = type
 
-    def _copy_params (self, source, destination):
-        """
-        Internal function that copies paramters maintaining theano shared nature. 
 
-        Args:
-            source: Source
-            destination: destination
-
-        Notes: 
-            Was using deep copy to do this. This seems faster. But can I use ``theano.clone`` ?
-        """
-        for src, dst in zip(source, destination):
-            dst.set_value ( src.get_value (borrow = self.borrow))
 
     def _cook_visualizer(self, verbose = 2):
         """
@@ -1703,7 +1693,49 @@ class network(object):
                 self.cooked_visualizer.theano_function_visualizer(
                                                         function = self.layer_activities[layer], 
                                                         verbose = verbose)
-                    
+        self.cooked_visualizer.initialize(batch_size = self.mini_batch_size, verbose = verbose) 
+        # datastream needs to be reshaped basically. Why I don't use unflatten or inputs I don't 
+        # know .     
+        imgs = self.data_x[:self.mini_batch_size,].reshape((self.mini_batch_size,
+                                                self.height, self.width, self.channels)).eval()
+        self.cooked_visualizer.visualize_images(imgs = imgs, verbose = verbose)
+        self.visualize_after_epochs = 1
+
+    def visualize_activities( self, epoch = 0, verbose = 2):
+        """
+        This method will save down all layer activities for the correct epoch.
+
+        Args:
+            epoch: What epoch is being running now.
+            verbose: As always.
+        """
+        self.cooked_visualizer.visualize_activities(layer_activities = self.layer_activities,
+                                                 epoch = epoch,
+                                                 index = 0,
+                                                 verbose = verbose)
+
+    def visualize_filters( self, epoch = 0, verbose = 2):
+        """
+        This method will save down all layer filters for the correct epoch.
+
+        Args:
+            epoch: What epoch is being running now.
+            verbose: As always.
+        """
+        self.cooked_visualizer.visualize_filters(layers = self.dropout_layers,
+                                                 epoch = epoch,
+                                                 verbose = verbose)
+    def visualize(self, epoch = 0, verbose =2 ):
+        """
+        This method will use the cooked visualizer to save down the visualizations
+
+        Args:
+            epoch: supply the epoch number ( used to create directories to save 
+        """
+        if (epoch % self.visualize_after_epochs == 0):             
+            self.visualize_activities(epoch = epoch, verbose = verbose)
+            self.visualize_filters(epoch = epoch, verbose = verbose)  
+
     def cook(self, verbose = 2, **kwargs):
         """
         This function builds the backprop network, and makes the trainer, tester and validator
@@ -1840,7 +1872,8 @@ class network(object):
 
         self.cost = []  
         self.cooked_visualizer = self.visualizer[visualizer]
-        self._cook_visualizer(verbose = verbose)
+        self._cook_visualizer(verbose = verbose) # always cook visualizer last.
+        self.visualize (epoch = 0, verbose = verbose)
         # Cook Resultor.
         # Cook Visualizer.
 
@@ -1906,7 +1939,9 @@ class network(object):
         This is going to be deprecated with the use of visualizer module.
         """
         if verbose >=2:
-            print ".. This method will be deprecated with the implementation of a visualizer"
+            print ".. This method will be deprecated with the implementation of a visualizer, also \
+                    this works only for tree-like networks. This will cause errors in printing \
+                    DAG-style networks."
         input_layers = []
         # collect all begining of streams
         for id, layer in self.layers.iteritems():
@@ -1916,7 +1951,7 @@ class network(object):
         for input_layer in input_layers:
             prefix = self._print_layer(id = input_layer, prefix = " ", nest = True)                                                     
                         
-    def validate(self, training_accuracy = False, show_progress = False, verbose = 2):
+    def validate(self, epoch = 0, training_accuracy = False, show_progress = False, verbose = 2):
         """
         Method is use to run validation. It will also load the validation dataset.
 
@@ -1925,7 +1960,9 @@ class network(object):
             show_progress: Display progressbar ?
             training_accuracy: Do you want to print accuracy on the training set as well ?
         """
-        best = False
+        best = False        
+        if  not (epoch % self.validate_after_epochs == 0) :  
+            return best
 
         validation_errors = 0   
         training_errors = 0
@@ -1959,7 +1996,6 @@ class network(object):
 
 
         batch_counter = 0 
-        
         if training_accuracy is True:
             if verbose >= 3:
                 print "... training accuracy of batch " + str(batch)            
@@ -2064,9 +2100,14 @@ class network(object):
             epochs = kwargs["epochs"]
 
         if not 'validate_after_epochs' in kwargs.keys():
-            validate_after_epochs = 1
+            self.validate_after_epochs = 1
         else:
-            validate_after_epochs = kwargs["validate_after_epochs"]            
+            self.validate_after_epochs = kwargs["validate_after_epochs"]            
+
+        if not 'visualize_after_epochs' in kwargs.keys():
+            self.visualize_after_epochs = self.validate_after_epochs
+        else:
+            self.visualize_after_epochs = kwargs['visualize_after_epochs']
 
         if not 'show_progress' in kwargs.keys():
             show_progress = True
@@ -2192,13 +2233,16 @@ class network(object):
 
             # post training items for one loop of batches.    
             if nan_flag is False:        
-                if  epoch_counter % validate_after_epochs == 0:  
-                    best = self.validate(training_accuracy = training_accuracy,
-                                         show_progress = show_progress,
-                                         verbose = verbose)
-                    if best is True:
-                        self._copy_params(source = self.params, destination= nan_insurance)
-                        self._copy_params(source = self.params, destination= self.best_params)                        
+                best = self.validate(   epoch = epoch_counter,
+                                        training_accuracy = training_accuracy,
+                                        show_progress = show_progress,
+                                        verbose = verbose )
+                self.visualize ( epoch = epoch_counter , verbose = verbose)
+                if best is True:
+                    copy_params(source = self.params, destination= nan_insurance , 
+                                                                            borrow = self.borrow)
+                    copy_params(source = self.params, destination= self.best_params, 
+                                                                            borrow = self.borrow)                        
                         # self.resultor.save_network()
                 # self.resultor.something() # this function is dummy now. But resultor should use 
                 # self.visualizer.soemthing() # Again visualizer shoudl do something.
@@ -2234,7 +2278,8 @@ class network(object):
         start_time = time.clock()
         wrong = 0
         predictions = []
-        posteriors = []
+        if self.network_type == 'classifier':
+            posteriors = []
         labels = []                
         total_mini_batches =  self.batches2test * self.mini_batches_per_batch[2]
 
@@ -2251,7 +2296,8 @@ class network(object):
             for minibatch in xrange (self.mini_batches_per_batch[2]):
                 wrong = wrong + self.mini_batch_test(minibatch) # why casted?
                 predictions = predictions + self.mini_batch_predictions(minibatch).tolist()
-                posteriors = posteriors + self.mini_batch_posterior(minibatch).tolist()
+                if self.network_type == 'classifier':
+                    posteriors = posteriors + self.mini_batch_posterior(minibatch).tolist()
                 if verbose >= 3:
                     print "... testing error after mini batch " + str(batch_counter) + \
                                                               " is " + str(wrong)
@@ -2263,10 +2309,16 @@ class network(object):
             bar.finish()
 
         total_samples = total_mini_batches * self.mini_batch_size 
-        testing_accuracy = (total_samples - wrong)*100. / total_samples
+        if self.network_type == 'classifier':
+            testing_accuracy = (total_samples - wrong)*100. / total_samples
 
-        if verbose >= 2:
-            print "... Testing accuracy : " + str(testing_accuracy)
+            if verbose >= 2:
+                print ".. Testing accuracy : " + str(testing_accuracy)
+        elif self.network_type == 'generator':
+            testing_accuracy = wrong / total_samples
+
+            if verbose >= 2:
+                print ".. Mean testing error : " + str(testing_accuracy)
 
 if __name__ == '__main__':
     pass                  

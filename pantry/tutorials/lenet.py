@@ -118,7 +118,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
 
     # visualization of the network.
     net.pretty_print()  
-    # draw_network(net.graph, filename = 'lenet.png')    
+    draw_network(net.graph, filename = 'lenet.png')    
 
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
@@ -218,7 +218,7 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
                     batch_norm = True,
-                    dropout_rate = 0.5,
+                    dropout_rate = 0, # because of maxout
                     verbose = verbose
                     )      
         
@@ -258,7 +258,7 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
 
-    learning_rates = (0.001, 0.01, 0.001, 0.0001, 0.00001)  
+    learning_rates = (0.05, 0.01, 0.001, 0.0001, 0.00001)  
 
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
@@ -266,9 +266,12 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
               classifier = 'softmax',
               verbose = verbose
               )
+    draw_network(net.graph, filename = 'lenet.png')    
+    net.pretty_print()
 
     net.train( epochs = (20, 20, 10, 5), 
                validate_after_epochs = 1,
+               visualize_after_epochs = 1,
                training_accuracy = True,
                learning_rates = learning_rates,               
                show_progress = True,
@@ -297,7 +300,7 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    lenet5 ( dataset, verbose = 2 )
-    #lenet_on_steroids (dataset, verbose = 2)
+    #lenet5 ( dataset, verbose = 2 )
+    lenet_on_steroids (dataset, verbose = 2)
      
 

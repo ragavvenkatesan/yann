@@ -50,4 +50,4 @@ def rmse ( a,  b ):
     Returns: 
         theano shared variable: Computational graph with the error.
     """        
-    return T.sqrt(T.mean((a - b) ** 2 ))
+    return T.sqrt(T.mean((a - b) ** 2))

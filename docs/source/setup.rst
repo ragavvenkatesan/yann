@@ -225,6 +225,19 @@ Dependencies for visualization
   .. code-block:: bash
 
     pip insall matplotlib
+
+  For visualization of images, yann also uses 
+  `pylearn2 <http://deeplearning.net/software/pylearn2/>`_. Pylearn2 used to be a library that was 
+  supported by the developers of theano, but the developement on it was stopped due to overheads
+  from development of blocks and fuel. I still use pylearn2 only for visualization, so it shouldn't 
+  be affected from developement and such. It has a setup.py file which can be used for pip install
+  as follows:
+
+  .. code-block:: bash
+
+    pip install git+git://github.com/lisa-lab/pylearn2.git
+
+
   
 cPickle, gzip and hdf5py 
 ------------------------

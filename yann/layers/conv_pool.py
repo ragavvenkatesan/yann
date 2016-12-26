@@ -125,7 +125,9 @@ class conv_pool_layer_2d (layer):
         else:
             pool_out = conv_out
             pool_out_shp = conv_out_shp
-
+        """
+        Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network 
+        training by reducing internal covariate shift." arXiv preprint arXiv:1502.03167 (2015). """
         if batch_norm is True:
             mean = pool_out.mean( (0,2,3), keepdims = True )
             std = pool_out.std( (0,2,3), keepdims = True )            
