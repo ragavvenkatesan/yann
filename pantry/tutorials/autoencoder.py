@@ -114,7 +114,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     origin = ("input","unflatten"),
                     id = "merge",
                     layer_type = "error",
-                    error = "l2",
+                    error = "rmse",
                     verbose = verbose)
 
     net.add_layer ( type = "objective",
