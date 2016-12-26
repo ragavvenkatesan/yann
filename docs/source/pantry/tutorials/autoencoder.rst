@@ -1,7 +1,7 @@
 .. _autoencoder:
 
 Autoencoder Network.
-=============================
+====================
 
 By virture of being here, it is assumed that you have gone through the :ref:`quick_start`.
 
