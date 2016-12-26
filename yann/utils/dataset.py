@@ -636,12 +636,15 @@ def rgb2gray(rgb):
 	Returns:
 		numpy ndarray: gray
 	"""
-	r, g, b = rgb[:,:,:,0], rgb[:,:,:,1], rgb[:,:,:,2]
+	if len(rgb.shape) == 4:
+		r, g, b = rgb[:,:,:,0], rgb[:,:,:,1], rgb[:,:,:,2]
+	elif len(rgb.shape) == 3:
+		r, g, b = rgb[:,:,0], rgb [:,:,1], rgb[:,:,2]
 	gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
 	return gray
 			
 # Concatenate three (height, width)s into one (height, width, 3).
-def gray2rgb_image(r, g, b, channels_dim = 3):
+def gray2rgb(r, g, b, channels_dim = 3):
 	""" 
 	Concatenates ``r, g ,b``, three two dimensional arrays into one rgb image.   
 				
@@ -954,7 +957,7 @@ class setup_dataset (object):
 		if "channels" in dataset_init_args.keys():
 			self.channels            = dataset_init_args [ "channels" ]
 		else:
-			self.channesl = 1
+			self.channels = 1
 		
 		if "mini_batch_size" in dataset_init_args.keys():
 			self.mini_batch_size          = dataset_init_args [ "mini_batch_size" ]
@@ -1001,7 +1004,7 @@ class setup_dataset (object):
 		os.mkdir(self.root + "/valid" )
 
 		if "preprocess_init_args" in kwargs.keys():
-			self.preprocessor = preprocess_init_args
+			self.preprocessor = kwargs['preprocess_init_args']
 		else: 
 			self.preprocessor =  { 
                             "normalize"     : True,
@@ -1040,13 +1043,10 @@ class setup_dataset (object):
 			self.name == 'mnist_bg_images' or
 			self.name == 'mnist_bg_rand' or
 			self.name == 'mnist_rotated' or
-			self.name == 'mnist_rotated_bg') :
+			self.name == 'mnist_rotated_bg' or
+			self.name == 'cifar10' ) :
 	
-			self._create_skdata_mnist(verbose = verbose)
-
-		elif self.name == 'cifar10':
-			self.create_cifar_10(verbose = verbose)
-			
+			self._create_skdata_mnist(verbose = verbose)			
 	
 	def _create_skdata_mnist(self, verbose = 1): 
 		"""
@@ -1060,7 +1060,7 @@ class setup_dataset (object):
 			print ".. setting up dataset"
 			print ".. training data"		
 
-		data_x, data_y, data_y1  = data[0]
+		data_x, data_y, data_y1  = data[0]		
 		data_x = preprocessing ( data = data_x,
 								 height = self.height,
 								 width = self.width,
@@ -1161,6 +1161,7 @@ class setup_dataset (object):
 		cPickle.dump(dataset_args, f, protocol=2)
 		f.close()	
 
+
 def cook_mnist(  verbose = 1,
 				 **kwargs):
 	"""
@@ -1209,7 +1210,7 @@ def cook_mnist(  verbose = 1,
 
 	dataset = setup_dataset(dataset_init_args = data_params,
 							save_directory = save_directory,
-							preprocess_params = preprocess_params,
+							preprocess_init_args = preprocess_params,
 							verbose = 3)
 	return dataset
 
@@ -1264,10 +1265,60 @@ def cook_mnist_multi_load(  verbose = 1, **kwargs):
 
 	dataset = setup_dataset(dataset_init_args = data_params,
 							save_directory = save_directory,
-							preprocess_params = preprocess_params,
+							preprocess_init_args = preprocess_params,
 							verbose = 3)
 	return dataset	
 
+def cook_cifar10(verbose = 1, **kwargs):
+	"""
+	Wrapper to cook cifar10 dataset. Will take as input,
+
+	Args:
+		save_directory: which directory to save the cooked dataset onto.
+		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
+		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
+	"""
+
+	if not 'data_params' in kwargs.keys():
+
+		data_params = {
+                   "source"             : 'skdata',                                   
+                   "name"               : 'cifar10',    
+				   "location"			: '',                                      
+                   "mini_batch_size"    : 500,                                     
+                   "mini_batches_per_batch" : (80, 20, 20), 
+                   "batches2train"      : 1,                                      
+                   "batches2test"       : 1,                                      
+                   "batches2validate"   : 1,                                        
+                   "height"             : 32,                                       
+                   "width"              : 32,                                       
+                   "channels"           : 3  }    
+				    
+	else:
+		data_params = kwargs['data_params']
+
+	if not 'preprocess_params' in kwargs.keys():
+                  
+    # parameters relating to preprocessing.
+		preprocess_params = { 
+                            "normalize"     : True,
+                            "GCN"           : False,
+                            "ZCA"           : False,
+                            "grayscale"     : False,
+                        }
+	else:
+		preprocess_params = kwargs['preprocess_params']
+
+	if not 'save_directory' in kwargs.keys():
+		save_directory = '_datasets'
+	else:
+		save_directory = kwargs ['save_directory']
+
+	dataset = setup_dataset(dataset_init_args = data_params,
+							save_directory = save_directory,
+							preprocess_init_args = preprocess_params,
+							verbose = 3)
+	return dataset    	
 if __name__ == '__main__':
     cook_mnist()  
 

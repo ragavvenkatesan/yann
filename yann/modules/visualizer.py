@@ -3,7 +3,7 @@ dynamic_printer_import = True
 
 import os
 from abstract import module
-from yann.utils.dataset import rgb2gray, gray2rgb_image
+from yann.utils.dataset import rgb2gray, gray2rgb
 from matplotlib.image import imsave
 import numpy as np
 

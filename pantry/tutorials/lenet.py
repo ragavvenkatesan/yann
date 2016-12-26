@@ -14,13 +14,13 @@ def lenet5 ( dataset= None, verbose = 1 ):
         verbose: Similar to the rest of the dataset.
     """
     optimizer_params =  {        
-                "momentum_type"       : 'false',             
+                "momentum_type"       : 'polyak',             
                                         # false, polyak, nesterov
                 "momentum_params"     : (0.5, 0.95, 30),      
                     # (mom_start, momentum_end, momentum_end_epoch)                                                           
-                "regularization"      : (0.00, 0.00),       
+                "regularization"      : (0.00, 0.0001),       
                         # l1_coeff, l2_coeff, decisiveness (optional)                                
-                "optimizer_type"      : 'sgd',                
+                "optimizer_type"      : 'rmsprop',                
                                         # sgd, adagrad, rmsprop, adam 
                 "id"                  : "main"
                         }
@@ -31,6 +31,16 @@ def lenet5 ( dataset= None, verbose = 1 ):
                             "n_classes" : 10,
                             "id"        : 'data'
                     }
+
+    visualizer_params = {
+                    "root"       : '.',
+                    "frequency"  : 1,
+                    "sample_size": 32,
+                    "rgb_filters": True,
+                    "debug_functions" : False,
+                    "debug_layers": False,  # Since we are on steroids this time, print everything.
+                    "id"         : 'main'
+                        }       
 
     # intitialize the network
     net = network(   borrow = True,
@@ -45,13 +55,17 @@ def lenet5 ( dataset= None, verbose = 1 ):
                      params = dataset_params,
                      verbose = verbose )
 
+    net.add_module ( type = 'visualizer',
+                     params = visualizer_params,
+                     verbose = verbose 
+                    )
     # add an input layer 
     net.add_layer ( type = "input",
                     id = "input",
                     verbose = verbose, 
                     datastream_origin = 'data', # if you didnt add a dataset module, now is 
                                                  # the time. 
-                    mean_subtract = False )
+                    mean_subtract = True )
     
     # add first convolutional layer
     net.add_layer ( type = "conv_pool",
@@ -60,7 +74,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     num_neurons = 20,
                     filter_size = (5,5),
                     pool_size = (2,2),
-                    activation = 'tanh',
+                    activation = 'relu',
+                    batch_norm = True,
                     verbose = verbose
                     )
 
@@ -70,7 +85,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     num_neurons = 50,
                     filter_size = (3,3),
                     pool_size = (2,2),
-                    activation = 'tanh',
+                    activation = 'relu',
+                    batch_norm = True,
+                    dropout_rate = 0.5,
                     verbose = verbose
                     )      
 
@@ -79,7 +96,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     origin = "conv_pool_2",
                     id = "dot_product_1",
                     num_neurons = 800,
-                    activation = 'tanh',
+                    activation = 'relu',
+                    batch_norm = True,
+                    dropout_rate = 0.5,
                     verbose = verbose
                     )
 
@@ -87,7 +106,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     origin = "dot_product_1",
                     id = "dot_product_2",
                     num_neurons = 800,                    
-                    activation = 'tanh',
+                    activation = 'relu',
+                    batch_norm = True,
+                    dropout_rate = 0.5,                    
                     verbose = verbose
                     ) 
     
@@ -138,10 +159,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
     net.test(verbose = verbose)
 
 # Advaned version of the CNN
-def lenet_on_steroids ( dataset= None, verbose = 1 ):             
+def lenet_maxout ( dataset= None, verbose = 1 ):             
     """
-    This function is a demo example of lenet5 from the infamous paper by Yann LeCun. 
-    This is an example code. You should study this code rather than merely run it.  
     This is a version with nesterov momentum and rmsprop instead of the typical sgd. 
     This also has maxout activations for convolutional layers, dropouts on the last
     convolutional layer and the other dropout layers and this also applies batch norm
@@ -155,7 +174,7 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
     optimizer_params =  {        
                 "momentum_type"       : 'nesterov',             
                 "momentum_params"     : (0.5, 0.95, 30),      
-                "regularization"      : (0.0001, 0.0001),       
+                "regularization"      : (0.000, 0.001),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -171,7 +190,7 @@ def lenet_on_steroids ( dataset= None, verbose = 1 ):
                     "root"       : '.',
                     "frequency"  : 1,
                     "sample_size": 32,
-                    "rgb_filters": False,
+                    "rgb_filters": True,
                     "debug_functions" : False,
                     "debug_layers": False,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
@@ -300,7 +319,7 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    #lenet5 ( dataset, verbose = 2 )
-    lenet_on_steroids (dataset, verbose = 2)
+    lenet5 ( dataset, verbose = 2 )
+    #lenet_on_steroids (dataset, verbose = 2)
      
 

@@ -49,23 +49,38 @@ class dot_product_layer (layer):
         if rng is None:
             rng = numpy.random
 
-        if input_params is None or input_params[0] is None:
+        create = False
+        if input_params is None:
+            create = True
+        elif input_params[0] is None:
+            create = True
+        if create is True:
             w_values = numpy.asarray(0.01 * rng.standard_normal(
                 size=(input_shape[1], num_neurons)), dtype=theano.config.floatX)
             if activation == 'sigmoid':
                 w_values*=4 
-            self.w = theano.shared(value=w_values, name='w')
+            self.w = theano.shared(value=w_values, name='w')        
         else:
             self.w = input_params[0]
 
-        if input_params is None or input_params[1] is None:            
+        create = False
+        if input_params is None:
+            create = True
+        elif input_params[1] is None:
+            create = True
+        if create is True: 
             b_values = numpy.zeros((num_neurons,), dtype=theano.config.floatX)
             self.b = theano.shared(value=b_values, name='b')           
         else:
             self.b = input_params[1]
 
         if batch_norm is True:
-            if input_params is None or input_params[3] is None:
+            create = False
+            if input_params is None:
+                create = True
+            elif input_params[2] is None:
+                create = True
+            if create is True:
                 alpha_values = numpy.ones((num_neurons,), dtype = theano.config.floatX)
                 self.alpha = theano.shared(value = alpha_values, name = 'alpha') 
             else:
