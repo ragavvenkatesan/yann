@@ -11,7 +11,7 @@ def Elu(x, alpha = 1):
     Supplying a value to ``alpha`` would make this a leay Elu. 
 
     Notes: 
-        Reference :Clevert, Djork-Arné, Thomas Unterthiner, and Sepp Hochreiter. "Fast and accurate 
+        Reference :Clevert, Djork-Arne, Thomas Unterthiner, and Sepp Hochreiter. "Fast and accurate 
          deep network learning by exponential linear units (elus)." arXiv preprint arXiv:1511.07289 
          (2015).
     
