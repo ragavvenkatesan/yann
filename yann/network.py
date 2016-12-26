@@ -294,6 +294,8 @@ class network(object):
                 if verbose >= 3:
                     print "... Making learnable True as it is not provided"
                 learnable = True                
+        else:
+            learnable = kwargs['learnable']
 
         if type == 'input' or \
            type == 'data':
@@ -343,8 +345,8 @@ class network(object):
             # .. Note :: using append is troublesome here.
 
         self.last_layer_created = id
-
-
+        self.layers[id].active = learnable
+        self.dropout_layers[id].active = learnable
         # addlayer to self.graph if it exists.
         if not self.graph is None: # graph is being created
             attributes = self.layers[id]._graph_attributes()  # collect all attributes of layer
@@ -391,7 +393,9 @@ class network(object):
                 else:
                     for edge_to in neurons:
                         self.graph.add_edge(origin , id + "-" + str(edge_to))                    
-            
+        if verbose >= 3:
+            print "... Layer " + id + " is created and it learnablity is " + \
+                                                                    str(self.layers[id].active)
     def add_module (self, type, params, verbose = 2):
         """
         Use this function to add a module to the net.
@@ -1608,7 +1612,9 @@ class network(object):
         if verbose >= 3:
             print "... setting up new era"
         self.learning_rate.set_value(numpy.asarray(new_learning_rate,dtype = theano.config.floatX))
-        copy_params ( source = self.best_params, destination = self.params , borrow = self.borrow)
+        # copying and removing only active_params. Is that a porblem ?
+        copy_params ( source = self.best_params, destination = self.active_params , 
+                                                                            borrow = self.borrow)
 
     def _cook_datastream (self, verbose = 2):
         """
@@ -1868,7 +1874,9 @@ class network(object):
         self.best_training_errors = numpy.inf
         self.training_accuracy = []
         self.best_params = []
-        for param in self.params:
+        # Let's bother only about learnable params. This avoids the problem when weights are 
+        # shared
+        for param in self.active_params:
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 
         self.cost = []  
@@ -2141,7 +2149,7 @@ class network(object):
 
         # Just save some backup parameters       
         nan_insurance = []
-        for param in self.params:
+        for param in self.active_params:
             nan_insurance.append(theano.shared(param.get_value(borrow = self.borrow)))     
 
         self.learning_rate.set_value(learning_rates[1])        
@@ -2227,13 +2235,13 @@ class network(object):
                         bar.update(total_mini_batches_done)                         
 
             if show_progress is True:
-                bar.finish()   
-
-            if verbose >= 2:
-                self.print_status ( epoch = epoch_counter, verbose = verbose )                
+                bar.finish()               
 
             # post training items for one loop of batches.    
-            if nan_flag is False:        
+            if nan_flag is False:    
+                if verbose >= 2:
+                    self.print_status ( epoch = epoch_counter, verbose = verbose )    
+                    
                 best = self.validate(   epoch = epoch_counter,
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,

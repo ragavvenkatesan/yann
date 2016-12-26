@@ -46,7 +46,8 @@ class layer(object):
         self.activation = 'identity'
         self.dropout_rate = 0
         self.batch_norm = False
-        # Every layer must have these four properties.
+        self.active = True # this flag is setup by the add_layer module
+        # Every layer must have these properties.
         if verbose >= 3:
             print "... Initializing a new layer " + self.id + " of type " + self.type        
 

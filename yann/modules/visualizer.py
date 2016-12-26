@@ -290,7 +290,7 @@ class visualizer(module):
         if not os.path.exists(loc):            
             os.makedirs(loc)
         for id, layer in layers.iteritems():  
-            if layer.params is not None:    
+            if layer.active is True:    
                 if verbose >= 3:
                     print "... saving down visualization of layer " + id      
                 imgs = layer.w.get_value(borrow = True)

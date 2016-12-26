@@ -16,33 +16,15 @@ def autoencoder ( dataset= None, verbose = 1 ):
         dataset: Supply a dataset.    
         verbose: Similar to the rest of the dataset.
     """
-    optimizer_params =  {        
-                "momentum_type"       : 'nesterov',             
-                                        # false, polyak, nesterov
-                "momentum_params"     : (0.5, 0.95, 30),      
-                    # (mom_start, momentum_end, momentum_end_epoch)                                                           
-                "regularization"      : (0.000, 0.001),       
-                        # l1_coeff, l2_coeff, decisiveness (optional)                                
-                "optimizer_type"      : 'rmsprop',                
-                                        # sgd, adagrad, rmsprop, adam 
-                "id"                  : "main"
-                        }
-
     dataset_params  = {
                             "dataset"   : dataset,
                             "type"      : 'x',
-                            "n_classes" : 10,
                             "id"        : 'data'
                     }
 
     # intitialize the network
     net = network(   borrow = True,
                      verbose = verbose )                       
-    
-    # or you can add modules after you create the net.
-    net.add_module ( type = 'optimizer',
-                     params = optimizer_params, 
-                     verbose = verbose )
 
     net.add_module ( type = 'datastream', 
                      params = dataset_params,
@@ -65,46 +47,27 @@ def autoencoder ( dataset= None, verbose = 1 ):
 
     net.add_layer ( type = "dot_product",
                     origin = "flatten",
-                    id = "encoder_1",
-                    num_neurons = 128,
-                    activation = 'relu',
-                    batch_norm = True,
-                    dropout_rate = 0.5,
+                    id = "encoder",
+                    num_neurons = 256,
+                    activation = 'sigmoid',
                     verbose = verbose
                     )
 
     net.add_layer ( type = "dot_product",
-                    origin = "encoder_1",
-                    id = "encoder_2",
-                    num_neurons = 32,
-                    activation = 'relu',
-                    batch_norm = True,
-                    dropout_rate = 0.5,
-                    verbose = verbose
-                    )                    
-
-    net.add_layer ( type = "dot_product",
-                    origin = "encoder_2",
-                    id = "decoder_1",
-                    num_neurons = 64,
-                    activation = 'relu',
-                    batch_norm = True,
-                    dropout_rate = 0.5,
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "dot_product",
-                    origin = "decoder_1",
-                    id = "decoder_2",
+                    origin = "encoder",
+                    id = "decoder",
                     num_neurons = 784,
-                    activation = 'relu',
-                    batch_norm = True,
-                    dropout_rate = 0.5,                    
+                    activation = 'sigmoid',
+                    input_params = [net.layers['encoder'].w.T, None],
+                    # Use the same weights but transposed for decoder. 
+                    learnable = False,                    
+                    # because we don't want to learn the weights of somehting already used in 
+                    # an optimizer, when reusing the weights, always use learnable as False                    
                     verbose = verbose
-                    )                    
+                    )           
 
     net.add_layer ( type = "unflatten",
-                    origin = "decoder_2",
+                    origin = "decoder",
                     id = "unflatten",
                     shape = (28,28,1),
                     verbose = verbose
@@ -125,10 +88,9 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
 
-    learning_rates = (0.05, 0.1, 0.01)  
+    learning_rates = (0, 0.1, 0.01)  
 
-    net.cook( optimizer = 'main',
-              objective_layer = 'obj',
+    net.cook( objective_layer = 'obj',
               datastream = 'data',
               generator = 'merge',
               learning_rates = learning_rates,
@@ -139,7 +101,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
     draw_network(net.graph, filename = 'autoencoder.png')    
     net.pretty_print()
 
-    net.train( epochs = (70, 30), 
+    net.train( epochs = (10, 10), 
                validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,
