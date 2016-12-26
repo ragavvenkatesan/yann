@@ -14,9 +14,9 @@ that are accessible in ``yann``. It contains various layers including:
         :mod:`conv_pool.conv_pool_layer_2d`
     * :mod:`ouput.classifier_layer`
     * :mod:`output.objective_layer`
-    * :mod: `merge.merge_layer`
-    * :mod: `flatten.flatten_layer`
-    * :mod: `flatten.unflatten_layer`
+    * :mod:`merge.merge_layer`
+    * :mod:`flatten.flatten_layer`
+    * :mod:`flatten.unflatten_layer`
 
 All these are inherited classes from :mod:`layer` class, which is abstract.
 
