@@ -1,6 +1,5 @@
 *.pyc
 *.pkl.gz
-*.jpg
 *.pkl
 *.mat
 *.zip
@@ -14,3 +13,4 @@
 .cache
 .eggs
 *.png
+/visualizer

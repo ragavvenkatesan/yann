@@ -15,13 +15,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                                        # false, polyak, nesterov
                 "momentum_params"     : (0.5, 0.95, 30),      
-                    # (mom_start, momentum_end, momentum_end_epoch)                                                           
                 "regularization"      : (0.00, 0.0001),       
-                        # l1_coeff, l2_coeff, decisiveness (optional)                                
-                "optimizer_type"      : 'rmsprop',                
-                                        # sgd, adagrad, rmsprop, adam 
+                "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
                         }
 
@@ -36,7 +32,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     "root"       : '.',
                     "frequency"  : 1,
                     "sample_size": 32,
-                    "rgb_filters": True,
+                    "rgb_filters": False,
                     "debug_functions" : False,
                     "debug_layers": False,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
@@ -75,7 +71,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = 'relu',
-                    batch_norm = True,
                     verbose = verbose
                     )
 
@@ -86,8 +81,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = 'relu',
-                    batch_norm = True,
-                    dropout_rate = 0.5,
                     verbose = verbose
                     )      
 
@@ -97,8 +90,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "dot_product_1",
                     num_neurons = 800,
                     activation = 'relu',
-                    batch_norm = True,
-                    dropout_rate = 0.5,
                     verbose = verbose
                     )
 
@@ -106,9 +97,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     origin = "dot_product_1",
                     id = "dot_product_2",
                     num_neurons = 800,                    
-                    activation = 'relu',
-                    batch_norm = True,
-                    dropout_rate = 0.5,                    
+                    activation = 'relu',                
                     verbose = verbose
                     ) 
     
@@ -128,16 +117,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
                     
-    # objective provided by classifier layer               
-    # nll-negative log likelihood, 
-    # cce-categorical cross entropy, 
-    # bce-binary cross entropy,
-    # hinge-hinge loss 
-    learning_rates = (0, 0.1, 0.01, 0.001, 0.0001)  
-    # (annealing, initial_learning_rate, ... )
-    # net.pretty_print()  # this will print out the network.
+    learning_rates = (0.05, 0.01, 0.001, 0.0001)  
 
-    # visualization of the network.
     net.pretty_print()  
     draw_network(net.graph, filename = 'lenet.png')    
 
@@ -148,7 +129,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
               verbose = verbose
               )
 
-    net.train( epochs = (10, 10, 10, 10), 
+    net.train( epochs = (20, 20, 20 ), 
                validate_after_epochs = 1,
                training_accuracy = True,
                learning_rates = learning_rates,               
@@ -174,7 +155,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     optimizer_params =  {        
                 "momentum_type"       : 'nesterov',             
                 "momentum_params"     : (0.5, 0.95, 30),      
-                "regularization"      : (0.000, 0.001),       
+                "regularization"      : (0.000, 0.0001),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -315,11 +296,11 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        from yann.utils.dataset import cook_mnist  
-        data = cook_mnist (verbose = 2)
+        from yann.utils.dataset import cook_cifar10  
+        data = cook_cifar10 (verbose = 2)
         dataset = data.dataset_location()
 
     lenet5 ( dataset, verbose = 2 )
-    #lenet_on_steroids (dataset, verbose = 2)
+    #lenet_maxout (dataset, verbose = 2)
      
 

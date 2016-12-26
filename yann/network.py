@@ -1584,13 +1584,9 @@ class network(object):
 
         self.layer_activities_created = True
         for id, _layer in self.layers.iteritems():
-            if len(_layer.output_shape) == 4:
-                if verbose >=3 :
-                    print "... collecting the activities of layer " + id
-                activity = _layer.output.dimshuffle(0,2,3,1)  # activities are dimshuffled for 
-                                                            # help with visualizers
-            else:
-                activity = _layer.output
+            if verbose >=3 :
+                print "... collecting the activities of layer " + id
+            activity = _layer.output  
 
             if self.network_type == 'classifier':
                 self._create_layer_activity_classifier(id =id, activity = activity, 
@@ -1948,9 +1944,9 @@ class network(object):
         This is going to be deprecated with the use of visualizer module.
         """
         if verbose >=2:
-            print ".. This method will be deprecated with the implementation of a visualizer, also \
-                    this works only for tree-like networks. This will cause errors in printing \
-                    DAG-style networks."
+            print ".. This method will be deprecated with the implementation of a visualizer," + \
+                    "also this works only for tree-like networks. This will cause errors in " + \
+                    "printing DAG-style networks."
         input_layers = []
         # collect all begining of streams
         for id, layer in self.layers.iteritems():
@@ -2018,7 +2014,8 @@ class network(object):
                                                                       " is " + str(training_errors)
                     batch_counter = batch_counter + 1                                                                                                                                                                                                            
                     if show_progress is True:
-                        bar.update(batch_counter)   
+                        bar.update(batch_counter + \
+                                            self.batches2validate * self.mini_batches_per_batch[1])   
 
         if show_progress is True:
             bar.finish()    

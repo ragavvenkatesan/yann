@@ -15,6 +15,16 @@ def autoencoder ( dataset= None, verbose = 1 ):
                             "id"        : 'data'
                     }
 
+    visualizer_params = {
+                    "root"       : '.',
+                    "frequency"  : 1,
+                    "sample_size": 32,
+                    "rgb_filters": False,
+                    "debug_functions" : False,
+                    "debug_layers": True,  
+                    "id"         : 'main'
+                        }  
+                      
     # intitialize the network
     net = network(   borrow = True,
                      verbose = verbose )                       
@@ -22,6 +32,11 @@ def autoencoder ( dataset= None, verbose = 1 ):
     net.add_module ( type = 'datastream', 
                      params = dataset_params,
                      verbose = verbose )
+    
+    net.add_module ( type = 'visualizer',
+                     params = visualizer_params,
+                     verbose = verbose 
+                    ) 
 
     # add an input layer 
     net.add_layer ( type = "input",
@@ -41,8 +56,8 @@ def autoencoder ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "flatten",
                     id = "encoder",
-                    num_neurons = 256,
-                    activation = 'sigmoid',
+                    num_neurons = 64,
+                    activation = 'tanh',
                     verbose = verbose
                     )
 
@@ -50,7 +65,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     origin = "encoder",
                     id = "decoder",
                     num_neurons = 784,
-                    activation = 'sigmoid',
+                    activation = 'tanh',
                     input_params = [net.layers['encoder'].w.T, None],
                     # Use the same weights but transposed for decoder. 
                     learnable = False,                    

@@ -43,9 +43,14 @@ def save_images(imgs, prefix, is_color, verbose = 2):
 
     raster = []
     count = 0 
-    if is_color is True and imgs.shape[3] % 3 != 0:
-        filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
-        imgs = imgs[:,:,:,0:filts]          
+
+    if is_color is True:
+        if imgs.shape[3] == 1:
+            is_color = False
+    
+        if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
+            filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
+            imgs = imgs[:,:,:,0:filts*3]      
     
     for i in xrange (imgs.shape[3]):
         curr_image = imgs[:,:,:,i]
@@ -248,7 +253,7 @@ class visualizer(module):
             loc = loc + '/image_'
         imgs = save_images(   imgs = imgs,
                             prefix = loc, 
-                            is_color = self.rgb_filters if imgs.shape[-1] == 3 else False)    
+                            is_color = self.rgb_filters)    
         
     def visualize_activities(self, layer_activities, epoch, index = 0, verbose = 2):
         """
@@ -270,6 +275,7 @@ class visualizer(module):
             if len(imgs.shape) == 2:
                 imgs = imgs[:,np.newaxis,:,np.newaxis]            
             if len(imgs.shape) == 4:
+                imgs = imgs.transpose(0,2,3,1)
                 if not os.path.exists(loc + '/layer_' + id):                
                     os.makedirs(loc + '/layer_' + id)
                 self.visualize_images(imgs, loc = loc + '/layer_' + id ,verbose = verbose)
@@ -304,8 +310,10 @@ class visualizer(module):
                 elif len(imgs.shape) == 2:
                     if not os.path.exists(loc + '/layer_' + id):                
                         os.makedirs(loc + '/layer_' + id)
-                    imgs = imgs[:,np.newaxis,:,np.newaxis]
-                    imgs = imgs.transpose(0,2,3,1)                                        
+                    size = imgs.shape[1]
+                    lt = int(np.floor(np.sqrt(size)))
+                    imgs = imgs[:,:lt*lt]
+                    imgs = np.reshape(imgs,(imgs.shape[0],1,lt,lt))
                     self.visualize_images(   imgs = imgs,
                                              loc = loc + '/layer_' + id , 
                                              verbose = verbose )                     
