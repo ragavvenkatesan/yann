@@ -14,7 +14,9 @@ tutorial just in case though.
    :maxdepth: 1
    :name: tutorials   
 
+   pantry/tutorials/log_reg
    pantry/tutorials/mlp
+   pantry/tutorials/autoencoder
    pantry/tutorials/lenet
 
 .. Todo::
@@ -23,5 +25,6 @@ tutorial just in case though.
         * Loading pre-trained VGG-19 net   
         * LeNet
         * AlexNet
-
+        * GANs
+        * All Visualization module workings.
 
