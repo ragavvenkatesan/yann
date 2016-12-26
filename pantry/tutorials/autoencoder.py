@@ -1,10 +1,3 @@
-"""
-TODO: 
-
-    Testing module does not work still 
-    
-"""
-
 from yann.network import network
 
 def autoencoder ( dataset= None, verbose = 1 ):             
