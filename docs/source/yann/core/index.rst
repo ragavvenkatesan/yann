@@ -15,3 +15,4 @@ in the toolbox will use these constantly.
    pool
    activations
    errors
+   operators
