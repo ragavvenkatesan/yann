@@ -30,44 +30,49 @@ def save_images(imgs, prefix, is_color, verbose = 2):
         is_color: If the image is color or not.
         verbose: As Always
     """
+    vis = False
     try:  
         # Pylearn2 pylearn_visualization
         from pylearn2.gui.patch_viewer import make_viewer
-        
+        vis = True
     except ImportError: 
-        print "Install pylearn2 before using visualize"
-        raise exc
-            
-    if verbose >= 3:
-        print "... Rasterizing"
+        if verbose >=3:
+            print "... Install pylearn2 before using visualize, not visualizing"
+        
 
-    raster = []
-    count = 0 
+    if vis is True:       
+        if verbose >= 3:
+            print "... Rasterizing"
 
-    if is_color is True:
-        if imgs.shape[3] == 1:
-            is_color = False
-    
-        if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
-            filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
-            imgs = imgs[:,:,:,0:filts*3]      
-    
-    for i in xrange (imgs.shape[3]):
-        curr_image = imgs[:,:,:,i]
+        raster = []
+        count = 0 
+
         if is_color is True:
-            raster.append(rgb2gray(np.array(make_viewer( 
-                            curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
-                                             curr_image.shape[2])), is_color = False ).get_img())))
-            if count == 2:          
-                imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
-                count = -1                            
-        else:   
-            raster.append(np.array(make_viewer( curr_image.reshape(
-                                 (curr_image.shape[0],curr_image.shape[1] * curr_image.shape[2])), 
+            if imgs.shape[3] == 1:
+                is_color = False
+        
+            if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
+                filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
+                imgs = imgs[:,:,:,0:filts*3]      
+        
+        for i in xrange (imgs.shape[3]):
+            curr_image = imgs[:,:,:,i]
+            if is_color is True:
+                raster.append(rgb2gray(np.array(make_viewer( 
+                                curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                            curr_image.shape[2])), is_color = False ).get_img())))
+                if count == 2:          
+                    imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
+                    count = -1                            
+            else:   
+                raster.append(np.array(make_viewer( curr_image.reshape(
+                                (curr_image.shape[0],curr_image.shape[1] * curr_image.shape[2])), 
                                                                 is_color = False ).get_img()))             
-            imsave(prefix + str(i) + ".jpg",raster[i])
-        count = count + 1
-    return raster
+                imsave(prefix + str(i) + ".jpg",raster[i])
+            count = count + 1
+        return raster
+    else:
+        return None
 
 class visualizer(module):
     """

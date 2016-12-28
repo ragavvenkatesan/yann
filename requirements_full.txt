@@ -5,6 +5,7 @@ skdata>=0.0.4
 pydot
 pyparsing
 pydot-ng
+pydotplus
 pygraphviz
 graphviz
 networkx
