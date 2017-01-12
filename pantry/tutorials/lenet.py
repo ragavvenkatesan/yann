@@ -202,7 +202,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "conv_pool",
                     origin = "input",
                     id = "conv_pool_1",
-                    num_neurons = 20,
+                    num_neurons = 30,
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
@@ -213,7 +213,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "conv_pool",
                     origin = "conv_pool_1",
                     id = "conv_pool_2",
-                    num_neurons = 50,
+                    num_neurons = 60,
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
@@ -300,7 +300,7 @@ if __name__ == '__main__':
         data = cook_cifar10 (verbose = 2)
         dataset = data.dataset_location()
 
-    lenet5 ( dataset, verbose = 2 )
-    #lenet_maxout (dataset, verbose = 2)
+    # lenet5 ( dataset, verbose = 2 )
+    lenet_maxout (dataset, verbose = 2)
      
 

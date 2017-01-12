@@ -7,18 +7,6 @@ def log_reg ( dataset, verbose ):
     Yann LeCun. This is an example code. You should study this code rather than merely run it.  
 
     """
-    optimizer_params =  {        
-                "momentum_type"       : 'false',             
-                                        # false, polyak, nesterov
-                "momentum_params"     : (0.5, 0.95, 30),      
-                    # (mom_start, momentum_end, momentum_end_epoch)                                                           
-                "regularization"      : (0.000, 0.000),       
-                        # l1_coeff, l2_coeff, decisiveness (optional)                                
-                "optimizer_type"      : 'sgd',                
-                                        # sgd, adagrad, rmsprop, adam 
-                "id"                  : "main"
-                        }
-
     dataset_params  = {
                             "dataset"   :  dataset,
                             "svm"       :  False, 
@@ -31,10 +19,6 @@ def log_reg ( dataset, verbose ):
     net = network( verbose = verbose )                       
     
     # or you can add modules after you create the net.
-    net.add_module ( type = 'optimizer',
-                     params = optimizer_params, 
-                     verbose = verbose )
-
     net.add_module ( type = 'datastream', 
                      params = dataset_params,
                      verbose = verbose )
@@ -70,16 +54,16 @@ def log_reg ( dataset, verbose ):
     learning_rates = (0.05, 0.01, 0.001)  
     # (initial_learning_rate, annealing, ft_learnint_rate)
 
-    net.cook( optimizer = 'main',
-              objective_layer = 'nll',
+    net.cook( objective_layer = 'nll',
               datastream = 'data',
               classifier = 'softmax',
               learning_rates = learning_rates,
               verbose = verbose
               )
     # visualization of the network.  
-    draw_network(net.graph, filename = 'log_reg.png')     
-    net.train( epochs = (10, 5), 
+    # draw_network(net.graph, filename = 'log_reg.png')     
+    net.pretty_print()
+    net.train( epochs = (20, 20), 
                validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,

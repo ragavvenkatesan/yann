@@ -79,8 +79,8 @@ def mlp ( dataset, verbose = 1 ):
               classifier = 'softmax',
               verbose = verbose
               )
-    from yann.utils.graph import draw_network
-    draw_network(net.graph, filename = 'mlp.png')    
+    # from yann.utils.graph import draw_network
+    # draw_network(net.graph, filename = 'mlp.png')    
     net.pretty_print()
     net.train( epochs = (20, 20), 
                validate_after_epochs = 1,

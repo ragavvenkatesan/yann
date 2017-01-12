@@ -1,3 +1,9 @@
+"""
+TODO:
+
+    Need a validation and testing thats better than just measuring rmse. Can't find something great.
+    
+"""
 from yann.network import network
 
 def autoencoder ( dataset= None, verbose = 1 ):             
@@ -116,8 +122,6 @@ def autoencoder ( dataset= None, verbose = 1 ):
                early_terminate = True,
                verbose = verbose)
                
-    net.test( show_progress = True,
-               verbose = verbose)
                            
 if __name__ == '__main__':
     import sys

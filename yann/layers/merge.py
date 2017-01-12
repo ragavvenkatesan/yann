@@ -1,5 +1,5 @@
 from abstract import layer
-from yann.core.errors import rmse, l2, l1, cross_entropy
+from yann.core.errors import rmse, l1, cross_entropy
 import numpy
 
 class merge_layer (layer):
@@ -32,8 +32,6 @@ class merge_layer (layer):
 
             if error == 'rmse':
                 error = rmse
-            elif error == 'l2':
-                error = l2
             elif error == 'l1':
                 error = l1
             elif error == 'cross_entropy':

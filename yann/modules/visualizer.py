@@ -30,6 +30,7 @@ def save_images(imgs, prefix, is_color, verbose = 2):
         is_color: If the image is color or not.
         verbose: As Always
     """
+    """
     vis = False
     try:  
         # Pylearn2 pylearn_visualization
@@ -38,41 +39,62 @@ def save_images(imgs, prefix, is_color, verbose = 2):
     except ImportError: 
         if verbose >=3:
             print "... Install pylearn2 before using visualize, not visualizing"
+    """
+    from yann.utils.raster import tile_raster_images
+
+    #if vis is True:       
+    if verbose >= 3:
+        print "... Rasterizing"
+
+    raster = []
+    count = 0 
+
+    if is_color is True:
+        if imgs.shape[3] == 1:
+            is_color = False
+    
+        if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
+            filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
+            imgs = imgs[:,:,:,0:int(filts)*3]      
+    
+    for i in xrange (imgs.shape[3]):
+        curr_image = imgs[:,:,:,i]
+        num_imgs = curr_image.shape[0]
+        tile_raster = np.floor(np.sqrt(num_imgs))
+
+        if int(tile_raster ** 2) == num_imgs:
+            tile_shape = (tile_raster, tile_raster)
+        else:
+            remain = num_imgs - (tile_raster ** 2)
+            remain_rows = np.ceil(tile_raster / remain)
+            tile_shape = (tile_raster + remain_rows, tile_raster)
         
-
-    if vis is True:       
-        if verbose >= 3:
-            print "... Rasterizing"
-
-        raster = []
-        count = 0 
-
+        tile_shape = (int(tile_shape[0]), int(tile_shape[1]))
         if is_color is True:
-            if imgs.shape[3] == 1:
-                is_color = False
-        
-            if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
-                filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
-                imgs = imgs[:,:,:,0:filts*3]      
-        
-        for i in xrange (imgs.shape[3]):
-            curr_image = imgs[:,:,:,i]
-            if is_color is True:
-                raster.append(rgb2gray(np.array(make_viewer( 
-                                curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
-                                            curr_image.shape[2])), is_color = False ).get_img())))
-                if count == 2:          
-                    imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
-                    count = -1                            
-            else:   
-                raster.append(np.array(make_viewer( curr_image.reshape(
-                                (curr_image.shape[0],curr_image.shape[1] * curr_image.shape[2])), 
-                                                                is_color = False ).get_img()))             
-                imsave(prefix + str(i) + ".jpg",raster[i])
-            count = count + 1
-        return raster
-    else:
-        return None
+            I = np.array(tile_raster_images( 
+                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                    curr_image.shape[2])),
+                                img_shape = (curr_image.shape[1], curr_image.shape[2]),
+                                tile_shape = tile_shape ))
+            if len(I.shape) == 3:
+                raster.append(rgb2gray(I)) 
+            else:
+                raster.append(I)
+            if count == 2:       
+                imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
+                count = -1                            
+        else:               
+            raster.append(np.array(tile_raster_images( 
+                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                     curr_image.shape[2])),
+                                img_shape = (curr_image.shape[1], curr_image.shape[2]),
+                                tile_shape = tile_shape )))          
+
+            imsave(prefix + str(i) + ".jpg",raster[i])
+        count = count + 1
+    return raster
+    #else:
+    #    return None
 
 class visualizer(module):
     """
