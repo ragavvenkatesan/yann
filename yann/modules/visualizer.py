@@ -18,16 +18,13 @@ except:
 
 def save_images(imgs, prefix, is_color, verbose = 2):   
     """
-    This functions produces a visualiation of the filters.
-    
-    This function requires the ``pylearn2`` package to be installed. Otherwise,
-    it will throw an exception.
-        
+    This functions produces a visualiation of the filters.       
      
     Args:
         imgs: images of shape .. [num_imgs, height, width, channels] Note the change in order. 
+              it can also be in lots of other shapes and they will be reshaped and saved as images.
         prefix: address to save the image to
-        is_color: If the image is color or not.
+        is_color: If the image is color or not. True only if image shape is of color images.
         verbose: As Always
     """
     """
@@ -48,50 +45,71 @@ def save_images(imgs, prefix, is_color, verbose = 2):
 
     raster = []
     count = 0 
+    
+    if len(imgs.shape) > 2:
 
-    if is_color is True:
-        if imgs.shape[3] == 1:
-            is_color = False
+        if is_color is True:
+            if imgs.shape[3] == 1:
+                is_color = False
+        
+            if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
+                filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
+                imgs = imgs[:,:,:,0:int(filts)*3]      
     
-        if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
-            filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
-            imgs = imgs[:,:,:,0:int(filts)*3]      
-    
-    for i in xrange (imgs.shape[3]):
-        curr_image = imgs[:,:,:,i]
-        num_imgs = curr_image.shape[0]
+        for i in xrange (imgs.shape[3]):
+            curr_image = imgs[:,:,:,i]
+            num_imgs = curr_image.shape[0]
+            tile_raster = np.floor(np.sqrt(num_imgs))
+
+            if int(tile_raster ** 2) == num_imgs:
+                tile_shape = (tile_raster, tile_raster)
+            else:
+                remain = num_imgs - (tile_raster ** 2)
+                remain_rows = np.ceil(tile_raster / remain)
+                tile_shape = (tile_raster + remain_rows, tile_raster)
+            
+            tile_shape = (int(tile_shape[0]), int(tile_shape[1]))
+            if is_color is True:
+                I = np.array(tile_raster_images( 
+                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                        curr_image.shape[2])),
+                                    img_shape = (curr_image.shape[1], curr_image.shape[2]),
+                                    tile_shape = tile_shape ))
+                if len(I.shape) == 3:
+                    raster.append(rgb2gray(I)) 
+                else:
+                    raster.append(I)
+                if count == 2:       
+                    imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
+                    count = -1                            
+            else:               
+                raster.append(np.array(tile_raster_images( 
+                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                        curr_image.shape[2])),
+                                    img_shape = (curr_image.shape[1], curr_image.shape[2]),
+                                    tile_shape = tile_shape )))          
+                assert len(raster[i].shape) == 2 
+                imsave(prefix + str(i) + ".jpg",raster[i], cmap = 'gray')
+            count = count + 1
+
+    else:         
+        num_imgs = imgs.shape[0]
         tile_raster = np.floor(np.sqrt(num_imgs))
+
+        lt = int(np.floor(np.sqrt(imgs.shape[1])))
+        imgs = imgs[:,:lt*lt]
 
         if int(tile_raster ** 2) == num_imgs:
             tile_shape = (tile_raster, tile_raster)
         else:
             remain = num_imgs - (tile_raster ** 2)
             remain_rows = np.ceil(tile_raster / remain)
-            tile_shape = (tile_raster + remain_rows, tile_raster)
-        
+            tile_shape = (tile_raster + remain_rows, tile_raster) 
         tile_shape = (int(tile_shape[0]), int(tile_shape[1]))
-        if is_color is True:
-            I = np.array(tile_raster_images( 
-                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
-                                    curr_image.shape[2])),
-                                img_shape = (curr_image.shape[1], curr_image.shape[2]),
-                                tile_shape = tile_shape ))
-            if len(I.shape) == 3:
-                raster.append(rgb2gray(I)) 
-            else:
-                raster.append(I)
-            if count == 2:       
-                imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
-                count = -1                            
-        else:               
-            raster.append(np.array(tile_raster_images( 
-                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
-                                     curr_image.shape[2])),
-                                img_shape = (curr_image.shape[1], curr_image.shape[2]),
-                                tile_shape = tile_shape )))          
-
-            imsave(prefix + str(i) + ".jpg",raster[i])
-        count = count + 1
+        raster.append(np.array(tile_raster_images(X = imgs, img_shape = (lt,lt),
+                                                                    tile_shape = tile_shape)))
+        is_color = False
+        imsave(prefix + "0.jpg",raster[0], cmap ='gray')
     return raster
     #else:
     #    return None
@@ -300,8 +318,10 @@ class visualizer(module):
         for id, activity in layer_activities.iteritems():            
             imgs = activity(index)
             if len(imgs.shape) == 2:
-                imgs = imgs[:,np.newaxis,:,np.newaxis]            
-            if len(imgs.shape) == 4:
+                if not os.path.exists(loc + '/layer_' + id):                
+                    os.makedirs(loc + '/layer_' + id)                
+                self.visualize_images(imgs, loc=loc + '/layer_' + id, verbose =verbose)
+            elif len(imgs.shape) == 4:
                 imgs = imgs.transpose(0,2,3,1)
                 if not os.path.exists(loc + '/layer_' + id):                
                     os.makedirs(loc + '/layer_' + id)
@@ -338,9 +358,6 @@ class visualizer(module):
                     if not os.path.exists(loc + '/layer_' + id):                
                         os.makedirs(loc + '/layer_' + id)
                     size = imgs.shape[1]
-                    lt = int(np.floor(np.sqrt(size)))
-                    imgs = imgs[:,:lt*lt]
-                    imgs = np.reshape(imgs,(imgs.shape[0],1,lt,lt))
                     self.visualize_images(   imgs = imgs,
                                              loc = loc + '/layer_' + id , 
                                              verbose = verbose )                     

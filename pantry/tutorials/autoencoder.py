@@ -58,7 +58,6 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
 
-
     net.add_layer ( type = "dot_product",
                     origin = "flatten",
                     id = "encoder",
@@ -112,8 +111,8 @@ def autoencoder ( dataset= None, verbose = 1 ):
               )
 
     from yann.utils.graph import draw_network
-    draw_network(net.graph, filename = 'autoencoder.png')    
-    net.pretty_print()
+    # draw_network(net.graph, filename = 'autoencoder.png')    
+    # net.pretty_print()
 
     net.train( epochs = (10, 10), 
                validate_after_epochs = 1,
