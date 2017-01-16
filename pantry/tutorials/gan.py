@@ -769,7 +769,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     origin = "z",
                     id = "G(z)",
                     num_neurons = 784,
-                    activation = 'sigmoid',
+                    activation = 'tanh',
                     verbose = verbose
                     )
 
@@ -778,7 +778,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     id = "D(x)",
                     origin = "x",
                     num_neurons = 256,
-                    activation = 'sigmoid',
+                    activation = 'tanh',
                     verbose = verbose
                     )
 
@@ -790,7 +790,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     num_neurons = 256,
                     input_params = net.dropout_layers["D(x)"].params, # must be the same params, 
                                                         # this way it remains the same network.
-                    activation = 'sigmoid',
+                    activation = (''tanh''),
                     verbose = verbose
                     )
 
