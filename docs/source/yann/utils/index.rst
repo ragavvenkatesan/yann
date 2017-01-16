@@ -12,4 +12,5 @@ their documentations.
    :name: Utils     
 
    dataset
-   networkx
+   graph
+   raster

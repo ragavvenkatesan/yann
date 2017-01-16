@@ -300,7 +300,7 @@ if __name__ == '__main__':
         data = cook_cifar10 (verbose = 2)
         dataset = data.dataset_location()
 
-    # lenet5 ( dataset, verbose = 2 )
+    lenet5 ( dataset, verbose = 2 )
     lenet_maxout (dataset, verbose = 2)
      
 

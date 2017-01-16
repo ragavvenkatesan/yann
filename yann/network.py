@@ -221,7 +221,8 @@ class network(object):
                   'classifier' or 'softmax' or 'output' or 'label' - indicates a classifier layer
                   'objective' or 'loss' - a layer that creates a loss function
                   'merge' - a layer that merges two layers.
-                  'flatten' - a layer tha produces a flattened output of a block data.
+                  'flatten' - a layer that produces a flattened output of a block data.
+                  'random' - a layer that produces random numbers.
                   From now on everything is optional args.. 
             id: <string> how to identify the layer by.
                 Default is just layer number that starts with ``0``.
@@ -286,6 +287,7 @@ class network(object):
                type == 'merge' or \
                type == 'flatten' or \
                type == 'unflatten' or \
+               type == 'random' or \
                type == 'loss':            
                 if verbose >= 3:
                     print "... Making learnable False as it is not provided"
@@ -336,6 +338,9 @@ class network(object):
 
         elif type == 'unflatten':
             self._add_unflatten_layer( id = id, options = kwargs, verbose = verbose)
+
+        elif type == 'random':
+            self._add_random_layer (id = id, options = kwargs, verbose = verbose)
 
         else:
             raise Exception('No layer called ' + type + ' exists in yann')
@@ -581,6 +586,7 @@ class network(object):
         # create a whole new stream, whether used or not.
         # users who do not need dropout need not know about this. muahhahaha 
         self.layers[id].origin.append(datastream_id)
+        self.dropout_layers[id].origin.append(datastream_id)
 
     def _add_conv_layer(self, id, options, verbose = 2):
         """
@@ -1065,6 +1071,13 @@ class network(object):
         if verbose >=3:
             print "... Adding an objective layer"           
 
+        if not 'layer_type' in options.keys():
+            if verbose >= 3:
+                print "... type is not provided, assuming discriminator"
+            type = 'discriminator'
+        else:
+            type = options['layer_type']
+
         if not 'origin' in options.keys():
             if self.last_classifier_created is None:
                 raise Exception("You can't create an objective layer without a" + \
@@ -1072,7 +1085,10 @@ class network(object):
             if verbose >=3: 
                 print "... origin layer is not supplied, assuming the last classifier layer" + \
                                    " created is the origin."
-            origin = self.last_classifier_created 
+            if not type == 'value':
+                origin = self.last_classifier_created 
+            else:
+                origin = None
         else:
             origin = options["origin"]
             import types
@@ -1081,13 +1097,6 @@ class network(object):
                                   merge layer for it .")
             else:
                 origin = options ["origin"]
-
-        if not 'layer_type' in options.keys():
-            if verbose >= 3:
-                print "... type is not provided, assuming discriminator"
-            type = 'discriminator'
-        else:
-            type = options['layer_type']
 
         if not 'objective' in options.keys():
             if verbose >= 3:
@@ -1124,12 +1133,15 @@ class network(object):
             data_y = self.datastream[datastream_id].y
             
         # check if the origin layer is a classifier error.
-        loss = getattr(self.layers[origin], "loss", None)
-        dropout_loss = getattr(self.dropout_layers[origin], "loss", None)  
+        if not type == 'value':
+            loss = getattr(self.layers[origin], "loss", None)
+            dropout_loss = getattr(self.dropout_layers[origin], "loss", None)  
 
-        if loss is None:
-            raise Exception ("Layer " + origin + " doesn't provide a loss function")
-
+            if loss is None:
+                raise Exception ("Layer " + origin + " doesn't provide a loss function")
+        else:
+            loss = None
+            dropout_loss = None
         # Just create a dropout layer no matter what.
         if not 'regularizer' in options.keys():
             l1_regularizer_coeff = 0.001
@@ -1148,7 +1160,6 @@ class network(object):
                                     id = id,
                                     objective = objective,
                                     type = type,
-                                    input_shape = self.dropout_layers[origin].output_shape,
                                     L1 = self.L1,
                                     L2 = self.L2,
                                     l1_coeff = l1_regularizer_coeff,
@@ -1162,17 +1173,17 @@ class network(object):
                             id = id,
                             objective = objective,
                             type = type,
-                            input_shape = self.layers[origin].output_shape,                                
                             L1 = self.L1,
                             L2 = self.L2,
                             l1_coeff = l1_regularizer_coeff,
                             l2_coeff = l2_regularizer_coeff,
                             verbose = verbose )                                                
-
-        self.dropout_layers[id].origin.append(origin)
-        self.dropout_layers[origin].destination.append(id)
-        self.layers[id].origin.append(origin)
-        self.layers[origin].destination.append(id)
+        
+        if not origin == None:
+            self.dropout_layers[id].origin.append(origin)
+            self.dropout_layers[origin].destination.append(id)
+            self.layers[id].origin.append(origin)
+            self.layers[origin].destination.append(id)
 
     def _add_merge_layer(self, id, options, verbose = 2):
         """
@@ -1244,6 +1255,45 @@ class network(object):
             self.layers[id].origin.append(lyr)
             self.layers[lyr].destination.append(id)
         
+    def _add_random_layer(self, id, options, verbose = 2):
+        """
+        This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
+        Args:
+            options: Basically kwargs supplied to the add_layer function.
+            verbose: simiar to everywhere on the toolbox.
+        """
+        if verbose >=3:
+            print "... Adding a random generator layer"   
+        
+        from yann.layers.random import random_layer as rl
+        
+        if 'distribution' in options.keys():
+            distribution = options['distribution']
+        else:
+            distribution = 'binomial'
+
+        if not 'num_neurons' in options.keys():
+            if verbose >=3:
+                print "... num_neurons not provided, Assuming 100"
+            num_neurons = 100
+        else:
+            num_neurons = options ["num_neurons"]
+        
+
+        self.dropout_layers[id] = rl (
+                            id = id,
+                            num_neurons = num_neurons,
+                            distribution = distribution,
+                            options = options,
+                            verbose = verbose)
+        
+        self.layers[id] = rl(
+                            id = id,
+                            num_neurons = num_neurons,
+                            distribution = distribution,
+                            options = options,
+                            verbose =verbose)
 
     def _initialize_test_classifier(self, errors, verbose):
         """
@@ -1470,7 +1520,7 @@ class network(object):
         elif self.network_type == 'generator':
             self._initialize_train_generator(objective = objective, verbose = verbose)
 
-    def _cook_optimizer (self, verbose = 2):
+    def _cook_optimizer (self, params = None, objective = None, optimizer = None, verbose = 2):
         """
         Internal function to create the ``self.decay_learning_rate`` and 
         ``self.momentum_value`` and ``self.learning_rate``   theano function. 
@@ -1479,29 +1529,38 @@ class network(object):
         Args:
             optimizer: an id
             verbose: as always
+            params: provide the parameters that you'd want to update. if ``None``, will use 
+                   ``active_params``
+            objective: provide the objective that yo'd need to cook optimizer with. if ``None``, 
+                        will use ``dropout_cost``.
         """
+        if params is None:
+            params = self.active_params
+
+        if objective is None:
+            objective = self.dropout_cost
 
         if verbose >=3:
             print "... Cooking Optimizer"
 
-        if self.cooked_optimizer is None:
-               raise Exception ("This needs to be run only after network is cooked")
+        if optimizer is None:
+            optimizer = self.cooked_optimizer
 
-        self.learning_rate = self.cooked_optimizer.learning_rate
+        self.learning_rate = optimizer.learning_rate
         anneal_rate = T.scalar('annealing_rate')
         self.decay_learning_rate = theano.function(
                         inputs=[anneal_rate],          # Just updates the learning rates. 
                         name = 'annealing',
                         updates={self.learning_rate: self.learning_rate - self.learning_rate * 
                                                                             anneal_rate })
-        self.current_momentum = theano.function ( inputs =[self.cooked_optimizer.epoch],
-                                                         outputs = self.cooked_optimizer.momentum,
+        self.current_momentum = theano.function ( inputs =[optimizer.epoch],
+                                                         outputs = optimizer.momentum,
                                                          name = 'momentum' ) 
 
-        self.cooked_optimizer.calculate_gradients(params = self.active_params,
-                                       objective = self.dropout_cost,
+        optimizer.calculate_gradients(params = params,
+                                       objective = objective,
                                        verbose = verbose) 
-        self.cooked_optimizer.create_updates (params = self.active_params, verbose = verbose)
+        optimizer.create_updates (params = params, verbose = verbose)
 
     def _create_layer_activity_classifier(self, id, activity, verbose = 2):
         
@@ -1692,9 +1751,9 @@ class network(object):
                                                             function = self.mini_batch_predictions,
                                                             verbose = verbose)
         if self.cooked_visualizer.debug_layers and self.layer_activities_created is True:
-            for layer in self.layers:
+            for lyr in self.layer_activities.keys():
                 self.cooked_visualizer.theano_function_visualizer(
-                                                        function = self.layer_activities[layer], 
+                                                        function = self.layer_activities[lyr], 
                                                         verbose = verbose)
         self.cooked_visualizer.initialize(batch_size = self.mini_batch_size, verbose = verbose) 
         # datastream needs to be reshaped basically. Why I don't use unflatten or inputs I don't 
@@ -1802,21 +1861,26 @@ class network(object):
             generator = kwargs['generator']
             self.network_type = 'generator'
 
+        if not 'params' in kwargs.keys():
+            params = None
+        else:
+            params = params
+
         if generator is None and classifier is None:
             if verbose >= 3:
                 print "... assuming classifier because it is not specified what network we are \
                         cooking "
             classifier = self.last_classifier_created
             self.network_type = 'classifier'
-
+        
         if optimizer is None:
             if self.last_optimizer_created is None:
 
                 optimizer_params =  {        
-                            "momentum_type"       : 'polyak',             
+                            "momentum_type"       : 'false',             
                             "momentum_params"     : (0.9, 0.95, 30),      
                             "regularization"      : (0.0001, 0.0001),       
-                            "optimizer_type"      : 'rmsprop',                
+                            "optimizer_type"      : 'sgd',                
                             "id"                  : "main"
                                 }
                 if verbose >= 3:
@@ -1853,7 +1917,7 @@ class network(object):
         self.dropout_cost = self.dropout_layers[objective_layer].output
 
         self._cook_datastream(verbose = verbose)
-        self._cook_optimizer(verbose = verbose )
+        self._cook_optimizer(params = params, verbose = verbose )
         
         self._initialize_test (classifier = classifier,
                                generator = generator,
@@ -1872,7 +1936,9 @@ class network(object):
         self.best_params = []
         # Let's bother only about learnable params. This avoids the problem when weights are 
         # shared
-        for param in self.active_params:
+        if params is None:
+            params = self.active_params
+        for param in params:
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 
         self.cost = []  
@@ -1880,7 +1946,6 @@ class network(object):
         self._cook_visualizer(verbose = verbose) # always cook visualizer last.
         self.visualize (epoch = 0, verbose = verbose)
         # Cook Resultor.
-        # Cook Visualizer.
 
 
     def print_status (self, epoch , verbose = 2):
@@ -1950,7 +2015,7 @@ class network(object):
         input_layers = []
         # collect all begining of streams
         for id, layer in self.layers.iteritems():
-            if layer.type == 'input':
+            if layer.type == 'input' or layer.type == 'random':
                 input_layers.append(id)
     
         for input_layer in input_layers:

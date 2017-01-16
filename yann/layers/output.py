@@ -217,9 +217,10 @@ class objective_layer(layer):
     Args:
         loss: ``yann.network.layers.classifier_layer.loss()`` method.        
         labels: ``theano.shared`` variable of labels. 
+        type: ``'discriminator'``, ``'generator'`` or ``'value'``. Value will just use the value as 
+                an objective and minimizes that.
         objective: depends on what is the classifier layer being used. Each have their own 
                    options.
-        input_shape: ``(mini_batch_size, predictions)``
         L1: Symbolic weight of the L1 added together
         L2: Sumbolic L2 of the weights added together
         l1_coeff: Coefficient to weight L1 by.
@@ -233,11 +234,10 @@ class objective_layer(layer):
         Use ``objective_layer.output`` and from this class.    
     """
     def __init__(   self, 
-                    loss,
-                    labels,
                     objective,
                     id,
-                    input_shape,
+                    labels = None,                    
+                    loss = None,                    
                     type = 'discriminator',
                     L1 = None,
                     L2 = None,
@@ -254,6 +254,8 @@ class objective_layer(layer):
             self.output = loss(y = labels, type = objective)
         elif type == 'generator':            
             self.output = loss(type = objective)
+        elif type == 'value':
+            self.output = objective
         if L1 is not None:            
             self.output = self.output + l1_coeff * L1 
         if L2 is not None:

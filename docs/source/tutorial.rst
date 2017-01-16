@@ -18,6 +18,7 @@ tutorial just in case though.
    pantry/tutorials/mlp
    pantry/tutorials/autoencoder
    pantry/tutorials/lenet
+   pantry/tutorials/gan
 
 .. Todo::
 
@@ -25,3 +26,4 @@ tutorial just in case though.
         * Loading pre-trained VGG-19 net   
         * AlexNet
         * GANs
+

@@ -17,6 +17,7 @@ that are accessible in ``yann``. It contains various layers including:
     * :mod:`merge.merge_layer`
     * :mod:`flatten.flatten_layer`
     * :mod:`flatten.unflatten_layer`
+    * :mod:`random.random_layer`
 
 All these are inherited classes from :mod:`layer` class, which is abstract.
 
@@ -33,5 +34,6 @@ Specific layers that can be used are
    merge
    flatten
    output   
+   random
 
 
