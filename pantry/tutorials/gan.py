@@ -195,6 +195,7 @@ class gan (network):
                 discriminator_layers,
                 classifier_layers,
                 generator_layers,
+                softmax_layer,
                 optimizer_params = None, 
                 verbose = 2, 
                 **kwargs ):
@@ -326,7 +327,14 @@ class gan (network):
                                     verbose = verbose)
         self.cook_gen_optimizer(   optimizer_params = optimizer_params,
                                     verbose = verbose)
-                                    
+
+        self._initialize_test (classifier = softmax_layer,
+                               verbose = verbose)
+        self._initialize_predict ( classifier = softmax_layer,
+                                 verbose = verbose)
+        self._initialize_posterior (classifier = softmax_layer,
+                                   verbose = verbose)
+
         self.initialize_train ( verbose = verbose )   
         self.validation_accuracy = []
         self.best_validation_errors = numpy.inf
@@ -467,8 +475,22 @@ class gan (network):
                                                     self.cooked_datastream.mini_batch_size]},
                                         on_unused_input = 'ignore')
 
-    def train ( self, verbose, **kwargs):
-        
+    def validate (self, epoch = 0, training_accuracy = False, show_progress = False, verbose = 2):
+        """
+        Method is use to run validation. It will also load the validation dataset.
+
+        Args:
+            verbose: Just as always
+            show_progress: Display progressbar ?
+            training_accuracy: Do you want to print accuracy on the training set as well ?
+        """        
+        self.network_type = 'classifier'        
+        best = super(gan,self).validate(epoch = epoch,
+                                 training_accuracy = training_accuracy,
+                                 show_progress = show_progress,
+                                 verbose = verbose)
+        return best
+    def train ( self, verbose, **kwargs):        
         """
         Training function of the network. Calling this will begin training.
 
@@ -747,7 +769,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     origin = "z",
                     id = "G(z)",
                     num_neurons = 784,
-                    activation = 'tanh',
+                    activation = 'sigmoid',
                     verbose = verbose
                     )
 
@@ -756,7 +778,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     id = "D(x)",
                     origin = "x",
                     num_neurons = 256,
-                    activation = 'tanh',
+                    activation = 'sigmoid',
                     verbose = verbose
                     )
 
@@ -768,7 +790,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     num_neurons = 256,
                     input_params = net.dropout_layers["D(x)"].params, # must be the same params, 
                                                         # this way it remains the same network.
-                    activation = 'tanh',
+                    activation = 'sigmoid',
                     verbose = verbose
                     )
 
@@ -809,7 +831,6 @@ def gan_network ( dataset= None, verbose = 1 ):
                     layer_type = 'value',
                     objective = -T.mean(T.log(1-(net.layers['fake'].output))),
                     datastream_origin = 'data', 
-                    regularizer = (0,0),
                     verbose = verbose
                     )
 
@@ -820,7 +841,6 @@ def gan_network ( dataset= None, verbose = 1 ):
                     layer_type = 'value',
                     objective = -T.mean(T.log((net.layers['real'].output))),
                     datastream_origin = 'data', 
-                    regularizer = (0,0),
                     verbose = verbose
                     )                
 
@@ -842,9 +862,10 @@ def gan_network ( dataset= None, verbose = 1 ):
                 generator_layers = ["G(z)"], 
                 discriminator_layers = ["D(G(z))","D(x)"],
                 classifier_layers = ["D(x)","softmax"],
+                softmax_layer = "softmax",
                 verbose = verbose )
                     
-    learning_rates = (0.05, 0.01, 0.001)  
+    learning_rates = (0.05, 0.001, 0.0001)  
     
     net.train( epochs = (50, 50), 
                validate_after_epochs = 1,

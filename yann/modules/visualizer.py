@@ -253,11 +253,11 @@ class visualizer(module):
         """
         if verbose >=3:
             print "... creating visualizations of computational graph"   
-        filename = self.root + '/computational_graphs/static/' + function.name 
         # this try and except is bad coding, but this seems to be OS dependent and I don't want to 
         # bother with this.
 
         if static_printer_import is True:
+            filename = self.root + '/computational_graphs/static/' + function.name             
             try:
                 static_theano_print(fct = function, outfile = filename + '.' + format, 
                                                                 print_output_file = False,
@@ -268,6 +268,7 @@ class visualizer(module):
                     print "... Something is wrong with the setup of installers for pydot"
         
         if dynamic_printer_import is True:
+            filename = self.root + '/computational_graphs/dynamic/' + function.name         
             try:
                 dynamic_theano_print(fct = function, outfile = filename + '.html') 
                                                 # this is not working for something is 
