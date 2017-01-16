@@ -608,10 +608,11 @@ class gan (network):
                 for minibatch in xrange(self.mini_batches_per_batch[0]):       
                     # All important part of the training function. Batch Train.
                     # This is the classifier for discriminator. I will run this later. 
+
                     fake_cost = self.mini_batch_train_fake (minibatch, epoch_counter)
                     real_cost = self.mini_batch_train_real (minibatch, epoch_counter)
+                    softmax_cost = self.mini_batch_train_softmax (minibatch, epoch_counter)                    
                     gen_cost = self.mini_batch_train_gen (minibatch, epoch_counter)
-                    softmax_cost = self.mini_batch_train_softmax (minibatch, epoch_counter)
 
                     if numpy.isnan(gen_cost) or \
                         numpy.isnan(softmax_cost) or \
@@ -645,20 +646,19 @@ class gan (network):
             if nan_flag is False:    
                 if verbose >= 2:
                     self.print_status ( epoch = epoch_counter, verbose = verbose )    
-                """
+                
                 best = self.validate(   epoch = epoch_counter,
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,
-                                        verbose = verbose )"""
+                                        verbose = verbose )
                 self.visualize ( epoch = epoch_counter , verbose = verbose)
-                """
+                
                 if best is True:
                     copy_params(source = self.params, destination= nan_insurance , 
                                                                             borrow = self.borrow)
                     copy_params(source = self.params, destination= self.best_params, 
                                                                             borrow = self.borrow)                        
-                        # self.resultor.save_network()
-                # self.resultor.something() # this function is dummy now. But resultor should use""" 
+
                 self.decay_learning_rate(learning_rates[0])  
 
                 if patience < epoch_counter:
@@ -692,7 +692,7 @@ def gan_network ( dataset= None, verbose = 1 ):
     optimizer_params =  {        
                 "momentum_type"       : 'nesterov',             
                 "momentum_params"     : (0.5, 0.95, 30),      
-                "regularization"      : (0.000, 0.0001),       
+                "regularization"      : (0.000, 0.000),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -841,10 +841,10 @@ def gan_network ( dataset= None, verbose = 1 ):
                 optimizer_params = optimizer_params,
                 generator_layers = ["G(z)"], 
                 discriminator_layers = ["D(G(z))","D(x)"],
-                classifier_layers = ["softmax"],
+                classifier_layers = ["D(x)","softmax"],
                 verbose = verbose )
                     
-    learning_rates = (0, 0.001, 0.0001)  
+    learning_rates = (0.05, 0.01, 0.001)  
     
     net.train( epochs = (50, 50), 
                validate_after_epochs = 1,

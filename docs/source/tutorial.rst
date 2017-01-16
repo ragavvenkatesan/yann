@@ -25,5 +25,5 @@ tutorial just in case though.
     Do tutorials for the following:
         * Loading pre-trained VGG-19 net   
         * AlexNet
-        * GANs
-
+        * GoogleNet
+        * ResNet
