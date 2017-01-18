@@ -15,4 +15,5 @@ files and the API documentations.
    modules/index
    core/index
    utils/index
+   special/index
    
