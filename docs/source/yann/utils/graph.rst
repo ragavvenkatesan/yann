@@ -9,7 +9,7 @@ which is accessible through `net = network()`, `net.graph`. In each layer some r
 nodes (max limited) will be added to this graph and can be seen at `net.graph.nodes()`.
 Its attributes will be layer prorperties such as `type`, `output_shape` and so on. 
 
-:mod:'yann.utils.graph` has some ports that uses this networkx graph. 
+:mod:`yann.utils.graph` has some ports that uses this networkx graph. 
 
 This includes:
 
