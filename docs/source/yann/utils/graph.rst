@@ -11,8 +11,7 @@ Its attributes will be layer prorperties such as `type`, `output_shape` and so o
 
 :mod:`yann.utils.graph` has some ports that uses this networkx graph. 
 
-This includes:
-        -  `draw_network` which draws the network.
+This includes: `draw_network` which draws the network.
 
 The documentation follows:
 
