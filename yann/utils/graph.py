@@ -21,17 +21,7 @@ def draw_network(graph, filename = 'network.pdf', show = False, verbose = 2 ):
     # convert from networkx -> pydot
     if verbose >=3 :
         print "... Coverting to dot"
-    """
-    cgraph=nx.complete_graph(net.graph)
-    temp_agraph=nx.to_agraph(cgraph)
-    agraph=nx.from_agraph(temp_agraph)
-    """
-    """
-    agraph = to_agraph(graph)
-    # Need to work on putting a box around nodes of the same layer.
-    agraph.layout(prog = 'dot')
-    agraph.draw(filename)
-    """
+
     dot = to_pydot(graph)
     dot.set_node_defaults(style="filled", fillcolor="grey")
     dot.set_edge_defaults(color="blue", arrowhead="vee", weight="0")    
