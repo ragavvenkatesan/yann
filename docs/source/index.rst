@@ -129,7 +129,7 @@ To cook a mnist dataset for yann run the following code:
 
 .. code-block:: python
 
-    from yann.utils.dataset import cook_mnist
+    from yann.special.datasets import cook_mnist
     cook_mnist()
 
 Running this code will print a statement to the following effect ``>>Dataset xxxxx is created.``

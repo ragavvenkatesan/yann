@@ -192,7 +192,7 @@ if __name__ == '__main__':
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
-            from yann.utils.dataset import cook_mnist  
+            from yann.special.datasets import cook_mnist  
             data = cook_mnist (verbose = 2)
             dataset = data.dataset_location()
         else:
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        from yann.utils.dataset import cook_mnist  
+        from yann.special.datasets import cook_mnist  
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
