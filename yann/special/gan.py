@@ -99,6 +99,7 @@ class gan (network):
     def cook_softmax_optimizer ( self, optimizer_params, verbose = 2):
         """
         This method cooks the softmax optimizer.
+
         Args: 
             verbose: as always 
         """    
@@ -119,6 +120,7 @@ class gan (network):
     def cook_real_optimizer ( self, optimizer_params, verbose = 2):
         """
         This method cooks the real optimizer.
+
         Args: 
             verbose: as always 
         """    
@@ -139,6 +141,7 @@ class gan (network):
     def cook_fake_optimizer ( self, optimizer_params, verbose = 2):
         """
         This method cooks the fake optimizer.
+
         Args: 
             verbose: as always 
         """    
@@ -159,6 +162,7 @@ class gan (network):
     def cook_gen_optimizer ( self, optimizer_params, verbose = 2):
         """
         This method cooks the generator optimizer.
+        
         Args: 
             verbose: as always 
         """    
