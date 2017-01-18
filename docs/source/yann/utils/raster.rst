@@ -15,5 +15,5 @@ All rights reserved.
 
 .. _skdata: https://jaberg.github.io/skdata/
 
-.. automodule:: yann.utils.dataset
+.. automodule:: yann.utils.raster
    :members:

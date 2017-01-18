@@ -15,5 +15,7 @@ This includes:
 
         * `draw_network` which draws the network.
 
+The documentation follows.
+
 .. automodule:: yann.utils.graph
    :members:
