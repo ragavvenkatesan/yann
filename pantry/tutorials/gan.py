@@ -14,22 +14,6 @@ if progressbar_installed is True:
 from yann.network import network
 from yann.core.operators import copy_params
 
-def create_real_labels(batch_size):
-    """ 
-    A function that creates labels for real data.
-    Args:
-        Supply how many batches you need data of.
-    """
-    return numpy.ones((batch_size,))
-
-def create_fake_labels(batch_size):
-    """ 
-    A function that creates labels for fake data.
-    Args:
-        Supply how many batches you need data of.
-    """
-    return numpy.zeros((batch_size,))    
-
 class gan (network):
     """
     This class is inherited from the network class and has its own methods modified in support of gan
@@ -76,26 +60,22 @@ class gan (network):
                     on_unused_input = 'ignore')
         
         #D(x)
-        real_labels = create_real_labels(self.mini_batch_size)
         self.mini_batch_train_real = theano.function(
                 inputs = [index, self.cooked_real_optimizer.epoch],
                 outputs = self.dropout_real_cost,
                 name = 'train',                    
                 givens={
-        self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
-        self.y: real_labels },
+        self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size] },
                 updates = self.cooked_real_optimizer.updates, 
                 on_unused_input = 'ignore')         
         
         #D(G(z))
-        fake_labels = create_fake_labels(self.mini_batch_size)
         self.mini_batch_train_fake = theano.function(
                 inputs = [index, self.cooked_fake_optimizer.epoch],
                 outputs = self.dropout_fake_cost,
                 name = 'train',                    
                 givens={
-        self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
-        self.y: fake_labels },
+        self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]},
                 updates = self.cooked_fake_optimizer.updates, 
                 on_unused_input = 'ignore')                                      
 
@@ -753,7 +733,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                         id = 'z',
                         num_neurons = (500,256), 
                         distribution = 'uniform',
-                        limits = (-1, 1),
+                        limits = (0, 1),
                         verbose = verbose)
     
     #x - inputs come from dataset 1 X 784
@@ -769,7 +749,8 @@ def gan_network ( dataset= None, verbose = 1 ):
                     origin = "z",
                     id = "G(z)",
                     num_neurons = 784,
-                    activation = 'tanh',
+                    activation = 'relu',
+                    dropout_rate = 0,
                     verbose = verbose
                     )
 
@@ -777,8 +758,9 @@ def gan_network ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     id = "D(x)",
                     origin = "x",
-                    num_neurons = 256,
-                    activation = 'tanh',
+                    num_neurons = 512,
+                    dropout_rate = 0.5,                    
+                    activation = ('maxout','maxout',2),
                     verbose = verbose
                     )
 
@@ -787,10 +769,11 @@ def gan_network ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     id = "D(G(z))",
                     origin = "G(z)",
-                    num_neurons = 256,
+                    dropout_rate = 0.5,                    
+                    num_neurons = 512,
                     input_params = net.dropout_layers["D(x)"].params, # must be the same params, 
                                                         # this way it remains the same network.
-                    activation = (''tanh''),
+                    activation = ('maxout','maxout',2),
                     verbose = verbose
                     )
 
@@ -800,6 +783,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     origin = "D(G(z))",
                     num_neurons = 1,
                     activation = 'sigmoid',
+                    dropout_rate = 0,
                     verbose = verbose
                     )
 
@@ -810,6 +794,7 @@ def gan_network ( dataset= None, verbose = 1 ):
                     num_neurons = 1,
                     input_params = net.dropout_layers["fake"].params, # Again share their parameters
                     activation = 'sigmoid',
+                    dropout_rate = 0,
                     verbose = verbose
                     )
 
@@ -860,9 +845,9 @@ def gan_network ( dataset= None, verbose = 1 ):
     net.cook (  objective_layers = ["classifier_obj","real_obj","fake_obj"],
                 optimizer_params = optimizer_params,
                 generator_layers = ["G(z)"], 
-                discriminator_layers = ["D(G(z))","D(x)"],
+                discriminator_layers = ["D(x)"],
                 classifier_layers = ["D(x)","softmax"],
-                softmax_layer = "softmax",
+                softmax_layer = ["softmax"],
                 verbose = verbose )
                     
     learning_rates = (0.05, 0.001, 0.0001)  

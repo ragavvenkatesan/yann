@@ -1195,7 +1195,7 @@ def cook_mnist(  verbose = 1,
                   
     # parameters relating to preprocessing.
 		preprocess_params = { 
-                            "normalize"     : True,
+                            "normalize"     : False,
                             "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
