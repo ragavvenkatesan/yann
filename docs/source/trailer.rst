@@ -81,7 +81,7 @@ toolboxes seem to have. Among many others there are:
    - *Inception Module [11]
    - Batch Normalization [12]
    - ReLU / ELU and other activations supported through theano [13,14]
-   - Generative Adversarial Networks [15]
+   - Generative Adversarial Networks [16]
 
 Those marked * are not fully tested yet. 
 
