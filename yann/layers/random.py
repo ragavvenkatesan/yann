@@ -9,7 +9,10 @@ class random_layer (layer):
 
     Args: 
         num_neurons: List of the shapes of all inputs.
-        distribution: ``'binomial'``
+        distribution: ``'binomial'``, ``'uniform'``, ``'normal'`` ``'gaussian'``
+        limits: tuple for binomial
+        mu: mean for gaussian
+        sigma: variance for gaussian
         p: if ``type`` is ``'binomial'`` supply a ``p`` variable. Default is 0.5
         id: Supply a layer id        
         num_neurons: Supply the output shape of the layer desired.
@@ -55,6 +58,23 @@ class random_layer (layer):
 
             self.output = srng.uniform(size = num_neurons, low =limits[0], high =limits[1], 
                                                 dtype = theano.config.floatX )
+
+        elif distribution == 'gaussian' or distribution == 'normal':
+            if not 'mu' in options.keys():
+                if verbose >= 3:
+                    print "... Needs mu, assuming default 0"
+                mu = 0
+            else:
+                mu = options['mu']
+            if not 'sigma' in options.keys():
+                if verbose >= 3:
+                    print "... Needs sigma, assuming default 1"
+                sigma = 1
+            else:
+                sigma = options['sigma']
+
+            self.output = srng.normal(size = num_neurons, avg = mu, std = sigma, 
+                                                dtype = theano.config.floatX)
 
         self.output_shape = num_neurons
         self.num_neurons = num_neurons
