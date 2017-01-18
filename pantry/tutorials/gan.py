@@ -34,7 +34,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
     visualizer_params = {
                     "root"       : '.',
                     "frequency"  : 1,
-                    "sample_size": 144,
+                    "sample_size": 225,
                     "rgb_filters": False,
                     "debug_functions" : False,
                     "debug_layers": True,  
@@ -85,7 +85,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     id = "D(x)",
                     origin = "x",
-                    num_neurons = 512,
+                    num_neurons = 1024,
                     dropout_rate = 0,                    
                     activation = ('maxout','maxout',2),
                     verbose = verbose
@@ -97,7 +97,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
                     id = "D(G(z))",
                     origin = "G(z)",
                     dropout_rate = 0,                    
-                    num_neurons = 512,
+                    num_neurons = 1024,
                     input_params = net.dropout_layers["D(x)"].params, # must be the same params, 
                                                         # this way it remains the same network.
                     activation = ('maxout','maxout',2),
@@ -168,6 +168,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
     from yann.utils.graph import draw_network
     draw_network(net.graph, filename = 'gan.png')    
     net.pretty_print()
+    
     net.cook (  objective_layers = ["classifier_obj","real_obj","fake_obj"],
                 optimizer_params = optimizer_params,
                 generator_layers = ["G(z)"], 
@@ -177,8 +178,9 @@ def simple_gan ( dataset= None, verbose = 1 ):
                 verbose = verbose )
                     
     learning_rates = (0.05, 0.001, 0.0001)  
+
     net.train( epochs = (50, 50), 
-               k = 1,  # refer to Ian Goodfellow's paper Algorithm 1.
+               k = 5,  # refer to Ian Goodfellow's paper Algorithm 1.
                validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,
