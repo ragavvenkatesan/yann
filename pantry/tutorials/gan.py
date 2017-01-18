@@ -8,7 +8,7 @@ Aaron Courville, and Yoshua Bengio. "Generative adversarial nets." In Advances i
 from yann.special.gan import gan
 from theano import tensor as T
 
-def gan1 ( dataset= None, verbose = 1 ):             
+def simple_gan ( dataset= None, verbose = 1 ):             
     """
     This function is a demo example of a sparse autoencoder. 
     This is an example code. You should study this code rather than merely run it.  
@@ -165,8 +165,8 @@ def gan1 ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
 
-    # from yann.utils.graph import draw_network
-    # draw_network(net.graph, filename = 'gan.png')    
+    from yann.utils.graph import draw_network
+    draw_network(net.graph, filename = 'gan.png')    
     net.pretty_print()
     net.cook (  objective_layers = ["classifier_obj","real_obj","fake_obj"],
                 optimizer_params = optimizer_params,
@@ -204,4 +204,4 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    gan1 ( dataset, verbose = 2 )
+    simple_gan ( dataset, verbose = 2 )
