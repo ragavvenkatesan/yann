@@ -81,6 +81,7 @@ toolboxes seem to have. Among many others there are:
    - *Inception Module [11]
    - Batch Normalization [12]
    - ReLU / ELU and other activations supported through theano [13,14]
+   - Generative Adversarial Networks [15]
 
 Those marked * are not fully tested yet. 
 
@@ -122,7 +123,10 @@ Those marked * are not fully tested yet.
          (2015).
 .. [#]   Venkatesan, Ragav, and Baoxin Li. "Diving deeper into mentee networks." arXiv preprint 
          arXiv:1604.08220 (2016).
-         
+.. [#]   Goodfellow, Ian, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil 
+         Ozair, Aaron Courville, and Yoshua Bengio. "Generative adversarial nets." In Advances in 
+         Neural Information Processing Systems, pp. 2672-2680. 2014.
+    
 .. _theano: http://deeplearning.net/software/theano/ 
 .. _GitHub: https://github.com/ragavvenkatesan/yann
 .. _Ragav Venkatesan: http://www.public.asu.edu/~rvenka10/
