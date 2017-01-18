@@ -1,4 +1,4 @@
-.. raster:
+.. _raster:
 
 :mod:`raster` - provides a visualization for rasterizing images.
 ================================================================

@@ -1,4 +1,4 @@
-.. activations:
+.. _activations:
 
 :mod:`activations` - Definitions for all activations functions.
 ===============================================================

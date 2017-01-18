@@ -1,4 +1,4 @@
-.. utils:
+.. _utils:
 
 :mod:`utils` - utilities that can be used as enhancement for the toolbox's functionality
 ========================================================================================

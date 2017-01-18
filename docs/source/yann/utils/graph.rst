@@ -1,4 +1,4 @@
-.. networkx:
+.. _graph:
 
 :mod:`graph` - provides a nice port to networkx methods related to Yann
 =======================================================================

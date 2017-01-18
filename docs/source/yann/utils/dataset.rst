@@ -1,4 +1,4 @@
-.. dataset:
+.. _dataset:
 
 :mod:`dataset` - provides a nice port to benchmark and matlab-based datasets
 ============================================================================

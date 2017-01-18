@@ -1,4 +1,4 @@
-.. operators:
+.. _operators:
 
 :mod:`operators` - Definitions for all basic operators written for yann .
 =========================================================================
