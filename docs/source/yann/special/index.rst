@@ -1,4 +1,4 @@
-.. special:
+.. _special:
 
 :mod:`special` - contains tools for special types of networks
 ========================================================================================

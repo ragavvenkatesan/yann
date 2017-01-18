@@ -1,4 +1,4 @@
-.. gan:
+.. _gan:
 
 :mod:`gan` - provides a inherited network class for a gan network.
 ================================================================
