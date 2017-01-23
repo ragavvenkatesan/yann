@@ -18,7 +18,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
         verbose: Similar to the rest of the dataset.
     """
     optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
+                "momentum_type"       : 'nesterov',             
                 "momentum_params"     : (0.65, 0.95, 30),      
                 "regularization"      : (0.000, 0.000),       
                 "optimizer_type"      : 'rmsprop',                
@@ -57,7 +57,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
     #z - latent space created by random gaussian layer
     net.add_layer(type = 'random',
                         id = 'z',
-                        num_neurons = (500,256), 
+                        num_neurons = (500,64), 
                         distribution = 'normal',
                         mu = 0,
                         sigma = 1,
@@ -77,7 +77,6 @@ def simple_gan ( dataset= None, verbose = 1 ):
                     id = "G(z)",
                     num_neurons = 784,
                     activation = 'relu',
-                    dropout_rate = 0,
                     verbose = verbose
                     )
 
@@ -85,9 +84,9 @@ def simple_gan ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     id = "D(x)",
                     origin = "x",
-                    num_neurons = 1024,
-                    dropout_rate = 0,                    
+                    num_neurons = 512,
                     activation = ('maxout','maxout',2),
+                    #activation = 'relu',
                     verbose = verbose
                     )
 
@@ -96,11 +95,11 @@ def simple_gan ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     id = "D(G(z))",
                     origin = "G(z)",
-                    dropout_rate = 0,                    
-                    num_neurons = 1024,
+                    num_neurons = 512,
                     input_params = net.dropout_layers["D(x)"].params, # must be the same params, 
                                                         # this way it remains the same network.
                     activation = ('maxout','maxout',2),
+                    #activation = 'relu',
                     verbose = verbose
                     )
 
@@ -110,7 +109,6 @@ def simple_gan ( dataset= None, verbose = 1 ):
                     origin = "D(G(z))",
                     num_neurons = 1,
                     activation = 'sigmoid',
-                    dropout_rate = 0,
                     verbose = verbose
                     )
 
@@ -121,7 +119,6 @@ def simple_gan ( dataset= None, verbose = 1 ):
                     num_neurons = 1,
                     input_params = net.dropout_layers["fake"].params, # Again share their parameters
                     activation = 'sigmoid',
-                    dropout_rate = 0,
                     verbose = verbose
                     )
 
@@ -177,10 +174,10 @@ def simple_gan ( dataset= None, verbose = 1 ):
                 softmax_layer = "softmax",
                 verbose = verbose )
                     
-    learning_rates = (0.05, 0.001, 0.0001)  
+    learning_rates = (0.05, 0.01)  
 
-    net.train( epochs = (50, 50), 
-               k = 5,  # refer to Ian Goodfellow's paper Algorithm 1.
+    net.train( epochs = (10), 
+               k = 30,  # refer to Ian Goodfellow's paper Algorithm 1.
                validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,

@@ -320,8 +320,17 @@ class visualizer(module):
             imgs = activity(index)
             if len(imgs.shape) == 2:
                 if not os.path.exists(loc + '/layer_' + id):                
-                    os.makedirs(loc + '/layer_' + id)                
-                self.visualize_images(imgs, loc=loc + '/layer_' + id, verbose =verbose)
+                    os.makedirs(loc + '/layer_' + id)     
+                if not os.path.exists(loc + '/layer_' + id + '/straight'):                
+                    os.makedirs(loc + '/layer_' + id + '/straight')                        
+                self.visualize_images(  imgs = imgs,
+                                        loc = loc + '/layer_' + id + '/straight', 
+                                        verbose = verbose )  
+                if not os.path.exists(loc + '/layer_' + id + '/transposed'):                
+                    os.makedirs(loc + '/layer_' + id + '/transposed')   
+                self.visualize_images(  imgs = imgs.transpose(),
+                                        loc = loc + '/layer_' + id + '/transposed', 
+                                        verbose = verbose )                                  
             elif len(imgs.shape) == 4:
                 imgs = imgs.transpose(0,2,3,1)
                 if not os.path.exists(loc + '/layer_' + id):                
@@ -344,10 +353,11 @@ class visualizer(module):
         if not os.path.exists(loc):            
             os.makedirs(loc)
         for id, layer in layers.iteritems():  
-            if layer.active is True:    
+            if layer.params is not None:    
                 if verbose >= 3:
-                    print "... saving down visualization of layer " + id      
-                imgs = layer.w.get_value(borrow = True)
+                    print "... saving down visualization of layer " + id
+     
+                imgs = layer.get_params()[0]
                 if len(imgs.shape) == 4:
                     if not os.path.exists(loc + '/layer_' + id):                
                         os.makedirs(loc + '/layer_' + id)
@@ -358,10 +368,16 @@ class visualizer(module):
                 elif len(imgs.shape) == 2:
                     if not os.path.exists(loc + '/layer_' + id):                
                         os.makedirs(loc + '/layer_' + id)
-                    size = imgs.shape[1]
+                    if not os.path.exists(loc + '/layer_' + id + '/straight'):                
+                        os.makedirs(loc + '/layer_' + id + '/straight')                        
                     self.visualize_images(   imgs = imgs,
-                                             loc = loc + '/layer_' + id , 
-                                             verbose = verbose )                     
+                                             loc = loc + '/layer_' + id + '/straight', 
+                                             verbose = verbose )  
+                    if not os.path.exists(loc + '/layer_' + id + '/transposed'):                
+                        os.makedirs(loc + '/layer_' + id + '/transposed')   
+                    self.visualize_images(   imgs = imgs.transpose(),
+                                             loc = loc + '/layer_' + id + '/transposed', 
+                                             verbose = verbose )                                                                                        
                     
 
 if __name__ == '__main__':

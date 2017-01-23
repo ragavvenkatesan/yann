@@ -2,12 +2,8 @@
 Todo:
 
     * LSTM / GRN layers
-    * A concatenate layer
-    * A Merge layer that is going to sum / average two layer activations.
     * An Embed layer that is going to create a new embedding space for two layer's activations to
       project on to the same space and minimize its distances. 
-    * An error layer that produces the error between two layers. (use errors.py in core.)
-      - This can be used to generate images back such as in the case of auto-encoders.    
 """
 
 import theano
@@ -16,6 +12,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 # The above import is an experimental code. Not sure if it works perfectly, but I have no doubt 
 # yet.
 from yann.core import activations
+import numpy
 
 class layer(object):
     """
@@ -51,7 +48,7 @@ class layer(object):
         if verbose >= 3:
             print "... Initializing a new layer " + self.id + " of type " + self.type        
 
-    def print_layer(self, prefix = " ", nest = True, last = True):
+    def print_layer(self, prefix = " ", nest = True, last = True, verbose = 2):
         """
         Print information about the layer
         
@@ -88,7 +85,7 @@ class layer(object):
         
         return prefix
 
-    def _graph_attributes(self):
+    def _graph_attributes(self, verbose = 2):
         """
         This is an internal function that returns attributes as a dictionary so that I can add
         it to the networkx graph output.
@@ -113,7 +110,21 @@ class layer(object):
         out["type"] = self.type
         return out
 
-def _dropout(rng, params, dropout_rate):
+    def get_params (self ,verbose = 2):
+        """
+        This method returns the parameters of the layer in a numpy ndarray format.
+
+        Notes:
+            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
+            have used get_value( borrow = True ), but I can't do this because some parameters are 
+            theano.tensor.var.TensroVariable which needs to be run through eval. 
+        """
+        out = []
+        for p in self.params:
+            out.append(numpy.asarray(p.eval(),dtype = theano.config.floatX))            
+        return out
+
+def _dropout(rng, params, dropout_rate, verbose = 2):
     """
     dropout thanks to misha denil 
     https://github.com/mdenil/dropout    

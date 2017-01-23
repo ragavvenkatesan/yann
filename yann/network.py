@@ -825,9 +825,8 @@ class network(object):
         from yann.layers.flatten import unflatten_layer as flt        
         self.dropout_layers[id] = flt(input = dropout_input, id = id, shape = shape,
                                                                     input_shape = input_shape)
-        self.layers[id] = flt(input = input, id = id, shape = shape,
-                                                                    input_shape = input_shape)        
-
+        self.layers[id] = flt(input = input, id = id, shape = shape, input_shape = input_shape)        
+        
         self.dropout_layers[id].origin.append(origin)
         self.dropout_layers[origin].destination.append(id)
         self.layers[id].origin.append(origin)
@@ -1862,7 +1861,8 @@ class network(object):
             self.network_type = 'generator'
 
         if not 'params' in kwargs.keys():
-            params = None
+            if self.network_type == 'generator' or 'classifier':
+                params = self.active_params
         else:
             params = params
 
@@ -1917,7 +1917,10 @@ class network(object):
         self.dropout_cost = self.dropout_layers[objective_layer].output
 
         self._cook_datastream(verbose = verbose)
-        self._cook_optimizer(params = params, verbose = verbose )
+        self._cook_optimizer(params = params,
+                             optimizer = self.cooked_optimizer,
+                             objective = self.dropout_cost,
+                             verbose = verbose )
         
         self._initialize_test (classifier = classifier,
                                generator = generator,
@@ -1936,8 +1939,7 @@ class network(object):
         self.best_params = []
         # Let's bother only about learnable params. This avoids the problem when weights are 
         # shared
-        if params is None:
-            params = self.active_params
+
         for param in params:
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 

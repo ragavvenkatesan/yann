@@ -31,7 +31,14 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     "id"         : 'main'
                         }  
                       
-    # intitialize the network
+    # intitialize the network    
+    optimizer_params =  {        
+                "momentum_type"       : 'nesterov',             
+                "momentum_params"     : (0.9, 0.95, 30),      
+                "regularization"      : (0.0001, 0.0001),       
+                "optimizer_type"      : 'rmsprop',                
+                "id"                  : "main"
+                    }
     net = network(   borrow = True,
                      verbose = verbose )                       
 
@@ -43,7 +50,9 @@ def autoencoder ( dataset= None, verbose = 1 ):
                      params = visualizer_params,
                      verbose = verbose 
                     ) 
-
+    net.add_module ( type = 'optimizer',
+                     params = optimizer_params,
+                     verbose = verbose )
     # add an input layer 
     net.add_layer ( type = "input",
                     id = "input",
@@ -102,7 +111,6 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     )
 
     learning_rates = (0, 0.1, 0.01)  
-
     net.cook( objective_layer = 'obj',
               datastream = 'data',
               generator = 'merge',
@@ -120,7 +128,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                show_progress = True,
                early_terminate = True,
                verbose = verbose)
-               
+                    
                            
 if __name__ == '__main__':
     import sys

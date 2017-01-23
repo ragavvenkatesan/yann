@@ -118,10 +118,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     )
                     
     learning_rates = (0.05, 0.01, 0.001, 0.0001)  
-
     net.pretty_print()  
     draw_network(net.graph, filename = 'lenet.png')    
-
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',
@@ -138,7 +136,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
                verbose = verbose)
 
     net.test(verbose = verbose)
-
 # Advaned version of the CNN
 def lenet_maxout ( dataset= None, verbose = 1 ):             
     """
@@ -202,7 +199,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "conv_pool",
                     origin = "input",
                     id = "conv_pool_1",
-                    num_neurons = 30,
+                    num_neurons = 20,
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
@@ -213,7 +210,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "conv_pool",
                     origin = "conv_pool_1",
                     id = "conv_pool_2",
-                    num_neurons = 60,
+                    num_neurons = 50,
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),

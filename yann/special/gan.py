@@ -4,6 +4,11 @@ Support for the implementation from
 Goodfellow, Ian, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, 
 Aaron Courville, and Yoshua Bengio. "Generative adversarial nets." In Advances in Neural Information
 Processing Systems, pp. 2672-2680. 2014.
+
+TODO:
+
+    There seems to be something wrong with the fine-tuning update. Code crashes after a call to 
+    _new_era. This needs debugging and fixing. 
 """
 import time 
 import numpy 
@@ -343,9 +348,7 @@ class gan (network):
         # shared
         self.active_params = self.classifier_active_params + self.discriminator_active_params + \
                                     self.generator_active_params 
-        if params is None:
-            params = self.active_params
-        for param in params:
+        for param in self.active_params:
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 
         self.gen_cost = []  
@@ -577,6 +580,10 @@ class gan (network):
         while (epoch_counter < total_epochs) and (not early_termination):
             nan_flag = False
             # check if its time for a new era.
+            if epoch_counter == 10:
+                import pdb
+                pdb.set_trace()
+
             if (epoch_counter == change_era):
             # if final_era, while loop would have terminated.
                 era = era + 1
@@ -634,7 +641,6 @@ class gan (network):
                     if minibatch % k == 0:                  
                         gen_cost = self.mini_batch_train_gen (minibatch, epoch_counter)
                     
-
                     if numpy.isnan(gen_cost) or \
                         numpy.isnan(softmax_cost) or \
                         numpy.isnan(fake_cost) or \
@@ -645,6 +651,7 @@ class gan (network):
                         if verbose >= 2:
                             print ".. NAN! Slowing learning rate by 10 times and restarting epoch."                                      
                         break                 
+
                     self.fake_cost = self.fake_cost + [fake_cost]
                     self.real_cost = self.real_cost + [real_cost]
                     self.softmax_cost = self.softmax_cost + [softmax_cost]                    
