@@ -201,7 +201,7 @@ def cook_cifar10_normalized_mean_subtracted(verbose = 1, **kwargs):
                             "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            mean_subtract   : True,
+                            "mean_subtract" : True,
                         }
 	else:
 		preprocess_params = kwargs['preprocess_params']
