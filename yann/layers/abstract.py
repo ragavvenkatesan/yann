@@ -121,7 +121,7 @@ class layer(object):
         """
         out = []
         for p in self.params:
-            out.append(numpy.asarray(p.eval(),dtype = theano.config.floatX))            
+            out.append(numpy.asarray(p.eval()))            
         return out
 
 def _dropout(rng, params, dropout_rate, verbose = 2):
