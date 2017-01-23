@@ -33,7 +33,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     "frequency"  : 1,
                     "sample_size": 32,
                     "rgb_filters": False,
-                    "debug_functions" : False,
+                    "debug_functions" : True,
                     "debug_layers": False,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
                         }       
@@ -169,7 +169,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     "frequency"  : 1,
                     "sample_size": 32,
                     "rgb_filters": True,
-                    "debug_functions" : False,
+                    "debug_functions" : True,
                     "debug_layers": False,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
                         }                      
@@ -298,6 +298,6 @@ if __name__ == '__main__':
         dataset = data.dataset_location()
 
     lenet5 ( dataset, verbose = 2 )
-    lenet_maxout (dataset, verbose = 2)
+    #lenet_maxout (dataset, verbose = 2)
      
 

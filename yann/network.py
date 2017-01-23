@@ -417,22 +417,22 @@ class network(object):
 
         # input parameter `viualizer` is used  
         if type == 'visualizer':
-            self.add_visualizer(visualizer_params = params, verbose = verbose)
+            self._add_visualizer(visualizer_params = params, verbose = verbose)
 
         # input parameter `optimizer` is used             
         elif type == 'optimizer':
-            self.add_optimizer(optimizer_params = params, verbose = verbose)
+            self._add_optimizer(optimizer_params = params, verbose = verbose)
 
         elif type == 'datastream':
-            self.add_datastream(dataset_params = params, verbose = verbose)
+            self._add_datastream(dataset_params = params, verbose = verbose)
         
         elif type == 'resultor':
-            self.add_resultor(resultor_params = params, verbose = verbose)
+            self._add_resultor(resultor_params = params, verbose = verbose)
 
         else:
             raise Exception ('No module called ' + type)
 
-    def add_resultor(self, resultor_params, verbose = 2):
+    def _add_resultor(self, resultor_params = None, verbose = 2):
         """
         This function is used to add a resultor to the network.
 
@@ -441,16 +441,47 @@ class network(object):
                              Refer to the network or resultor class for details.
             verbose: Similar to what is found in the rest of the toolbox.
         """
+        if resultor_params is None:
+            resultor_params    =    {} 
+            
         if not "id" in resultor_params.keys():
             id = len(self.resultor) + 1
             resultor_params["id"] = id
         else:
             id = resultor_params['id']
+
+        if not "root" in resultor_params.keys():            
+            resultor_params["root"] = "."
+
+        if not "results" in resultor_params.keys():            
+            resultor_params["results"] = "results.txt"
+
+        if not "errors" in resultor_params.keys():            
+            resultor_params["erros"] = "errors.txt"
+
+        if not "costs" in resultor_params.keys():            
+            resultor_params["costs"] = "costs.txt"
+
+        if not "confusion" in resultor_params.keys():            
+            resultor_params["confusion"] = "confusion.txt"
+
+        if not "network" in resultor_params.keys():            
+            resultor_params["network"] = "network.pkl"
+
+        if not "learning_rate" in resultor_params.keys():            
+            resultor_params["learning_rate"] = "learning_rate.txt"
+
+        if not "momentum" in resultor_params.keys():            
+            resultor_params["momentum"] = "momentum.txt"
+
+        if not "viualize" in resultor_params.keys():            
+            resultor_params["visualize"] = True
+
         from yann.modules.resultor import resultor
         self.resultor[id] = resultor ( resultor_init_args = resultor_params, verbose = verbose )
         self.last_resultor_created = id
 
-    def add_visualizer(self, visualizer_params, verbose = 2):
+    def _add_visualizer(self, visualizer_params, verbose = 2):
         """
         This function is used to add a visualizer to the network.
 
@@ -469,7 +500,7 @@ class network(object):
                                                                                  verbose = verbose )
         self.last_visualizer_created = id
 
-    def add_optimizer(self, optimizer_params, verbose = 2):
+    def _add_optimizer(self, optimizer_params, verbose = 2):
         """
         This function is used to add a optimizer to the network.
 
@@ -487,7 +518,7 @@ class network(object):
         self.optimizer[id] = optimizer ( optimizer_init_args = optimizer_params, verbose = verbose )
         self.last_optimizer_created = id
 
-    def add_datastream(self, dataset_params, verbose = 2):
+    def _add_datastream(self, dataset_params, verbose = 2):
         """
         This function is used to add a datastream to the network.
 
@@ -1797,6 +1828,16 @@ class network(object):
             self.visualize_activities(epoch = epoch, verbose = verbose)
             self.visualize_filters(epoch = epoch, verbose = verbose)  
 
+    def _cook_resultor (verbose = 2):
+        """
+        This is an internal function that cooks a resultor
+
+        Args:
+            verbose: as always
+        """
+        if verbose > 3:
+            print "... Resultor is cooked"
+
     def cook(self, verbose = 2, **kwargs):
         """
         This function builds the backprop network, and makes the trainer, tester and validator
@@ -1866,6 +1907,26 @@ class network(object):
         else:
             params = params
 
+        if not 'resultor' in kwargs.keys():
+            resultor = None
+        else:
+            resultor =  kwargs['resultor']
+
+        if resultor is None:
+            if self.last_resultor_created is None:
+                if verbose >= 3:
+                    print '... No resultor setup, creating a defualt one.'
+                self.add_module( type = 'resultor', verbose =verbose )
+            else:
+                if verbose >= 3:
+                    print "... resultor not provided, assuming " + self.last_resultor_created
+            resultor = self.last_resultor_created    
+        else:
+            if not resultor in self.resultor.keys():
+                raise Exception ("Resultor " + resultor + " not found.")                
+        self.cooked_resultor = self.resultor[resultor]
+
+        
         if generator is None and classifier is None:
             if verbose >= 3:
                 print "... assuming classifier because it is not specified what network we are \
@@ -1947,13 +2008,12 @@ class network(object):
         self.cooked_visualizer = self.visualizer[visualizer]
         self._cook_visualizer(verbose = verbose) # always cook visualizer last.
         self.visualize (epoch = 0, verbose = verbose)
-        # Cook Resultor.
-
+        self._cook_resultor(resultor = self.cooked_resultor, verbose = verbose)
 
     def print_status (self, epoch , verbose = 2):
         """
         This function prints the cost of the current epoch, learning rate and momentum of the 
-        network at the moment. 
+        network at the moment. This also calls the resultor to process results.
         
         Todo:
             This needs to to go to visualizer.
@@ -1976,7 +2036,11 @@ class network(object):
             print "... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
                                                                                  self.borrow))
             print "... Momentum            : " + str(self.current_momentum(epoch))  
-
+        
+        self.cooked_resultor.process_results(cost = self.cost[-1],
+                                           lr = self.learning_rate.get_value(borrow=self.borrow),
+                                           mom = self.current_momentum(epoch),
+                                           verbose = verbose)
     
     
     def _print_layer (self, id, prefix = " ", nest = True, last = True):

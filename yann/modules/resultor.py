@@ -19,6 +19,9 @@ class resultor(module):
                     "costs"     : "<cost_file_name>.txt",
                     "confusion" : "<confusion_file_name>.txt",
                     "network"   : "<network_save_file_name>.pkl"
+                    "learning_rate" : "<learning_rate_file_name>.txt"
+                    "momentum"  : <momentum_file_name>.txt
+                    "visualize" : <bool>
                     "id"        : id of the resultor
                                 }                                                          
 
@@ -52,6 +55,11 @@ class resultor(module):
                 self.confusion_file         = value
             elif item == "network":
                 self.network_file           = value
+            elif item == "learning_rate":
+                self.learning_rate          = value
+            elif item == "momentum":
+                self.momentum               = value
+            
 
         if not hasattr(self, 'root'): raise Exception('root variable has not been provided. \
                                             Without a root folder, no save can be performed')
@@ -62,5 +70,21 @@ class resultor(module):
                     
         if verbose >= 3:
             print "... Resultor is initiliazed"
+
+    def process_results( self, 
+                        cost,
+                        lr,
+                        mom,
+                        verbose = 2):
+        """
+        This method will print results and also write them down in the appropriate files.
+
+        Args:
+            cost: Cost, is a float
+            lr: Learning Rate, is a float
+            mom: Momentum, is a float.
+        """
+
+
   
     
