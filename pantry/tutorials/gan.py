@@ -76,7 +76,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
                     origin = "z",
                     id = "G(z)",
                     num_neurons = 784,
-                    activation = 'relu',
+                    activation = 'tanh',
                     verbose = verbose
                     )
 
@@ -177,7 +177,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
     learning_rates = (0.05, 0.01)  
 
     net.train( epochs = (10), 
-               k = 30,  # refer to Ian Goodfellow's paper Algorithm 1.
+               k = 10,  # refer to Ian Goodfellow's paper Algorithm 1.
                validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,
