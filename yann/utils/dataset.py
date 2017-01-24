@@ -735,8 +735,7 @@ def preprocessing( data, height, width, channels, args):
 		if normalize is True or ZCA is True: 
 			data = (data - data.mean() / (data.max() + 1e-7)
 			# do this normalization thing in batch mode.	
-	else:
-		if normalize is True or ZCA is True:
+	elif normalize is True or ZCA is True:
 			data = data / (data.max() + 1e-7)
 	
 	if ZCA is True:		
