@@ -733,9 +733,10 @@ def preprocessing( data, height, width, channels, args):
 	data = numpy.reshape(data,out_shp)
 	if mean_subtract is True:
 		if normalize is True or ZCA is True: 
-			data = (data - data.mean() / (data.max() + 1e-7)
+			data = (data - data.mean()) / (data.max() + 1e-7)
 			# do this normalization thing in batch mode.	
-	elif normalize is True or ZCA is True:
+	else:
+    		if normalize is True or ZCA is True:
 			data = data / (data.max() + 1e-7)
 	
 	if ZCA is True:		
