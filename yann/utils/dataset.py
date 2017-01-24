@@ -693,7 +693,7 @@ def preprocessing( data, height, width, channels, args):
 					"GCN"	: True for global contrast normalization
 					"ZCA"	: True, kind of like a PCA representation (not fully tested)
 					"grayscale"  : Convert the image to grayscale
-					"mean_subtract" : Subtracts the mean of the image. 
+					"zero_mean" : Subtracts the mean of the image. 
 
 						} 
 
@@ -705,7 +705,7 @@ def preprocessing( data, height, width, channels, args):
 	GCN 			= args [ "GCN" ]      
 	ZCA 			= args [ "ZCA" ]	 
 	gray 			= args [ "grayscale" ]
-	mean_subtract   = args [ "mean_subtract" ]
+	zero_mean	    = args [ "zero_mean" ]
 
 	# Assume that the data is already resized on height and width and all ... 
 	if len(data.shape) == 2 and channels > 1: 	
@@ -731,14 +731,12 @@ def preprocessing( data, height, width, channels, args):
 	
 	# from here on data is processed as a 2D matrix
 	data = numpy.reshape(data,out_shp)
-	if mean_subtract is True:
-		if normalize is True or ZCA is True: 
-			data = data  / (data.max() + 1e-7)
-			data = data - data.mean()
-			# do this normalization thing in batch mode.	
-	else:
-    		if normalize is True or ZCA is True:
-			data = data / (data.max() + 1e-7)
+
+	if normalize is True or ZCA is True:
+		data = data / (data.max() + 1e-7)
+
+	if zero_mean is True:  # This will make the data go from (-1,1)
+		data = ( data - 0.5 ) * 2
 	
 	if ZCA is True:		
 

@@ -1,7 +1,6 @@
 from yann.utils.dataset import setup_dataset
 
-def cook_mnist_normalized(  verbose = 1,
-				 **kwargs):
+def cook_mnist_normalized(  verbose = 1, **kwargs):
 	"""
 	Wrapper to cook mnist dataset. Will take as input,
 
@@ -40,7 +39,7 @@ def cook_mnist_normalized(  verbose = 1,
                             "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
-							"mean_subtract" : False,
+							"zero_mean" 	: False,
                         }
 	else:
 		preprocess_params = kwargs['preprocess_params']
@@ -56,8 +55,7 @@ def cook_mnist_normalized(  verbose = 1,
 							verbose = 3)
 	return dataset
 
-def cook_mnist_normalized_mean_subtracted(  verbose = 1,
-				 **kwargs):
+def cook_mnist_normalized_zero_mean(  verbose = 1,	**kwargs):
 	"""
 	Wrapper to cook mnist dataset. Will take as input,
 
@@ -93,7 +91,7 @@ def cook_mnist_normalized_mean_subtracted(  verbose = 1,
                             "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
-							"mean_subtract" : True,
+							"zero_mean"	 	: True,
                         }
 	else:
 		preprocess_params = kwargs['preprocess_params']
@@ -149,7 +147,7 @@ def cook_mnist_multi_load(  verbose = 1, **kwargs):
                             "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            "mean_subtract" : True,
+                            "zero_mean" 	: False,
                         }
 	else:
 		preprocess_params = kwargs['preprocess_params']
@@ -165,7 +163,7 @@ def cook_mnist_multi_load(  verbose = 1, **kwargs):
 							verbose = 3)
 	return dataset	
 
-def cook_cifar10_normalized_mean_subtracted(verbose = 1, **kwargs):
+def cook_cifar10_normalized(verbose = 1, **kwargs):
 	"""
 	Wrapper to cook cifar10 dataset. Will take as input,
 
@@ -201,7 +199,7 @@ def cook_cifar10_normalized_mean_subtracted(verbose = 1, **kwargs):
                             "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            "mean_subtract" : True,
+                            "mean_subtract" : False,
                         }
 	else:
 		preprocess_params = kwargs['preprocess_params']
@@ -219,8 +217,8 @@ def cook_cifar10_normalized_mean_subtracted(verbose = 1, **kwargs):
 
 
 # Just some wrappers
-cook_mnist = cook_mnist_normalized_mean_subtracted
-cook_cifar10 = cook_cifar10_normalized_mean_subtracted
+cook_mnist = cook_mnist_normalized
+cook_cifar10 = cook_cifar10_normalized
 
 if __name__ == '__main__':
 	pass
