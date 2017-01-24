@@ -15,8 +15,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.5, 0.95, 30),      
-                "regularization"      : (0.00, 0.0001),       
+                "momentum_params"     : (0.65, 0.95, 30),      
+                "regularization"      : (0.00, 0.001),       
                 "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
                         }
@@ -29,11 +29,11 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     }
 
     visualizer_params = {
-                    "root"       : '.',
+                    "root"       : 'lenet5',
                     "frequency"  : 1,
-                    "sample_size": 32,
-                    "rgb_filters": False,
-                    "debug_functions" : True,
+                    "sample_size": 144,
+                    "rgb_filters": True,
+                    "debug_functions" : False,
                     "debug_layers": False,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
                         }       
@@ -61,7 +61,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     verbose = verbose, 
                     datastream_origin = 'data', # if you didnt add a dataset module, now is 
                                                  # the time. 
-                    mean_subtract = True )
+                    mean_subtract = False )
     
     # add first convolutional layer
     net.add_layer ( type = "conv_pool",
@@ -117,9 +117,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
                     
-    learning_rates = (0.05, 0.01, 0.001, 0.0001)  
+    learning_rates = (0.05, 0.01, 0.001)  
     net.pretty_print()  
-    draw_network(net.graph, filename = 'lenet.png')    
+    #draw_network(net.graph, filename = 'lenet.png')    
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',
@@ -127,7 +127,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
               verbose = verbose
               )
 
-    net.train( epochs = (20, 20, 20 ), 
+    net.train( epochs = (40, 40 ), 
                validate_after_epochs = 1,
                training_accuracy = True,
                learning_rates = learning_rates,               
@@ -165,12 +165,12 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     }
 
     visualizer_params = {
-                    "root"       : '.',
+                    "root"       : 'lenet_on_steroids',
                     "frequency"  : 1,
                     "sample_size": 32,
                     "rgb_filters": True,
                     "debug_functions" : True,
-                    "debug_layers": False,  # Since we are on steroids this time, print everything.
+                    "debug_layers": True,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
                         }                      
 
@@ -263,10 +263,10 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
               classifier = 'softmax',
               verbose = verbose
               )
-    draw_network(net.graph, filename = 'lenet.png')    
+    #draw_network(net.graph, filename = 'lenet.png')    
     net.pretty_print()
 
-    net.train( epochs = (20, 20, 10, 5), 
+    net.train( epochs = (40, 40, 20, 10), 
                validate_after_epochs = 1,
                visualize_after_epochs = 1,
                training_accuracy = True,
@@ -298,6 +298,6 @@ if __name__ == '__main__':
         dataset = data.dataset_location()
 
     lenet5 ( dataset, verbose = 2 )
-    #lenet_maxout (dataset, verbose = 2)
+    lenet_maxout (dataset, verbose = 2)
      
 

@@ -572,17 +572,23 @@ class gan (network):
         early_termination = False
         iteration= 0        
         era = 0
-        total_epochs = sum(epochs) 
-        change_era = epochs[era] 
+
+        if isinstance(epochs, int):
+            total_epochs = epochs  
+            change_era = epochs + 1      
+        elif len(epochs) > 1:
+            total_epochs = sum(epochs)
+            change_era = epochs[era]
+        else:
+            total_epochs = epochs
+            change_era = epochs + 1      
+            
         final_era = False 
                                                                 
         # main loop
         while (epoch_counter < total_epochs) and (not early_termination):
             nan_flag = False
             # check if its time for a new era.
-            if epoch_counter == 10:
-                import pdb
-                pdb.set_trace()
 
             if (epoch_counter == change_era):
             # if final_era, while loop would have terminated.
@@ -682,10 +688,12 @@ class gan (network):
                 self.visualize ( epoch = epoch_counter , verbose = verbose)
                 
                 if best is True:
-                    copy_params(source = self.params, destination= nan_insurance , 
-                                                                            borrow = self.borrow)
-                    copy_params(source = self.params, destination= self.best_params, 
-                                                                            borrow = self.borrow)                        
+                    copy_params(source = self.active_params, destination= nan_insurance , 
+                                                                    borrow = self.borrow,
+                                                                    verbose = verbose)
+                    copy_params(source = self.active_params, destination= self.best_params, 
+                                                                    borrow = self.borrow,
+                                                                    verbose = verbose)                        
 
                 self.decay_learning_rate(learning_rates[0])  
 

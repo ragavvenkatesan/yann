@@ -401,7 +401,7 @@ class network(object):
         if verbose >= 3:
             print "... Layer " + id + " is created and it learnablity is " + \
                                                                     str(self.layers[id].active)
-    def add_module (self, type, params, verbose = 2):
+    def add_module (self, type, params = None, verbose = 2):
         """
         Use this function to add a module to the net.
 
@@ -1281,8 +1281,8 @@ class network(object):
 
         for lyr in origin:
             self.dropout_layers[id].origin.append(lyr)
-            self.dropout_layers[lyr].destination.append(id)
             self.layers[id].origin.append(lyr)
+            self.dropout_layers[lyr].destination.append(id)            
             self.layers[lyr].destination.append(id)
         
     def _add_random_layer(self, id, options, verbose = 2):
@@ -1751,6 +1751,7 @@ class network(object):
 
 
 
+    
     def _cook_visualizer(self, verbose = 2):
         """
         This is an internal function that cooks a visualizer
@@ -1793,6 +1794,16 @@ class network(object):
         self.cooked_visualizer.visualize_images(imgs = imgs, verbose = verbose)
         self.visualize_after_epochs = 1
 
+    def _cook_resultor (self, resultor = None, verbose = 2):
+        """
+        This is an internal function that cooks a resultor
+
+        Args:
+            verbose: as always
+        """
+        if verbose > 3:
+            print "... Resultor is cooked"
+
     def visualize_activities( self, epoch = 0, verbose = 2):
         """
         This method will save down all layer activities for the correct epoch.
@@ -1828,15 +1839,7 @@ class network(object):
             self.visualize_activities(epoch = epoch, verbose = verbose)
             self.visualize_filters(epoch = epoch, verbose = verbose)  
 
-    def _cook_resultor (verbose = 2):
-        """
-        This is an internal function that cooks a resultor
 
-        Args:
-            verbose: as always
-        """
-        if verbose > 3:
-            print "... Resultor is cooked"
 
     def cook(self, verbose = 2, **kwargs):
         """
@@ -2288,8 +2291,15 @@ class network(object):
         early_termination = False
         iteration= 0        
         era = 0
-        total_epochs = sum(epochs) 
-        change_era = epochs[era] 
+        if isinstance(epochs, int):
+            total_epochs = epochs  
+            change_era = epochs + 1      
+        elif len(epochs) > 1:
+            total_epochs = sum(epochs)
+            change_era = epochs[era]
+        else:
+            total_epochs = epochs
+            change_era = epochs + 1    
         final_era = False 
                                                                
         # main loop
@@ -2376,9 +2386,9 @@ class network(object):
                                         verbose = verbose )
                 self.visualize ( epoch = epoch_counter , verbose = verbose)
                 if best is True:
-                    copy_params(source = self.params, destination= nan_insurance , 
+                    copy_params(source = self.active_params, destination= nan_insurance , 
                                                                             borrow = self.borrow)
-                    copy_params(source = self.params, destination= self.best_params, 
+                    copy_params(source = self.active_params, destination= self.best_params, 
                                                                             borrow = self.borrow)                        
                         # self.resultor.save_network()
                 # self.resultor.something() # this function is dummy now. But resultor should use 

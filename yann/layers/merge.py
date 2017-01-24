@@ -1,6 +1,7 @@
 from abstract import layer
 from yann.core.errors import rmse, l1, cross_entropy
 import numpy
+from theano import tensor as T
 
 class merge_layer (layer):
     """
@@ -23,6 +24,8 @@ class merge_layer (layer):
                     type = 'error',                        
                     error = 'rmse',
                     verbose = 2):
+           
+        super(merge_layer,self).__init__(id = id, type = 'merge', verbose = verbose)
            
         if type == 'error':
             if verbose >=3:
@@ -61,8 +64,12 @@ class merge_layer (layer):
             self.output_shape = input_shape[0]
 
         elif type == 'concatenate':
-            self.output = T.concatenate([x[0],x[1]], axis = 1)
-                
+            self.output = T.concatenate([x[0],x[1]], axis = 1)   
+            if len(input_shape[0]) == 2:             
+                self.output_shape = (input_shape [0], input_shape[0][1] + input_shape[1][1])
+            elif len(input_shape[1]) == 4:
+                self.output_shape = (input_shape [0], input_shape[0][1] + input_shape[1][1],
+                                        input_shape[2], input_shape[3])
 
     def loss(self, type = None):
         """
