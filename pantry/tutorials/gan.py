@@ -57,7 +57,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
     #z - latent space created by random gaussian layer
     net.add_layer(type = 'random',
                         id = 'z',
-                        num_neurons = (500,64), 
+                        num_neurons = (500,128), 
                         distribution = 'normal',
                         mu = 0,
                         sigma = 1,
@@ -86,7 +86,6 @@ def simple_gan ( dataset= None, verbose = 1 ):
                     origin = "x",
                     num_neurons = 512,
                     activation = ('maxout','maxout',2),
-                    #activation = 'relu',
                     verbose = verbose
                     )
 
@@ -99,7 +98,6 @@ def simple_gan ( dataset= None, verbose = 1 ):
                     input_params = net.dropout_layers["D(x)"].params, # must be the same params, 
                                                         # this way it remains the same network.
                     activation = ('maxout','maxout',2),
-                    #activation = 'relu',
                     verbose = verbose
                     )
 
@@ -174,10 +172,10 @@ def simple_gan ( dataset= None, verbose = 1 ):
                 softmax_layer = "softmax",
                 verbose = verbose )
                     
-    learning_rates = (0.05, 0.01)  
+    learning_rates = (0.05, 0.1)  
 
-    net.train( epochs = (10), 
-               k = 10,  # refer to Ian Goodfellow's paper Algorithm 1.
+    net.train( epochs = (30), 
+               k = 1,  # refer to Ian Goodfellow's paper Algorithm 1.
                validate_after_epochs = 1,
                training_accuracy = True,
                show_progress = True,
