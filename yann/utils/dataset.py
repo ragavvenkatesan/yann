@@ -689,8 +689,7 @@ def preprocessing( data, height, width, channels, args):
 
 				args =  {
 
-					"normalize" : <bool> True for normalize across batches
-					"GCN"	: True for global contrast normalization
+					"normalize" : <bool> True for normalize across batches makes image go from 0 - 1
 					"ZCA"	: True, kind of like a PCA representation (not fully tested)
 					"grayscale"  : Convert the image to grayscale
 					"zero_mean" : Subtracts the mean of the image. 
@@ -702,7 +701,6 @@ def preprocessing( data, height, width, channels, args):
 	
 	"""
 	normalize 		= args [ "normalize" ]
-	GCN 			= args [ "GCN" ]      
 	ZCA 			= args [ "ZCA" ]	 
 	gray 			= args [ "grayscale" ]
 	zero_mean	    = args [ "zero_mean" ]
@@ -735,8 +733,11 @@ def preprocessing( data, height, width, channels, args):
 	if normalize is True or ZCA is True:
 		data = data / (data.max() + 1e-7)
 
-	if zero_mean is True:  # This will make the data go from (-1,1)
+	if normalize is True and zero_mean is True:  # This will make the data go from (-1,1)
 		data = ( data - 0.5 ) * 2
+	
+	elif zero_mean is True:
+    	data = (data - data.mean())
 	
 	if ZCA is True:		
 

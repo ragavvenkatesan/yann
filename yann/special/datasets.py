@@ -37,7 +37,6 @@ def cook_mnist_normalized(  verbose = 1, **kwargs):
     # parameters relating to preprocessing.
 		preprocess_params = { 
                             "normalize"     : True,
-                            "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
 							"zero_mean" 	: False,
@@ -90,7 +89,6 @@ def cook_mnist_normalized_zero_mean(  verbose = 1,	**kwargs):
     # parameters relating to preprocessing.
 		preprocess_params = { 
                             "normalize"     : True,
-                            "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
 							"zero_mean"	 	: True,
@@ -147,7 +145,6 @@ def cook_mnist_multi_load(  verbose = 1, **kwargs):
     	# parameters relating to preprocessing.
 		preprocess_params = { 
                             "normalize"     : True,
-                            "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
                             "zero_mean" 	: False,
@@ -200,10 +197,9 @@ def cook_cifar10_normalized(verbose = 1, **kwargs):
     # parameters relating to preprocessing.
 		preprocess_params = { 
                             "normalize"     : True,
-                            "GCN"           : False,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            "mean_subtract" : False,
+                            "zero_mean" 	: False,
                         }
 	else:
 		preprocess_params = kwargs['preprocess_params']
