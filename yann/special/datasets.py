@@ -5,6 +5,7 @@ def cook_mnist_normalized(  verbose = 1, **kwargs):
 	Wrapper to cook mnist dataset. Will take as input,
 
 	Args:
+	
 		save_directory: which directory to save the cooked dataset onto.
 		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
 		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
@@ -60,6 +61,7 @@ def cook_mnist_normalized_zero_mean(  verbose = 1,	**kwargs):
 	Wrapper to cook mnist dataset. Will take as input,
 
 	Args:
+
 		save_directory: which directory to save the cooked dataset onto.
 		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
 		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
@@ -113,6 +115,7 @@ def cook_mnist_multi_load(  verbose = 1, **kwargs):
 	Wrapper to cook mnist dataset. Will take as input,
 	
 	Args:
+
 		save_directory: which directory to save the cooked dataset onto.
 		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
 		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
@@ -168,6 +171,7 @@ def cook_cifar10_normalized(verbose = 1, **kwargs):
 	Wrapper to cook cifar10 dataset. Will take as input,
 
 	Args:
+
 		save_directory: which directory to save the cooked dataset onto.
 		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
 		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
