@@ -115,7 +115,7 @@ def preprocessing( data, height, width, channels, args):
 
     if normalize is True and zero_mean is True:
         data = ( data - 0.5 ) * 2
-    elif normalize is True and zero_mean is False:
+    elif normalize is False and zero_mean is True:
         data = (data - data.mean())
 
     if ZCA is True:		

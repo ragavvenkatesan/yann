@@ -215,12 +215,13 @@ class objective_layer(layer):
     I need this because I am making objective as a loss layer. 
 
     Args:
-        loss: ``yann.network.layers.classifier_layer.loss()`` method.        
+        loss: ``yann.network.layers.classifier_layer.loss()`` method, or some thenao variable
+                 if other types  of objective layers.       
         labels: ``theano.shared`` variable of labels. 
-        type: ``'discriminator'``, ``'generator'`` or ``'value'``. Value will just use the value as 
-                an objective and minimizes that.
-        objective: depends on what is the classifier layer being used. Each have their own 
-                   options.
+        objective: ``'nll'``, ``'cce'``, ``'nll'`` or ``''bce''`` or ``'hinge'`` for classifier 
+                kayers. ``'value'``. Value will just use the value as 
+                an objective and minimizes that. depends on what is the classifier layer being used.
+                 Each have their own  options. This is usually a string.
         L1: Symbolic weight of the L1 added together
         L2: Sumbolic L2 of the weights added together
         l1_coeff: Coefficient to weight L1 by.
@@ -232,13 +233,13 @@ class objective_layer(layer):
 
     Notes:
         Use ``objective_layer.output`` and from this class.    
+
     """
     def __init__(   self, 
-                    objective,
                     id,
+                    loss,
                     labels = None,                    
-                    loss = None,                    
-                    type = 'discriminator',
+                    objective = 'nll',
                     L1 = None,
                     L2 = None,
                     l1_coeff = 0.001,
@@ -247,20 +248,21 @@ class objective_layer(layer):
         """
         Refer to the class description
         """        
-        super(objective_layer,self).__init__(id = id, type = 'objective', verbose = verbose)                        
+        super(objective_layer,self).__init__(id = id, type = 'objective', verbose = verbose) 
+
         if verbose >=3:
             print "... creating the objective_layer"
-        if type == 'discriminator':
+        if objective == 'value':
+            self.output = loss            
+        else:
             self.output = loss(y = labels, type = objective)
-        elif type == 'generator':            
-            self.output = loss(type = objective)
-        elif type == 'value':
-            self.output = objective
+
         if L1 is not None:            
             self.output = self.output + l1_coeff * L1 
         if L2 is not None:
             self.output = self.output + l2_coeff * L2
         self.output_shape = (1,)
+        
         if verbose >=3:
             print "... Objective_layer is created with output shape " + str(self.output_shape)
 

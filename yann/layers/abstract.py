@@ -110,18 +110,26 @@ class layer(object):
         out["type"] = self.type
         return out
 
-    def get_params (self ,verbose = 2):
+    def get_params (self , borrow = True, verbose = 2):
         """
         This method returns the parameters of the layer in a numpy ndarray format.
+
+        Args:
+            borrow : Theano borrow, default is True. 
+            verbose: As always
 
         Notes:
             This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
             have used get_value( borrow = True ), but I can't do this because some parameters are 
-            theano.tensor.var.TensroVariable which needs to be run through eval. 
+            theano.tensor.var.TensorVariable which needs to be run through eval. 
         """
         out = []
+
         for p in self.params:
-            out.append(numpy.asarray(p.eval()))            
+            try:
+                out.append(p.get_value(borrow = borrow))
+            except:
+                out.append(numpy.asarray(p.eval()))    
         return out
 
 def _dropout(rng, params, dropout_rate, verbose = 2):

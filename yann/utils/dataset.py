@@ -919,7 +919,8 @@ class setup_dataset (object):
 			print ".. setting up dataset"
 			print ".. training data"		
 
-		data_x, data_y, data_y1  = data[0]		
+		data_x, data_y, data_y1  = data[0]
+
 		data_x = preprocessing ( data = data_x,
 								 height = self.height,
 								 width = self.width,

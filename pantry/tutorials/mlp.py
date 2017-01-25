@@ -37,9 +37,7 @@ def mlp ( dataset, verbose = 1 ):
     net.add_layer ( type = "input",
                     id = "input",
                     verbose = verbose, 
-                    datastream_origin = 'data', # if you didnt add a dataset module, now is 
-                                                 # the time. 
-                    mean_subtract = True )
+                    datastream_origin = 'data')
     
     net.add_layer ( type = "dot_product",
                     origin = "input",
@@ -66,7 +64,7 @@ def mlp ( dataset, verbose = 1 ):
                     )
 
     net.add_layer ( type = "objective",
-                    id = "nll",
+                    id = "obj",
                     origin = "softmax",
                     verbose = verbose
                     )
@@ -74,7 +72,7 @@ def mlp ( dataset, verbose = 1 ):
     learning_rates = (0.05, 0.01, 0.001)  
 
     net.cook( optimizer = 'main',
-              objective_layer = 'nll',
+              objective_layer = 'obj',
               datastream = 'data',
               classifier = 'softmax',
               verbose = verbose

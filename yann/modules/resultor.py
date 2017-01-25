@@ -8,7 +8,7 @@ class resultor(module):
 
     Args:
         verbose:  Similar to any 3-level verbose in the toolbox.
-        resultor_init_args: ``resultor_params`` is a dictionary of the form 
+        resultor_init_args: ``resultor_init_args`` is a dictionary of the form 
 
             .. code-block:: none
 
@@ -41,7 +41,34 @@ class resultor(module):
             
         if verbose >= 3:
             print "... Creating resultor directories"
-            
+
+        if not "root" in resultor_init_args.keys():            
+            resultor_init_args["root"] = "."
+
+        if not "results" in resultor_init_args.keys():            
+            resultor_init_args["results"] = "results.txt"
+
+        if not "errors" in resultor_init_args.keys():            
+            resultor_init_args["erros"] = "errors.txt"
+
+        if not "costs" in resultor_init_args.keys():            
+            resultor_init_args["costs"] = "costs.txt"
+
+        if not "confusion" in resultor_init_args.keys():            
+            resultor_init_args["confusion"] = "confusion.txt"
+
+        if not "network" in resultor_init_args.keys():            
+            resultor_init_args["network"] = "network.pkl"
+
+        if not "learning_rate" in resultor_init_args.keys():            
+            resultor_init_args["learning_rate"] = "learning_rate.txt"
+
+        if not "momentum" in resultor_init_args.keys():            
+            resultor_init_args["momentum"] = "momentum.txt"
+
+        if not "viualize" in resultor_init_args.keys():            
+            resultor_init_args["visualize"] = True
+
         for item, value in resultor_init_args.iteritems():            
             if item == "root":
                 self.root                   = value                

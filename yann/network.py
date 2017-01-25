@@ -48,80 +48,6 @@ class network(object):
         verbose             : Similar to any 3-level verbose in the toolbox. 
         type                : option takes only 'classifier' for now. Will add 'encoders'
                               and others later
-        resultor            : ``resultor`` is a dictionary of the form:
-
-            .. code-block:: none
-
-                resultor    =    { 
-                        "root"     : "<root directory to save stuff inside>"
-                        "results"  : "<results_file_name>.txt",      
-                        "errors"   : "<error_file_name>.txt",
-                        "costs"    : "<cost_file_name>.txt",
-                        "confusion": "<confusion_file_name>.txt",
-                        "network"  : "<network_save_file_name>.pkl"
-                        "id"       : id of the resultor
-                                }  
-                                            
-            While the filenames are optional, ``root`` must be provided. If a particular file 
-            is not provided, that value will not be saved. This value is supplied to setup the
-            resultor module of :mod: `network`.
-
-        visualizer           : ``visualizer`` is a dictionary of the form:
-         
-            .. code-block:: none
-
-                visualizer = {
-                        "root"        : location to save the visualizations
-                        "frequency"   : <integer>, after how many epochs do you need to 
-                                        visualize. Default value is 1import os
-
-                        "sample_size" : <integer, prefer squares>, simply save down random 
-                                        images from the datasets also saves down activations 
-                                        for the same images also. Default value is 16
-                        "rgb_filters" : <bool> flag. if True 3D-RGB CNN filters are rendered. 
-                                        Default value is False
-                        "id"          : id of the visualizer
-                                }  
-
-        optimizer         : ``optimizer`` is a dictionary of the form: 
-
-            .. code-block:: none
-
-                optimizer =  {        
-                        "momentum_type"       : <option> takes 'false' <no momentum>, 'polyak'
-                                                and 'nesterov'. Default value is 'polyak'
-                        "momentum_params"   : (<value in [0,1]>, <value in [0,1]>, <int>),
-                                                (momentum coeffient at start, at end, at what
-                                                epoch to end momentum increase). Default is 
-                                                the tuple (0.5, 0.95,50)                                                           
-                        "learning_rate"   : (initial_learning_rate, fine_tuning_learning_rate, 
-                                                annealing_decay_rate). Default is the tuple 
-                                                (0.1,0.001,0.005)
-                        "regularization"    : (l1_coeff, l2_coeff). Default is (0.001, 0.001)                
-                        "optimizer_type": <option>, takes 'sgd', 'adagrad', 'rmsprop', 'adam'.
-                                                Default is 'rmsprop'
-                        "objective_function": <option>,  takes  
-                                                'nll'-negative log likelihood,
-                                                'cce'-categorical cross entropy,
-                                                'bce'-binary cross entropy.    
-                                                Default is 'nll'
-                        "id"                : id of the optimizer
-                            }         
-
-        datastream          : ``datastream`` is a dictionary of the form:
-
-            .. code-block:: python
-
-                dataset_init_args = {
-                            "dataset":  <location>
-                            "svm"    :  False or True 
-                                 ``svm`` if ``True``, a one-hot label set will also be setup.
-                            "n_classes": <int>
-                                ``n_classes`` if ``svm`` is ``True``, we need to know how 
-                                 many ``n_classes`` are present.
-                            "id": id of the datastream
-                    }
-
         borrow: Check ``theano's`` borrow. Default is ``True``.
         
     Returns:            
@@ -162,7 +88,6 @@ class network(object):
         self.resultor   = {}
         self.datastream = {}
         self.num_layers = 0
-        self.type = 'classifier'   # default value assignment
         self.rng = numpy.random    # each network will have its own unique randomizer
         self.borrow = True
         self.L1 = 0
@@ -170,18 +95,10 @@ class network(object):
         self.layer_activities = {}
 
         # for each argument supplied by kwargs, intialize something.
-        for argument, value in kwargs.iteritems():
-
-            if (argument == 'resultor' or argument == 'optimizer' or  
-                argument == 'datastream' or argument == 'visualizer'):
-                # add module
-                self.add_module(type = argument, params = value, verbose = verbose)                              
-
-            if argument == 'type':
-                self.type = value
-
-            if argument == 'borrow':
-                self.borrow = value
+        if 'borrow' in kwargs.keys():
+            self.borrow = kwargs['borrow']
+        else:
+            self.borrow = True
     
     def layer_activity(self, id, index=0, verbose = 2):
         """
@@ -219,16 +136,17 @@ class network(object):
                   'dot_product' or 'hidden' or 'mlp' or 'fully_connected' - indicates a hidden fully
                   connected layer
                   'classifier' or 'softmax' or 'output' or 'label' - indicates a classifier layer
-                  'objective' or 'loss' - a layer that creates a loss function
-                  'merge' - a layer that merges two layers.
+                  'objective' or 'loss' or 'energy' - a layer that creates a loss function
+                  'merge' or 'join' - a layer that merges two layers.
                   'flatten' - a layer that produces a flattened output of a block data.
                   'random' - a layer that produces random numbers.
                   From now on everything is optional args.. 
             id: <string> how to identify the layer by.
                 Default is just layer number that starts with ``0``.
             origin: ``id`` will use the output of that layer as input to the new layer.
-                     Default is the last layer created. This variable is not needed for 
-                     ``input`` type of layers. For some layers like ``merge``, this is a tuple.                     
+                     Default is the last layer created. This variable for ``input`` type of layers
+                     is not a layer, but a datastream id. For ``merge`` layer, this is a
+                     tuple of two layer ids.                     
             verbose: similar to the rest of the toolbox.
             mean_subtract: if ``True`` we will subtract the mean from each image, else not.
             num_neurons: number of neurons in the layer
@@ -266,7 +184,7 @@ class network(object):
                             coefficients. 
             error: ``merge`` layers take an option called ``'error'`` which can be None or others
                     which are methods in ``yann.core.errors``.
-            layer_type                                                
+            layer_type: If ``value`` supply, else it is default ``'discriminator'``                                                
 
         """
         if not 'id' in kwargs.keys():
@@ -288,7 +206,9 @@ class network(object):
                type == 'flatten' or \
                type == 'unflatten' or \
                type == 'random' or \
-               type == 'loss':            
+               type == 'loss' or \
+               type == 'energy' or \
+               type == 'join':            
                 if verbose >= 3:
                     print "... Making learnable False as it is not provided"
                 learnable = False
@@ -321,16 +241,19 @@ class network(object):
              type ==  'softmax' or \
              type ==  'output' or \
              type == 'label':
-            self._add_classifier(id =id, options = kwargs, verbose = verbose)
+            self._add_classifier_layer(id =id, options = kwargs, verbose = verbose)
             self.last_classifier_created = id
             self.params = self.params + self.dropout_layers[id].params
 
         elif type == 'objective' or  \
-             type == 'loss': 
+             type == 'loss' or \
+             type == 'energy':
             self._add_objective_layer(id =id, options = kwargs, verbose = verbose)
             self.last_objective_layer_created = id
         
-        elif type == 'merge':
+        elif type == 'merge' or \
+             type == 'join' or \
+             type == 'connect':
             self._add_merge_layer(id = id, options = kwargs, verbose = verbose) 
 
         elif type == 'flatten':
@@ -409,7 +332,81 @@ class network(object):
          
             type: which module to add. Options are ``'resultor'``, ``'visualizer'``, ``'optimizer'``
                   ``'datastream'``
-            params: Refer to network class initializer for details. For the type of module. 
+            params: 
+                If the ``type`` was ``'resultor'`` params is a dictionary of the form:
+
+                .. code-block:: none
+
+                    params    =    { 
+                            "root"     : "<root directory to save stuff inside>"
+                            "results"  : "<results_file_name>.txt",      
+                            "errors"   : "<error_file_name>.txt",
+                            "costs"    : "<cost_file_name>.txt",
+                            "confusion": "<confusion_file_name>.txt",
+                            "network"  : "<network_save_file_name>.pkl"
+                            "id"       : id of the resultor
+                                    }  
+                                                
+                While the filenames are optional, ``root`` must be provided. If a particular file 
+                is not provided, that value will not be saved. This value is supplied to setup the
+                resultor module of :mod: `network`.
+
+                If the ``type`` was ``'visualizer'`` params is a dictionary of the form:
+            
+                .. code-block:: none
+
+                    parmas = {
+                            "root"        : location to save the visualizations
+                            "frequency"   : <integer>, after how many epochs do you need to 
+                                            visualize. Default value is 1import os
+
+                            "sample_size" : <integer, prefer squares>, simply save down random 
+                                            images from the datasets also saves down activations 
+                                            for the same images also. Default value is 16
+                            "rgb_filters" : <bool> flag. if True 3D-RGB CNN filters are rendered. 
+                                            Default value is False
+                            "id"          : id of the visualizer
+                                    }  
+
+                If the  ``type`` was ``'optimizer'`` params is a dictionary of the form: 
+
+                .. code-block:: none
+
+                    params =  {        
+                            "momentum_type"       : <option> takes 'false' <no momentum>, 'polyak'
+                                                    and 'nesterov'. Default value is 'polyak'
+                            "momentum_params"   : (<value in [0,1]>, <value in [0,1]>, <int>),
+                                                    (momentum coeffient at start, at end, at what
+                                                    epoch to end momentum increase). Default is 
+                                                    the tuple (0.5, 0.95,50)                                                           
+                            "learning_rate"   : (initial_learning_rate, fine_tuning_learning_rate, 
+                                                    annealing_decay_rate). Default is the tuple 
+                                                    (0.1,0.001,0.005)
+                            "regularization"    : (l1_coeff, l2_coeff). Default is (0.001, 0.001)                
+                            "optimizer_type": <option>, takes 'sgd', 'adagrad', 'rmsprop', 'adam'.
+                                                    Default is 'rmsprop'
+                            "objective_function": <option>,  takes  
+                                                    'nll'-negative log likelihood,
+                                                    'cce'-categorical cross entropy,
+                                                    'bce'-binary cross entropy.    
+                                                    Default is 'nll'
+                            "id"                : id of the optimizer
+                                }         
+
+                If the ``type was ``'datastream'`` params is a dictionary of the form:
+
+                .. code-block:: python
+
+                    params = {
+                                "dataset":  <location>
+                                "svm"    :  False or True 
+                                    ``svm`` if ``True``, a one-hot label set will also be setup.
+                                "n_classes": <int>
+                                    ``n_classes`` if ``svm`` is ``True``, we need to know how 
+                                    many ``n_classes`` are present.
+                                "id": id of the datastream
+                        }  
+
             verbose: Similar to rest of the toolbox.
         """
         if verbose >= 2: 
@@ -449,33 +446,6 @@ class network(object):
             resultor_params["id"] = id
         else:
             id = resultor_params['id']
-
-        if not "root" in resultor_params.keys():            
-            resultor_params["root"] = "."
-
-        if not "results" in resultor_params.keys():            
-            resultor_params["results"] = "results.txt"
-
-        if not "errors" in resultor_params.keys():            
-            resultor_params["erros"] = "errors.txt"
-
-        if not "costs" in resultor_params.keys():            
-            resultor_params["costs"] = "costs.txt"
-
-        if not "confusion" in resultor_params.keys():            
-            resultor_params["confusion"] = "confusion.txt"
-
-        if not "network" in resultor_params.keys():            
-            resultor_params["network"] = "network.pkl"
-
-        if not "learning_rate" in resultor_params.keys():            
-            resultor_params["learning_rate"] = "learning_rate.txt"
-
-        if not "momentum" in resultor_params.keys():            
-            resultor_params["momentum"] = "momentum.txt"
-
-        if not "viualize" in resultor_params.keys():            
-            resultor_params["visualize"] = True
 
         from yann.modules.resultor import resultor
         self.resultor[id] = resultor ( resultor_init_args = resultor_params, verbose = verbose )
@@ -565,20 +535,21 @@ class network(object):
                 if verbose >= 3:
                     print "... Datastream already created, will use it straight away"
 
-        if 'dataset_origin' in options.keys():
-            if 'dataset_origin' in self.datastream.keys():
-                datastream_id = options["datset_origin"]
+        if 'origin' in options.keys():
+            datastream_id = options['origin']
 
         elif len(self.datastream) == 0:
             raise Exception("Can't setup an input layer without dataset initialized")
         
-        datastream_id = self.last_datastream_created 
+        else:
+            datastream_id = self.last_datastream_created
+
         self.svm = self.datastream[datastream_id].svm                    
         
         if not 'mean_subtract' in options.keys():
             if verbose >=3:
                 print "... mean_subtract not provided. Assuming False"
-            mean_subtract = True
+            mean_subtract = False
         else:
             mean_subtract = options["mean_subtract"]
 
@@ -620,13 +591,6 @@ class network(object):
         self.dropout_layers[id].origin.append(datastream_id)
 
     def _add_conv_layer(self, id, options, verbose = 2):
-        """
-        At the moment is a wrapper to conv2d. Once conv 1d is implemented this will run
-        through some checks an call other methods accordingly. 
-        """
-        self._add_conv_2d_layer(id =id, options = options, verbose = verbose )
-
-    def _add_conv_2d_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
 
@@ -764,7 +728,8 @@ class network(object):
             alpha = self.dropout_layers[id].alpha * (1 - dropout_rate)
             layer_params.append(alpha)    
         if verbose >=3:
-            print "... creating the stable stream"                
+            print "... creating the stable stream"            
+
         self.layers[id] = cpl2d (
                             input = self.layers[origin].output,
                             nkerns = nkerns,
@@ -988,7 +953,7 @@ class network(object):
         self.layers[id].origin.append(origin)
         self.layers[origin].destination.append(id)
 
-    def _add_classifier(self, id, options, verbose = 2): 
+    def _add_classifier_layer(self, id, options, verbose = 2): 
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
 
@@ -1098,19 +1063,20 @@ class network(object):
             verbose: simiar to everywhere on the toolbox.
         
         """
+     
         if verbose >=3:
             print "... Adding an objective layer"           
 
         if not 'layer_type' in options.keys():
             if verbose >= 3:
-                print "... type is not provided, assuming discriminator"
-            type = 'discriminator'
+                print "... type is not provided, assuming nll"
+            type = 'nll'
         else:
             type = options['layer_type']
 
         if not 'origin' in options.keys():
             if self.last_classifier_created is None:
-                raise Exception("You can't create an objective layer without a" + \
+                raise Exception("You can't create an abstract objective layer without a" + \
                                     " classifier layer.")
             if verbose >=3: 
                 print "... origin layer is not supplied, assuming the last classifier layer" + \
@@ -1129,12 +1095,26 @@ class network(object):
                 origin = options ["origin"]
 
         if not 'objective' in options.keys():
-            if verbose >= 3:
-                print "... objective not provided, assuming nll"            
-            objective = 'nll'
+            if not type == 'value':
+                if verbose >= 3:
+                    print "... objective not provided, assuming nll"            
+                objective = type
+                # check if the origin layer is a classifier error.
+                loss = getattr(self.layers[origin], "loss", None)
+                dropout_loss = getattr(self.dropout_layers[origin], "loss", None)  
+
+            if loss is None:
+                raise Exception ("Layer " + origin + " doesn't provide a loss function")                
         else:
-            objective = options["objective"]
-        
+            if type =='value':
+                loss = options['objective']
+                dropout_loss = options['objective']
+                objective = 'value'
+            else:
+                objective = options['objective']   
+                loss = getattr(self.layers[origin], "loss", None)
+                dropout_loss = getattr(self.dropout_layers[origin], "loss", None)                                               
+
         if 'dataset_origin' in options.keys():
             if 'dataset_origin' in self.datastream.keys():
                 datastream_id = options["datset_origin"]
@@ -1161,21 +1141,12 @@ class network(object):
                 data_y = data_y = self.datastream[datastream_id].one_hot_y
         else:
             data_y = self.datastream[datastream_id].y
-            
-        # check if the origin layer is a classifier error.
-        if not type == 'value':
-            loss = getattr(self.layers[origin], "loss", None)
-            dropout_loss = getattr(self.dropout_layers[origin], "loss", None)  
 
-            if loss is None:
-                raise Exception ("Layer " + origin + " doesn't provide a loss function")
-        else:
-            loss = None
-            dropout_loss = None
+
         # Just create a dropout layer no matter what.
         if not 'regularizer' in options.keys():
-            l1_regularizer_coeff = 0.001
-            l2_regularizer_coeff = 0.001
+            l1_regularizer_coeff = 0
+            l2_regularizer_coeff = 0
         else:
             l1_regularizer_coeff, l2_regularizer_coeff = options['regularizer']        
 
@@ -1185,11 +1156,10 @@ class network(object):
         from yann.layers.output import objective_layer as obj
 
         self.dropout_layers[id] = obj(                    
-                                    loss = dropout_loss,
+                                    objective = objective,
                                     labels = data_y,
                                     id = id,
-                                    objective = objective,
-                                    type = type,
+                                    loss = dropout_loss,
                                     L1 = self.L1,
                                     L2 = self.L2,
                                     l1_coeff = l1_regularizer_coeff,
@@ -1197,12 +1167,12 @@ class network(object):
                                     verbose = verbose )
         if verbose >=3:
             print "... creating the stable stream"
+
         self.layers[id] = obj(                    
-                            loss = loss,
+                            objective = objective,
                             labels = data_y,
                             id = id,
-                            objective = objective,
-                            type = type,
+                            loss = loss,
                             L1 = self.L1,
                             L2 = self.L2,
                             l1_coeff = l1_regularizer_coeff,
@@ -1345,7 +1315,9 @@ class network(object):
             self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
             self.y: self.data_y[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})
 
-    def _initialize_test_generator(self, errors, verbose):
+
+
+    def _initialize_test_value(self, errors, verbose):
         """
         Internal function that creates a test method for a classifier network
 
@@ -1359,12 +1331,12 @@ class network(object):
 
         self.mini_batch_test = theano.function(
             inputs = [index],
-            outputs = errors(),
+            outputs = errors,
             name = 'test',
             givens={
-            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})            
+            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})
 
-    def _initialize_test (self, classifier = None, generator = None, verbose = 2):
+    def _initialize_test (self, verbose = 2, **kwargs):
         """
         Internal function to create the ``self.test_batch``  theano function. ``net.cook`` will use
         this function.
@@ -1373,6 +1345,7 @@ class network(object):
             datastream: as always
             classifier: the classifier layer to test out of.
             generator: if generator network, generator layer to test out of.
+            value: if value-based objective network, the value layer to test out of.
             verbose: as always
 
         """
@@ -1382,20 +1355,19 @@ class network(object):
         if self.cooked_datastream is None:
                raise Exception ("This needs to be run only after datastream is cooked")
         
-        if not classifier is None:
-            _errors = self.layers[classifier].errors
-        elif not generator is None:
-            _errors = self.layers[generator].loss
-        else:
-            raise Exception('Cannot cook a network that is neither generator nor classifier')
-
-        if not classifier is None: 
+        if 'classifier' in kwargs.keys():
+            _errors = self.layers[kwargs['classifier']].errors
             self._initialize_test_classifier(errors = _errors, verbose = verbose)
+            
+        elif 'value' in kwargs.keys():
+            _errors = self.layers[kwargs['value']].output
+            self._initialize_test_value(errors = _errors, verbose = verbose)
+            
+        else:
+            raise Exception('Supply a type of layer to cook test')
 
-        elif not generator is None:
-            self._initialize_test_generator(errors = _errors, verbose = verbose)
 
-    def _initialize_predict (self, classifier = None, generator = None, verbose = 2):
+    def _initialize_predict (self, classifier = None, verbose = 2):
         """
         Internal function to create the ``self.predict_batch``  theano function. 
         ``net.cook`` will use this function.
@@ -1403,7 +1375,6 @@ class network(object):
         Args:
             datastream: as always
             classifier: the classifier layer whose predictions are needed.
-            generator: if generator network, generator layer to test out of.            
             verbose: as always
 
         """
@@ -1413,10 +1384,7 @@ class network(object):
         if verbose>=3 :
             print "... initializing predict function"
 
-        if not classifier is None:    
-            _predictions = self.layers[classifier].predictions
-        elif not generator is None:
-            _predictions = self.layers[generator].generation
+        _predictions = self.layers[classifier].predictions
 
         index = T.lscalar('index')     
 
@@ -1434,9 +1402,7 @@ class network(object):
 
         Args:
             datastream: as always
-            classifier: the classifier layer whose predictions are needed.
-            generator: if generator network, generator layer to test out of.
-            
+            classifier: the classifier layer whose predictions are needed.            
             verbose: as always
 
         """
@@ -1494,7 +1460,7 @@ class network(object):
                                                                     self.mini_batch_size]},
                     updates = self.cooked_optimizer.updates, on_unused_input = 'ignore')
 
-    def _initialize_train_generator(self, objective = None, verbose = 2):
+    def _initialize_train_value(self, objective = None, verbose = 2):
         """
         Internal function that creates a train method for a generator network
 
@@ -1547,8 +1513,8 @@ class network(object):
         if self.network_type == 'classifier':
             self._initialize_train_classifier(objective = objective, verbose = verbose)
 
-        elif self.network_type == 'generator':
-            self._initialize_train_generator(objective = objective, verbose = verbose)
+        else:
+            self._initialize_train_value(objective = objective, verbose = verbose)
 
     def _cook_optimizer (self, params = None, objective = None, optimizer = None, verbose = 2):
         """
@@ -1592,46 +1558,9 @@ class network(object):
                                        verbose = verbose) 
         optimizer.create_updates (params = params, verbose = verbose)
 
-    def _create_layer_activity_classifier(self, id, activity, verbose = 2):
-        
-        """
-        This is an internal method to create activity of one classifier layer.
+ 
 
-        Args:
-            id: id of layer to calcualte activity of.
-            activity: Supply the activity to output to produce activity of.
-            verbose: as always
-
-        """
-        index = T.lscalar('index')             
-        if self.cooked_datastream.svm is False:   
-            self.layer_activities[id] = theano.function(
-                        name = 'layer_activity_' + id,
-                        inputs = [index],
-                        outputs = activity,
-                        givens={
-                        self.x: self.cooked_datastream.data_x[index * 
-                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                    self.cooked_datastream.mini_batch_size],
-                        self.y: self.cooked_datastream.data_y[index * 
-                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                    self.cooked_datastream.mini_batch_size]},
-                                        on_unused_input = 'ignore')
-        else:                                                                        
-            self.layer_activities[id] = theano.function(
-                        name = 'layer_activity_' + id,                    
-                        inputs = [index],
-                        outputs = activity,
-                        givens={
-                        self.x: self.cooked_datastream.data_x[index * 
-                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                    self.cooked_datastream.mini_batch_size],
-                        self.one_hot_y: self.cooked_datastream.data_one_hot_y[index * 
-                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                self.cooked_datastream.mini_batch_size]},
-                                        on_unused_input = 'ignore')     
-
-    def _create_layer_activity_generator(self, id, activity, verbose = 2):
+    def _create_layer_activity(self, id, activity, verbose = 2):
         """
         This is an internal method to create activity of one generator layer.
 
@@ -1641,15 +1570,29 @@ class network(object):
             verbose: as always
 
         """
-        index = T.lscalar('index')             
-        self.layer_activities[id] = theano.function(
+        index = T.lscalar('index')  
+        if self.network_type == 'classifier':
+            self.layer_activities[id] = theano.function(
                     name = 'layer_activity_' + id,                    
                     inputs = [index],
                     outputs = activity,
                     givens={
                     self.x: self.cooked_datastream.data_x[index * 
                                     self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                self.cooked_datastream.mini_batch_size]},
+                                    self.cooked_datastream.mini_batch_size],
+                    self.y: self.cooked_datastream.data_y[index * 
+                                    self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                    self.cooked_datastream.mini_batch_size]},
+                                    on_unused_input = 'ignore')                    
+        else:   
+            self.layer_activities[id] = theano.function(
+                    name = 'layer_activity_' + id,                    
+                    inputs = [index],
+                    outputs = activity,
+                    givens={
+                    self.x: self.cooked_datastream.data_x[index * 
+                                    self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                    self.cooked_datastream.mini_batch_size]},
                                     on_unused_input = 'ignore')  
 
     def _create_layer_activities(self, datastream = None, verbose = 2):
@@ -1676,14 +1619,7 @@ class network(object):
             if verbose >=3 :
                 print "... collecting the activities of layer " + id
             activity = _layer.output  
-
-            if self.network_type == 'classifier':
-                self._create_layer_activity_classifier(id =id, activity = activity, 
-                                                                                verbose = verbose)
-
-            elif self.network_type == 'generator':
-                self._create_layer_activity_generator(id = id, 
-                                                             activity = activity, verbose = verbose)              
+            self._create_layer_activity(id = id, activity = activity, verbose = verbose)              
                                             
     def _new_era (self, new_learning_rate = 0.01, verbose = 2):
         """
@@ -1710,6 +1646,7 @@ class network(object):
         """
         if verbose >= 3:
             print "... Cooking datastream"
+
         self.mini_batch_size = self.cooked_datastream.mini_batch_size
         self.height = self.cooked_datastream.height
         self.width = self.cooked_datastream.width
@@ -1722,13 +1659,12 @@ class network(object):
         self.mini_batches_per_batch = self.cooked_datastream.mini_batches_per_batch
         self.data_x = self.cooked_datastream.data_x
         if self.network_type == 'classifier':
+            self.y = self.cooked_datastream.y            
             self.data_y = self.cooked_datastream.data_y
             if self.cooked_datastream.svm is True:
                 self.data_one_hot_y = self.cooked_datastream.data_one_hot_y
+                self.one_hot_y = self.cooked_datastream.one_hot_y                         
         self.x = self.cooked_datastream.x
-        if self.network_type == 'classifier':            
-            self.y = self.cooked_datastream.y
-            self.one_hot_y = self.cooked_datastream.one_hot_y             
         self.current_data_type = self.cooked_datastream.current_type
 
     def _cache_data (self, type = 'train', batch = 0, verbose = 2):
@@ -1748,9 +1684,6 @@ class network(object):
             print "... Loading batch " + str(batch) + " of type " + type
         self.set_data ( batch = batch , type = type, verbose = verbose )
         self.current_data_type = type
-
-
-
     
     def _cook_visualizer(self, verbose = 2):
         """
@@ -1851,13 +1784,16 @@ class network(object):
             optimizer: Supply which optimizer to use.
                           Default is last optimizer created.
             datastream: Supply which datastream to use.
-                            Default is the last datastream created.
+                          Default is the last datastream created.
             visualizer: Supply a visualizer to cook with.
-
+                          Default is the last visualizer created.
+            classifier_layer: supply the layer of classifier.  
+                          Default is the last classifier layer created.     
             objective_layer: Supply the layer id of layer that has the objective function.
-                          Default is last objective layer created.
-            classifier: supply the layer of classifier.  
-                          Default is the last classifier layer created.              
+                          Default is last objective layer created if no classifier is provided.   
+            active_layers: Supply a list of active layers. If this parameter is supplied all 
+                           ``'learnabile'`` of all layers will be ignored and only these layers
+                           will be trained. By default, all the learnable layers are used.       
             verbose: Similar to the rest of the toolbox.
 
 
@@ -1880,35 +1816,39 @@ class network(object):
             visualizer = self.last_visualizer_created
         else:
             visualizer = kwargs['visualizer']
+        self.cooked_visualizer = self.visualizer[visualizer]
             
         if not 'datastream' in kwargs.keys():
             datastream = None
         else:
             datastream = kwargs['datastream'] 
 
+        self.network_type = None # This is the first palce where the network type is created.
+                                 # This is to differentiate between a classifier and other
+                                 # types of networks.
+        if 'classifier_layer' in kwargs.keys():
+            classifier_layer = kwargs['classifier_layer']
+            self.network_type = 'classifier'
+                
+        else:
+            if not self.last_classifier_created is None:
+                classifier_layer = self.last_classifier_created
+                self.network_type = 'classifier'
+            else:                
+                classifier_layer = None
+                self.network_type = 'value'
+
         if not 'objective_layer' in kwargs.keys():
-            objective_layer = None
+            objective_layer = self.last_objective_layer_created
         else:
             objective_layer = kwargs['objective_layer']
 
-        self.network_type = None
-        if not 'classifier' in kwargs.keys():
-            classifier = None
+        if not 'active_layers' in kwargs.keys():
+            params = self.active_params
         else:
-            classifier = kwargs['classifier']
-            self.network_type = 'classifier'
-
-        if not 'generator' in kwargs.keys():
-            generator = None
-        else:
-            generator = kwargs['generator']
-            self.network_type = 'generator'
-
-        if not 'params' in kwargs.keys():
-            if self.network_type == 'generator' or 'classifier':
-                params = self.active_params
-        else:
-            params = params
+            params = []
+            for lyr in kwargs['active_layers']:
+                params.append(lyr.params)
 
         if not 'resultor' in kwargs.keys():
             resultor = None
@@ -1928,14 +1868,6 @@ class network(object):
             if not resultor in self.resultor.keys():
                 raise Exception ("Resultor " + resultor + " not found.")                
         self.cooked_resultor = self.resultor[resultor]
-
-        
-        if generator is None and classifier is None:
-            if verbose >= 3:
-                print "... assuming classifier because it is not specified what network we are \
-                        cooking "
-            classifier = self.last_classifier_created
-            self.network_type = 'classifier'
         
         if optimizer is None:
             if self.last_optimizer_created is None:
@@ -1943,7 +1875,7 @@ class network(object):
                 optimizer_params =  {        
                             "momentum_type"       : 'false',             
                             "momentum_params"     : (0.9, 0.95, 30),      
-                            "regularization"      : (0.0001, 0.0001),       
+                            "regularization"      : (0, 0),       
                             "optimizer_type"      : 'sgd',                
                             "id"                  : "main"
                                 }
@@ -1979,23 +1911,31 @@ class network(object):
 
         self.cost = self.layers[objective_layer].output
         self.dropout_cost = self.dropout_layers[objective_layer].output
-
+        self.cost = []  
+        
         self._cook_datastream(verbose = verbose)
+        
         self._cook_optimizer(params = params,
                              optimizer = self.cooked_optimizer,
                              objective = self.dropout_cost,
                              verbose = verbose )
-        
-        self._initialize_test (classifier = classifier,
-                               generator = generator,
-                               verbose = verbose)
-        self._initialize_predict ( classifier = classifier,
-                                 generator = generator,
-                                 verbose = verbose)
-        self._initialize_posterior (classifier = classifier,
-                                  generator = generator,        
+
+        if self.network_type == 'classifier':
+            self._initialize_test (classifier = classifier_layer,
                                    verbose = verbose)
-        self._initialize_train ( verbose = verbose )   
+            self._initialize_predict ( classifier = classifier_layer,
+                                   verbose = verbose)
+            self._initialize_posterior (classifier = classifier_layer,
+                                   verbose = verbose)
+        else:
+            self._initialize_test (value = objective_layer,
+                                   verbose = verbose)
+        self._initialize_train ( verbose = verbose )               
+
+        self._cook_resultor(resultor = self.cooked_resultor, verbose = verbose)
+        self._cook_visualizer(verbose = verbose) # always cook visualizer last.
+        self.visualize (epoch = 0, verbose = verbose)
+
         self.validation_accuracy = []
         self.best_validation_errors = numpy.inf
         self.best_training_errors = numpy.inf
@@ -2006,12 +1946,6 @@ class network(object):
 
         for param in params:
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
-
-        self.cost = []  
-        self.cooked_visualizer = self.visualizer[visualizer]
-        self._cook_visualizer(verbose = verbose) # always cook visualizer last.
-        self.visualize (epoch = 0, verbose = verbose)
-        self._cook_resultor(resultor = self.cooked_resultor, verbose = verbose)
 
     def print_status (self, epoch , verbose = 2):
         """

@@ -1,3 +1,10 @@
+"""
+TODO:
+
+    Something is off with the visualizations of the CNN filters. Need to check what is going on. 
+    
+"""
+
 from yann.network import network
 from yann.utils.graph import draw_network
 
@@ -71,6 +78,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = 'relu',
+                    regularize = True,
                     verbose = verbose
                     )
 
@@ -81,6 +89,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = 'relu',
+                    regularize = True,
                     verbose = verbose
                     )      
 
@@ -90,6 +99,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "dot_product_1",
                     num_neurons = 800,
                     activation = 'relu',
+                    regularize = True,
                     verbose = verbose
                     )
 
@@ -97,7 +107,8 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     origin = "dot_product_1",
                     id = "dot_product_2",
                     num_neurons = 800,                    
-                    activation = 'relu',                
+                    activation = 'relu',  
+                    regularize = True,              
                     verbose = verbose
                     ) 
     
@@ -105,6 +116,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "softmax",
                     origin = "dot_product_2",
                     num_classes = 10,
+                    regularize = True,
                     activation = 'softmax',
                     verbose = verbose
                     )
@@ -118,12 +130,13 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     )
                     
     learning_rates = (0.05, 0.01, 0.001)  
-    net.pretty_print()  
-    #draw_network(net.graph, filename = 'lenet.png')    
+    #net.pretty_print()  
+    #draw_network(net.graph, filename = 'lenet.png')   
+
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
               datastream = 'data',
-              classifier = 'softmax',
+              classifier_layer = 'softmax',
               verbose = verbose
               )
 
@@ -192,29 +205,31 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "input",
                     id = "input",
                     verbose = verbose, 
-                    datastream_origin = 'data', # if you didnt add a dataset module, now is 
+                    origin = 'data', # if you didnt add a dataset module, now is 
                                                  # the time. 
                     mean_subtract = False )
     
     net.add_layer ( type = "conv_pool",
                     origin = "input",
                     id = "conv_pool_1",
-                    num_neurons = 20,
+                    num_neurons = 40,
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
-                    batch_norm = True,                                        
+                    batch_norm = True,           
+                    regularize = True,                             
                     verbose = verbose
                     )
 
     net.add_layer ( type = "conv_pool",
                     origin = "conv_pool_1",
                     id = "conv_pool_2",
-                    num_neurons = 50,
+                    num_neurons = 100,
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
                     batch_norm = True,
+                    regularize = True,                    
                     dropout_rate = 0, # because of maxout
                     verbose = verbose
                     )      
@@ -222,10 +237,10 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "conv_pool_2",
                     id = "dot_product_1",
-                    num_neurons = 800,
-                    activation = 'relu',
+                    num_neurons = 1600,
+                    regularize = True,                    
+                    activation = ('maxout', 'maxout', 2),
                     batch_norm = True,
-                    dropout_rate = 0.5,
                     verbose = verbose
                     )
 
@@ -236,6 +251,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     activation = 'relu',
                     batch_norm = True,
                     dropout_rate = 0.5,
+                    regularize = True,                    
                     verbose = verbose
                     ) 
     
@@ -243,6 +259,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     id = "softmax",
                     origin = "dot_product_2",
                     num_classes = 10,
+                    regularize = True,                    
                     activation = 'softmax',
                     verbose = verbose
                     )
@@ -283,7 +300,7 @@ if __name__ == '__main__':
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
-            from yann.special.datasets import cook_mnist  
+            from yann.special.datasets import cook_cifar10 
             data = cook_mnist (verbose = 2)
             dataset = data.dataset_location()
         else:

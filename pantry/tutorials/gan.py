@@ -67,9 +67,7 @@ def simple_gan ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "input",
                     id = "x",
                     verbose = verbose, 
-                    datastream_origin = 'data', # if you didnt add a dataset module, now is 
-                                                 # the time. 
-                    mean_subtract = False )
+                    datastream_origin = 'data' )
 
     #G(z) contains params theta_g - 100 X 784 - creates images of 1 X 784
     net.add_layer ( type = "dot_product",
@@ -187,7 +185,7 @@ if __name__ == '__main__':
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
-            from yann.special.datasets import cook_mnist  
+            from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist  
             data = cook_mnist (verbose = 2)
             dataset = data.dataset_location()
         else:
@@ -197,7 +195,7 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        from yann.special.datasets import cook_mnist  
+        from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 

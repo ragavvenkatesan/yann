@@ -57,7 +57,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "input",
                     id = "input",
                     verbose = verbose, 
-                    datastream_origin = 'data', # if you didnt add a dataset module, now is 
+                    origin = 'data', # if you didnt add a dataset module, now is 
                                                  # the time. 
                     mean_subtract = True )
 
@@ -72,6 +72,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     id = "encoder",
                     num_neurons = 64,
                     activation = 'tanh',
+                    regularize = True,
                     verbose = verbose
                     )
 
@@ -103,17 +104,17 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     verbose = verbose)
 
     net.add_layer ( type = "objective",
-                    origin = "merge",
                     id = "obj",
-                    objective = None,
-                    layer_type = 'generator',
+                    origin = "merge", # this is useless anyway.
+                    layer_type = 'value',
+                    objective = net.layers['merge'].output,
+                    datastream_origin = 'data', 
                     verbose = verbose
-                    )
+                    )          
 
     learning_rates = (0, 0.1, 0.01)  
     net.cook( objective_layer = 'obj',
               datastream = 'data',
-              generator = 'merge',
               learning_rates = learning_rates,
               verbose = verbose
               )
@@ -135,7 +136,7 @@ if __name__ == '__main__':
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
-            from yann.special.datasets import cook_mnist  
+            from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist  
             data = cook_mnist (verbose = 2)
             dataset = data.dataset_location()
         else:
@@ -145,7 +146,7 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        from yann.special.datasets import cook_mnist  
+        from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist  
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
