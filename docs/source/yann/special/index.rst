@@ -12,3 +12,4 @@ inheriting the main network class and re-writing a new class for different types
    :name: special     
 
    gan
+   datasets
