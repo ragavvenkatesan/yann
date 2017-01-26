@@ -48,28 +48,29 @@ class gan (network):
             print "... creating the classifier training theano function "
 
         #D_c(x)
-        index = T.lscalar('index')     
-        if self.cooked_datastream.svm is False:   
-            self.mini_batch_train_softmax = theano.function(
-                    inputs = [index, self.cooked_softmax_optimizer.epoch],
-                    outputs = self.dropout_softmax_cost,
-                    name = 'train',
-                    givens={
-            self.x: self.data_x[index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
-            self.y: self.data_y[index * self.mini_batch_size:(index + 1) * self.mini_batch_size]},
-                    updates = self.cooked_softmax_optimizer.updates, 
-                    on_unused_input = 'ignore')
-        else:                                                                        
-            self.mini_batch_train_softmax = theano.function(
-                    inputs = [index, self.cooked_softmax_optimizer.epoch],
-                    outputs = self.dropout_softmax_sot,
-                    name = 'train',                    
-                    givens={
-            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
-            self.one_hot_y: self.data_one_hot_y[index * self.mini_batch_size:(index + 1) * 
-                                                                    self.mini_batch_size]},
-                    updates = self.cooked_softmax_optimizer.updates, 
-                    on_unused_input = 'ignore')
+        index = T.lscalar('index')             
+        if self.softmax_head is True:
+            if self.cooked_datastream.svm is False:   
+                self.mini_batch_train_softmax = theano.function(
+                        inputs = [index, self.cooked_softmax_optimizer.epoch],
+                        outputs = self.dropout_softmax_cost,
+                        name = 'train',
+                        givens={
+                self.x: self.data_x[index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
+                self.y: self.data_y[index * self.mini_batch_size:(index + 1) * self.mini_batch_size]},
+                        updates = self.cooked_softmax_optimizer.updates, 
+                        on_unused_input = 'ignore')
+            else:                                                                        
+                self.mini_batch_train_softmax = theano.function(
+                        inputs = [index, self.cooked_softmax_optimizer.epoch],
+                        outputs = self.dropout_softmax_sot,
+                        name = 'train',                    
+                        givens={
+                self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
+                self.one_hot_y: self.data_one_hot_y[index * self.mini_batch_size:(index + 1) * 
+                                                                        self.mini_batch_size]},
+                        updates = self.cooked_softmax_optimizer.updates, 
+                        on_unused_input = 'ignore')
         
         #D(x)
         self.mini_batch_train_real = theano.function(
@@ -188,9 +189,9 @@ class gan (network):
     def cook(   self,   
                 objective_layers, 
                 discriminator_layers,
-                classifier_layers,
                 generator_layers,
-                softmax_layer,
+                softmax_layer = None,
+                classifier_layers = None,                
                 optimizer_params = None, 
                 verbose = 2, 
                 **kwargs ):
@@ -263,7 +264,14 @@ class gan (network):
 
         self.generator_active_params = []
         self.discriminator_active_params = []
-        self.classifier_active_params = []
+
+        if objective_layers[0] is None:
+            self.softmax_head = False
+        else:
+            self.softmax_head = True
+
+        if self.softmax_head is True:
+            self.classifier_active_params = []
 
         for lyr in generator_layers:
             self.generator_active_params = self.generator_active_params + \
@@ -272,9 +280,10 @@ class gan (network):
         for lyr in discriminator_layers:
             self.discriminator_active_params = self.discriminator_active_params + \
                                                self.dropout_layers[lyr].params
-        for lyr in classifier_layers:
-            self.classifier_active_params = self.classifier_active_params + \
-                                            self.dropout_layers[lyr].params
+        if self.softmax_head is True:
+            for lyr in classifier_layers:
+                self.classifier_active_params = self.classifier_active_params + \
+                                                self.dropout_layers[lyr].params
 
         if optimizer_params is None:
             optimizer_params =  {        
@@ -298,15 +307,17 @@ class gan (network):
         self.cooked_datastream = self.datastream[datastream]         
         self._cook_datastream(verbose = verbose)
 
-        self.data_y = self.cooked_datastream.data_y
-        if self.cooked_datastream.svm is True:
-            self.data_one_hot_y = self.cooked_datastream.data_one_hot_y
-        self.y = self.cooked_datastream.y
-        self.one_hot_y = self.cooked_datastream.one_hot_y             
+        if self.softmax_head is True:
+            self.data_y = self.cooked_datastream.data_y
+            if self.cooked_datastream.svm is True:
+                self.data_one_hot_y = self.cooked_datastream.data_one_hot_y
+            self.y = self.cooked_datastream.y
+            self.one_hot_y = self.cooked_datastream.one_hot_y             
         self.current_data_type = self.cooked_datastream.current_type
 
-        self.softmax_cost = self.layers[objective_layers[0]].output
-        self.dropout_softmax_cost = self.dropout_layers[objective_layers[0]].output
+        if self.softmax_head is True:
+            self.softmax_cost = self.layers[objective_layers[0]].output
+            self.dropout_softmax_cost = self.dropout_layers[objective_layers[0]].output
         self.real_cost = self.layers[objective_layers[1]].output
         self.dropout_real_cost = self.dropout_layers[objective_layers[1]].output
         self.fake_cost = self.layers[objective_layers[2]].output
@@ -315,20 +326,22 @@ class gan (network):
         self.dropout_gen_cost = -self.dropout_fake_cost 
 
         self._cook_datastream(verbose = verbose)
-        self.cook_softmax_optimizer(optimizer_params = optimizer_params,
-                                    verbose = verbose)
+        if self.softmax_head is True:
+            self.cook_softmax_optimizer(optimizer_params = optimizer_params,
+                                        verbose = verbose)
         self.cook_real_optimizer(   optimizer_params = optimizer_params,
                                     verbose = verbose)                                       
         self.cook_fake_optimizer(   optimizer_params = optimizer_params,
                                     verbose = verbose)                                                                     
         self.cook_gen_optimizer(   optimizer_params = optimizer_params,
-                                    verbose = verbose)                                    
-        self._initialize_test (classifier = softmax_layer,
-                               verbose = verbose)
-        self._initialize_predict ( classifier = softmax_layer,
-                                 verbose = verbose)
-        self._initialize_posterior (classifier = softmax_layer,
+                                    verbose = verbose)        
+        if self.softmax_head is True:                            
+            self._initialize_test (classifier = softmax_layer,
                                    verbose = verbose)
+            self._initialize_predict ( classifier = softmax_layer,
+                                     verbose = verbose)
+            self._initialize_posterior (classifier = softmax_layer,
+                                       verbose = verbose)
 
         self.initialize_train ( verbose = verbose )   
         self.validation_accuracy = []
@@ -339,15 +352,12 @@ class gan (network):
         
         # Let's bother only about learnable params. This avoids the problem when weights are 
         # shared
-        self.validation_accuracy = []
-        self.best_validation_errors = numpy.inf
-        self.best_training_errors = numpy.inf
-        self.training_accuracy = []
-        self.best_params = []
-        # Let's bother only about learnable params. This avoids the problem when weights are 
-        # shared
-        self.active_params = self.classifier_active_params + self.discriminator_active_params + \
+        if self.softmax_head is True:
+            self.active_params = self.classifier_active_params + self.discriminator_active_params+\
                                     self.generator_active_params 
+        else:
+            self.active_params = self.discriminator_active_params + self.generator_active_params   
+
         for param in self.active_params:
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 
@@ -372,7 +382,8 @@ class gan (network):
         """    
         if verbose >= 3:
             print "... setting up new era"
-        self.softmax_learning_rate.set_value(numpy.asarray(new_learning_rate,
+        if self.softmax_head is True:
+            self.softmax_learning_rate.set_value(numpy.asarray(new_learning_rate,
                                                         dtype = theano.config.floatX))
         self.real_learning_rate.set_value(numpy.asarray(new_learning_rate,
                                                         dtype = theano.config.floatX))
@@ -418,12 +429,12 @@ class gan (network):
         else:
             print ".. Discriminator Fake Images Cost    : " + str(numpy.mean(self.fake_cost[-1 * 
                                 self.batches2train * self.mini_batches_per_batch[0]:]))   
-        
-        if len(self.softmax_cost) < self.batches2train * self.mini_batches_per_batch[0]:
-            print ".. Discriminator Softmax Cost        : " + str(self.softmax_cost[-1])
-        else:
-            print ".. Discriminator Softmax Cost        : " + str(numpy.mean(self.softmax_cost[-1 * 
-                                self.batches2train * self.mini_batches_per_batch[0]:])) 
+        if self.softmax_head is True:
+            if len(self.softmax_cost) < self.batches2train * self.mini_batches_per_batch[0]:
+                print ".. Discriminator Softmax Cost        : " + str(self.softmax_cost[-1])
+            else:
+                print ".. Discriminator Softmax Cost        : " + str(numpy.mean
+                      (self.softmax_cost[-1 * self.batches2train * self.mini_batches_per_batch[0]:])) 
 
         if verbose >= 3:
             print "... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
@@ -455,18 +466,29 @@ class gan (network):
             if verbose >=3 :
                 print "... collecting the activities of layer " + id
             activity = _layer.output  
-            self.layer_activities[id] = theano.function(
-                        name = 'layer_activity_' + id,
-                        inputs = [index],
-                        outputs = activity,
-                        givens={
-                        self.x: self.cooked_datastream.data_x[index * 
-                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                    self.cooked_datastream.mini_batch_size],
-                        self.y: self.cooked_datastream.data_y[index * 
-                                        self.cooked_datastream.mini_batch_size:(index + 1) * 
-                                                    self.cooked_datastream.mini_batch_size]},
-                                        on_unused_input = 'ignore')
+            if self.softmax_head is True:
+                self.layer_activities[id] = theano.function(
+                            name = 'layer_activity_' + id,
+                            inputs = [index],
+                            outputs = activity,
+                            givens={
+                            self.x: self.cooked_datastream.data_x[index * 
+                                            self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                        self.cooked_datastream.mini_batch_size],
+                            self.y: self.cooked_datastream.data_y[index * 
+                                            self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                        self.cooked_datastream.mini_batch_size]},
+                                            on_unused_input = 'ignore')
+            else:
+                self.layer_activities[id] = theano.function(
+                            name = 'layer_activity_' + id,
+                            inputs = [index],
+                            outputs = activity,
+                            givens={
+                            self.x: self.cooked_datastream.data_x[index * 
+                                            self.cooked_datastream.mini_batch_size:(index + 1) * 
+                                                        self.cooked_datastream.mini_batch_size]},
+                                                        on_unused_input = 'ignore')                                        
 
     def validate (self, epoch = 0, training_accuracy = False, show_progress = False, verbose = 2):
         """
@@ -476,12 +498,15 @@ class gan (network):
             verbose: Just as always
             show_progress: Display progressbar ?
             training_accuracy: Do you want to print accuracy on the training set as well ?
-        """        
-        self.network_type = 'classifier'        
-        best = super(gan,self).validate(epoch = epoch,
-                                 training_accuracy = training_accuracy,
-                                 show_progress = show_progress,
-                                 verbose = verbose)
+        """       
+        if self.softmax_head is True:
+            self.network_type = 'classifier'        
+            best = super(gan,self).validate(epoch = epoch,
+                                    training_accuracy = training_accuracy,
+                                    show_progress = show_progress,
+                                    verbose = verbose)
+        else:
+            best = True
         return best
     def train ( self, verbose, **kwargs):        
         """
@@ -496,6 +521,10 @@ class gan (network):
             k : how many discriminator updates for every generator update.
             learning_rates: (annealing_rate, learning_rates ... ) length must be one more than 
                             ``epochs`` Default is ``(0.05, 0.01, 0.001)``
+            pre_train_discriminator: If you want to pre-train the discriminator to make it stay
+                                    ahead of the generator for making predictions. This will only 
+                                    train the softmax layer loss and not the fake or real loss.
+
             
         """
         start_time = time.clock()  
@@ -549,6 +578,12 @@ class gan (network):
                 patience = numpy.inf
             else:
                 patience = 5
+
+        if not 'pre_train_discriminator' in kwargs.keys():
+            pre_train_discriminator = 0
+        else:
+            pre_train_discriminator = kwargs['pre_train_discriminator']
+
         # (initial_learning_rate, fine_tuning_learning_rate, annealing)
         if not 'learning_rates' in kwargs.keys():
             learning_rates = (0.05, 0.01, 0.001)
@@ -560,7 +595,130 @@ class gan (network):
         for param in self.active_params:
             nan_insurance.append(theano.shared(param.get_value(borrow = self.borrow)))     
 
-        self.softmax_learning_rate.set_value(learning_rates[1])        
+        if self.softmax_head is True:
+            self.softmax_learning_rate.set_value(learning_rates[1])         
+                
+        patience_increase = 2  
+        improvement_threshold = 0.995       
+        best_iteration = 0
+        epoch_counter = 0
+        early_termination = False
+        iteration= 0        
+        era = 0
+
+        while (epoch_counter < pre_train_discriminator) \
+                            and (not early_termination) \
+                            and (self.softmax_head is True):
+
+            nan_flag = False        
+            # This printing below and the progressbar should move to visualizer ?
+            if verbose >= 1:
+                print ".",
+                if  verbose >= 2:
+                    print "\n"
+                    print ".. Pre-Training Epoch: " + str(epoch_counter)
+                    
+            if show_progress is True:
+                total_mini_batches =  self.batches2train * self.mini_batches_per_batch[0]        
+                bar = progressbar.ProgressBar(maxval=total_mini_batches, \
+                        widgets=[progressbar.AnimatedMarker(), \
+                ' training ', ' ', progressbar.Percentage(), ' ',progressbar.ETA(), ]).start() 
+
+            # Go through all the large batches 
+            total_mini_batches_done = 0 
+            for batch in xrange (self.batches2train):
+
+                if nan_flag is True:
+                    # If NAN, restart the epoch, forget the current epoch.                                                    
+                    break
+                # do multiple cached mini-batches in one loaded batch
+                if self.cache is True:
+                    self._cache_data ( batch = batch , type = 'train', verbose = verbose )
+                else:
+                    # If dataset is not cached but need to be loaded all at once, check if trianing.
+                    if not self.current_data_type == 'train':
+                        # If cache is False, then there is only one batch to load.
+                        self._cache_data(batch = 0, type = 'train', verbose = verbose )
+
+                # run through all mini-batches in new batch of data that was loaded.
+                for minibatch in xrange(self.mini_batches_per_batch[0]):       
+                    # All important part of the training function. Batch Train.
+                    # This is the classifier for discriminator. I will run this later.                
+                    softmax_cost = self.mini_batch_train_softmax (minibatch, epoch_counter)
+                    
+                    if  numpy.isnan(softmax_cost):                  
+                        nan_flag = True
+                        new_lr = self.softmax_learning_rate.get_value( borrow = self.borrow ) * 0.1 
+                        self._new_era(new_learning_rate = new_lr, verbose =verbose )
+                        if verbose >= 2:
+                            print ".. NAN! Slowing learning rate by 10 times and restarting epoch."                                      
+                        break                 
+
+                    self.softmax_cost = self.softmax_cost + [softmax_cost]                                        
+                    total_mini_batches_done = total_mini_batches_done + 1                     
+                    
+                    if show_progress is False and verbose >= 3:
+                        print ".. Mini batch: " + str(total_mini_batches_done)
+                        self.print_status(  epoch = epoch_counter, verbose = verbose ) 
+
+                    if show_progress is True:
+                        bar.update(total_mini_batches_done)                         
+
+            if show_progress is True:
+                bar.finish()                           
+            
+            # post training items for one loop of batches.    
+            if nan_flag is False:    
+                if verbose >= 2:
+                    if len(self.softmax_cost) < self.batches2train * self.mini_batches_per_batch[0]:
+                        print ".. Discriminator Softmax Cost        : " + str(self.softmax_cost[-1])
+                    else:
+                        print ".. Discriminator Softmax Cost        : " + str(numpy.mean(
+                                                            self.softmax_cost[-1 * 
+                                            self.batches2train * self.mini_batches_per_batch[0]:])) 
+
+                    if verbose >= 3:
+                        print "... Learning Rate       : " + str(self.learning_rate.get_value(
+                                                                             borrow=  self.borrow))
+                        print "... Momentum            : " + str(self.current_momentum(epoch))  
+
+                best = self.validate(   epoch = epoch_counter,
+                                        training_accuracy = training_accuracy,
+                                        show_progress = show_progress,
+                                        verbose = verbose )
+                self.visualize ( epoch = epoch_counter , verbose = verbose)
+                
+                if best is True:
+                    copy_params(source = self.active_params, destination= nan_insurance , 
+                                                                    borrow = self.borrow,
+                                                                    verbose = verbose)
+                    copy_params(source = self.active_params, destination= self.best_params, 
+                                                                    borrow = self.borrow,
+                                                                    verbose = verbose)                        
+
+
+                    self.softmax_decay_learning_rate(learning_rates[0])  
+
+                if patience < epoch_counter:
+                    early_termination = True
+                    if final_era is False:
+                        if verbose >= 3:
+                            print "... Patience ran out lowering learning rate."
+                        new_lr = self.fake_learning_rate.get_value( borrow = self.borrow ) * 0.1 
+                        self._new_era(new_learning_rate = new_lr, verbose =verbose )              
+                        early_termination = False
+                    else:
+                        if verbose >= 2:
+                            print ".. Early stopping"
+                        break   
+                epoch_counter = epoch_counter + 1
+         
+        end_time = time.clock()
+        if verbose >=2 and self.softmax_head is True:
+            print ".. Pre- Training complete.Took " +str((end_time - start_time)/60) + " minutes"                
+
+        # Reset training for the main loop 
+
         self.real_learning_rate.set_value(learning_rates[1]) 
         self.fake_learning_rate.set_value(learning_rates[1])     
         self.gen_learning_rate.set_value(learning_rates[1])   
@@ -584,7 +742,7 @@ class gan (network):
             change_era = epochs + 1      
             
         final_era = False 
-                                                                
+
         # main loop
         while (epoch_counter < total_epochs) and (not early_termination):
             nan_flag = False
@@ -641,14 +799,14 @@ class gan (network):
                     # This is the classifier for discriminator. I will run this later.
 
                     fake_cost = self.mini_batch_train_fake (minibatch, epoch_counter)                    
-                    real_cost = self.mini_batch_train_real (minibatch, epoch_counter)                    
-                    softmax_cost = self.mini_batch_train_softmax (minibatch, epoch_counter)
+                    real_cost = self.mini_batch_train_real (minibatch, epoch_counter) 
+                    if self.softmax_head is True:                   
+                        softmax_cost = self.mini_batch_train_softmax (minibatch, epoch_counter)
                                             
                     if minibatch % k == 0:                  
                         gen_cost = self.mini_batch_train_gen (minibatch, epoch_counter)
                     
                     if numpy.isnan(gen_cost) or \
-                        numpy.isnan(softmax_cost) or \
                         numpy.isnan(fake_cost) or \
                         numpy.isnan(real_cost):                  
                         nan_flag = True
@@ -660,7 +818,8 @@ class gan (network):
 
                     self.fake_cost = self.fake_cost + [fake_cost]
                     self.real_cost = self.real_cost + [real_cost]
-                    self.softmax_cost = self.softmax_cost + [softmax_cost]                    
+                    if self.softmax_head is True:
+                        self.softmax_cost = self.softmax_cost + [softmax_cost]                    
                     self.gen_cost = self.gen_cost + [gen_cost]
                     
                     total_mini_batches_done = total_mini_batches_done + 1                     
@@ -674,7 +833,6 @@ class gan (network):
 
             if show_progress is True:
                 bar.finish()               
-            
             
             # post training items for one loop of batches.    
             if nan_flag is False:    
@@ -695,14 +853,18 @@ class gan (network):
                                                                     borrow = self.borrow,
                                                                     verbose = verbose)                        
 
-                self.decay_learning_rate(learning_rates[0])  
+                #self.real_decay_learning_rate(learning_rates[0])
+                #self.fake_decay_learning_rate(learning_rates[0])
+                #self.gen_decay_learning_rate(learning_rates[0])
+                #if self.softmax_head is True:
+                #    self.softmax_decay_learning_rate(learning_rates[0])  
 
                 if patience < epoch_counter:
                     early_termination = True
                     if final_era is False:
                         if verbose >= 3:
                             print "... Patience ran out lowering learning rate."
-                        new_lr = self.learning_rate.get_value( borrow = self.borrow ) * 0.1 
+                        new_lr = self.fake_learning_rate.get_value( borrow = self.borrow ) * 0.1 
                         self._new_era(new_learning_rate = new_lr, verbose =verbose )              
                         early_termination = False
                     else:
