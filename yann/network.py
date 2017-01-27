@@ -1326,13 +1326,11 @@ class network(object):
         self.dropout_layers[id] = drl (
                             id = id,
                             angle = angle,
-                            options = options,
                             verbose = verbose)
         
         self.layers[id] = rl(
                             id = id,
                             angle = angle,
-                            options = options,
                             verbose =verbose)
 
     def _initialize_test_classifier(self, errors, verbose):
@@ -2442,4 +2440,12 @@ class network(object):
                 print ".. Mean testing error : " + str(testing_accuracy)
 
 if __name__ == '__main__':
-    pass
+    pass                  
+
+
+
+                                        
+
+
+
+                    
