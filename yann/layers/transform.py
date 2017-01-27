@@ -196,6 +196,7 @@ class dropout_rotate_layer (rotate_layer):
                   input,
                   input_shape,
                   id,
+                  dropout_rate = 0.5,
                   input_params = None,
                   angle = None,
                   borrow = True,
