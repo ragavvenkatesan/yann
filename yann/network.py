@@ -1336,7 +1336,10 @@ class network(object):
         if 'angle' in options.keys():
             angle = options['angle']
         else:
-            angle = None        
+            angle = None
+
+        import pdb
+        pdb.set_trace()
 
         self.layers[id] = rl(
                             input = input,
