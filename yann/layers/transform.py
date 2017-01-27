@@ -48,7 +48,7 @@ class rotate_layer (layer):
                             -T.sin(angle[:,0]*180).dimshuffle(0,'x'),
                             T.sin(angle[:,0]*180).dimshuffle(0,'x'),
                             T.cos(angle[:,0]*180).dimshuffle(0,'x'),
-                            T.zeros((input_shape[0],1),dtype='float32')], axis=1)
+                            T.zeros((input_shape[0],2),dtype='float32')], axis=1)
             # theta[:,0,0] = numpy.cos(angle[:,0]*180)
             # theta[:,0,1] = -numpy.sin(angle[:,0]*180)
             # theta[:,1,0] = numpy.sin(angle[:,0]*180)
