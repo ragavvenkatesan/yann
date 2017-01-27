@@ -1338,9 +1338,6 @@ class network(object):
         else:
             angle = None
 
-        import pdb
-        pdb.set_trace()
-
         self.layers[id] = rl(
                             input = input,
                             input_shape = input_shape,

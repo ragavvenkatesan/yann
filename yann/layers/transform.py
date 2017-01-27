@@ -32,7 +32,7 @@ class rotate_layer (layer):
         if verbose >= 3:
             print "... Creating rotate layer"
 
-        if input_shape == 4:
+        if len(input_shape) == 4:
             if verbose >= 3:
                 print "... Creating the rotate layer"
 
