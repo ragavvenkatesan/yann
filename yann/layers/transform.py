@@ -37,7 +37,7 @@ class rotate_layer (layer):
                 print "... Creating the rotate layer"
 
             if angle is None:
-                angle = srng.uniform(size = input_shape[0], low =limits[0], high =limits[1], 
+                angle = srng.uniform(size = input_shape[0], low = 0, high = 1, 
                                                 dtype = theano.config.floatX )
 
             angle = angle.dimshuffle(0,'x')
