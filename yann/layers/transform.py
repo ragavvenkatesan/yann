@@ -78,6 +78,8 @@ class rotate_layer (layer):
         x_s_flat = x_s.flatten()
         y_s_flat = y_s.flatten()
 
+        import pdb
+        pdb.set_trace()
         # dimshuffle input to  (bs, height, width, channels)
         input_dim = input.dimshuffle(0, 2, 3, 1)
         input_transformed = self._interpolate(
