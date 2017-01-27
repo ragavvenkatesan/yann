@@ -42,6 +42,8 @@ class rotate_layer (layer):
 
             angle = angle.dimshuffle(0,'x')
             theta = numpy.zeros((input_shape[0],2,3),dtype='float32')
+            import pdb
+            pdb.set_trace()
             theta[:,0,0] = numpy.cos(angle[:,0]*180)
             theta[:,0,1] = -numpy.sin(angle[:,0]*180)
             theta[:,1,0] = numpy.sin(angle[:,0]*180)
