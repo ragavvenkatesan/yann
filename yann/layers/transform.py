@@ -1,5 +1,6 @@
 from abstract import layer, _activate, _dropout
 import numpy
+import numpy.random as rng
 import theano
 import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
@@ -27,7 +28,6 @@ class rotate_layer (layer):
                   borrow = True,
                   verbose = 2 ):
         super(rotate_layer,self).__init__(id = id, type = 'rotate', verbose = verbose)
-        rng = numpy.random
         srng = RandomStreams(rng.randint(1,2147462468), use_cuda=None)
         if verbose >= 3:
             print "... Creating rotate layer"
