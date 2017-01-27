@@ -44,10 +44,10 @@ class rotate_layer (layer):
             import pdb
             pdb.set_trace()
             # theta = numpy.zeros((input_shape[0],2,3),dtype='float32')
-            theta = T.stack([T.cos(angle.dimshuffle(0,'x')[:,0]*180).dimshuffle(0,'x'),
-                            -T.sin(angle.dimshuffle(0,'x')[:,0]*180).dimshuffle(0,'x'),
-                            T.sin.dimshuffle(0,'x')(angle[:,0]*180).dimshuffle(0,'x'),
-                            T.cos.dimshuffle(0,'x')(angle[:,0]*180).dimshuffle(0,'x'),
+            theta = T.stack([T.cos(angle[:,0]*180).dimshuffle(0,'x'),
+                            -T.sin(angle[:,0]*180).dimshuffle(0,'x'),
+                            T.sin(angle[:,0]*180).dimshuffle(0,'x'),
+                            T.cos(angle[:,0]*180).dimshuffle(0,'x'),
                             T.zeros((input_shape[0],1),dtype='float32')], axis=1)
             # theta[:,0,0] = numpy.cos(angle[:,0]*180)
             # theta[:,0,1] = -numpy.sin(angle[:,0]*180)
