@@ -1318,17 +1318,25 @@ class network(object):
         from yann.layers.transform import rotate_layer as rl
         from yann.layers.transform import dropout_rotate_layer as drl
         
+        input = self.layers[origin].output
+        dropout_input = self.dropout_layers[origin].output
+        input_shape = self.layers[origin].output_shape
+
         if 'angle' in options.keys():
             angle = options['angle']
         else:
             angle = None        
 
         self.dropout_layers[id] = drl (
+                            input = dropout_input,
+                            input_shape = input_shape,
                             id = id,
                             angle = angle,
                             verbose = verbose)
         
         self.layers[id] = rl(
+                            input = input,
+                            input_shape = input_shape,
                             id = id,
                             angle = angle,
                             verbose =verbose)
