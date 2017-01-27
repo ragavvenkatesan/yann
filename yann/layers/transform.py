@@ -41,8 +41,6 @@ class rotate_layer (layer):
                                                 dtype = theano.config.floatX )
 
             angle = angle.dimshuffle(0,'x')
-            import pdb
-            pdb.set_trace()
             # theta = numpy.zeros((input_shape[0],2,3),dtype='float32')
             theta = T.stack([T.cos(angle[:,0]*180).dimshuffle(0,'x'),
                             -T.sin(angle[:,0]*180).dimshuffle(0,'x'),
@@ -57,8 +55,6 @@ class rotate_layer (layer):
             theta = theta.reshape((-1, 6))
 
             self.output = self._transform_affine(theta, input)
-            import pdb
-            pdb.set_trace()
             self.output_shape = input_shape
             self.angle = angle
 
@@ -209,8 +205,6 @@ class dropout_rotate_layer (rotate_layer):
 
         if verbose >= 3:
             print "... set up the dropout rotate layer"
-        import pdb
-        pdb.set_trace()
         if rng is None:
             rng = numpy.random
         super(dropout_rotate_layer, self).__init__ (
