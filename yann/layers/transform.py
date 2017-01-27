@@ -69,7 +69,7 @@ class rotate_layer (layer):
         # grid of (x_t, y_t, 1)
         out_height = T.cast(height, 'int64')
         out_width = T.cast(width, 'int64')
-        grid = _meshgrid(out_height, out_width)
+        grid = self._meshgrid(out_height, out_width)
 
         # Transform A x (x_t, y_t, 1)^T -> (x_s, y_s)
         T_g = T.dot(theta, grid)
@@ -80,7 +80,7 @@ class rotate_layer (layer):
 
         # dimshuffle input to  (bs, height, width, channels)
         input_dim = input.dimshuffle(0, 2, 3, 1)
-        input_transformed = _interpolate(
+        input_transformed = self._interpolate(
             input_dim, x_s_flat, y_s_flat,
             out_height, out_width)
 
@@ -164,8 +164,8 @@ class rotate_layer (layer):
         # compute the meshgrid offline in numpy instead of doing it dynamically
         # in Theano. However, it hardly affected performance when we tried.
         x_t = T.dot(T.ones((height, 1)),
-                    _linspace(-1.0, 1.0, width).dimshuffle('x', 0))
-        y_t = T.dot(_linspace(-1.0, 1.0, height).dimshuffle(0, 'x'),
+                    self._linspace(-1.0, 1.0, width).dimshuffle('x', 0))
+        y_t = T.dot(self._linspace(-1.0, 1.0, height).dimshuffle(0, 'x'),
                     T.ones((1, width)))
 
         x_t_flat = x_t.reshape((1, -1))
