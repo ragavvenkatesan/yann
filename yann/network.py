@@ -1330,6 +1330,8 @@ class network(object):
         from yann.layers.transform import dropout_rotate_layer as drl
         
         input = self.layers[origin].output
+        import pdb
+        pdb.set_trace()
         dropout_input = self.dropout_layers[origin].output
         input_shape = self.layers[origin].output_shape
 
