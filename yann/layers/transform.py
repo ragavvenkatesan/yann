@@ -48,7 +48,7 @@ class rotate_layer (layer):
             theta = theta.reshape((input_shape[0], 6))
 
             self.output = self._transform_affine(theta, input)
-            self.output_shape = self.output.shape
+            self.output_shape = input_shape
             self.angle = angle
 
     def _transform_affine(self, theta, input):

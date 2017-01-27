@@ -1337,19 +1337,19 @@ class network(object):
         else:
             angle = None        
 
-        self.dropout_layers[id] = drl (
-                            input = dropout_input,
-                            input_shape = input_shape,
-                            id = id,
-                            angle = angle,
-                            verbose = verbose)
-        
         self.layers[id] = rl(
                             input = input,
                             input_shape = input_shape,
                             id = id,
                             angle = angle,
                             verbose =verbose)
+
+        self.dropout_layers[id] = drl (
+                            input = dropout_input,
+                            input_shape = input_shape,
+                            id = id,
+                            angle = angle,
+                            verbose = verbose)
 
     def _initialize_test_classifier(self, errors, verbose):
         """
