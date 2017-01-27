@@ -177,17 +177,11 @@ class dropout_rotate_layer (rotate_layer):
         input_shape: ``(mini_batch_size, input_size)``
         batch_norm: If provided will be used, default is ``False``. 
         rng: typically ``numpy.random``.
-        borrow: ``theano`` borrow, typicall ``True``.                                        
-        activation: String, takes options that are listed in :mod:`activations` Needed for
-                    layers that use activations.
-                    Some activations also take support parameters, for instance ``maxout``
-                    takes maxout type and size, ``softmax`` takes an option temperature.
-                    Refer to the module :mod:`activations` to know more.
-        input_params: Supply params or initializations from a pre-trained system.
+        borrow: ``theano`` borrow, typicall ``True``.    
         dropout_rate: ``0.5`` is the default.
 
     Notes:
-        Use ``dropout_dot_product_layer.output`` and ``dropout_dot_product_layer.output_shape`` from
+        Use ``dropout_rotate_layer.output`` and ``dropout_rotate_layer.output_shape`` from
         this class. ``L1`` and ``L2`` are also public and can also can be used for regularization.
         The class also has in public ``w``, ``b`` and ``alpha``
         which are also a list in ``params``, another property of this class.     

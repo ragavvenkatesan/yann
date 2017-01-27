@@ -210,6 +210,7 @@ class network(object):
                type == 'flatten' or \
                type == 'unflatten' or \
                type == 'random' or \
+               type == 'rotate' or \
                type == 'loss' or \
                type == 'energy' or \
                type == 'join':            
