@@ -27,6 +27,7 @@ class rotate_layer (layer):
                   borrow = True,
                   verbose = 2 ):
         super(rotate_layer,self).__init__(id = id, type = 'rotate', verbose = verbose)
+        rng = numpy.random
         srng = RandomStreams(rng.randint(1,2147462468), use_cuda=None)
         if verbose >= 3:
             print "... Creating rotate layer"
