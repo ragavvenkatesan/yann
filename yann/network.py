@@ -1313,7 +1313,17 @@ class network(object):
             verbose: simiar to everywhere on the toolbox.
         """
         if verbose >=3:
-            print "... Adding a rotate layer"   
+            print "... Adding a rotate layer"
+
+        if not 'origin' in options.keys():
+            if self.last_layer_created is None:
+                raise Exception("You can't create a fully connected layer without an" + \
+                                    " origin layer.")
+            if verbose >=3: 
+                print "... origin layer is not supplied, assuming the last layer created is."
+            origin = self.last_layer_created 
+        else:
+            origin = options ["origin"]
         
         from yann.layers.transform import rotate_layer as rl
         from yann.layers.transform import dropout_rotate_layer as drl
