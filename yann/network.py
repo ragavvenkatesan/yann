@@ -1250,9 +1250,6 @@ class network(object):
         for lyr in origin:
             inputs.append(self.layers[lyr].output)
 
-        import pdb
-        pdb.set_trace()
-
         self.layers[id] = mrg( id = id,                                   
                                x = inputs,
                                error = error,

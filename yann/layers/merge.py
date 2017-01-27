@@ -64,8 +64,6 @@ class merge_layer (layer):
             self.output_shape = input_shape[0]
 
         elif type == 'concatenate':
-            import pdb
-            pdb.set_trace()
             self.output = T.concatenate([x[0],x[1]], axis = 1)   
             if len(input_shape[0]) == 2:             
                 self.output_shape = (input_shape [0], input_shape[0][1] + input_shape[1][1])
