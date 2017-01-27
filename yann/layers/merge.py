@@ -66,9 +66,9 @@ class merge_layer (layer):
         elif type == 'concatenate':
             self.output = T.concatenate([x[0],x[1]], axis = 1)   
             if len(input_shape[0]) == 2:             
-                self.output_shape = (input_shape [0], input_shape[0][1] + input_shape[1][1])
+                self.output_shape = (input_shape [0][0], input_shape[0][1] + input_shape[1][1])
             elif len(input_shape[1]) == 4:
-                self.output_shape = (input_shape [0], input_shape[0][1] + input_shape[1][1],
+                self.output_shape = (input_shape [0][0], input_shape[0][1] + input_shape[1][1],
                                         input_shape[2], input_shape[3])
 
     def loss(self, type = None):
