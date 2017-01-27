@@ -201,7 +201,7 @@ class dropout_rotate_layer (rotate_layer):
         if verbose >= 3:
             print "... set up the dropout rotate layer"
         import pdb
-            pdb.set_trace()
+        pdb.set_trace()
         if rng is None:
             rng = numpy.random
         super(dropout_rotate_layer, self).__init__ (
