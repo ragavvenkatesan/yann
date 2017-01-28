@@ -320,6 +320,8 @@ class visualizer(module):
             os.makedirs(loc)
         for id, activity in layer_activities.iteritems():            
             imgs = activity(index)
+            if verbose >= 3:
+                print "... Visualizing Activities :: id = %s" % id
             if len(imgs.shape) == 2:
                 if not os.path.exists(loc + '/layer_' + id):                
                     os.makedirs(loc + '/layer_' + id)     
