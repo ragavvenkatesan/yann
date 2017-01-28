@@ -164,8 +164,6 @@ class optimizer(module):
         if verbose >=3: 
             print "... creating internal parameters for all the optimizations"
         velocities = []
-        import pdb
-        pdb.set_trace()
         for param in params:
             velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,
                                                                 dtype=theano.config.floatX))

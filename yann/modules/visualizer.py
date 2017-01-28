@@ -310,6 +310,8 @@ class visualizer(module):
             epoch: what epoch are we running currently.
             verbose: as always
         """
+        import pdb
+        pdb.set_trace()
         if verbose >= 3:
             print "... Visualizing Activities"
 
