@@ -41,7 +41,7 @@ class rotate_layer (layer):
                                                 dtype = theano.config.floatX )
             import pdb
             pdb.set_trace()
-            angle = angle.dimshuffle(0,'x')
+            # angle = angle.dimshuffle(0,'x')
             # theta = numpy.zeros((input_shape[0],2,3),dtype='float32')
             theta = T.stack([T.cos(angle[:,0]*180).dimshuffle(0,'x'),
                             -T.sin(angle[:,0]*180).dimshuffle(0,'x'),
