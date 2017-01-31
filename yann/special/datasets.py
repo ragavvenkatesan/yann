@@ -196,7 +196,7 @@ def cook_cifar10(verbose = 1, **kwargs):
                   
     # parameters relating to preprocessing.
 		preprocess_params = { 
-                            "normalize"     : False,
+                            "normalize"     : True,
                             "ZCA"           : False,
                             "grayscale"     : False,
                             "zero_mean" 	: False,
@@ -215,6 +215,109 @@ def cook_cifar10(verbose = 1, **kwargs):
 							verbose = 3)
 	return dataset    	
 
+def cook_caltech101(verbose = 1, **kwargs):
+    """
+    Wrapper to cook cifar10 dataset. Will take as input,
+
+    Args:
+
+        save_directory: which directory to save the cooked dataset onto.
+        dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
+        preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
+    """
+    
+    if not 'data_params' in kwargs.keys():
+
+        data_params = {
+                    "source"             : 'skdata',                                   
+                    "name"               : 'caltech101',    
+                    "location"			 : '',                                      
+                    "mini_batch_size"    : 72,                                     
+                    "mini_batches_per_batch" : (1, 1, 1), 
+                    "batches2train"      : 60,                                      
+                    "batches2test"       : 37,                                      
+                    "batches2validate"   : 30,                                        
+                    "height"             : 224,                                       
+                    "width"              : 224,                                       
+                    "channels"           : 3  }    
+                    
+    else:
+        data_params = kwargs['data_params']
+
+    if not 'preprocess_params' in kwargs.keys():
+                    
+        # parameters relating to preprocessing.
+        preprocess_params = { 
+                            "normalize"     : False,
+                            "ZCA"           : False,
+                            "grayscale"     : False,
+                            "zero_mean" 	: False,
+                        }
+    else:
+        preprocess_params = kwargs['preprocess_params']
+
+    if not 'save_directory' in kwargs.keys():
+        save_directory = '_datasets'
+    else:
+        save_directory = kwargs ['save_directory']
+
+    dataset = setup_dataset(dataset_init_args = data_params,
+                        save_directory = save_directory,
+                        preprocess_init_args = preprocess_params,
+                        verbose = 3)
+    return dataset    
+
+def cook_caltech256(verbose = 1, **kwargs):
+    """
+    Wrapper to cook cifar10 dataset. Will take as input,
+
+    Args:
+
+        save_directory: which directory to save the cooked dataset onto.
+        dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
+        preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
+    """
+    
+    if not 'data_params' in kwargs.keys():
+
+        data_params = {
+                    "source"             : 'skdata',                                   
+                    "name"               : 'caltech256',    
+                    "location"			 : '',                                      
+                    "mini_batch_size"    : 127,                                     
+                    "mini_batches_per_batch" : (1, 1, 1), 
+                    "batches2train"      : 120,                                      
+                    "batches2test"       : 61,                                      
+                    "batches2validate"   : 60,                                        
+                    "height"             : 224,                                       
+                    "width"              : 224,                                       
+                    "channels"           : 3  }    
+                    
+    else:
+        data_params = kwargs['data_params']
+
+    if not 'preprocess_params' in kwargs.keys():
+                    
+        # parameters relating to preprocessing.
+        preprocess_params = { 
+                            "normalize"     : False,
+                            "ZCA"           : False,
+                            "grayscale"     : False,
+                            "zero_mean" 	: False,
+                        }
+    else:
+        preprocess_params = kwargs['preprocess_params']
+
+    if not 'save_directory' in kwargs.keys():
+        save_directory = '_datasets'
+    else:
+        save_directory = kwargs ['save_directory']
+
+    dataset = setup_dataset(dataset_init_args = data_params,
+                        save_directory = save_directory,
+                        preprocess_init_args = preprocess_params,
+                        verbose = 3)
+    return dataset    
 
 # Just some wrappers
 cook_mnist = cook_mnist_normalized

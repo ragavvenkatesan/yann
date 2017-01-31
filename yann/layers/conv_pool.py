@@ -91,11 +91,12 @@ class conv_pool_layer_2d (layer):
             w_bound = numpy.sqrt(6. / (fan_in + fan_out))          
             self.w = theano.shared(value=
                    numpy.asarray(rng.uniform(low=-w_bound, high=w_bound, size =w_shp),
-                                    dtype=theano.config.floatX ), borrow=borrow, name ='w' )
+                                    dtype=theano.config.floatX ), borrow=borrow, 
+                                    name ='filterbank' )
             self.b = theano.shared(value=numpy.zeros((w_shp[0]), dtype=theano.config.floatX),
-                                     name = 'b', borrow=borrow)  
+                                     name = 'bias', borrow=borrow)  
             self.alpha = theano.shared(value=numpy.ones((w_shp[0]), 
-                                 dtype=theano.config.floatX), name = 'alpha', borrow = borrow)                                                                                                                    
+                                 dtype=theano.config.floatX), name = 'batchnorm', borrow = borrow)                                                                                                                    
         else:
             self.w = init_w
             self.b = init_b
@@ -192,6 +193,25 @@ class conv_pool_layer_2d (layer):
                                                              
         return prefix
 
+    def get_params (self , borrow = True, verbose = 2):
+        """
+        This method returns the parameters of the layer in a numpy ndarray format.
+
+        Args:
+            borrow : Theano borrow, default is True. 
+            verbose: As always
+
+        Notes:
+            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
+            have used get_value( borrow = True ), but I can't do this because some parameters are 
+            theano.tensor.var.TensorVariable which needs to be run through eval. 
+        """
+        out = []
+
+        for p in self.params:
+            out.append(p.get_value(borrow = borrow))
+        return out
+
 class dropout_conv_pool_layer_2d(conv_pool_layer_2d):    
     """
     This class is the typical 2D convolutional pooling and batch normalizationlayer. It is called 
@@ -275,7 +295,7 @@ class dropout_conv_pool_layer_2d(conv_pool_layer_2d):
 
 
 
-
+### 
 class deconv_pool_layer_2d (layer):
     """
     This class is the typical 2D convolutional pooling and batch normalizationlayer. It is called 

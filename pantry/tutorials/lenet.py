@@ -22,8 +22,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.65, 0.95, 30),      
-                "regularization"      : (0.00, 0.001),       
+                "momentum_params"     : (0.75, 0.97, 30),      
                 "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
                         }
@@ -97,7 +96,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "conv_pool_2",
                     id = "dot_product_1",
-                    num_neurons = 800,
+                    num_neurons = 1250,
                     activation = 'relu',
                     regularize = True,
                     verbose = verbose
@@ -106,7 +105,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "dot_product_1",
                     id = "dot_product_2",
-                    num_neurons = 800,                    
+                    num_neurons = 1250,                    
                     activation = 'relu',  
                     regularize = True,              
                     verbose = verbose
@@ -126,12 +125,13 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     origin = "softmax",
                     objective = "nll",
                     datastream_origin = 'data', 
+                    regularization = (0.000, 0.001),                
                     verbose = verbose
                     )
                     
     learning_rates = (0.05, 0.01, 0.001)  
-    #net.pretty_print()  
-    #draw_network(net.graph, filename = 'lenet.png')   
+    net.pretty_print()  
+    draw_network(net.graph, filename = 'lenet.png')   
 
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
@@ -139,6 +139,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
               classifier_layer = 'softmax',
               verbose = verbose
               )
+    
 
     net.train( epochs = (40, 40 ), 
                validate_after_epochs = 1,
@@ -165,7 +166,6 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     optimizer_params =  {        
                 "momentum_type"       : 'nesterov',             
                 "momentum_params"     : (0.5, 0.95, 30),      
-                "regularization"      : (0.000, 0.0001),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -237,7 +237,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "conv_pool_2",
                     id = "dot_product_1",
-                    num_neurons = 1600,
+                    num_neurons = 1250,
                     regularize = True,                    
                     activation = ('maxout', 'maxout', 2),
                     batch_norm = True,
@@ -247,7 +247,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "dot_product_1",
                     id = "dot_product_2",
-                    num_neurons = 800,                    
+                    num_neurons = 1250,                    
                     activation = 'relu',
                     batch_norm = True,
                     dropout_rate = 0.5,
@@ -268,11 +268,12 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     id = "obj",
                     origin = "softmax",
                     objective = "cce",
+                    regularization = (0.000, 0.001),                                    
                     datastream_origin = 'data', 
                     verbose = verbose
                     )
 
-    learning_rates = (0.05, 0.01, 0.001, 0.0001, 0.00001)  
+    learning_rates = (0.05, 0.001, 0.0001)  
 
     net.cook( optimizer = 'main',
               objective_layer = 'obj',
@@ -283,7 +284,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     #draw_network(net.graph, filename = 'lenet.png')    
     net.pretty_print()
 
-    net.train( epochs = (40, 40, 20, 10), 
+    net.train( epochs = (40, 40), 
                validate_after_epochs = 1,
                visualize_after_epochs = 1,
                training_accuracy = True,
@@ -301,7 +302,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
             from yann.special.datasets import cook_cifar10 
-            data = cook_mnist (verbose = 2)
+            data = cook_cifar10 (verbose = 2)
             dataset = data.dataset_location()
         else:
             dataset = sys.argv[1]

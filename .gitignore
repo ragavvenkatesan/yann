@@ -1,7 +1,6 @@
 *.pyc
 *.pkl.gz
 *.pkl
-*.mat
 *.zip
 .coverage
 /docs/build

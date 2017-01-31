@@ -60,10 +60,10 @@ class classifier_layer (layer):
         else:
             self.w = theano.shared ( value=numpy.asarray(0.01 * rng.standard_normal( 
                                      size=(input_shape[1], num_classes)), 
-                                     dtype=theano.config.floatX), name='w' ,borrow = borrow)                    
+                                     dtype=theano.config.floatX), name='weights' ,borrow = borrow)                    
             self.b = theano.shared( value=numpy.zeros((num_classes,),
                                         dtype=theano.config.floatX), 
-                                     name='b' ,borrow = borrow)
+                                     name='bias' ,borrow = borrow)
         
         self.fit = T.dot(input, self.w) + self.b
         self.p_y_given_x, softmax_shp = _activate ( x =  self.fit,
@@ -209,6 +209,25 @@ class classifier_layer (layer):
         else:
             raise Exception("Classifier layer does not support " + type + " loss")
 
+    def get_params (self , borrow = True, verbose = 2):
+        """
+        This method returns the parameters of the layer in a numpy ndarray format.
+
+        Args:
+            borrow : Theano borrow, default is True. 
+            verbose: As always
+
+        Notes:
+            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
+            have used get_value( borrow = True ), but I can't do this because some parameters are 
+            theano.tensor.var.TensorVariable which needs to be run through eval. 
+        """
+        out = []
+
+        for p in self.params:
+            out.append(p.get_value(borrow = borrow))
+        return out
+        
 class objective_layer(layer):
     """
     This class is an objective layer. It just has a wrapper for loss function. 

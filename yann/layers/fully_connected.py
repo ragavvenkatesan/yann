@@ -59,7 +59,7 @@ class dot_product_layer (layer):
                 size=(input_shape[1], num_neurons)), dtype=theano.config.floatX)
             if activation == 'sigmoid':
                 w_values*=4 
-            self.w = theano.shared(value=w_values, name='w')        
+            self.w = theano.shared(value=w_values, name='weights')        
         else:
             self.w = input_params[0]
 
@@ -70,7 +70,7 @@ class dot_product_layer (layer):
             create = True
         if create is True: 
             b_values = numpy.zeros((num_neurons,), dtype=theano.config.floatX)
-            self.b = theano.shared(value=b_values, name='b')           
+            self.b = theano.shared(value=b_values, name='bias')           
         else:
             self.b = input_params[1]
 
@@ -82,7 +82,7 @@ class dot_product_layer (layer):
                 create = True
             if create is True:
                 alpha_values = numpy.ones((num_neurons,), dtype = theano.config.floatX)
-                self.alpha = theano.shared(value = alpha_values, name = 'alpha') 
+                self.alpha = theano.shared(value = alpha_values, name = 'batchnorm') 
             else:
                 self.alpha = input_params[2]  
 
@@ -125,6 +125,25 @@ class dot_product_layer (layer):
         self.activation = activation
         self.batch_norm = batch_norm
 
+    def get_params (self , borrow = True, verbose = 2):
+        """
+        This method returns the parameters of the layer in a numpy ndarray format.
+
+        Args:
+            borrow : Theano borrow, default is True. 
+            verbose: As always
+
+        Notes:
+            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
+            have used get_value( borrow = True ), but I can't do this because some parameters are 
+            theano.tensor.var.TensorVariable which needs to be run through eval. 
+        """
+        out = []
+
+        for p in self.params:
+            out.append(p.get_value(borrow = borrow))
+        return out
+        
 class dropout_dot_product_layer (dot_product_layer):
     """
     This class is the typical dropout neural hidden layer and batch normalization layer. Called 

@@ -61,7 +61,6 @@ class optimizer(module):
                                         (momentum coeffient at start,at end, 
                                         at what epoch to end momentum increase)
                                         Default is the tuple (0.5, 0.95,50)                                                           
-                    "regularization" : (l1_coeff, l2_coeff). Default is (0.001, 0.001)                
                     "optimizer_type" : <option>, 'sgd', 'adagrad', 'rmsprop', 'adam'. 
                                        Default is 'rmsprop'
                     "objective_function": <option>,'nll'- log likelihood,
