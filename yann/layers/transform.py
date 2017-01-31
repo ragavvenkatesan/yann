@@ -39,8 +39,7 @@ class rotate_layer (layer):
             if angle is None:
                 angle = srng.uniform(size = (input_shape[0],), low = 0, high = 1, 
                                                 dtype = theano.config.floatX )
-            import pdb
-            pdb.set_trace()
+
             # angle = angle.dimshuffle(0,'x')
             # theta = numpy.zeros((input_shape[0],2,3),dtype='float32')
             theta = T.stack([T.cos(angle[:,0]*180).reshape([angle.shape[0],1]),
