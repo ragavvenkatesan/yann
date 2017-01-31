@@ -317,9 +317,6 @@ class visualizer(module):
         if not os.path.exists(loc):            
             os.makedirs(loc)
         for id, activity in layer_activities.iteritems():
-            if id == 'obj':
-                import pdb
-                pdb.set_trace()        
             imgs = activity(index)
             if verbose >= 3:
                 print "... Visualizing Activities :: id = %s" % id
