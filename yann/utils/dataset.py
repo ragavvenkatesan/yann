@@ -45,52 +45,16 @@ from theano import shared
 
 from scipy.misc import imresize as imresize
 
-
 thismodule = sys.modules[__name__]
 
-# from sklearn.base import TransformerMixin, BaseEstimator
-def unpickle_cifar100(file):
-    import cPickle
-    fo = open(file, 'rb')
-    dict = cPickle.load(fo)
-    fo.close()
-    return dict
 
 def load_cifar100 ():
 	"""
 	Function that downloads the cifar 100 dataset and returns the dataset in full
+
+	TODO: Need to implement this.
 	"""
-	import os.path 	
-	if not os.path.exists('cifar-100-python.tar.gz'):
-		import urllib2
-		url = "http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
-
-		file_name = url.split('/')[-1]
-		u = urllib2.urlopen(url)
-		f = open(file_name, 'wb')
-		meta = u.info()
-		file_size = int(meta.getheaders("Content-Length")[0])
-		print "Downloading: %s Bytes: %s" % (file_name, file_size)
-
-		file_size_dl = 0
-		block_sz = 8192
-		while True:
-			buffer = u.read(block_sz)
-			if not buffer:
-				break
-			file_size_dl += len(buffer)
-			f.write(buffer)
-			status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-			status = status + chr(8)*(len(status)+1)
-			print status,
-		f.close()
-	import tarfile
-	tar = tarfile.open("cifar-100-python.tar.gz")
-	tar.extractall()
-	tar.close()
-	train = unpickle_cifar100('./cifar-100-python/train')
-	import pdb
-	pdb.set_trace()
+	print "Not implemented yet."
 
 def load_data_mat(classes, 
                   height,
