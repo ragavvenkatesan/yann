@@ -1,9 +1,8 @@
 from abstract import layer, _activate, _dropout
 import numpy
-import numpy.random as rng
+import numpy.random as nprnd
 import theano
 import theano.tensor as T
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 class rotate_layer (layer):
     """
@@ -28,7 +27,6 @@ class rotate_layer (layer):
                   borrow = True,
                   verbose = 2 ):
         super(rotate_layer,self).__init__(id = id, type = 'rotate', verbose = verbose)
-        srng = RandomStreams(rng.randint(1,2147462468), use_cuda=None)
         if verbose >= 3:
             print "... Creating rotate layer"
 
@@ -37,20 +35,15 @@ class rotate_layer (layer):
                 print "... Creating the rotate layer"
 
             if angle is None:
-                angle = srng.uniform(size = (input_shape[0],1), low = 0, high = 1, 
-                                                dtype = theano.config.floatX )
+                angle = nprnd.uniform(size = (input_shape[0],1), low = 0, high = 1)
 
             # theta = numpy.zeros((input_shape[0],2,3),dtype='float32')
-            theta = T.stack([T.cos(angle[:,0]*180).reshape([angle.shape[0],1]),
-                            -T.sin(angle[:,0]*180).reshape([angle.shape[0],1]),
-                            T.sin(angle[:,0]*180).reshape([angle.shape[0],1]),
-                            T.cos(angle[:,0]*180).reshape([angle.shape[0],1]),
+            theta = T.stack([T.cos(angle[:,0]*90).reshape([angle.shape[0],1]),
+                            -T.sin(angle[:,0]*90).reshape([angle.shape[0],1]),
                             T.zeros((input_shape[0],1),dtype='float32'),
+                            T.sin(angle[:,0]*90).reshape([angle.shape[0],1]),
+                            T.cos(angle[:,0]*90).reshape([angle.shape[0],1]),
                             T.zeros((input_shape[0],1),dtype='float32')], axis=1)
-            # theta[:,0,0] = numpy.cos(angle[:,0]*180)
-            # theta[:,0,1] = -numpy.sin(angle[:,0]*180)
-            # theta[:,1,0] = numpy.sin(angle[:,0]*180)
-            # theta[:,1,1] = numpy.cos(angle[:,0]*180)
             theta = theta.reshape((-1, 6))
 
             self.output = self._transform_affine(theta, input)
