@@ -140,6 +140,7 @@ class network(object):
                   'merge' or 'join' - a layer that merges two layers.
                   'flatten' - a layer that produces a flattened output of a block data.
                   'random' - a layer that produces random numbers.
+                  'rotate' - a layer that rotate the input images.
                   From now on everything is optional args.. 
             id: <string> how to identify the layer by.
                 Default is just layer number that starts with ``0``.
@@ -184,6 +185,9 @@ class network(object):
                             coefficients. 
             error: ``merge`` layers take an option called ``'error'`` which can be None or others
                     which are methods in ``yann.core.errors``.
+            angle:  Takes value between [0,1] to capture the angle between [0,180] degrees
+                    Default is None. If None is specified, random number is generated from a uniform
+                    distriibution between 0 and 1.
             layer_type: If ``value`` supply, else it is default ``'discriminator'``                                                
 
         """
@@ -206,6 +210,7 @@ class network(object):
                type == 'flatten' or \
                type == 'unflatten' or \
                type == 'random' or \
+               type == 'rotate' or \
                type == 'loss' or \
                type == 'energy' or \
                type == 'join':            
@@ -264,6 +269,9 @@ class network(object):
 
         elif type == 'random':
             self._add_random_layer (id = id, options = kwargs, verbose = verbose)
+
+        elif type == 'rotate':
+            self._add_rotate_layer (id = id, options = kwargs, verbose = verbose)
 
         else:
             raise Exception('No layer called ' + type + ' exists in yann')
@@ -1294,6 +1302,55 @@ class network(object):
                             distribution = distribution,
                             options = options,
                             verbose =verbose)
+
+    def _add_rotate_layer(self, id, options, verbose = 2):
+        """
+        This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
+        Args:
+            options: Basically kwargs supplied to the add_layer function.
+            angle:  Value between [0,1] to capture the rotation between [0,90] degrees
+                    If None is specified, angle is generated randomly from a uniform dist
+            verbose: simiar to everywhere on the toolbox.
+        """
+        if verbose >=3:
+            print "... Adding a rotate layer"
+
+        if not 'origin' in options.keys():
+            if self.last_layer_created is None:
+                raise Exception("You can't create a fully connected layer without an" + \
+                                    " origin layer.")
+            if verbose >=3: 
+                print "... origin layer is not supplied, assuming the last layer created is."
+            origin = self.last_layer_created 
+        else:
+            origin = options ["origin"]
+        
+        from yann.layers.transform import rotate_layer as rl
+        from yann.layers.transform import dropout_rotate_layer as drl
+        
+        input = self.layers[origin].output
+        dropout_input = self.dropout_layers[origin].output
+        input_shape = self.layers[origin].output_shape
+
+        if 'angle' in options.keys():
+            angle = options['angle']
+        else:
+            angle = None
+
+        self.layers[id] = rl(
+                            input = input,
+                            input_shape = input_shape,
+                            id = id,
+                            angle = angle,
+                            verbose =verbose)
+
+        self.dropout_layers[id] = drl (
+                            input = dropout_input,
+                            input_shape = input_shape,
+                            id = id,
+                            angle = angle,
+                            verbose = verbose)
 
     def _initialize_test_classifier(self, errors, verbose):
         """
