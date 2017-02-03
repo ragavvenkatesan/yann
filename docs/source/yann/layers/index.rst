@@ -35,5 +35,6 @@ Specific layers that can be used are
    flatten
    output   
    random
+   transform
 
 
