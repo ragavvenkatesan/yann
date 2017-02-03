@@ -141,7 +141,10 @@ class dot_product_layer (layer):
         out = []
 
         for p in self.params:
-            out.append(p.get_value(borrow = borrow))
+            try:
+                out.append(p.get_value(borrow = borrow))
+            except:  
+                out.append(p.eval())
         return out
         
 class dropout_dot_product_layer (dot_product_layer):
