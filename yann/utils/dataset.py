@@ -1051,7 +1051,7 @@ class setup_dataset (object):
 		n_test_images = self.mini_batches_per_batch[2]*self.mini_batch_size * self.batches2test
 		n_valid_images = self.mini_batches_per_batch[1]*self.mini_batch_size * self.batches2validate
 		
-		assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
+		assert n_valid_images + n_train_images + n_test_images <= total_images_in_dataset  
 		
 		if verbose >=2:               
 			print ".. Setting up dataset"
@@ -1172,7 +1172,7 @@ class setup_dataset (object):
 		n_test_images = self.mini_batches_per_batch[2]*self.mini_batch_size * self.batches2test
 		n_valid_images = self.mini_batches_per_batch[1]*self.mini_batch_size * self.batches2validate
 		
-		assert n_valid_images + n_train_images + n_test_images == total_images_in_dataset  
+		assert n_valid_images + n_train_images + n_test_images <= total_images_in_dataset  
 		
 		if verbose >=2:               
 			print ".. Setting up dataset"
