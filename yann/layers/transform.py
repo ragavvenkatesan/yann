@@ -51,7 +51,7 @@ class rotate_layer (layer):
 
     Args:
         input: An input ``theano.tensor`` variable. Even ``theano.shared`` will work as long as they
-               are in the following shape ``mini_batch_size, height, width, channels``
+               are in the following shape ``mini_batch_size, channels, height, width``
         verbose: similar to the rest of the toolbox.
         input_shape: ``(mini_batch_size, input_size)``
         angle: value from [0,1]
@@ -209,20 +209,17 @@ class dropout_rotate_layer (rotate_layer):
 
     Args:
         input: An input ``theano.tensor`` variable. Even ``theano.shared`` will work as long as they
-               are in the following shape ``mini_batch_size, height, width, channels``
+               are in the following shape ``mini_batch_size, channels, height, width``
         verbose: similar to the rest of the toolbox.
-        num_neurons: number of neurons in the layer
         input_shape: ``(mini_batch_size, input_size)``
-        batch_norm: If provided will be used, default is ``False``. 
+        angle: value from [0,1]
+        borrow: ``theano`` borrow, typically ``True``.
         rng: typically ``numpy.random``.
-        borrow: ``theano`` borrow, typicall ``True``.    
         dropout_rate: ``0.5`` is the default.
 
     Notes:
         Use ``dropout_rotate_layer.output`` and ``dropout_rotate_layer.output_shape`` from
-        this class. ``L1`` and ``L2`` are also public and can also can be used for regularization.
-        The class also has in public ``w``, ``b`` and ``alpha``
-        which are also a list in ``params``, another property of this class.     
+        this class.
     """
     def __init__ (self,
                   input,
