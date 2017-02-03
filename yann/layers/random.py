@@ -10,7 +10,7 @@ class random_layer (layer):
     Args: 
         num_neurons: List of the shapes of all inputs.
         distribution: ``'binomial'``, ``'uniform'``, ``'normal'`` ``'gaussian'``
-        limits: tuple for binomial
+        limits: tuple for uniform
         mu: mean for gaussian
         sigma: variance for gaussian
         p: if ``type`` is ``'binomial'`` supply a ``p`` variable. Default is 0.5
