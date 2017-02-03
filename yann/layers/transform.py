@@ -1,3 +1,43 @@
+"""
+This code is used to rotate the images given some angles between [0,1].
+
+Obliging License, credit and conditions for Lasagne: Some part of the file was 
+directly reproduced from the Lasagne code base. 
+
+
+LICENSE
+=======
+
+Copyright (c) 2014-2015 Lasagne contributors
+
+Lasagne uses a shared copyright model: each contributor holds copyright over
+their contributions to Lasagne. The project versioning records all such
+contribution and copyright details.
+By contributing to the Lasagne repository through pull-request, comment,
+or otherwise, the contributor releases their content to the license and
+copyright terms herein.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+"""
+
 from abstract import layer, _activate, _dropout
 import numpy
 import numpy.random as nprnd
@@ -15,7 +55,7 @@ class rotate_layer (layer):
         verbose: similar to the rest of the toolbox.
         input_shape: ``(mini_batch_size, input_size)``
         angle: value from [0,1]
-        borrow: ``theano`` borrow, typicall ``True``.   
+        borrow: ``theano`` borrow, typically ``True``.
         input_params: Supply params or initializations from a pre-trained system.
     """
 
@@ -37,7 +77,6 @@ class rotate_layer (layer):
             if angle is None:
                 angle = nprnd.uniform(size = (input_shape[0],1), low = 0, high = 1)
 
-            # theta = numpy.zeros((input_shape[0],2,3),dtype='float32')
             theta = T.stack([T.cos(angle[:,0]*90).reshape([angle.shape[0],1]),
                             -T.sin(angle[:,0]*90).reshape([angle.shape[0],1]),
                             T.zeros((input_shape[0],1),dtype='float32'),

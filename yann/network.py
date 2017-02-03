@@ -1309,7 +1309,7 @@ class network(object):
 
         Args:
             options: Basically kwargs supplied to the add_layer function.
-            angle:  Value between [0,1] to capture the rotation between [0,180] degrees
+            angle:  Value between [0,1] to capture the rotation between [0,90] degrees
                     If None is specified, angle is generated randomly from a uniform dist
             verbose: simiar to everywhere on the toolbox.
         """
