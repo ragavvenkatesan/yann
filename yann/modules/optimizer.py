@@ -135,7 +135,9 @@ class optimizer(module):
         if verbose >=3 :
             print "... Estimating gradients"
 
-        self.gradients = []      
+        self.gradients = []     
+        import pdb
+        pdb.set_trace() 
         for param in params: 
             try:
                 gradient = T.grad( objective ,param)
