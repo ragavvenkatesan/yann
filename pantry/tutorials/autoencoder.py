@@ -81,13 +81,18 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     id = "decoder",
                     num_neurons = 784,
                     activation = 'tanh',
-                    input_params = [net.layers['encoder'].w.T, None],
+                    input_params = [net.dropout_layers['encoder'].w.T, None],
                     # Use the same weights but transposed for decoder. 
                     learnable = False,                    
                     # because we don't want to learn the weights of somehting already used in 
                     # an optimizer, when reusing the weights, always use learnable as False                    
                     verbose = verbose
                     )           
+
+    # We still need to learn the newly created biases in the decoder layer, so add them to the 
+    # Learnable parameters list before cooking
+
+    net.active_params.append(net.dropout_layers['decoder'].b)
 
     net.add_layer ( type = "unflatten",
                     origin = "decoder",

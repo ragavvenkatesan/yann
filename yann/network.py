@@ -826,6 +826,9 @@ class network(object):
         dropout_input = self.dropout_layers[origin].output
         input_shape = self.layers[origin].output_shape
 
+        if len(shape) == 2:
+            shape = (shape[0], shape[1], 1) # If not provided assume 1 channel
+            
         from yann.layers.flatten import unflatten_layer as flt        
         self.dropout_layers[id] = flt(input = dropout_input, id = id, shape = shape,
                                                                     input_shape = input_shape)

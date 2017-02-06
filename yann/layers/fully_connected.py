@@ -13,7 +13,7 @@ class dot_product_layer (layer):
                are in the following shape ``mini_batch_size, height, width, channels``
         verbose: similar to the rest of the toolbox.
         num_neurons: number of neurons in the layer
-        input_shape: ``(mini_batch_size, input_size)``
+        input_shape: ``(mini_batch_size, input_size)`` theano shared
         batch_norm: If provided will be used, default is ``False``.        
         rng: typically ``numpy.random``.
         borrow: ``theano`` borrow, typicall ``True``.                                        
