@@ -13,5 +13,6 @@
 .eggs
 *.png
 /visualizer
+/lenet5
 .vscode
 .yann_data
