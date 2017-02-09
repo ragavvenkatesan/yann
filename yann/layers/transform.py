@@ -1,8 +1,8 @@
 """
 This code is used to rotate the images given some angles between [0,1].
 
-Obliging License, credit and conditions for Lasagne: Some part of the file was 
-directly reproduced from the Lasagne code base. 
+Obliging License, credit and conditions for Lasagne: Some part of the file was
+directly reproduced from the Lasagne code base.
 
 
 LICENSE
@@ -68,11 +68,11 @@ class rotate_layer (layer):
                   verbose = 2 ):
         super(rotate_layer,self).__init__(id = id, type = 'rotate', verbose = verbose)
         if verbose >= 3:
-            print "... Creating rotate layer"
+            print("... Creating rotate layer")
 
         if len(input_shape) == 4:
             if verbose >= 3:
-                print "... Creating the rotate layer"
+                print("... Creating the rotate layer")
 
             if angle is None:
                 angle = nprnd.uniform(size = (input_shape[0],1), low = 0, high = 1)
@@ -204,7 +204,7 @@ class rotate_layer (layer):
 
 class dropout_rotate_layer (rotate_layer):
     """
-    This class is the typical dropout neural hidden layer and batch normalization layer. Called 
+    This class is the typical dropout neural hidden layer and batch normalization layer. Called
     by the ``add_layer`` method in network class.
 
     Args:
@@ -232,7 +232,7 @@ class dropout_rotate_layer (rotate_layer):
                   verbose = 2):
 
         if verbose >= 3:
-            print "... set up the dropout rotate layer"
+            print("... set up the dropout rotate layer")
         if rng is None:
             rng = numpy.random
         super(dropout_rotate_layer, self).__init__ (
@@ -240,15 +240,15 @@ class dropout_rotate_layer (rotate_layer):
                                         input_shape = input_shape,
                                         id = id,
                                         borrow = borrow,
-                                        verbose = verbose 
+                                        verbose = verbose
                                         )
-        if not dropout_rate == 0:            
+        if not dropout_rate == 0:
             self.output = _dropout(rng = rng,
                                 params = self.output,
-                                dropout_rate = dropout_rate)                                          
+                                dropout_rate = dropout_rate)
         self.dropout_rate = dropout_rate
-        if verbose >=3: 
-            print "... Dropped out"
+        if verbose >=3:
+            print("... Dropped out")
 
 if __name__ == '__main__':
-    pass  
+    pass
