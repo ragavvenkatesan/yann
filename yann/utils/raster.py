@@ -1,10 +1,10 @@
 """
-This code is used to remove the dependency on now out-dated pylearn2 library. Yann uses pylearn2's 
+This code is used to remove the dependency on now out-dated pylearn2 library. Yann uses pylearn2's
 make_viewer to create images that are raster. Migrating to this tile_raster_images from theano
-tutorials. 
+tutorials.
 
-Obliging License, credit and conditions for Theano Deep Learning Tutorials: This entire file was 
-completely and directly reproduced from the theano deep learnign tutorials. 
+Obliging License, credit and conditions for Theano Deep Learning Tutorials: This entire file was
+completely and directly reproduced from the theano deep learnign tutorials.
 
 
 LICENSE

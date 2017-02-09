@@ -3,21 +3,21 @@ Todo:
 
     * LSTM / GRN layers
     * An Embed layer that is going to create a new embedding space for two layer's activations to
-      project on to the same space and minimize its distances. 
+      project on to the same space and minimize its distances.
 """
 
 import theano
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 # from theano.tensor.shared_randomstreams import RandomStreams
-# The above import is an experimental code. Not sure if it works perfectly, but I have no doubt 
+# The above import is an experimental code. Not sure if it works perfectly, but I have no doubt
 # yet.
 from yann.core import activations
 import numpy
 
 class layer(object):
     """
-    Prototype for what a layer should look like. Every layer should inherit from this. This is 
-    a template class do not use this directly, you need to use a specific type of layer which 
+    Prototype for what a layer should look like. Every layer should inherit from this. This is
+    a template class do not use this directly, you need to use a specific type of layer which
     again will be called by ``yann.network.network.add_layer``
 
     Args:
@@ -27,15 +27,15 @@ class layer(object):
               ``'input'`` .. .
 
     Notes:
-        Use ``self.type``, ``self.origin``, self.destination``, ``self.output``, 
+        Use ``self.type``, ``self.origin``, self.destination``, ``self.output``,
             ``self.output_shape`` for outside calls and purposes.
     """
 
     def __init__(self, id, type, verbose = 2):
         self.id = id
         self.type = type
-        self.origin = []  # this and destination will be added from outside. 
-        self.destination = [] # only None for now during initialization. 
+        self.origin = []  # this and destination will be added from outside.
+        self.destination = [] # only None for now during initialization.
         self.output = None
         self.params = None
         self.output_shape = None
@@ -46,50 +46,50 @@ class layer(object):
         self.active = True # this flag is setup by the add_layer module
         # Every layer must have these properties.
         if verbose >= 3:
-            print "... Initializing a new layer " + self.id + " of type " + self.type        
+            print("... Initializing a new layer " + self.id + " of type " + self.type)
 
     def print_layer(self, prefix = " ", nest = True, last = True, verbose = 2):
         """
         Print information about the layer
-        
+
         Args:
             nest: If True will print the tree from here on. If False it will print only this
                 layer.
             prefix: Is what prefix you want to add to the network print command.
-        """       
+        """
         prefix_entry = prefix
-        
+
         if last is True:
             prefix += "         "
         else:
-            prefix +=  "|        " 
-        prefix_entry +=   "|-" 
-                
-        print prefix_entry
-        print prefix_entry
-        print prefix_entry                
-        print prefix_entry + " id: " + self.id
-        print prefix_entry + "=================------------------"        
-        print prefix_entry + " type: " + self.type
-        print prefix_entry + " output shape: ",
-        print self.output_shape
-        print prefix_entry + "-----------------------------------"
+            prefix +=  "|        "
+        prefix_entry +=   "|-"
+
+        print(prefix_entry)
+        print(prefix_entry)
+        print(prefix_entry)
+        print(prefix_entry + " id: " + self.id)
+        print(prefix_entry + "=================------------------")
+        print(prefix_entry + " type: " + self.type)
+        print(prefix_entry + " output shape: ")
+        print(self.output_shape)
+        print(prefix_entry + "-----------------------------------")
 
         if nest is False:
-            print prefix_entry + " origin: " + self.origin
-            print prefix_entry + " destination: " + self.destination      
+            print(prefix_entry + " origin: " + self.origin)
+            print(prefix_entry + " destination: " + self.destination)
 
         if self.type == 'conv_pool':
             self.prefix_entry = prefix_entry
             self.prefix = prefix
-        
+
         return prefix
 
     def _graph_attributes(self, verbose = 2):
         """
         This is an internal function that returns attributes as a dictionary so that I can add
         it to the networkx graph output.
-        """ 
+        """
         out = {}
         out["id"] = self.id
         if not self.output_shape is None:
@@ -100,7 +100,7 @@ class layer(object):
             out["num_neurons"] = self.num_neurons
         else:
             out["num_neurons"] = "N/A"
-        if type(self.activation) is tuple:            
+        if type(self.activation) is tuple:
             out["activation"] = self.activation[0]
         else:
             out["activation"] = self.activation
@@ -115,13 +115,13 @@ class layer(object):
         This method returns the parameters of the layer in a numpy ndarray format.
 
         Args:
-            borrow : Theano borrow, default is True. 
+            borrow : Theano borrow, default is True.
             verbose: As always
 
         Notes:
             This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
-            have used get_value( borrow = True ), but I can't do this because some parameters are 
-            theano.tensor.var.TensorVariable which needs to be run through eval. 
+            have used get_value( borrow = True ), but I can't do this because some parameters are
+            theano.tensor.var.TensorVariable which needs to be run through eval.
         """
         out = []
 
@@ -129,16 +129,16 @@ class layer(object):
             try:
                 out.append(p.get_value(borrow = borrow))
             except:
-                out.append(numpy.asarray(p.eval()))    
+                out.append(numpy.asarray(p.eval()))
         return out
 
 def _dropout(rng, params, dropout_rate, verbose = 2):
     """
-    dropout thanks to misha denil 
-    https://github.com/mdenil/dropout    
+    dropout thanks to misha denil
+    https://github.com/mdenil/dropout
     """
     srng = RandomStreams(rng.randint(1,2147462468), use_cuda=None)
-    # I have raised this issue with the theano guys, use_cuda = True is creating a duplicate 
+    # I have raised this issue with the theano guys, use_cuda = True is creating a duplicate
     # process in the GPU.
     mask = srng.binomial(n=1, p=1-dropout_rate, size=params.shape, dtype = theano.config.floatX )
     output = params * mask
@@ -147,12 +147,12 @@ def _dropout(rng, params, dropout_rate, verbose = 2):
 def _activate (x, activation, input_size, verbose = 2, **kwargs):
     """
     This function is used to produce activations for the outputs of any type of layer.
-    
+
     Args:
-        
+
         x: input tensor.
         activation: Refer to the ``add_layer`` method.
-        input_size: supply the size of the inputs. 
+        input_size: supply the size of the inputs.
         verbose: typical toolbox verbose
         dimension: used only for maxout. Give the dimension on which to maxout.
 
@@ -161,19 +161,19 @@ def _activate (x, activation, input_size, verbose = 2, **kwargs):
         tuple: ``(out, out_shp)``
 
     """
-    if verbose >=3: 
-        print "... Setting up activations"
+    if verbose >=3:
+        print("... Setting up activations")
 
-    # some activations like maxouts are supplied with special support parameters    
+    # some activations like maxouts are supplied with special support parameters
     if type(activation) is tuple:
         if activation[0] == 'maxout':
             maxout_size = activation[2]
             maxout_type = activation[1]
-            out, out_shp = activations.Maxout(x = x, 
+            out, out_shp = activations.Maxout(x = x,
                                             maxout_size = maxout_size,
                                             input_size = input_size,
                                             type = maxout_type,
-                                            dimension = kwargs["dimension"] )            
+                                            dimension = kwargs["dimension"] )
         if activation[0] == 'relu':
             relu_leak = activation[1]
             out = activations.ReLU (x = x, alpha = relu_leak)
@@ -197,10 +197,10 @@ def _activate (x, activation, input_size, verbose = 2, **kwargs):
             out = activations.Squared (x=x)
         out_shp = input_size
 
-    if verbose >=3: 
-        print "... Activations are setup"
+    if verbose >=3:
+        print("... Activations are setup")
 
     return (out, out_shp)
 
 if __name__ == '__main__':
-    pass  
+    pass

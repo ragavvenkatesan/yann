@@ -5,10 +5,10 @@ from theano import tensor as T
 
 class merge_layer (layer):
     """
-    This is a merge layer. This takes two layer inputs and produces an error between them if the 
+    This is a merge layer. This takes two layer inputs and produces an error between them if the
     ``type`` argument supplied was ``'error'``. It does other things too accordingly.
 
-    Args: 
+    Args:
         x: a list of inputs (lenght must be two basically)
         input_shape: List of the shapes of all inputs.
         type: ``'error'`` creates an error layer.
@@ -17,16 +17,16 @@ class merge_layer (layer):
                options include, ``'rmse'``, ``'l2'``, ``'l1'``,``'cross_entropy'``.
 
     """
-    def __init__ (  self,                 
+    def __init__ (  self,
                     x,
                     input_shape,
                     id = -1,
-                    type = 'error',                        
+                    type = 'error',
                     error = 'rmse',
                     verbose = 2):
-           
+
         super(merge_layer,self).__init__(id = id, type = 'merge', verbose = verbose)
-           
+
         if type == 'error':
             if verbose >=3:
                 print "... Creating the merge layer"
@@ -52,20 +52,20 @@ class merge_layer (layer):
             elif len(input_shape) == 4:
                 self.num_neurons = self.output_shape[1]
 
-            self.generation = x[0] # I'm basically assuming that 0 is the generation in case 
+            self.generation = x[0] # I'm basically assuming that 0 is the generation in case
                                    # this was an auto encoder network.
 
-            if verbose >=3: 
+            if verbose >=3:
                 print "... Merge layer is created with output shape " + str(self.output_shape)
-        
-            
+
+
         elif type == 'sum':
             self.output = x[0] + x[1]
             self.output_shape = input_shape[0]
 
         elif type == 'concatenate':
-            self.output = T.concatenate([x[0],x[1]], axis = 1)   
-            if len(input_shape[0]) == 2:             
+            self.output = T.concatenate([x[0],x[1]], axis = 1)
+            if len(input_shape[0]) == 2:
                 self.output_shape = (input_shape [0][0], input_shape[0][1] + input_shape[1][1])
             elif len(input_shape[1]) == 4:
                 self.output_shape = (input_shape [0][0], input_shape[0][1] + input_shape[1][1],
@@ -73,13 +73,13 @@ class merge_layer (layer):
 
     def loss(self, type = None):
         """
-        This method will return the cost function of the merge layer. This can be used by the 
+        This method will return the cost function of the merge layer. This can be used by the
         optimizer module for instance to acquire a symbolic loss function that tries to minimize
         the distance between the two layers.
 
-        Args: 
+        Args:
             y: symbolic ``theano.ivector`` variable of labels to calculate loss from.
-            type: options 
+            type: options
                            None - Simple error
                            'log' - log loss
 
@@ -94,10 +94,10 @@ class merge_layer (layer):
 
 class dropout_merge_layer (merge_layer):
     """
-    This is a dropotu merge layer. This takes two layer inputs and produces an error between them 
+    This is a dropotu merge layer. This takes two layer inputs and produces an error between them
     if the ``type`` argument supplied was ``'error'``. It does other things too accordingly.
 
-    Args: 
+    Args:
         x: a list of inputs (lenght must be two basically)
         input_shape: List of the shapes of all inputs.
         type: ``'error'`` creates an error layer.
@@ -106,12 +106,12 @@ class dropout_merge_layer (merge_layer):
                options include, ``'rmse'``, ``'l2'``, ``'l1'``,``'cross_entropy'``.
 
     """
-    def __init__ (  self, 
-                    x,      
-                    input_shape,              
+    def __init__ (  self,
+                    x,
+                    input_shape,
                     id = -1,
                     error = 'rmse',
-                    verbose = 2):  
+                    verbose = 2):
 
         if verbose >= 3:
             print "... set up the dropout merge layer"
@@ -125,13 +125,13 @@ class dropout_merge_layer (merge_layer):
                                             verbose = verbose
                                         )
         dropout_rate = 0
-        if not dropout_rate == 0:            
+        if not dropout_rate == 0:
             self.output = _dropout(rng = rng,
                                 params = self.output,
-                                dropout_rate = dropout_rate)  
+                                dropout_rate = dropout_rate)
 
-        if verbose >=3: 
+        if verbose >=3:
             print "... Dropped out"
 
 if __name__ == '__main__':
-    pass  
+    pass
