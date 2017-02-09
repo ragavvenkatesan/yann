@@ -47,6 +47,59 @@ from scipy.misc import imresize as imresize
 
 thismodule = sys.modules[__name__]
 
+def download_data (url, location):
+	"""
+	"""
+	import urllib2
+	file_name = url.split('/')[-1]
+	u = urllib2.urlopen(url)
+	f = open(location + file_name, 'wb')
+	meta = u.info()
+	file_size = int(meta.getheaders("Content-Length")[0])
+	print "Downloading: %s Bytes: %s" % (file_name, file_size)
+	file_size_dl = 0
+	block_sz = 8192
+	while True:
+		buffer = u.read(block_sz)
+		if not buffer:
+			break
+
+		file_size_dl += len(buffer)
+		f.write(buffer)
+		status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+		status = status + chr(8)*(len(status)+1)
+		print status,
+	f.close()    
+
+def load_svhn():
+	"""
+	Function that downloads the dataset from a url and returns the dataset in full
+
+	Returns:
+	list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
+	"""
+	train_mat = "https://www.dropbox.com/s/uyssbz9ar7879az/batch_0.mat?dl=1"
+	if not os.path.exists('.yann_data'):
+		os.mkdir('.yann_data')	
+	if not os.path.exists('.yann_data/svhn/'):
+		os.mkdir('.yann_data/svhn/')	
+	if not os.path.exists('.yann_data/svhn/train'):
+		os.mkdir('.yann_data/svhn/train')			
+	if not os.path.exists('.yann_data/svhn/train/batch_0.mat'):
+		download_data (url = train_mat, 
+						location = '.yann_data/svhn/train/')
+		os.rename('.yann_data/svhn/train/batch_0.mat?dl=1', '.yann_data/svhn/train/batch_0.mat')
+	dataset_location = '.yann_data/svhn/'
+	train_x, train_y, train_y1 =  load_data_mat(classes = 10, 
+						height = 32,
+						width= 32,
+						channels = 3,
+						location = dataset_location,
+						type_set = 'train',
+						batch = 0
+					)
+	import pdb
+	pdb.set_trace()
 
 def load_cifar100 ():
 	"""
@@ -118,6 +171,7 @@ def load_data_mat(classes,
 	    return (data_x,data_y,y1.astype( dtype = 'float32' ))
 	else:
 	    return (data_x,data_y,y1.astype( dtype = 'float32' ),data_z)
+
 
 # for MNIST of skdata
 def load_skdata_mnist ():

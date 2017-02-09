@@ -14,3 +14,4 @@
 *.png
 /visualizer
 .vscode
+.yann_data
