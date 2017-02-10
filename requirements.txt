@@ -4,4 +4,5 @@ scipy>=0.18
 progressbar>=2
 skdata>=0.0.4
 pillow>=4.0
+matplotlib
 
