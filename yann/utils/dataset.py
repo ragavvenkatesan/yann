@@ -847,7 +847,7 @@ class setup_dataset (object):
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
             
-        elif self.source == 'mat:
+        elif self.source == 'mat':
             self.location        = dataset_init_args [ "location" ]
 
         if "height" in dataset_init_args.keys():
