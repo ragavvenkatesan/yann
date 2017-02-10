@@ -163,7 +163,7 @@ def cook_mnist_multi_load(  verbose = 1, **kwargs):
                             verbose = 3)
     return dataset
 
-def cook_cifar10(verbose = 1, **kwargs):
+def cook_cifar10_normalized(verbose = 1, **kwargs):
     """
     Wrapper to cook cifar10 dataset. Will take as input,
 
@@ -321,6 +321,7 @@ def cook_caltech256(verbose = 1, **kwargs):
 
 # Just some wrappers
 cook_mnist = cook_mnist_normalized
+cook_cifar10 = cook_cifar10_normalized
 
 if __name__ == '__main__':
     pass

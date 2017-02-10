@@ -71,36 +71,6 @@ def download_data (url, location):
 		print status,
 	f.close()    
 
-def load_svhn():
-	"""
-	Function that downloads the dataset from a url and returns the dataset in full
-
-	Returns:
-	list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
-	"""
-	train_mat = "https://www.dropbox.com/s/uyssbz9ar7879az/batch_0.mat?dl=1"
-	if not os.path.exists('.yann_data'):
-		os.mkdir('.yann_data')	
-	if not os.path.exists('.yann_data/svhn/'):
-		os.mkdir('.yann_data/svhn/')	
-	if not os.path.exists('.yann_data/svhn/train'):
-		os.mkdir('.yann_data/svhn/train')			
-	if not os.path.exists('.yann_data/svhn/train/batch_0.mat'):
-		download_data (url = train_mat, 
-						location = '.yann_data/svhn/train/')
-		os.rename('.yann_data/svhn/train/batch_0.mat?dl=1', '.yann_data/svhn/train/batch_0.mat')
-	dataset_location = '.yann_data/svhn/'
-	train_x, train_y, train_y1 =  load_data_mat(classes = 10, 
-						height = 32,
-						width= 32,
-						channels = 3,
-						location = dataset_location,
-						type_set = 'train',
-						batch = 0
-					)
-	import pdb
-	pdb.set_trace()
-
 def load_cifar100 ():
     """
     Function that downloads the cifar 100 dataset and returns the dataset in full
@@ -765,12 +735,25 @@ class setup_dataset (object):
                                 'skdata' : Download and setup from skdata
                                 'matlab' : Data is created and is being used from Matlab
                     "name" : necessary only for skdata
-                              supports 'mnist','mnist_noise1', 'mnist_noise2', 'mnist_noise3',
-                            'mnist_noise4', 'mnist_noise5', 'mnist_noise6', 'mnist_bg_images',
-                             'mnist_bg_rand', 'mnist_rotated', 'mnist_rotated_bg'. Refer to
-                             original paper by Hugo Larochelle [1] for these dataset details.
+                              supports 
+                                * ``'mnist'``
+                                * ``'mnist_noise1'``
+                                * ``'mnist_noise2'``
+                                * ``'mnist_noise3'``
+                                * ``'mnist_noise4'``
+                                * ``'mnist_noise5'``
+                                * ``'mnist_noise6'``
+                                * ``'mnist_bg_images'``
+                                * ``'mnist_bg_rand'``
+                                * ``'mnist_rotated'``
+                                * ``'mnist_rotated_bg'``.
+                                * ``'cifar10'``
+                                * ``'caltech101'``
+                                * ``'caltech256'``
+                        Refer to original paper by Hugo Larochelle [1] for these dataset details.
+                        
                     "location"                  : #necessary for 'pkl' and 'matlab'
-                    "mini_batch_size"               : 500,
+                    "mini_batch_size"           : 500,
                     "mini_batches_per_batch"    : (100, 20, 20), # trianing, testing, validation
                     "batches2train"             : 1,
                     "batches2test"              : 1,
@@ -863,7 +846,8 @@ class setup_dataset (object):
         self.source              = dataset_init_args [ "source" ]
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
-        else:
+            
+        elif self.source == 'mat:
             self.location        = dataset_init_args [ "location" ]
 
         if "height" in dataset_init_args.keys():
@@ -937,6 +921,10 @@ class setup_dataset (object):
         start_time = time.clock()
         if self.source == 'skdata':
             self._create_skdata(verbose = verbose)
+
+        if self.source == 'mat':
+            self._mat2yann( verbose =verbose ) # This needs to be done still.
+
         end_time = time.clock()
         if verbose >=1:
             print(". Dataset " + self.id + " is created.")
@@ -974,7 +962,7 @@ class setup_dataset (object):
             self._create_skdata_caltech101(verbose = verbose)
 
         elif self.name == 'caltech256':
-                self._create_skdata_caltech256(verbose = verbose)
+            self._create_skdata_caltech256(verbose = verbose)
 
     def _create_skdata_mnist(self, verbose = 1):
         """
@@ -1089,7 +1077,6 @@ class setup_dataset (object):
         f = open(self.root +  '/data_params.pkl', 'wb')
         cPickle.dump(dataset_args, f, protocol=2)
         f.close()
-
 
     def _create_skdata_caltech101(self, verbose = 2):
         """
