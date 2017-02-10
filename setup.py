@@ -24,7 +24,7 @@ setup(
     ],
     keywords='convolutional neural networks deep learning',
     packages=find_packages(exclude=['docs', 'tests', 'pantry']),
-    install_requires=['theano','numpy'],
+    install_requires=['theano','numpy','scipy','skdata','progressbar','pillow','matplotlib'],
     extras_require={
         'dev': ['progressbar', 'skdata', 'scipy', 'sphinx', 'sphinx_rtd_theme', 'pydot',
                 'pydot-ng','graphviz','networkx'],
