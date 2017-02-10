@@ -19,6 +19,7 @@ tutorial just in case though.
    pantry/tutorials/autoencoder
    pantry/tutorials/lenet
    pantry/tutorials/gan
+   pantry/tutorials/matt2yann   
 
 .. Todo::
 

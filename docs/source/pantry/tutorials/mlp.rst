@@ -23,11 +23,14 @@ of fully connected hidden layers. Hidden layers can be created using layer ``typ
                    origin ="input", 
                    id = "dot_product_1",
                    num_neurons = 800, 
-                   activation ='relu')                   
+                   regularize = True,
+                   activation ='relu')    
+
     net.add_layer (type = "dot_product", 
                    origin ="dot_product_1", 
                    id = "dot_product_2",
                    num_neurons = 800, 
+                   regularize = True,
                    activation ='relu')    
 
 Notice the parameters passed. ``num_neurons`` is the number of nodes in the layer. Notice also 
@@ -51,6 +54,7 @@ implemented. Let us now add a classifier and an objective layer to this.
                     origin = "softmax",
                     )
 
+Again notice that we have supplied a lot more arguments than before. Refer the API for more details.
 Let us create our own optimizer module this time instead of using the yann default. For any 
 ``module`` in yann, the initialization can be done using the ``add_module`` method. The 
 ``add_module`` method typically takes input ``type`` which in this case is ``optimizer`` and a set
@@ -70,7 +74,8 @@ options. A typical ``optimizer setup`` is:
     net.add_module ( type = 'optimizer', params = optimizer_params )                        
 
 We have now successfully added a Polyak momentum with RmsProp back propagation with some :math:`L_1`
-and :math:`L2` norms. This optimizer will therefore solve the following error:
+and :math:`L2` co-efficients that will be applied to the layers for which we passed as argument
+``regularize = True``. This optimizer will therefore solve the following error:
 
 .. math::
 
@@ -99,6 +104,10 @@ ith layer of the network. Once we are done, we can cook, train and test as usual
                show_progress = True,
                early_terminate = True)
 
+The ``learning_rate``, supplied here is a tuple. The first indicates a annealing of a linear rate,
+the second is the initial learning rate of the first era, and the third value is the leanring rate
+of the second era. Accordingly, ``epochs`` takes in a tuple with number of epochs for each era.
+
 This time, let us not let it run the forty epochs, let us cancel in the middle after some epochs 
 by hitting ^c. Once it stops lets immediately test and demonstrate that the ``net`` retains the 
 parameters as updated as possible. Once done, lets run ``net.test()``. 
@@ -106,11 +115,8 @@ parameters as updated as possible. Once done, lets run ``net.test()``.
 Some new arguments are introduced here and they are for the most part easy to understand in context.
 ``epoch`` represents a ``tuple`` which is the number of epochs of training and number of epochs of 
 fine tuning epochs after that. There could be several of these stages of finer tuning. Yann uses the
-term 'era' to represent each set of epochs running with one learning rate. 
-
-``learning_rates`` indicates the leanring rates. The fist element of this learning rate is a 
-annealing parameter. ``learning_rates`` is naturally of length that is one higher than ``epochs``.
-``show_progress`` will print a progress bar for each epoch. ``validate_after_epochs`` will perform 
+term 'era' to represent each set of epochs running with one learning rate. ``show_progress`` will 
+print a progress bar for each epoch. ``validate_after_epochs`` will perform 
 validation after such many epochs on a different validation dataset. The full code for this tutorial
 with additional commentary can be found in the file ``pantry.tutorials.mlp.py``. If you have 
 toolbox cloned or downloaded or just the tutorials downloaded, Run the code as,
