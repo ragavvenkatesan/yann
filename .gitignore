@@ -13,4 +13,6 @@
 .eggs
 *.png
 /visualizer
+/lenet5
 .vscode
+svhn

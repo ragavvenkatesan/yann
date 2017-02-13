@@ -536,7 +536,7 @@ class network(object):
             else:
                 datastream_id = '-1'  # this is temp datastream will initialize a new id.
             if not datastream_id in self.datastream.keys():
-                self.add_datastream(dataset_params = dataset_params, verbose = 2)
+                self._add_datastream(dataset_params = dataset_params, verbose = 2)
                 if verbose >= 3:
                     print "... Created a new datastream module also"
             else:

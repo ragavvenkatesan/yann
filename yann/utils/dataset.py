@@ -47,6 +47,29 @@ from scipy.misc import imresize as imresize
 
 thismodule = sys.modules[__name__]
 
+def download_data (url, location):
+	"""
+	"""
+	import urllib2
+	file_name = url.split('/')[-1]
+	u = urllib2.urlopen(url)
+	f = open(location + file_name, 'wb')
+	meta = u.info()
+	file_size = int(meta.getheaders("Content-Length")[0])
+	print "Downloading: %s Bytes: %s" % (file_name, file_size)
+	file_size_dl = 0
+	block_sz = 8192
+	while True:
+		buffer = u.read(block_sz)
+		if not buffer:
+			break
+
+		file_size_dl += len(buffer)
+		f.write(buffer)
+		status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+		status = status + chr(8)*(len(status)+1)
+		print status,
+	f.close()    
 
 def load_cifar100 ():
     """
@@ -118,6 +141,7 @@ def load_data_mat(classes,
         return (data_x,data_y,y1.astype( dtype = 'float32' ))
     else:
         return (data_x,data_y,y1.astype( dtype = 'float32' ),data_z)
+
 
 # for MNIST of skdata
 def load_skdata_mnist ():
@@ -711,12 +735,25 @@ class setup_dataset (object):
                                 'skdata' : Download and setup from skdata
                                 'matlab' : Data is created and is being used from Matlab
                     "name" : necessary only for skdata
-                              supports 'mnist','mnist_noise1', 'mnist_noise2', 'mnist_noise3',
-                            'mnist_noise4', 'mnist_noise5', 'mnist_noise6', 'mnist_bg_images',
-                             'mnist_bg_rand', 'mnist_rotated', 'mnist_rotated_bg'. Refer to
-                             original paper by Hugo Larochelle [1] for these dataset details.
+                              supports 
+                                * ``'mnist'``
+                                * ``'mnist_noise1'``
+                                * ``'mnist_noise2'``
+                                * ``'mnist_noise3'``
+                                * ``'mnist_noise4'``
+                                * ``'mnist_noise5'``
+                                * ``'mnist_noise6'``
+                                * ``'mnist_bg_images'``
+                                * ``'mnist_bg_rand'``
+                                * ``'mnist_rotated'``
+                                * ``'mnist_rotated_bg'``.
+                                * ``'cifar10'``
+                                * ``'caltech101'``
+                                * ``'caltech256'``
+                        Refer to original paper by Hugo Larochelle [1] for these dataset details.
+                        
                     "location"                  : #necessary for 'pkl' and 'matlab'
-                    "mini_batch_size"               : 500,
+                    "mini_batch_size"           : 500,
                     "mini_batches_per_batch"    : (100, 20, 20), # trianing, testing, validation
                     "batches2train"             : 1,
                     "batches2test"              : 1,
@@ -809,7 +846,8 @@ class setup_dataset (object):
         self.source              = dataset_init_args [ "source" ]
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
-        else:
+            
+        elif self.source == 'mat':
             self.location        = dataset_init_args [ "location" ]
 
         if "height" in dataset_init_args.keys():
@@ -883,6 +921,10 @@ class setup_dataset (object):
         start_time = time.clock()
         if self.source == 'skdata':
             self._create_skdata(verbose = verbose)
+
+        if self.source == 'mat':
+            self._mat2yann( verbose =verbose ) # This needs to be done still.
+
         end_time = time.clock()
         if verbose >=1:
             print(". Dataset " + self.id + " is created.")
@@ -920,7 +962,7 @@ class setup_dataset (object):
             self._create_skdata_caltech101(verbose = verbose)
 
         elif self.name == 'caltech256':
-                self._create_skdata_caltech256(verbose = verbose)
+            self._create_skdata_caltech256(verbose = verbose)
 
     def _create_skdata_mnist(self, verbose = 1):
         """
@@ -1035,7 +1077,6 @@ class setup_dataset (object):
         f = open(self.root +  '/data_params.pkl', 'wb')
         cPickle.dump(dataset_args, f, protocol=2)
         f.close()
-
 
     def _create_skdata_caltech101(self, verbose = 2):
         """

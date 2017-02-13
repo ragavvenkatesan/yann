@@ -101,9 +101,9 @@ To install in a quick fashion without much dependencies run the follwing command
     pip install git+git://github.com/ragavvenkatesan/yann.git
 
 If there was an error with installing ``skdata``, you might want to install ``numpy`` and ``scipy``
-independenyly first and then run the above command. Note that this installer, does not enable a lot
-of options of the toolbox for which you need to go through the complete install described at
-:ref:`setup`.
+independently first and then run the above command. Note that this installer, does not enable a lot
+of options of the toolbox for which you need to go through the complete install described at the
+:ref:`setup` page.
 
 The start and the end of Yann toolbox is the :mod:`network` module. The :mod:`yann.network`.
 ``network`` object is where all the magic happens. Start by importing :mod:`network` and creating a
@@ -171,7 +171,12 @@ constructed we can see that the ``net`` objects have ``layers`` populated.
 
 The keys of the dictionary such as ``'1'``, ``'0'`` and ``'2'`` are the ``id`` of the layer. We 
 could have created a layer with a custom id by supplying an ``id`` argument to the ``add_layer``
-method. 
+method. To get a better idea of how the network looks like, you can use the ``pretty_print`` mehtod
+in yann.
+
+.. code-block:: python
+
+    net.pretty_print()
 
 Now our network is finally ready to be trained. Before training, we need to build an 
 :mod:`optimizer` and other tools, but for now let us use the default ones. Once all of this is done,

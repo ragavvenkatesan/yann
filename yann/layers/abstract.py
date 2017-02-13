@@ -71,8 +71,7 @@ class layer(object):
         print(prefix_entry + " id: " + self.id)
         print(prefix_entry + "=================------------------")
         print(prefix_entry + " type: " + self.type)
-        print(prefix_entry + " output shape: ")
-        print(self.output_shape)
+        print(prefix_entry + " output shape: " + str(self.output_shape))
         print(prefix_entry + "-----------------------------------")
 
         if nest is False:
