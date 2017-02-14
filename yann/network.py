@@ -1794,7 +1794,16 @@ class network(object):
         Args:
             verbose: as always
         """
-        if verbose > 3:
+        if verbsoe >= 3:
+            print "... Cooking the resultor"
+        
+        resultor.cook(cost = self.cost,
+                      lr = self.learning_rate,
+                      mom = self.mom,
+                      acc = (self.training_accuracy, self.validation_accuracy)
+                      )
+         
+        if verbose >= 3:
             print "... Resultor is cooked"
 
     def visualize_activities( self, epoch = 0, verbose = 2):

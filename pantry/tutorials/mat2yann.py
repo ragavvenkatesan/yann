@@ -27,8 +27,8 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
 
         data_params = {
                    "source"             : 'mat',
-                   "name"               : 'yann_svhn',
-                   "location"			: location,
+                   "name"               : 'yann_Svhn', # some name.
+                   "location"			: location,    # some location
                    "height"             : 32,
                    "width"              : 32,
                    "channels"           : 3  }

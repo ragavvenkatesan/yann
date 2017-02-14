@@ -15,7 +15,7 @@ class resultor(module):
                 resultor_init_args    =    {
                     "root"      : "<root directory to save stuff inside>",
                     "results"   : "<results_file_name>.txt",
-                    "errors"    : "<error_file_name>.txt",
+                    "accuracy"    : "<error_file_name>.txt",
                     "costs"     : "<cost_file_name>.txt",
                     "confusion" : "<confusion_file_name>.txt",
                     "network"   : "<network_save_file_name>.pkl"
@@ -48,7 +48,7 @@ class resultor(module):
         if not "results" in resultor_init_args.keys():
             resultor_init_args["results"] = "results.txt"
 
-        if not "errors" in resultor_init_args.keys():
+        if not "accuracy" in resultor_init_args.keys():
             resultor_init_args["erros"] = "errors.txt"
 
         if not "costs" in resultor_init_args.keys():
@@ -74,7 +74,7 @@ class resultor(module):
                 self.root                   = value
             elif item == "results":
                 self.results_file           = value
-            elif item == "errors":
+            elif item == "accuracy":
                 self.error_file             = value
             elif item == "costs":
                 self.cost_file              = value
@@ -98,11 +98,26 @@ class resultor(module):
         if verbose >= 3:
             print "... Resultor is initiliazed"
 
-    def process_results( self,
-                        cost,
-                        lr,
-                        mom,
-                        verbose = 2):
+    def cook (  self,
+                cost,
+                lr,
+                mom,
+                acc,
+                verbose = 2):   
+        """
+        Get the arrays from the network and make them available locally in this module.
+
+        Args:
+            cost: cost arrays (numpy array)
+            lr: learning rate array (theano tensor)
+            mom: momentum array (theano tensor)
+            acc: accuracy tuple of (training, validation)
+
+        """
+
+
+        
+    def process_results( ):
         """
         This method will print results and also write them down in the appropriate files.
 
