@@ -26,12 +26,16 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
     if not 'data_params' in kwargs.keys():
 
         data_params = {
-                   "source"             : 'mat',
+                   "source"             : 'matlab',
                    "name"               : 'yann_Svhn', # some name.
-                   "location"			: location,    # some location
+                   "location"			: 'svhn',    # some location
                    "height"             : 32,
                    "width"              : 32,
-                   "channels"           : 3  }
+                   "channels"           : 3,
+                   "batches2test"       : 42,
+                   "batches2train"      : 56,
+                   "batches2validate"   : 28,
+                   "batch_size"         : 500,}
 
     else:
         data_params = kwargs['data_params']

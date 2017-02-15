@@ -15,7 +15,7 @@ class resultor(module):
                 resultor_init_args    =    {
                     "root"      : "<root directory to save stuff inside>",
                     "results"   : "<results_file_name>.txt",
-                    "accuracy"    : "<error_file_name>.txt",
+                    "errors"    : "<error_file_name>.txt",
                     "costs"     : "<cost_file_name>.txt",
                     "confusion" : "<confusion_file_name>.txt",
                     "network"   : "<network_save_file_name>.pkl"
@@ -48,7 +48,7 @@ class resultor(module):
         if not "results" in resultor_init_args.keys():
             resultor_init_args["results"] = "results.txt"
 
-        if not "accuracy" in resultor_init_args.keys():
+        if not "errors" in resultor_init_args.keys():
             resultor_init_args["erros"] = "errors.txt"
 
         if not "costs" in resultor_init_args.keys():
@@ -74,7 +74,7 @@ class resultor(module):
                 self.root                   = value
             elif item == "results":
                 self.results_file           = value
-            elif item == "accuracy":
+            elif item == "errors":
                 self.error_file             = value
             elif item == "costs":
                 self.cost_file              = value
@@ -94,30 +94,20 @@ class resultor(module):
             if verbose >= 3:
                 print "... Creating a root directory for save files"
             os.makedirs(self.root)
+        
+        for file in [self.results_file, self.error_file, self.cost_file, self.confusion_file,
+                     self.learning_rate, self.momentum]:
+            f = open(self.root + "/" + file, 'w')
+            f.close()
 
         if verbose >= 3:
-            print "... Resultor is initiliazed"
+            print ( "... Resultor is initiliazed" )
 
-    def cook (  self,
-                cost,
-                lr,
-                mom,
-                acc,
-                verbose = 2):   
-        """
-        Get the arrays from the network and make them available locally in this module.
-
-        Args:
-            cost: cost arrays (numpy array)
-            lr: learning rate array (theano tensor)
-            mom: momentum array (theano tensor)
-            acc: accuracy tuple of (training, validation)
-
-        """
-
-
-        
-    def process_results( ):
+    def process_results(    self,
+                            cost,
+                            lr,
+                            mom,                        
+                            verbose = 2 ):
         """
         This method will print results and also write them down in the appropriate files.
 
@@ -126,3 +116,34 @@ class resultor(module):
             lr: Learning Rate, is a float
             mom: Momentum, is a float.
         """
+        print ( ".. Cost                : " + str(cost) )
+        if verbose >= 3:
+            print ( "... Learning Rate       : " + str(lr) )
+            print ( "... Momentum            : " + str(mom) )
+
+        f = open(self.root + "/" + self.cost_file, 'a')
+        f.write(str(cost))
+        f.write('\n')
+        f.close()
+
+        f = open(self.root + "/" + self.learning_rate, 'a')
+        f.write(str(lr))
+        f.write('\n')
+        f.close()
+
+        f = open(self.root + "/" + self.momentum, 'a')
+        f.write(str(mom))
+        f.write('\n')        
+        f.close()    
+
+    def plot (self, verbose = 2):
+        """
+        This method will (should) plot all the values in the files.
+        """
+        print "TBD"
+
+    def update_plot (self, verbose = 2):
+        """
+        This method should update the open plots with costs and other values.
+        """
+        print "TBD"        

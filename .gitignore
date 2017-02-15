@@ -12,7 +12,8 @@
 .cache
 .eggs
 *.png
-/visualizer
-/lenet5
+visualizer
+lenet5
 .vscode
 svhn
+resultor
