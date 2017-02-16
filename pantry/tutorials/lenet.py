@@ -1,10 +1,3 @@
-"""
-TODO:
-
-    Something is off with the visualizations of the CNN filters. Need to check what is going on. 
-    
-"""
-
 from yann.network import network
 from yann.utils.graph import draw_network
 

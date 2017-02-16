@@ -38,9 +38,10 @@ could be added thus,
                     verbose = verbose
                     )
 
+Refer to the APIs for more details on the convpool layer.
 It is often useful to visualize the filters learnt in a CNN, so we introduce the visualizer module 
-here with the CNN tutorial. The visualizer can be setup using the ``add_module`` method of ``net``
-object.
+here along with the CNN tutorial. The visualizer can be setup using the ``add_module`` method of 
+``net`` object. 
 
 
 .. code-block :: python
@@ -66,11 +67,15 @@ where the ``visualizer_params`` is a dictionary of the following format.
 
 ``root`` is the location where the visualizations are saved, ``frequency`` is the number of epochs
 for which visualizations are saved down, ``sample_size`` number of images are saved each time.
-``rgb_filters`` make the filters save in color.  
+``rgb_filters`` make the filters save in color. Along with the activities of each layer for the 
+exact same images as the data itself, the filters of neural network are also saved down. 
+For more options of parameters on visualizer refer to the `visualizer documentation`_ .
+
+.. _visualizer documentation: http://yann.readthedocs.io/en/master/yann/modules/visualizer.html
 
 The full code for this tutorial with additional commentary can be found in the file 
 ``pantry.tutorials.lenet.py``. This tutorial runs a CNN for the lenet dataset. 
-If you have toolbox cloned or downloaded or just the tutorials downloaded, Run the code as,
+If you have toolbox cloned or downloaded or just the tutorials downloaded, Run the code using,
 
 .. automodule:: pantry.tutorials.lenet
    :members:

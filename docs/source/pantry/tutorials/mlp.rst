@@ -75,14 +75,17 @@ options. A typical ``optimizer setup`` is:
 
 We have now successfully added a Polyak momentum with RmsProp back propagation with some :math:`L_1`
 and :math:`L2` co-efficients that will be applied to the layers for which we passed as argument
-``regularize = True``. This optimizer will therefore solve the following error:
+``regularize = True``. For more options of parameters on optimizer refer to the `optimizer 
+documentation`_ . This optimizer will therefore solve the following error:
+
+.. _optimizer documentation: http://yann.readthedocs.io/en/master/yann/modules/optimizer.html
 
 .. math::
 
-    e(\bf{w_2,w_1,w_{\sigma}}) = \sigma(d_2(d_1(\bf{x}),w_1),w_2)w_{\sigma}) + 
-                               0.0001(\vert w_2\vert + 
-                    \vert w_1\vert + \vert w_{\sigma} \vert) + 0.0002(\vert\vert w_2\vert\vert 
-                     \vert\vert w_1\vert\vert + \vert\vert w_{\sigma} \vert\vert)
+    e(\bf{w_2,w_1,w_{\sigma}}) = \sigma(d_2(d_1(\bf{x},w_1),w_2)w_{\sigma}) + 
+                                  0.0001(\vert w_2 \vert + \vert w_1\vert + \vert w_{\sigma} \vert) 
+                                + 0.0002(\vert\vert w_2\vert\vert + \vert\vert w_1\vert\vert + 
+                                  \vert\vert w_{\sigma} \vert\vert)
 
 where :math:`e` is the error, :math:`\sigma(.)` is the sigmoid layer and :math:`d_i(.)` is the
 ith layer of the network. Once we are done, we can cook, train and test as usual:

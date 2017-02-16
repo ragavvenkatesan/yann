@@ -48,12 +48,3 @@ parts of the network. Once cooked, the network is ready for training and testing
 methods within the network. The network class also has several properties such as layers, which is 
 a dictionary of the layers that are added to it and params, which is a dictionary of all the 
 parameters. All layers and modules contain a property called `id` through which they are referred.
-
-
-
-
-
-
-
-
-

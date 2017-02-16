@@ -53,7 +53,6 @@ mkdir('valid');
 throw_away = 420; 
 batch_size = 500;
 
-
 data = x (1:length(x) - throw_away,:);
 labels = y (1:length(y) - throw_away) - 1; % because labels go from 1-10
 

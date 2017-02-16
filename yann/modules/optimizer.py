@@ -56,17 +56,13 @@ class optimizer(module):
 
                 optimizer_params =  {
                     "momentum_type"   : <option>  'false' <no momentum>, 'polyak', 'nesterov'.
-                                        Default value is 'polyak'
-                    "momentum_params" : (<option [0,1]>, <option [0,1]>, <int>)
+                                        Default value is 'false'
+                    "momentum_params" : (<option in range [0,1]>, <option in range [0,1]>, <int>)
                                         (momentum coeffient at start,at end,
                                         at what epoch to end momentum increase)
                                         Default is the tuple (0.5, 0.95,50)
                     "optimizer_type" : <option>, 'sgd', 'adagrad', 'rmsprop', 'adam'.
-                                       Default is 'rmsprop'
-                    "objective_function": <option>,'nll'- log likelihood,
-                                        'cce'-categorical cross entropy,
-                                            'bce'-binary cross entropy.
-                                         Default is 'nll'
+                                       Default is 'sgd'
                     "id"        : id of the optimizer
                             }
 
@@ -95,12 +91,12 @@ class optimizer(module):
         if "momentum_type" in optimizer_init_args.keys():
             self.momentum_type   = optimizer_init_args [ "momentum_type" ]
         else:
-            self.momentum_type                   = 'polyak'
+            self.momentum_type                   = 'false'
 
         if "optimizer_type" in optimizer_init_args.keys():
             self.optimizer_type = optimizer_init_args [ "optimizer_type" ]
         else:
-            self.optimizer_type                  = 'rmsprop'
+            self.optimizer_type                  = 'sgd'
 
         if verbose >= 3:
             print "... Optimizer is initiliazed"
