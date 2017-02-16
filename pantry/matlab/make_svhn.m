@@ -6,7 +6,7 @@
 % As seen here in this folder. (These are processed mats.
 %
 % Download test_32x32.mat, train_32x32.mat and extra_32x32.mat from 
-% http://ufldl.stanford.edu/housenumbers/ svhn website, format 2.
+% http://ufldl.stanford.edu/housenumbers/ website, format 2.
 % Then run this code. 
 %
 % batch_sizing and number of batches are parameters that can be 
