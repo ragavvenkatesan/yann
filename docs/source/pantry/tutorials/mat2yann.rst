@@ -13,6 +13,6 @@ The full code for this tutorial with additional commentary can be found in the f
 ``pantry.tutorials.mat2yann.py``. If you have toolbox cloned or downloaded or just the tutorials 
 downloaded, Run the code as,
 
-.. automodule:: pantry.tutorials.matt2yann
+.. automodule:: pantry.tutorials.mat2yann
    :members:
 

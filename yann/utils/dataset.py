@@ -79,12 +79,11 @@ def load_cifar100 ():
     """
     print("Not implemented yet.")
 
-def load_data_mat(classes,
-                  height,
+def load_data_mat(height,
                   width,
                   channels, 
                   location = '../dataset/waldo/',
-                  batch = 1,
+                  batch = 0,
                   type_set = 'train',
                   load_z = False):
     """
@@ -98,8 +97,6 @@ def load_data_mat(classes,
     scipy to run.
 
     Args:
-            classes: Number of unique classes in the dataset. You can use ``unique(y)`` in
-                     MATLAB to get this value.
             height: The height of each image in the dataset.
             width: The width of each image in the dataset.
             channels: ``3`` if RGB, ``1`` if grayscale and so on.
@@ -116,7 +113,7 @@ def load_data_mat(classes,
     print("... Loading " + type_set + " batch number " + str(batch))
     if scipy_installed is False:
         raise Exception("Scipy needed for cooking this dataset. Please install")
-    mat = scipy.io.loadmat(location  +  type_set + '/batch_' + str(batch) + '.mat')
+    mat = scipy.io.loadmat(location  + '/' +  type_set + '/batch_' + str(batch) + '.mat')
     data_x = numpy.asarray(mat['x'], dtype = 'float32')
     if data_x.max() > 1:
         data_x = data_x/data_x.max() # this is not normalize. This just scales.
@@ -135,13 +132,15 @@ def load_data_mat(classes,
 
     if load_z is True:
         data_z = numpy.array(numpy.squeeze(mat['z']), dtype='float32' )
-    y1 = -1 * numpy.ones((data_y.shape[0], n_classes))
-    y1[numpy.arange(data_y.shape[0]), data_y] = 1
+
+    # y1 = -1 * numpy.ones((data_y.shape[0], max(data_y)))  # is this max dangerous ?
+    # y1[numpy.arange(data_y.shape[0]), data_y] = 1
 
     if load_z is False:
-        return (data_x,data_y,y1.astype( dtype = 'float32' ))
+        # return (data_x,data_y,y1.astype( dtype = 'float32' ))
+        return (data_x,data_y)        
     else:
-        return (data_x,data_y,y1.astype( dtype = 'float32' ),data_z)
+        return (data_x,data_y,data_z)
 
 
 # for MNIST of skdata
@@ -831,7 +830,7 @@ class setup_dataset (object):
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
             
-        elif self.source == 'mat':
+        elif self.source == 'matlab':
             self.location        = dataset_init_args [ "location" ]
 
         if "height" in dataset_init_args.keys():
@@ -907,14 +906,14 @@ class setup_dataset (object):
             self._create_skdata(verbose = verbose)
 
         if self.source == 'matlab':
-            self._mat2yann( verbose =verbose )
+            self._mat2yann( verbose = verbose )
 
         end_time = time.clock()
         if verbose >=1:
             print(". Dataset " + self.id + " is created.")
             print(". Time taken is " +str(end_time - start_time) + " seconds")
 
-    def _mat2yann (verbose = 2):
+    def _mat2yann (self, verbose = 2):
         """
         This method will convert a matlab dataset into yann.        
         Refer to the svhn example in tutorials as to how to create a matlab dataset for yann.
@@ -924,73 +923,55 @@ class setup_dataset (object):
             This will convert all the mat files into pkl files. If you need lesser batches or 
             mini batch sizes, alter the mat files accordingly. 
         """
-
-        print "...      --> training data "
-        """ Working on this code
-        for i in xrange(self.batches2train):		# for each batch_i file....
-            data_x, data_y, data_y1 = load_data_mat(dataset = self.name, 
-                                                    batch = i + 1, 
-                                                    type_set = 'train',
-                                                    height = self.height,
-                                                    width = self.width,
-                                                    channels = self.channels)
-                                                    
-            data_x = preprocessing ( data_x, 
-                                     self.height,
-                                     self.width,
-                                     self.channels,
-                                     self.preprocessor )
-
-            # compute number of minibatches for training, validation and testing
-            self.n_train_batches = data_x.shape[0] / self.mini_batch_size
-            f = open(temp_dir + "/train/" + 'batch_' + str(i) + '.pkl', 'wb')
-            obj = (data_x, data_y )
-            cPickle.dump(obj, f, protocol=2)
-            f.close()
-
-            print "...      --> testing data "
-            for i in xrange(self.batches2test):		# for each batch_i file....
-                data_x, data_y, data_y1 = load_data_mat(dataset = self.name, batch = i + 1, type_set = 'test' , n_classes = outs, height = self.height, width = self.width, channels = self.channels)
-                data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )
+        for type in ['train', 'test', 'valid']:
+            if verbose >= 2:
+                print ( ".. creating data " + type )
+            if type == 'train': 
+                batches = self.batches2train
+            elif type == 'test':
+                batches = self.batches2test
+            else:
+                batches = self.batches2validate
+            for batch in xrange(batches):		# for each batch_i file....
+                if verbose >= 3:
+                    print ( "... batch " +str(batch) )
+                data_x, data_y = load_data_mat(location = self.location, 
+                                                        batch = batch, 
+                                                        type_set = type,
+                                                        height = self.height,
+                                                        width = self.width,
+                                                        channels = self.channels)
+                                                        
+                data_x = preprocessing ( data_x, 
+                                        self.height,
+                                        self.width,
+                                        self.channels,
+                                        self.preprocessor )
 
                 # compute number of minibatches for training, validation and testing
-                self.n_test_batches = data_x.shape[0] / self.mini_batch_size
-                f = open(temp_dir + "/test/" + 'batch_' + str(i) + '.pkl', 'wb')
+                f = open(self.root + "/" + type + "/" + 'batch_' + str(batch) + '.pkl', 'wb')
                 obj = (data_x, data_y )
                 cPickle.dump(obj, f, protocol=2)
                 f.close()
 
-            print "...      --> validation data "
-            for i in xrange(self.batches2validate):		# for each batch_i file....
-                data_x, data_y, data_y1 = load_data_mat(dataset = self.name, batch = i + 1, type_set = 'valid' , n_classes = outs, height = self.height, width = self.width, channels = self.channels)
-                data_x = preprocessing ( data_x, self.height, self.width, self.channels, self.preprocessor )
-
-                # compute number of minibatches for training, validation and testing
-                self.n_valid_batches = data_x.shape[0] / self.mini_batch_size
-                f = open(temp_dir + "/valid/" + 'batch_' + str(i) + '.pkl', 'wb')
-                obj = (data_x, data_y )
-                cPickle.dump(obj, f, protocol=2)
-                f.close()
-
-            self.multi_load = True
-            new_data_params = {
-                    "type"               : 'base',
-                    "loc"                : temp_dir,
-                    "mini_batch_size"         : self.mini_batch_size,
-                    "load_batches"       : -1,
-                    "batches2train"      : self.batches2train,
-                    "batches2test"       : self.batches2test,
-                    "batches2validate"   : self.batches2validate,
-                    "height"             : self.height,
-                    "width"              : self.width,
-                    "channels"           : self.channels,
-                    "multi_load"         : self.multi_load,
-                    "n_train_batches"    : self.n_train_batches,
-                    "n_test_batches"     : self.n_test_batches,
-                    "n_valid_batches"    : self.n_valid_batches
-                    }
-        """
+        dataset_args = {
+                "location"                  : self.root,
+                "mini_batch_size"           : self.mini_batch_size,
+                "cache_batches"             : self.mini_batches_per_batch,
+                "batches2train"             : self.batches2train,
+                "batches2test"              : self.batches2test,
+                "batches2validate"          : self.batches2validate,
+                "height"                    : self.height,
+                "width"                     : self.width,
+                "channels"              : 1 if self.preprocessor ["grayscale"] else self.channels,
+                "cache"                 : self.cache,
+                }
         
+        assert ( self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]) )
+        f = open(self.root +  '/data_params.pkl', 'wb')
+        cPickle.dump(dataset_args, f, protocol=2)
+        f.close()
+
     def dataset_location (self):
         """
         Use this function that return the location of dataset.
