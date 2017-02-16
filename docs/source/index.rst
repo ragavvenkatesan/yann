@@ -97,7 +97,7 @@ and the video of the presentation is available.
 
 .. raw:: html
 
-    <iframe width="560" height="315" src="https://www.youtube.com/watch?v=0NFvfg8CItQ&t=1106s"
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/0NFvfg8CItQ"
      frameborder="0" allowfullscreen></iframe>
 
 To install in a quick fashion without much dependencies run the follwing command:
