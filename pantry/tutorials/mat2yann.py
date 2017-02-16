@@ -35,7 +35,7 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
                    "batches2test"       : 42,
                    "batches2train"      : 56,
                    "batches2validate"   : 28,
-                   "batch_size"         : 500,}
+                   "mini_batch_size"    : 500}
 
     else:
         data_params = kwargs['data_params']

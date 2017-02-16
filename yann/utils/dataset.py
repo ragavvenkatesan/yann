@@ -953,11 +953,17 @@ class setup_dataset (object):
                 obj = (data_x, data_y )
                 cPickle.dump(obj, f, protocol=2)
                 f.close()
-
+                if type == 'train':
+                    mppb_train = data_x.shape[0] / self.mini_batch_size
+                elif type == 'test': 
+                    mppb_test = data_x.shape[0] / self.mini_batch_size
+                else: 
+                    mppb_valid = data_x.shape[0] / self.mini_batch_size
+            
         dataset_args = {
                 "location"                  : self.root,
                 "mini_batch_size"           : self.mini_batch_size,
-                "cache_batches"             : self.mini_batches_per_batch,
+                "cache_batches"             : (mppb_train, mppb_test, mppb_valid),
                 "batches2train"             : self.batches2train,
                 "batches2test"              : self.batches2test,
                 "batches2validate"          : self.batches2validate,
