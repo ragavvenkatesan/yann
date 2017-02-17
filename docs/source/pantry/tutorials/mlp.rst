@@ -94,7 +94,7 @@ ith layer of the network. Once we are done, we can cook, train and test as usual
 
     learning_rates = (0.05, 0.01, 0.001)  
 
-    net.cook( optimizer = 'main',
+    net.cook( optimizer = 'polyak-rms',
               objective_layer = 'nll',
               datastream = 'mnist',
               classifier = 'softmax',
