@@ -5,7 +5,7 @@ defined in yann/core/errors.py
 
 import unittest
 import numpy as np
-import theano
+from theano import shared
 import theano.tensor as T
 import yann.core.errors as E
 
@@ -20,7 +20,7 @@ class TestActivations(unittest.TestCase):
 
         self.theano_input = T.lvector()
         # TO-DO: Find out proper numpy_input dimensionality
-        self.numpy_input = np.array([1, 2])
+        self.numpy_input = np.array([1, 2, 3, 4])
 
     def test_cross_entropy(self):
         expected_array = 'mean'
