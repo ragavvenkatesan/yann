@@ -200,7 +200,7 @@ class network(object):
         self.num_layers = self.num_layers + 1
 
         if verbose >= 2 :
-            print ".. Adding "+ type + " layer " + id
+            print(".. Adding "+ type + " layer " + id)
 
         if not 'learnable' in kwargs.keys():
             if type == 'input' or \
@@ -215,11 +215,11 @@ class network(object):
                type == 'energy' or \
                type == 'join':
                 if verbose >= 3:
-                    print "... Making learnable False as it is not provided"
+                    print("... Making learnable False as it is not provided")
                 learnable = False
             else:
                 if verbose >= 3:
-                    print "... Making learnable True as it is not provided"
+                    print("... Making learnable True as it is not provided")
                 learnable = True
         else:
             learnable = kwargs['learnable']
@@ -330,8 +330,8 @@ class network(object):
                     for edge_to in neurons:
                         self.graph.add_edge(origin , id + "-" + str(edge_to))
         if verbose >= 3:
-            print "... Layer " + id + " is created and it learnablity is " + \
-                                                                    str(self.layers[id].active)
+            print("... Layer " + id + " is created and it learnablity is " + \
+                                                                    str(self.layers[id].active))
     def add_module (self, type, params = None, verbose = 2):
         """
         Use this function to add a module to the net.
@@ -418,7 +418,7 @@ class network(object):
             verbose: Similar to rest of the toolbox.
         """
         if verbose >= 2:
-            print ".. Setting up the " + type
+            print(".. Setting up the " + type)
 
         # input parameter `viualizer` is used
         if type == 'visualizer':
@@ -527,7 +527,7 @@ class network(object):
             verbose: simiar to everywhere on the toolbox.
         """
         if verbose >=3:
-            print "... Adding an input layer"
+            print("... Adding an input layer")
 
         if 'dataset_init_args' in options.keys():
             dataset_params = options["dataset_init_args"]
@@ -538,10 +538,10 @@ class network(object):
             if not datastream_id in self.datastream.keys():
                 self._add_datastream(dataset_params = dataset_params, verbose = 2)
                 if verbose >= 3:
-                    print "... Created a new datastream module also"
+                    print("... Created a new datastream module also")
             else:
                 if verbose >= 3:
-                    print "... Datastream already created, will use it straight away"
+                    print("... Datastream already created, will use it straight away")
 
         if 'origin' in options.keys():
             datastream_id = options['origin']
@@ -556,14 +556,14 @@ class network(object):
 
         if not 'mean_subtract' in options.keys():
             if verbose >=3:
-                print "... mean_subtract not provided. Assuming False"
+                print("... mean_subtract not provided. Assuming False")
             mean_subtract = False
         else:
             mean_subtract = options["mean_subtract"]
 
         if not 'dropout_rate' in options.keys():
             if verbose >= 3:
-                print "... dropout_rate not provided. Assuming 0"
+                print("... dropout_rate not provided. Assuming 0")
             dropout_rate = 0
         else:
             dropout_rate = options ["dropout_rate"]
@@ -607,14 +607,14 @@ class network(object):
             verbose: same as everywhere else on the toolbox
         """
         if verbose >=3:
-            print "... Adding a convolution layer"
+            print("... Adding a convolution layer")
         if not 'origin' in options.keys():
             if self.last_layer_created is None:
                 raise Exception("You can't create a convolutional layer without an" + \
                                     " origin layer.")
             else:
                 if verbose >=3:
-                    print "... origin layer not provided, assuming the last layer created."
+                    print ("... origin layer not provided, assuming the last layer created.")
                 origin = self.last_layer_created
         else:
             origin = options["origin"]
@@ -623,83 +623,83 @@ class network(object):
 
         if not 'num_neurons' in options.keys():
             if verbose >=3:
-                print "... num_neurons not provided for layer " + id + ". Asumming 20"
+                print("... num_neurons not provided for layer " + id + ". Asumming 20")
             num_neurons = 20
         else:
             nkerns = options ["num_neurons"]
 
         if not 'filter_size' in options.keys():
             if verbose >=3:
-                print "... filter_size not provided for layer " + id + ". Asumming (3,3)"
+                print("... filter_size not provided for layer " + id + ". Asumming (3,3)")
             filter_size = (3,3)
         else:
             filter_size = options ["filter_size"]
 
         if not 'activation' in options.keys():
             if verbose >=3:
-                print "... Activations not provided for layer " + id + ". Using ReLU"
+                print("... Activations not provided for layer " + id + ". Using ReLU")
             activation = 'relu'
         else:
             activation = options ["activation"]
 
         if not 'border_mode' in options.keys():
             if verbose >=3:
-                print "... no border_mode setup, going with default"
+                print("... no border_mode setup, going with default")
             border_mode = 'valid'
         else:
             border_mode = options ["border_mode"]
 
         if not 'stride' in options.keys():
             if verbose >=3:
-                print"... No stride provided for layer " + id + ". Using (1,1)"
+                print("... No stride provided for layer " + id + ". Using (1,1)")
             stride = (1,1)
         else:
             stride = options ["stride"]
 
         if not 'batch_norm' in options.keys():
             if verbose >=3:
-                print "... No batch norm provided for layer " + id + ". Batch norm is off"
+                print("... No batch norm provided for layer " + id + ". Batch norm is off")
             batch_norm = False
         else:
             batch_norm = options["batch_norm"]
 
         if not 'pool_size' in options.keys():
             if verbose >=3:
-                print "... No pool size provided for layer " + id + " assume (1,1)"
+                print("... No pool size provided for layer " + id + " assume (1,1)")
             pool_size = (1,1)
         else:
             pool_size = options ["pool_size"]
 
         if not 'pool_type' in options.keys():
             if verbose >=3:
-                print "... No pool type provided for layer " + id + " assume max"
+                print("... No pool type provided for layer " + id + " assume max")
             pool_type = 'max'
         else:
             pool_type = options ["pool_type"]
 
         if not 'input_params' in options.keys():
             if verbose >=3:
-                print "... No initial params for layer " + id + " assume None"
+                print("... No initial params for layer " + id + " assume None")
             input_params = None
         else:
             input_params = options ["input_params"]
 
         if not 'dropout_rate' in options.keys():
             if verbose >=3:
-                print "... No dropout_rate set for layer " + id + " assume 0"
+                print("... No dropout_rate set for layer " + id + " assume 0")
             dropout_rate = 0
         else:
             dropout_rate = options ["dropout_rate"]
 
         if not 'regularize' in options.keys():
             if verbose >=3:
-                print "... No regularize set for layer " + id + " assume False"
+                print ("... No regularize set for layer " + id + " assume False")
             regularize = False
         else:
             regularize = options ["regularize"]
 
         if verbose >=3:
-            print "... creating the dropout stream"
+            print("... creating the dropout stream")
         # Just create a dropout layer no matter what.
 
         from yann.layers.conv_pool import dropout_conv_pool_layer_2d as dcpl2d
@@ -736,7 +736,7 @@ class network(object):
             alpha = self.dropout_layers[id].alpha * (1 - dropout_rate)
             layer_params.append(alpha)
         if verbose >=3:
-            print "... creating the stable stream"
+            print("... creating the stable stream")
 
         self.layers[id] = cpl2d (
                             input = self.layers[origin].output,
@@ -774,12 +774,12 @@ class network(object):
             verbose: as usual
         """
         if verbose >= 3:
-            print "... Adding a flatten layer"
+            print("... Adding a flatten layer")
         if not 'origin' in options.keys():
             if self.last_layer_created is None:
                 raise Exception("You can't create a flatten without a layer to flatten.")
             if verbose >=3:
-                print "... origin layer is not supplied, assuming the last layer created is."
+                print("... origin layer is not supplied, assuming the last layer created is.")
             origin = self.last_layer_created
         else:
             origin = options ["origin"]
@@ -807,12 +807,12 @@ class network(object):
             verbose: as usual
         """
         if verbose >= 3:
-            print "... Adding a flatten layer"
+            print("... Adding a flatten layer")
         if not 'origin' in options.keys():
             if self.last_layer_created is None:
                 raise Exception("You can't create a flatten without a layer to flatten.")
             if verbose >=3:
-                print "... origin layer is not supplied, assuming the last layer created is."
+                print("... origin layer is not supplied, assuming the last layer created is.")
             origin = self.last_layer_created
         else:
             origin = options ["origin"]
@@ -849,13 +849,13 @@ class network(object):
             verbose: simiar to everywhere on the toolbox.
         """
         if verbose >= 3:
-            print "... Adding a dot product layer"
+            print("... Adding a dot product layer")
         if not 'origin' in options.keys():
             if self.last_layer_created is None:
                 raise Exception("You can't create a fully connected layer without an" + \
                                     " origin layer.")
             if verbose >=3:
-                print "... origin layer is not supplied, assuming the last layer created is."
+                print("... origin layer is not supplied, assuming the last layer created is.")
             origin = self.last_layer_created
         else:
             origin = options ["origin"]
@@ -863,8 +863,8 @@ class network(object):
         # If the last layer was not a MLP layer, flatten the output signal from there.
         if not len(self.layers[origin].output_shape) == 2:
             if verbose >= 3:
-                print "... Can't add a fully connected layer to a 2D image, flattening the" + \
-                                                                                  " layer output."
+                print("... Can't add a fully connected layer to a 2D image, flattening the" + \
+                                                                                  " layer output.")
             self.add_layer(type = 'flatten', origin = origin, verbose = verbose)
             origin = self.last_layer_created
 
@@ -874,47 +874,47 @@ class network(object):
 
         if not 'num_neurons' in options.keys():
             if verbose >=3:
-                print "... num_neurons not provided, Assuming 100"
+                print("... num_neurons not provided, Assuming 100")
             num_neurons = 100
         else:
             num_neurons = options ["num_neurons"]
 
         if not 'activation' in options.keys():
             if verbose >=3:
-                print "... Activations not provided for layer " + id + ". Using ReLU"
+                print("... Activations not provided for layer " + id + ". Using ReLU")
             activation = 'relu'
         else:
             activation = options ["activation"]
 
         if not 'batch_norm' in options.keys():
             if verbose >=3:
-                print "... No batch norm provided for layer " + id + ". Batch norm is off"
+                print("... No batch norm provided for layer " + id + ". Batch norm is off")
             batch_norm = False
         else:
             batch_norm = options["batch_norm"]
 
         if not 'input_params' in options.keys():
             if verbose >=3:
-                print "... No initial params for layer " + id + " assume None"
+                print("... No initial params for layer " + id + " assume None")
             input_params = None
         else:
             input_params = options ["input_params"]
 
         if not 'dropout_rate' in options.keys():
             if verbose >=3:
-                print "... No dropout_rate set for layer " + id + " assume 0"
+                print("... No dropout_rate set for layer " + id + " assume 0")
             dropout_rate = 0
         else:
             dropout_rate = options ["dropout_rate"]
 
         if not 'regularize' in options.keys():
             if verbose >=3:
-                print "... No regularize set for layer " + id + " assume False"
+                print("... No regularize set for layer " + id + " assume False")
             regularize = False
         else:
             regularize = options ["regularize"]
         if verbose >=3:
-            print "... creating the dropout stream"
+            print("... creating the dropout stream")
         # Just create a dropout layer no matter what.
 
         from yann.layers.fully_connected import dropout_dot_product_layer as ddpl
@@ -942,7 +942,7 @@ class network(object):
             alpha = self.dropout_layers[id].alpha * (1 - dropout_rate)
             layer_params.append(alpha)
         if verbose >=3:
-            print "... creating the stable stream"
+            print("... creating the stable stream")
         self.layers[id] = dpl (
                             input = input,
                             num_neurons = num_neurons,
@@ -973,14 +973,14 @@ class network(object):
             verbose: simiar to everywhere on the toolbox.
         """
         if verbose >=3:
-            print "... Adding a classifier layer"
+            print("... Adding a classifier layer")
 
         if not 'origin' in options.keys():
             if self.last_layer_created is None:
                 raise Exception("You can't create a softmax layer without an" + \
                                     " origin layer.")
             if verbose >=3:
-                print "... origin layer is not supplied, assuming the last layer created is."
+                print("... origin layer is not supplied, assuming the last layer created is.")
             origin = self.last_layer_created
         else:
             origin = options ["origin"]
@@ -1005,27 +1005,27 @@ class network(object):
 
         if not 'activation' in options.keys():
             if verbose >=3:
-                print "... Activations not provided for layer " + id + ". Using ReLU"
+                print("... Activations not provided for layer " + id + ". Using ReLU")
             activation = 'softmax'
         else:
             activation = options ["activation"]
 
         if not 'input_params' in options.keys():
             if verbose >=3:
-                print "... No initial params for layer " + id + " assume None"
+                print("... No initial params for layer " + id + " assume None")
             input_params = None
         else:
             input_params = options ["input_params"]
 
         if not 'regularize' in options.keys():
             if verbose >=3:
-                print "... No regularize set for layer " + id + " assume False"
+                print("... No regularize set for layer " + id + " assume False")
             regularize = False
         else:
             regularize = options ["regularize"]
 
         if verbose >=3:
-            print "... creating the dropout stream"
+            print("... creating the dropout stream")
         # Just create a dropout layer no matter what.
 
         from yann.layers.output import classifier_layer as classifier
@@ -1042,7 +1042,7 @@ class network(object):
                                     verbose = verbose
                                 )
         if verbose >=3:
-            print "... creating the stable stream"
+            print("... creating the stable stream")
         params = self.dropout_layers[id].params
         self.layers[id] = classifier (
                                     input = input,
@@ -1076,11 +1076,11 @@ class network(object):
         """
 
         if verbose >=3:
-            print "... Adding an objective layer"
+            print("... Adding an objective layer")
 
         if not 'layer_type' in options.keys():
             if verbose >= 3:
-                print "... type is not provided, assuming nll"
+                print("... type is not provided, assuming nll")
             type = 'nll'
         else:
             type = options['layer_type']
@@ -1090,8 +1090,8 @@ class network(object):
                 raise Exception("You can't create an abstract objective layer without a" + \
                                     " classifier layer.")
             if verbose >=3:
-                print "... origin layer is not supplied, assuming the last classifier layer" + \
-                                   " created is the origin."
+                print("... origin layer is not supplied, assuming the last classifier layer" + \
+                                   " created is the origin.")
             if not type == 'value':
                 origin = self.last_classifier_created
             else:
@@ -1108,7 +1108,7 @@ class network(object):
         if not 'objective' in options.keys():
             if not type == 'value':
                 if verbose >= 3:
-                    print "... objective not provided, assuming nll"
+                    print("... objective not provided, assuming nll")
                 objective = type
                 # check if the origin layer is a classifier error.
                 loss = getattr(self.layers[origin], "loss", None)
@@ -1131,21 +1131,21 @@ class network(object):
                 datastream_id = options["datset_origin"]
             else:
                 if verbose >= 3:
-                    print "... Invalid datastream id, switching to last created datastream"
+                    print("... Invalid datastream id, switching to last created datastream")
                 datastream_id = self.last_datastream_created
         else:
             datastream_id = self.last_datastream_created
 
         if self.datastream[datastream_id].svm is True and not objective == 'hinge':
             if verbose >=2:
-                print ".. Objective should only be hinge if datastream is setup for svm. Beware"
+                print(".. Objective should only be hinge if datastream is setup for svm. Beware")
             self.datastream[datastream_id].svm = False
 
         if objective == 'hinge':
             if not hasattr(self.datastream[datastream_id], 'one_hot_y') is True:
                 if verbose >=1:
-                    print". Datastream is not setup for hinge loss " + \
-                                                       "switching to negative log likelihood"
+                    print(". Datastream is not setup for hinge loss " + \
+                                                       "switching to negative log likelihood")
                 objective = 'nll'
                 data_y = self.datastream[datastream_id].y
             else:
@@ -1162,7 +1162,7 @@ class network(object):
             l1_regularizer_coeff, l2_regularizer_coeff = options['regularizer']
 
         if verbose >=3:
-            print "... creating the dropout stream"
+            print("... creating the dropout stream")
 
         from yann.layers.output import objective_layer as obj
 
@@ -1177,7 +1177,7 @@ class network(object):
                                     l2_coeff = l2_regularizer_coeff,
                                     verbose = verbose )
         if verbose >=3:
-            print "... creating the stable stream"
+            print("... creating the stable stream")
 
         self.layers[id] = obj(
                             objective = objective,
@@ -1206,7 +1206,7 @@ class network(object):
 
         """
         if verbose >=3:
-            print "... Adding a merge layer"
+            print("... Adding a merge layer")
 
         if not 'origin' in options.keys():
             raise Exception("You can't create an merge layer without atleast two" + \
@@ -1229,7 +1229,7 @@ class network(object):
             layer_type = options['layer_type']
 
         if verbose >=3:
-            print "... creating the dropout stream"
+            print("... creating the dropout stream")
 
         from yann.layers.merge import merge_layer as mrg
         inputs = []
@@ -1247,7 +1247,7 @@ class network(object):
                                     input_shape = input_shape,
                                     verbose = verbose )
         if verbose >=3:
-            print "... creating the stable stream"
+            print("... creating the stable stream")
 
         inputs = [] # input_shape is going to remain the same from dropout to this.
         for lyr in origin:
@@ -1275,7 +1275,7 @@ class network(object):
             verbose: simiar to everywhere on the toolbox.
         """
         if verbose >=3:
-            print "... Adding a random generator layer"
+            print("... Adding a random generator layer")
 
         from yann.layers.random import random_layer as rl
 
@@ -1286,7 +1286,7 @@ class network(object):
 
         if not 'num_neurons' in options.keys():
             if verbose >=3:
-                print "... num_neurons not provided, Assuming 100"
+                print("... num_neurons not provided, Assuming 100")
             num_neurons = 100
         else:
             num_neurons = options ["num_neurons"]
@@ -1317,14 +1317,14 @@ class network(object):
             verbose: simiar to everywhere on the toolbox.
         """
         if verbose >=3:
-            print "... Adding a rotate layer"
+            print("... Adding a rotate layer")
 
         if not 'origin' in options.keys():
             if self.last_layer_created is None:
                 raise Exception("You can't create a fully connected layer without an" + \
                                     " origin layer.")
             if verbose >=3:
-                print "... origin layer is not supplied, assuming the last layer created is."
+                print("... origin layer is not supplied, assuming the last layer created is.")
             origin = self.last_layer_created
         else:
             origin = options ["origin"]
@@ -1363,7 +1363,7 @@ class network(object):
             errors: a function that returns the error when supplied with y data.
         """
         if verbose >=3:
-            print "... creating the classifier testing theano function "
+            print("... creating the classifier testing theano function ")
 
         index = T.lscalar('index')
 
@@ -1385,7 +1385,7 @@ class network(object):
             errors: a function that returns the errors
         """
         if verbose >=3:
-            print "... creating the generator testing theano function "
+            print("... creating the generator testing theano function ")
 
         index = T.lscalar('index')
 
@@ -1410,7 +1410,7 @@ class network(object):
 
         """
         if verbose>=3 :
-            print "... initializing test function"
+            print("... initializing test function")
 
         if self.cooked_datastream is None:
                raise Exception ("This needs to be run only after datastream is cooked")
@@ -1442,7 +1442,7 @@ class network(object):
                raise Exception ("This needs to be run only after network is cooked")
 
         if verbose>=3 :
-            print "... initializing predict function"
+            print("... initializing predict function")
 
         _predictions = self.layers[classifier].predictions
 
@@ -1472,7 +1472,7 @@ class network(object):
                 raise Exception ("This needs to be run only after network is cooked")
 
             if verbose>=3 :
-                print "... initializing probability output functions"
+                print("... initializing probability output functions")
 
             _probabilities = self.layers[classifier].probabilities
 
@@ -1486,7 +1486,7 @@ class network(object):
                                                                              self.mini_batch_size]})
         else:
             if verbose >=3:
-                print "... This network does not need a posterior"
+                print("... This network does not need a posterior")
 
     def _initialize_train_classifier(self, objective = None, verbose = 2):
         """
@@ -1496,7 +1496,7 @@ class network(object):
             objective: a function that returns the objective when supplied with y data.
         """
         if verbose >=3:
-            print "... creating the classifier training theano function "
+            print("... creating the classifier training theano function ")
 
         index = T.lscalar('index')
         if self.cooked_datastream.svm is False:
@@ -1528,7 +1528,7 @@ class network(object):
             objective: a function that returns the objective when supplied with y data.
         """
         if verbose >=3:
-            print "... creating the generator training theano function "
+            print("... creating the generator training theano function ")
 
         index = T.lscalar('index')
         if self.cooked_datastream.svm is False:
@@ -1565,7 +1565,7 @@ class network(object):
                raise Exception ("This needs to be run only after network is cooked")
 
         if verbose >= 3:
-            print "... initializing trainer functions"
+            print("... initializing trainer functions")
 
         if objective == None:
             objective = self.dropout_cost
@@ -1597,7 +1597,7 @@ class network(object):
             objective = self.dropout_cost
 
         if verbose >=3:
-            print "... Cooking Optimizer"
+            print("... Cooking Optimizer")
 
         if optimizer is None:
             optimizer = self.cooked_optimizer
@@ -1669,7 +1669,7 @@ class network(object):
 
         """
         if verbose >=3:
-            print "... creating the activities of all layers "
+            print("... creating the activities of all layers ")
 
         if self.cooked_datastream is None:
            raise Exception ("This needs to be run only after network is cooked")
@@ -1677,7 +1677,7 @@ class network(object):
         self.layer_activities_created = True
         for id, _layer in self.layers.iteritems():
             if verbose >=3 :
-                print "... collecting the activities of layer " + id
+                print("... collecting the activities of layer " + id)
             activity = _layer.output
             self._create_layer_activity(id = id, activity = activity, verbose = verbose)
 
@@ -1691,7 +1691,7 @@ class network(object):
             verbose: Just as the rest of the toolbox.
         """
         if verbose >= 3:
-            print "... setting up new era"
+            print("... setting up new era")
         self.learning_rate.set_value(numpy.asarray(new_learning_rate,dtype = theano.config.floatX))
         # copying and removing only active_params. Is that a porblem ?
         copy_params ( source = self.best_params, destination = self.active_params ,
@@ -1705,7 +1705,7 @@ class network(object):
             verbose: Just as always
         """
         if verbose >= 3:
-            print "... Cooking datastream"
+            print("... Cooking datastream")
 
         self.mini_batch_size = self.cooked_datastream.mini_batch_size
         self.height = self.cooked_datastream.height
@@ -1741,7 +1741,7 @@ class network(object):
             raise Exception ("This needs to be run only after network is cooked")
 
         if verbose >= 3:
-            print "... Loading batch " + str(batch) + " of type " + type
+            print("... Loading batch " + str(batch) + " of type " + type)
         self.set_data ( batch = batch , type = type, verbose = verbose )
         self.current_data_type = type
 
@@ -1755,14 +1755,14 @@ class network(object):
             verbose: as always
         """
         if verbose >= 3:
-            print "... Cooking visualizer"
+            print("... Cooking visualizer")
 
         self._create_layer_activities ( verbose = verbose )
 
         if self.cooked_visualizer.debug_functions is True:
             if hasattr(self,'cooked_optimizer'):
                 if verbose >= 3:
-                    print "... Saving down visualizations of optimizer"
+                    print("... Saving down visualizations of optimizer")
 
                 self.cooked_visualizer.theano_function_visualizer(function = self.mini_batch_test,
                                                                                 verbose = verbose)
@@ -1795,7 +1795,7 @@ class network(object):
             verbose: as always
         """
         if verbose > 3:
-            print "... Resultor is cooked"
+            print("... Resultor is cooked")
 
     def visualize_activities( self, epoch = 0, verbose = 2):
         """
@@ -1859,9 +1859,9 @@ class network(object):
 
         """
         if verbose >= 2:
-            print ".. Cooking the network"
+            print(".. Cooking the network")
         if verbose >= 3:
-            print "... Building the network's objectives, gradients and backprop network"
+            print("... Building the network's objectives, gradients and backprop network")
 
         if not 'optimizer' in kwargs.keys():
             optimizer = None
@@ -1918,11 +1918,11 @@ class network(object):
         if resultor is None:
             if self.last_resultor_created is None:
                 if verbose >= 3:
-                    print '... No resultor setup, creating a defualt one.'
+                    print('... No resultor setup, creating a defualt one.')
                 self.add_module( type = 'resultor', verbose =verbose )
             else:
                 if verbose >= 3:
-                    print "... resultor not provided, assuming " + self.last_resultor_created
+                    print("... resultor not provided, assuming " + self.last_resultor_created)
             resultor = self.last_resultor_created
         else:
             if not resultor in self.resultor.keys():
@@ -1940,11 +1940,11 @@ class network(object):
                             "id"                  : "main"
                                 }
                 if verbose >= 3:
-                    print '... No optimzier setup, creating a defualt one.'
+                    print('... No optimzier setup, creating a defualt one.')
                 self.add_module( type = 'optimizer', params = optimizer_params, verbose =verbose )
             else:
                 if verbose >= 3:
-                    print "... optimizer not provided, assuming " + self.last_optimizer_created
+                    print("... optimizer not provided, assuming " + self.last_optimizer_created)
             optimizer = self.last_optimizer_created
         else:
             if not optimizer in self.optimizer.keys():
@@ -1956,7 +1956,7 @@ class network(object):
                 raise Exception("Cannot build trainer without having an datastream initialized")
 
             if verbose >= 3:
-                print "... datastream not provided, assuming " + self.last_datastream_created
+                print("... datastream not provided, assuming " + self.last_datastream_created)
             datastream = self.last_datastream_created
         else:
             if not datastream in self.datastream.keys():
@@ -2025,14 +2025,14 @@ class network(object):
 
         if verbose >=2 :
             if len(self.cost) < self.batches2train * self.mini_batches_per_batch[0]:
-                print ".. Cost                : " + str(self.cost[-1])
+                print(".. Cost                : " + str(self.cost[-1]))
             else:
-                print ".. Cost                : " + str(numpy.mean(self.cost[-1 *
-                                    self.batches2train * self.mini_batches_per_batch[0]:]))
+                print(".. Cost                : " + str(numpy.mean(self.cost[-1 *
+                                    self.batches2train * self.mini_batches_per_batch[0]:])))
         if verbose >= 3:
-            print "... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
-                                                                                 self.borrow))
-            print "... Momentum            : " + str(self.current_momentum(epoch))
+            print("... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
+                                                                                 self.borrow)))
+            print("... Momentum            : " + str(self.current_momentum(epoch)))
 
         self.cooked_resultor.process_results(cost = self.cost[-1],
                                            lr = self.learning_rate.get_value(borrow=self.borrow),
@@ -2072,9 +2072,9 @@ class network(object):
         This is going to be deprecated with the use of visualizer module.
         """
         if verbose >=2:
-            print ".. This method will be deprecated with the implementation of a visualizer," + \
+            print(".. This method will be deprecated with the implementation of a visualizer," + \
                     "also this works only for tree-like networks. This will cause errors in " + \
-                    "printing DAG-style networks."
+                    "printing DAG-style networks.")
         input_layers = []
         # collect all begining of streams
         for id, layer in self.layers.iteritems():
@@ -2116,13 +2116,13 @@ class network(object):
         batch_counter = 0
         for batch in xrange (self.batches2validate):
             if verbose >= 3:
-                print "... validating batch " + str(batch)
+                print("... validating batch " + str(batch))
             self._cache_data ( batch = batch , type = 'valid', verbose = verbose )
             for minibatch in xrange(self.mini_batches_per_batch[1]):
                 validation_errors = validation_errors + self.mini_batch_test (minibatch)
                 if verbose >= 3:
-                    print "... validation error after mini batch " + str(batch_counter) + \
-                                                              " is " + str(validation_errors)
+                    print("... validation error after mini batch " + str(batch_counter) + \
+                                                              " is " + str(validation_errors))
                 batch_counter = batch_counter + 1
                 if show_progress is True:
                     bar.update(batch_counter)
@@ -2131,15 +2131,15 @@ class network(object):
         batch_counter = 0
         if training_accuracy is True:
             if verbose >= 3:
-                print "... training accuracy of batch " + str(batch)
+                print("... training accuracy of batch " + str(batch))
             for batch in xrange (self.batches2train):
                 self._cache_data(batch = batch, type = 'train', verbose = verbose )
 
                 for minibatch in xrange(self.mini_batches_per_batch[0]):
                     training_errors = training_errors + self.mini_batch_test (minibatch)
                     if verbose >= 3:
-                        print "... training error after mini batch " + str(batch_counter) + \
-                                                                      " is " + str(training_errors)
+                        print("... training error after mini batch " + str(batch_counter) + \
+                                                                      " is " + str(training_errors))
                     batch_counter = batch_counter + 1
                     if show_progress is True:
                         bar.update(batch_counter + \
@@ -2157,50 +2157,50 @@ class network(object):
                                                     validation_errors)*100. / total_valid_samples
             self.validation_accuracy = self.validation_accuracy + [validation_accuracy]
             if verbose >=2 :
-                print ".. Validation accuracy : " +str(validation_accuracy)
+                print(".. Validation accuracy : " +str(validation_accuracy))
 
             if training_accuracy is True:
                 training_accuracy = (total_train_samples - \
                                                         training_errors)*100. / total_train_samples
                 self.training_accuracy = self.training_accuracy + [training_accuracy]
                 if verbose >=2 :
-                    print ".. Training accuracy : " +str(training_accuracy)
+                    print(".. Training accuracy : " +str(training_accuracy))
 
                 if training_errors < self.best_training_errors:
                     self.best_training_errors = training_errors
                     if verbose >= 2:
-                        print ".. Best training accuracy"
+                        print(".. Best training accuracy")
 
             if validation_errors < self.best_validation_errors:
                 self.best_validation_errors = validation_errors
                 best = True
                 if verbose >= 2:
-                    print ".. Best validation accuracy"
+                    print(".. Best validation accuracy")
 
         elif self.network_type == 'generator':
             validation_accuracy = validation_errors / total_valid_samples
             self.validation_accuracy = self.validation_accuracy + [validation_accuracy]
 
             if verbose >= 2:
-                print ".. Mean Validation Error : " + str(validation_accuracy)
+                print(".. Mean Validation Error : " + str(validation_accuracy))
 
             if training_accuracy is True:
                 training_accuracy = training_errors / total_train_samples
                 self.training_accuracy = self.training_accuracy + [training_accuracy]
 
                 if verbose >=2:
-                    print".. Mean Trianing Error : " + str(training_accuracy)
+                    print(".. Mean Trianing Error : " + str(training_accuracy))
 
                 if training_errors < self.best_training_errors:
                     self.best_training_errors = training_errors
                     if verbose >= 2:
-                        print ".. Best training error"
+                        print(".. Best training error")
 
             if validation_errors < self.best_validation_errors:
                 self.best_validation_errors = validation_errors
                 best = True
                 if verbose >= 2:
-                    print ".. Best validation error"
+                    print(".. Best validation error")
 
         return best
 
@@ -2223,7 +2223,7 @@ class network(object):
         start_time = time.clock()
 
         if verbose >= 1:
-            print ". Training"
+            print(". Training")
 
         if self.cooked_datastream is None:
             raise Exception ("Cannot train without cooking the network first")
@@ -2306,11 +2306,11 @@ class network(object):
                 if era == len(epochs) - 1:
                     final_era = True
                 if verbose >= 3:
-                    print "... Begin era " + str(era)
+                    print("... Begin era " + str(era))
                 change_era = epoch_counter + epochs[era]
                 if self.learning_rate.get_value(borrow = self.borrow) < learning_rates[era+1]:
                     if verbose >= 2:
-                        print ".. Learning rate was already lower than specified. Not changing it."
+                        print(".. Learning rate was already lower than specified. Not changing it.")
                     new_lr = self.learning_rate.get_value(borrow = self.borrow)
                 else:
                     new_lr = learning_rates[era+1]
@@ -2318,10 +2318,10 @@ class network(object):
 
             # This printing below and the progressbar should move to visualizer ?
             if verbose >= 1:
-                print ".",
+                print("."),
                 if  verbose >= 2:
-                    print "\n"
-                    print ".. Epoch: " + str(epoch_counter) + " Era: " +str(era)
+                    print("\n")
+                    print (".. Epoch: " + str(epoch_counter) + " Era: " +str(era))
 
             if show_progress is True:
                 total_mini_batches =  self.batches2train * self.mini_batches_per_batch[0]
@@ -2354,13 +2354,13 @@ class network(object):
                         new_lr = self.learning_rate.get_value( borrow = self.borrow ) * 0.1
                         self._new_era(new_learning_rate = new_lr, verbose =verbose )
                         if verbose >= 2:
-                            print ".. NAN! Slowing learning rate by 10 times and restarting epoch."
+                            print(".. NAN! Slowing learning rate by 10 times and restarting epoch.")
                         break
                     self.cost = self.cost + [cost]
                     total_mini_batches_done = total_mini_batches_done + 1
 
                     if show_progress is False and verbose >= 3:
-                        print ".. Mini batch: " + str(total_mini_batches_done)
+                        print(".. Mini batch: " + str(total_mini_batches_done))
                         self.print_status(  epoch = epoch_counter, verbose = verbose )
 
                     if show_progress is True:
@@ -2393,19 +2393,19 @@ class network(object):
                     early_termination = True
                     if final_era is False:
                         if verbose >= 3:
-                            print "... Patience ran out lowering learning rate."
+                            print("... Patience ran out lowering learning rate.")
                         new_lr = self.learning_rate.get_value( borrow = self.borrow ) * 0.1
                         self._new_era(new_learning_rate = new_lr, verbose =verbose )
                         early_termination = False
                     else:
                         if verbose >= 2:
-                            print ".. Early stopping"
+                            print(".. Early stopping")
                         break
                 epoch_counter = epoch_counter + 1
 
         end_time = time.clock()
         if verbose >=2 :
-            print ".. Training complete.Took " +str((end_time - start_time)/60) + " minutes"
+            print(".. Training complete.Took " +str((end_time - start_time)/60) + " minutes")
 
     def test(self, show_progress = True, verbose = 2):
         """
@@ -2415,7 +2415,7 @@ class network(object):
             verbose: As usual
         """
         if verbose >= 2:
-            print ".. Testing"
+            print(".. Testing")
         start_time = time.clock()
         wrong = 0
         predictions = []
@@ -2432,7 +2432,7 @@ class network(object):
         batch_counter = 0
         for batch in xrange(self.batches2test):
             if verbose >= 3:
-                print "... training batch " + str(batch)
+                print("... training batch " + str(batch))
             self._cache_data ( batch = batch , type = 'test', verbose = verbose )
             for minibatch in xrange (self.mini_batches_per_batch[2]):
                 wrong = wrong + self.mini_batch_test(minibatch) # why casted?
@@ -2440,8 +2440,8 @@ class network(object):
                 if self.network_type == 'classifier':
                     posteriors = posteriors + self.mini_batch_posterior(minibatch).tolist()
                 if verbose >= 3:
-                    print "... testing error after mini batch " + str(batch_counter) + \
-                                                              " is " + str(wrong)
+                    print("... testing error after mini batch " + str(batch_counter) + \
+                                                              " is " + str(wrong))
                 batch_counter = batch_counter + 1
                 if show_progress is True:
                     bar.update(batch_counter)
@@ -2454,12 +2454,12 @@ class network(object):
             testing_accuracy = (total_samples - wrong)*100. / total_samples
 
             if verbose >= 2:
-                print ".. Testing accuracy : " + str(testing_accuracy)
+                print(".. Testing accuracy : " + str(testing_accuracy))
         elif self.network_type == 'generator':
             testing_accuracy = wrong / total_samples
 
             if verbose >= 2:
-                print ".. Mean testing error : " + str(testing_accuracy)
+                print(".. Mean testing error : " + str(testing_accuracy))
 
 if __name__ == '__main__':
     pass
