@@ -6,7 +6,8 @@ import theano.tensor as T
 
 from yann.utils.dataset import create_shared_memory_dataset
 from yann.utils.dataset import check_type
-from abstract import module
+from yann.modules.abstract import module
+
 
 class datastream(module):
     """
@@ -42,23 +43,20 @@ class datastream(module):
     """
 
     # this loads up the data_params from a folder and sets up the initial databatch.
-    def __init__ ( self,
-                   dataset_init_args,
-                   borrow = True,
-                   verbose = 1):
+    def __init__(self, dataset_init_args, borrow = True, verbose = 1):
 
         if "id" in dataset_init_args.keys():
             id = dataset_init_args["id"]
         else:
             id = '-1'
-        super(datastream,self).__init__(id = id, type = 'datastream')
+        super(datastream, self).__init__(id = id, type = 'datastream')
 
-        dataset = dataset_init_args ["dataset"]
+        dataset = dataset_init_args["dataset"]
         self.dataset = dataset
         self.borrow = borrow
 
         if verbose >= 3:
-            print "... Initializing datastream with " + dataset
+            print("... Initializing datastream with " + dataset)
 
         f = open(dataset + '/data_params.pkl', 'rb')
         data_params = cPickle.load(f)
@@ -104,7 +102,7 @@ class datastream(module):
             self.cached_zeros_y = numpy.zeros((1,),dtype = theano.config.floatX)
 
         if verbose >= 3:
-            print "... Datastream is initiliazed"
+            print("... Datastream is initiliazed")
 
         self.x = T.matrix('x')
         if self.type == 'xy':
@@ -113,7 +111,7 @@ class datastream(module):
         elif self.type == 'x':
             self.y = self.x
 
-    def load_data (self, type = 'train', batch = 0, verbose = 2):
+    def load_data(self, type = 'train', batch = 0, verbose = 2):
         """
         Will load the data from the file and will return the data. The important thing to note
         is that all the datasets in :mod: ``yann`` all require a ``y`` or a variable to
@@ -134,7 +132,7 @@ class datastream(module):
             numpy.ndarray: ``data_x, data_y``
         """
         if verbose >= 3:
-            print "... loading " + type + " data batch " + str(batch)
+            print("... loading " + type + " data batch " + str(batch))
 
         f = open(self.dataset + '/' + type + '/batch_' + str(batch) +'.pkl', 'rb')
 
@@ -142,7 +140,7 @@ class datastream(module):
         f.close()
 
         if verbose >= 3:
-            print "... data is loaded"
+            print("... data is loaded")
 
         data_x = check_type (data_x, theano.config.floatX)
         if self.type == 'xy':
@@ -151,7 +149,7 @@ class datastream(module):
         # I don't know why, but I am following their recommendations blindly.
         return data_x, data_y
 
-    def set_data (self, type = 'train', batch = 0, verbose = 2):
+    def set_data(self, type = 'train', batch = 0, verbose = 2):
         """
         This can work only after network is cooked.
 
@@ -160,7 +158,7 @@ class datastream(module):
             verbose: as usual
         """
         if verbose >=3 :
-            print "... Setting batch " + str(batch) + " of data of type " + type
+            print("... Setting batch " + str(batch) + " of data of type " + type)
 
         data_x, data_y = self.load_data (batch = batch, type = type, verbose = verbose )
         # Doing this just so that I can use set_value instead of set_sub_tensor.
@@ -174,7 +172,7 @@ class datastream(module):
                 self.cached_zeros_x = numpy.zeros(data_size_needed,
                                                      dtype = data_x.dtype)
                 if verbose >= 3:
-                    print "... Cache miss in loading data "
+                    print("... Cache miss in loading data ")
 
             if self.type == 'xy':
                 if not self.cached_zeros_y.shape[0] == data_size_needed[0]:
@@ -199,7 +197,7 @@ class datastream(module):
 
         self.current_type = type
 
-    def one_hot_labels (self, y, verbose = 1):
+    def one_hot_labels(self, y, verbose = 1):
         """
         Function takes in labels and returns a one-hot encoding. Used for max-margin loss.
         Args:
@@ -224,7 +222,7 @@ class datastream(module):
 
         if self.n_classes is False:
             if verbose >= 3:
-                print "... Making a decision to create n_classes variable, not a good idea."
+                print("... Making a decision to create n_classes variable, not a good idea.")
             self.n_classes = len(numpy.unique(y))
 
         # found this technique online somewhere, forgot where couldn't cite.
@@ -234,7 +232,7 @@ class datastream(module):
         return y1
 
 
-    def initialize_dataset( self, verbose = 1 ):
+    def initialize_dataset(self, verbose = 1):
         """
         Load the initial training batch of data on to ``data_x`` and ``data_y`` variables
         and create shared memories.
@@ -246,7 +244,7 @@ class datastream(module):
             verbose: Toolbox style verbose.
         """
         if verbose >= 3:
-            print ".. Initializing the dataset by loading 0th batch"
+            print(".. Initializing the dataset by loading 0th batch")
 
         # every dataset will have atleast one batch ..load that.
         # Assumimg that train has more number of data than any other.
@@ -270,7 +268,7 @@ class datastream(module):
             self.data_y = T.cast(self.data_y_uncasted, 'int32')
 
         if verbose >=3:
-            print "... dataset is initialized"
+            print("... dataset is initialized")
 
 
 if __name__ == '__main__':
