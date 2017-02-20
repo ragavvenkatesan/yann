@@ -760,18 +760,9 @@ class setup_dataset (object):
                                 * ``'caltech101'``
                                 * ``'caltech256'``
                         Refer to original paper by Hugo Larochelle [1] for these dataset details.
-<<<<<<< HEAD
-<<<<<<< HEAD
-                        
-                    "location"                  : # necessary for 'pkl' and 'matlab'
-=======
-
                     "location"                  : #necessary for 'pkl' and 'matlab'
->>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
-=======
-
                     "location"                  : #necessary for 'pkl' and 'matlab'
->>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
+                    "location"                  : #necessary for 'pkl' and 'matlab'
                     "mini_batch_size"           : 500,
                     "mini_batches_per_batch"    : (100, 20, 20), # trianing, testing, validation
                     "batches2train"             : 1,
@@ -848,18 +839,12 @@ class setup_dataset (object):
         self.source              = dataset_init_args [ "source" ]
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
-<<<<<<< HEAD
-<<<<<<< HEAD
-            
-        elif self.source == 'matlab':
-=======
 
         elif self.source == 'mat':
->>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
-=======
 
         elif self.source == 'mat':
->>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
+
+        elif self.source == 'mat':
             self.location        = dataset_init_args [ "location" ]
 
         if "height" in dataset_init_args.keys():

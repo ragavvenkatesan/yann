@@ -1804,10 +1804,8 @@ class network(object):
         Args:
             verbose: as always
         """
-<<<<<<< HEAD
-=======
 
->>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
+
         if verbose > 3:
             print("... Resultor is cooked")
 
@@ -2055,9 +2053,12 @@ class network(object):
                 print(".. Cost                : " + str(numpy.mean(self.cost[-1 *
                                     self.batches2train * self.mini_batches_per_batch[0]:])))
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
+=======
+>>>>>>> 4bf0cab2e4a5ec8dd056b75b85f98a1b6b13651f
         if verbose >= 3:
             print("... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
                                                                                  self.borrow)))
