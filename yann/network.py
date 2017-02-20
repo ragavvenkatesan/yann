@@ -2051,7 +2051,6 @@ class network(object):
             else:
                 print(".. Cost                : " + str(numpy.mean(self.cost[-1 *
                                     self.batches2train * self.mini_batches_per_batch[0]:])))
-
         if verbose >= 3:
             print("... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
                                                                                  self.borrow)))
