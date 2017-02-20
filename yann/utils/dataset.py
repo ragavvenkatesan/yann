@@ -761,8 +761,13 @@ class setup_dataset (object):
                                 * ``'caltech256'``
                         Refer to original paper by Hugo Larochelle [1] for these dataset details.
 <<<<<<< HEAD
+<<<<<<< HEAD
                         
                     "location"                  : # necessary for 'pkl' and 'matlab'
+=======
+
+                    "location"                  : #necessary for 'pkl' and 'matlab'
+>>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
 =======
 
                     "location"                  : #necessary for 'pkl' and 'matlab'
@@ -844,8 +849,13 @@ class setup_dataset (object):
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
 <<<<<<< HEAD
+<<<<<<< HEAD
             
         elif self.source == 'matlab':
+=======
+
+        elif self.source == 'mat':
+>>>>>>> Fix whitespace, update print for python3, fix import syntax on datastream.py
 =======
 
         elif self.source == 'mat':
