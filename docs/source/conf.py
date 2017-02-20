@@ -27,12 +27,12 @@ except ImportError:
     from mock import Mock
 
 import theano
-import theano.sandbox.cuda
+# import theano.sandbox.cuda
 
 theano.config = Mock(device='gpu')
-theano.sandbox.cuda.cuda_enabled = True
-theano.sandbox.cuda.dnn = Mock(dnn_available=lambda: True)
-sys.modules['theano.sandbox.cuda.blas'] = Mock(GpuCorrMM=None)
+# theano.sandbox.cuda.cuda_enabled = True
+# theano.sandbox.cuda.dnn = Mock(dnn_available=lambda: True)
+# sys.modules['theano.sandbox.cuda.blas'] = Mock(GpuCorrMM=None)
 
 import shlex
 

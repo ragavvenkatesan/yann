@@ -87,7 +87,7 @@ class pooler_2d(object):
         elif mode == 'max' or mode == 'sum':    # normal maxpool
             self.out = pool_2d(
                 input=input,
-                ds=ds,
+                ws=ds,
                 ignore_border = ignore_border,
                 mode = mode
                 )
@@ -97,7 +97,7 @@ class pooler_2d(object):
         elif mode == 'mean':
             self.out = pool_2d(
                 input=input,
-                ds=ds,
+                ws=ds,
                 ignore_border = ignore_border,
                 mode = 'average_exc_pad'
                 )

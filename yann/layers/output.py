@@ -15,6 +15,7 @@ class classifier_layer (layer):
         input_shape: ``(mini_batch_size, features)``
         num_classes: number of classes to classify into
         filter_shape: (<int>,<int>)
+        batch_norm: <bool> (Not active yet. Will be implemented in near future.)
         rng: typically ``numpy.random``.
         borrow: ``theano`` borrow, typicall ``True``.
         rng: typically ``numpy.random``.
@@ -32,6 +33,7 @@ class classifier_layer (layer):
         The class also has in public ``w``, ``b`` and ``alpha`` which are also a list in ``params``,
         another property of this class.
     """
+
     def __init__ (  self,
                     input,
                     input_shape,
@@ -40,6 +42,7 @@ class classifier_layer (layer):
                     rng = None,
                     input_params = None,
                     borrow = True,
+                    # batch_norm = False,
                     activation = 'softmax',
                     verbose = 2
                     ):
@@ -73,12 +76,14 @@ class classifier_layer (layer):
                                                     dimension = 2 )
 
         # compute prediction as class whose probability is maximal in symbolic form
-        self.predictions = T.argmax(self.p_y_given_x, axis=1)
+        self.inference = self.p_y_given_x # this is where batchnorm test should go.
+        self.predictions = T.argmax(self.inference, axis=1)
 
         # parameters of the model
         self.L1 = abs(self.w).sum()
         self.L2 = (self.w ** 2).sum()
         self.params = [self.w, self.b]
+        self.active_params = [self.w, self.b]
         self.probabilities = T.log(self.p_y_given_x)
         self.output = self.p_y_given_x
         self.output_shape = (input_shape[0], num_classes)
@@ -284,6 +289,8 @@ class objective_layer(layer):
 
         if verbose >=3:
             print "... Objective_layer is created with output shape " + str(self.output_shape)
-
+        
+        self.inference = self.output
+        
 if __name__ == '__main__':
     pass

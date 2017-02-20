@@ -48,6 +48,7 @@ class input_layer (layer):
 
         self.output = mean_subtracted_data_feeder if mean_subtract is True else data_feeder
         self.output_shape = (mini_batch_size, channels, height, width)
+        self.inference = self.output
 
         if verbose >=3:
             print "... Input layer is created with output shape " + str(self.output_shape)

@@ -70,6 +70,7 @@ class network(object):
         self.active_params = []
         self.params = []
         self.dropout_layers = {} # These are just weights dropped out. Contains references
+        self.inference_layers = {} # This is used for when doing only forward prop.
         self.num_layers = 0  # just maintain for the sake of it.
 
         # All these are just bookkeeping variables.
@@ -213,6 +214,7 @@ class network(object):
                type == 'rotate' or \
                type == 'loss' or \
                type == 'energy' or \
+               type == 'connect' or \
                type == 'join':
                 if verbose >= 3:
                     print "... Making learnable False as it is not provided"
@@ -277,7 +279,7 @@ class network(object):
             raise Exception('No layer called ' + type + ' exists in yann')
 
         if learnable is True:
-            self.active_params = self.active_params + self.dropout_layers[id].params
+            self.active_params = self.active_params + self.dropout_layers[id].active_params
             # .. Note :: using append is troublesome here.
 
         self.last_layer_created = id
@@ -603,10 +605,21 @@ class network(object):
                             mean_subtract = mean_subtract,
                             verbose =verbose)
 
+        self.inference_layers[id] = il(
+                            x = self.datastream[datastream_id].x,
+                            mini_batch_size = self.datastream[datastream_id].mini_batch_size,
+                            id = id,
+                            height = self.datastream[datastream_id].height,
+                            width = self.datastream[datastream_id].width,
+                            channels = self.datastream[datastream_id].channels,
+                            mean_subtract = mean_subtract,
+                            verbose =verbose)
+
         # create a whole new stream, whether used or not.
         # users who do not need dropout need not know about this. muahhahaha
         self.layers[id].origin.append(datastream_id)
         self.dropout_layers[id].origin.append(datastream_id)
+        self.inference_layers[id].origin.append(datastream_id)
 
     def _add_conv_layer(self, id, options, verbose = 2):
         """
@@ -736,15 +749,21 @@ class network(object):
         # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
         if dropout_rate >0:
             w = self.dropout_layers[id].w * (1 - dropout_rate)
-            b = self.dropout_layers[id].b * (1 - dropout_rate)
         else:
             w = self.dropout_layers[id].w
-            b = self.dropout_layers[id].b
+        b = self.dropout_layers[id].b
 
         layer_params = [w,b]
         if batch_norm is True:
-            alpha = self.dropout_layers[id].alpha * (1 - dropout_rate)
-            layer_params.append(alpha)
+            # should I halve the gamma for batch norm ?
+            gamma = self.dropout_layers[id].gamma
+            beta = self.dropout_layers[id].beta
+            mean = self.dropout_layers[id].running_mean
+            var = self.dropout_layers[id].running_var
+            layer_params.append(gamma)
+            layer_params.append(beta)
+            layer_params.append(mean)
+            layer_params.append(var)
         if verbose >=3:
             print "... creating the stable stream"
 
@@ -765,6 +784,25 @@ class network(object):
                             input_params = layer_params,
                             verbose = verbose,
                                 )
+
+        self.inference_layers[id] = cpl2d (
+                            input = self.inference_layers[origin].inference,
+                            nkerns = nkerns,
+                            id = id,
+                            input_shape = self.layers[origin].output_shape,
+                            filter_shape = filter_size,
+                            poolsize = pool_size,
+                            pooltype = pool_type,
+                            batch_norm = batch_norm,
+                            border_mode = border_mode,
+                            stride = stride,
+                            rng = self.rng,
+                            borrow = self.borrow,
+                            activation = activation,
+                            input_params = layer_params,
+                            verbose = verbose,
+                                )
+
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2
@@ -773,6 +811,8 @@ class network(object):
         self.dropout_layers[origin].destination.append(id)
         self.layers[id].origin.append(origin)
         self.layers[origin].destination.append(id)
+        self.inference_layers[id].origin.append(origin)
+        self.inference_layers[origin].destination.append(id)
 
     def _add_flatten_layer( self, id, options, verbose = 2):
         """
@@ -796,11 +836,14 @@ class network(object):
 
         input = self.layers[origin].output
         dropout_input = self.dropout_layers[origin].output
+        inference_input = self.inference_layers[origin].inference
         input_shape = self.layers[origin].output_shape
 
         from yann.layers.flatten import flatten_layer as flt
         self.dropout_layers[id] = flt(input = dropout_input, id = id, input_shape = input_shape)
         self.layers[id] = flt(input = input, id = id, input_shape = input_shape)
+        self.inference_layers[id] = flt(input = inference_input, id = id, input_shape = input_shape)
+        
 
         self.dropout_layers[id].origin.append(origin)
         self.dropout_layers[origin].destination.append(id)
@@ -834,6 +877,7 @@ class network(object):
 
         input = self.layers[origin].output
         dropout_input = self.dropout_layers[origin].output
+        inference_input = self.inference_layers[origin].inference
         input_shape = self.layers[origin].output_shape
 
         if len(shape) == 2:
@@ -843,11 +887,16 @@ class network(object):
         self.dropout_layers[id] = flt(input = dropout_input, id = id, shape = shape,
                                                                     input_shape = input_shape)
         self.layers[id] = flt(input = input, id = id, shape = shape, input_shape = input_shape)
+        self.inference_layers[id] = flt(input = inference_input, id = id, shape = shape,
+                                                                    input_shape = input_shape)
+        
 
         self.dropout_layers[id].origin.append(origin)
         self.dropout_layers[origin].destination.append(id)
         self.layers[id].origin.append(origin)
         self.layers[origin].destination.append(id)
+        self.inference_layers[id].origin.append(origin)
+        self.inference_layers[origin].destination.append(id)
 
 
     def _add_dot_product_layer(self, id, options, verbose = 2):
@@ -880,6 +929,7 @@ class network(object):
 
         input = self.layers[origin].output
         dropout_input = self.dropout_layers[origin].output
+        inference_input = self.inference_layers[origin].inference
         input_shape = self.layers[origin].output_shape
 
         if not 'num_neurons' in options.keys():
@@ -945,12 +995,19 @@ class network(object):
                                 )
         # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
         w = self.dropout_layers[id].w * (1 - dropout_rate)
-        b = self.dropout_layers[id].b * (1 - dropout_rate)
+        b = self.dropout_layers[id].b 
         layer_params = [w,b]
 
         if batch_norm is True:
-            alpha = self.dropout_layers[id].alpha * (1 - dropout_rate)
-            layer_params.append(alpha)
+            # Again, should I halve gamma because of dropout ???
+            gamma = self.dropout_layers[id].gamma 
+            beta = self.dropout_layers[id].beta
+            mean = self.dropout_layers[id].running_mean
+            var = self.dropout_layers[id].running_var            
+            layer_params.append(gamma)
+            layer_params.append(beta)
+            layer_params.append(mean)
+            layer_params.append(var)
         if verbose >=3:
             print "... creating the stable stream"
         self.layers[id] = dpl (
@@ -965,6 +1022,18 @@ class network(object):
                             batch_norm = batch_norm,
                             verbose = verbose
                                 )
+        self.inference_layers[id] = dpl (
+                            input = inference_input,
+                            num_neurons = num_neurons,
+                            input_shape = input_shape,
+                            id = id,
+                            rng = self.rng,
+                            input_params = layer_params,
+                            borrow = self.borrow,
+                            activation = activation,
+                            batch_norm = batch_norm,
+                            verbose = verbose
+                                )                                
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2
@@ -997,16 +1066,16 @@ class network(object):
 
         # If the last layer was not a MLP layer, flatten the output signal from there.
         if not len(self.layers[origin].output_shape) == 2:
-            input = self.layers[origin].output.flatten(2)
-            dropout_input = self.dropout_layers[origin].output.flatten(2)
-            input_shape = (self.layers[origin].output_shape[0], \
-                                self.layers[origin].output_shape[1] *\
-                                    self.layers[origin].output_shape[2]*\
-                                            self.layers[origin].output_shape[3])
-        else:
-            input = self.layers[origin].output
-            dropout_input = self.dropout_layers[origin].output
-            input_shape = self.layers[origin].output_shape
+            if verbose >= 3:
+                print "... Can't add a classifier layer to a 2D image, flattening the" + \
+                                                                                  " layer output."
+            self.add_layer(type = 'flatten', origin = origin, verbose = verbose)
+            origin = self.last_layer_created
+
+        input = self.layers[origin].output
+        dropout_input = self.dropout_layers[origin].output
+        inference_input = self.inference_layers[origin].inference
+        input_shape = self.layers[origin].output_shape
 
         if not 'num_classes' in options.keys():
             raise Exception("Supply number of classes")
@@ -1065,6 +1134,17 @@ class network(object):
                                     activation = activation,
                                     verbose = verbose
                                 )
+        self.inference_layers[id] = classifier (
+                                    input = inference_input,
+                                    id = id,
+                                    input_shape = input_shape,
+                                    num_classes = num_classes,
+                                    rng = self.rng,
+                                    input_params = params,
+                                    borrow = self.borrow,
+                                    activation = activation,
+                                    verbose = verbose
+                                )                                
 
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
@@ -1074,6 +1154,8 @@ class network(object):
         self.dropout_layers[origin].destination.append(id)
         self.layers[id].origin.append(origin)
         self.layers[origin].destination.append(id)
+        self.inference_layers[id].origin.append(origin)
+        self.inference_layers[origin].destination.append(id)
 
     def _add_objective_layer (self, id, options, verbose = 2):
         """
@@ -1200,11 +1282,24 @@ class network(object):
                             l2_coeff = l2_regularizer_coeff,
                             verbose = verbose )
 
+        self.inference_layers[id] = obj(
+                            objective = objective,
+                            labels = data_y,
+                            id = id,
+                            loss = loss,
+                            L1 = self.L1,
+                            L2 = self.L2,
+                            l1_coeff = l1_regularizer_coeff,
+                            l2_coeff = l2_regularizer_coeff,
+                            verbose = verbose )
+
         if not origin == None:
             self.dropout_layers[id].origin.append(origin)
             self.dropout_layers[origin].destination.append(id)
             self.layers[id].origin.append(origin)
             self.layers[origin].destination.append(id)
+            self.inference_layers[id].origin.append(origin)
+            self.inference_layers[origin].destination.append(id)            
 
     def _add_merge_layer(self, id, options, verbose = 2):
         """
@@ -1270,11 +1365,25 @@ class network(object):
                                input_shape = input_shape,
                                verbose = verbose )
 
+        inputs = [] # input_shape is going to remain the same from dropout to this.
+        for lyr in origin:
+            inputs.append(self.inference_layers[lyr].inference)
+
+        self.inference_layers[id] = mrg( id = id,
+                               x = inputs,
+                               error = error,
+                               type = layer_type,
+                               input_shape = input_shape,
+                               verbose = verbose )
+
         for lyr in origin:
             self.dropout_layers[id].origin.append(lyr)
             self.layers[id].origin.append(lyr)
+            self.inference_layers[id].origin.append(lyr)
             self.dropout_layers[lyr].destination.append(id)
             self.layers[lyr].destination.append(id)
+            self.inference_layers[lyr].destination.append(id)
+            
 
     def _add_random_layer(self, id, options, verbose = 2):
         """
@@ -1309,12 +1418,8 @@ class network(object):
                             options = options,
                             verbose = verbose)
 
-        self.layers[id] = rl(
-                            id = id,
-                            num_neurons = num_neurons,
-                            distribution = distribution,
-                            options = options,
-                            verbose =verbose)
+        self.layers[id] = self.dropout_layers[id]
+        self.inference_layers[id] = self.dropout_layers[id]
 
     def _add_rotate_layer(self, id, options, verbose = 2):
         """
@@ -1344,6 +1449,8 @@ class network(object):
 
         input = self.layers[origin].output
         dropout_input = self.dropout_layers[origin].output
+        inference_input = self.inference_layers[origin].inference
+        
         input_shape = self.layers[origin].output_shape
 
         if 'angle' in options.keys():
@@ -1360,6 +1467,13 @@ class network(object):
 
         self.dropout_layers[id] = drl (
                             input = dropout_input,
+                            input_shape = input_shape,
+                            id = id,
+                            angle = angle,
+                            verbose = verbose)
+
+        self.inference_layers[id] = drl (
+                            input = inference_input,
                             input_shape = input_shape,
                             id = id,
                             angle = angle,
@@ -1426,11 +1540,11 @@ class network(object):
                raise Exception ("This needs to be run only after datastream is cooked")
 
         if 'classifier' in kwargs.keys():
-            _errors = self.layers[kwargs['classifier']].errors
+            _errors = self.inference_layers[kwargs['classifier']].errors
             self._initialize_test_classifier(errors = _errors, verbose = verbose)
 
         elif 'value' in kwargs.keys():
-            _errors = self.layers[kwargs['value']].output
+            _errors = self.inference_layers[kwargs['value']].inference
             self._initialize_test_value(errors = _errors, verbose = verbose)
 
         else:
@@ -1454,7 +1568,7 @@ class network(object):
         if verbose>=3 :
             print "... initializing predict function"
 
-        _predictions = self.layers[classifier].predictions
+        _predictions = self.inference_layers[classifier].predictions
 
         index = T.lscalar('index')
 
@@ -1484,7 +1598,7 @@ class network(object):
             if verbose>=3 :
                 print "... initializing probability output functions"
 
-            _probabilities = self.layers[classifier].probabilities
+            _probabilities = self.inference_layers[classifier].probabilities
 
             index = T.lscalar('index')
             self.mini_batch_posterior = theano.function(
@@ -1628,6 +1742,9 @@ class network(object):
                                        verbose = verbose)
         optimizer.create_updates (params = params, verbose = verbose)
 
+        # add layer specific updates on to the main optimizer updates.
+        for lyr in self.dropout_layers:
+            optimizer.updates.update(self.dropout_layers[lyr].updates)
 
 
     def _create_layer_activity(self, id, activity, verbose = 2):
@@ -1685,10 +1802,10 @@ class network(object):
            raise Exception ("This needs to be run only after network is cooked")
 
         self.layer_activities_created = True
-        for id, _layer in self.layers.iteritems():
+        for id, _layer in self.inference_layers.iteritems():
             if verbose >=3 :
                 print "... collecting the activities of layer " + id
-            activity = _layer.output
+            activity = _layer.inference
             self._create_layer_activity(id = id, activity = activity, verbose = verbose)
 
     def _new_era (self, new_learning_rate = 0.01, verbose = 2):
@@ -1994,6 +2111,9 @@ class network(object):
                 raise Exception ("Cannot build trainer without having an objective layer created")
             else:
                 objective_layer = self.last_objective_layer_created
+
+        if verbose >=2 :
+            print (".. All checks complete, cooking continues" )
 
         self.cost = self.layers[objective_layer].output
         self.dropout_cost = self.dropout_layers[objective_layer].output
@@ -2393,9 +2513,6 @@ class network(object):
 
             # post training items for one loop of batches.
             if nan_flag is False:
-                if verbose >= 2:
-                    self.print_status ( epoch = epoch_counter, verbose = verbose )
-
                 best = self.validate(   epoch = epoch_counter,
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,

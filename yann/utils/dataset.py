@@ -43,6 +43,7 @@ import theano
 import theano.tensor as T
 from theano import shared
 
+from yann.utils.image import preprocessing
 from scipy.misc import imresize as imresize
 
 thismodule = sys.modules[__name__]
