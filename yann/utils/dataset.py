@@ -760,8 +760,7 @@ class setup_dataset (object):
                                 * ``'caltech101'``
                                 * ``'caltech256'``
                         Refer to original paper by Hugo Larochelle [1] for these dataset details.
-                    "location"                  : #necessary for 'pkl' and 'matlab'
-                    "location"                  : #necessary for 'pkl' and 'matlab'
+
                     "location"                  : #necessary for 'pkl' and 'matlab'
                     "mini_batch_size"           : 500,
                     "mini_batches_per_batch"    : (100, 20, 20), # trianing, testing, validation
@@ -839,10 +838,6 @@ class setup_dataset (object):
         self.source              = dataset_init_args [ "source" ]
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
-
-        elif self.source == 'mat':
-
-        elif self.source == 'mat':
 
         elif self.source == 'mat':
             self.location        = dataset_init_args [ "location" ]
