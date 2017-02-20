@@ -447,7 +447,17 @@ class network(object):
             verbose: Similar to what is found in the rest of the toolbox.
         """
         if resultor_params is None:
-            resultor_params    =    {}
+            resultor_params = {
+                    "root"      : "resultor",
+                    "results"   : "results.txt",
+                    "errors"    : "errors.txt",
+                    "costs"     : "costs.txt",
+                    "confusion" : "confusion.txt",
+                    "network"   : "network.pkl",
+                    "learning_rate" : "learning_rate.txt",
+                    "momentum"  : "momentum.txt",
+                    "visualize" : False,
+            }
 
         if not "id" in resultor_params.keys():
             id = len(self.resultor) + 1
@@ -1794,6 +1804,7 @@ class network(object):
         Args:
             verbose: as always
         """
+
         if verbose > 3:
             print("... Resultor is cooked")
 
@@ -1821,6 +1832,7 @@ class network(object):
         self.cooked_visualizer.visualize_filters(layers = self.dropout_layers,
                                                  epoch = epoch,
                                                  verbose = verbose)
+
     def visualize(self, epoch = 0, verbose =2 ):
         """
         This method will use the cooked visualizer to save down the visualizations
@@ -1832,8 +1844,18 @@ class network(object):
             self.visualize_activities(epoch = epoch, verbose = verbose)
             self.visualize_filters(epoch = epoch, verbose = verbose)
 
+    def write_results(self, epoch = 0, verbose =2 ):
+        
+        """
+        This method will use the cooked visualizer to save down the visualizations
 
-
+        Args:
+            epoch: supply the epoch number ( used to create directories to save
+        """
+        if (epoch % self.write_results_after_epochs == 0):
+            self.write_results(epoch = epoch, verbose = verbose)
+            self.visualize_filters(epoch = epoch, verbose = verbose)
+    
     def cook(self, verbose = 2, **kwargs):
         """
         This function builds the backprop network, and makes the trainer, tester and validator
@@ -2034,11 +2056,13 @@ class network(object):
                                                                                  self.borrow)))
             print("... Momentum            : " + str(self.current_momentum(epoch)))
 
-        self.cooked_resultor.process_results(cost = self.cost[-1],
-                                           lr = self.learning_rate.get_value(borrow=self.borrow),
-                                           mom = self.current_momentum(epoch),
-                                           verbose = verbose)
+        lr = self.learning_rate.get_value(borrow =  self.borrow)
+        mom = self.current_momentum(epoch)
 
+        self.cooked_resultor.process_results(cost = cost,
+                                           lr = lr,
+                                           mom = mom,
+                                           verbose = verbose)
 
     def _print_layer (self, id, prefix = " ", nest = True, last = True):
         """
@@ -2378,7 +2402,9 @@ class network(object):
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,
                                         verbose = verbose )
-                self.visualize ( epoch = epoch_counter , verbose = verbose)
+                self.visualize ( epoch = epoch_counter , verbose = verbose )
+                self.print_status ( epoch = epoch_counter, verbose=verbose )
+
                 if best is True:
                     copy_params(source = self.active_params, destination= nan_insurance ,
                                                                             borrow = self.borrow)

@@ -94,15 +94,20 @@ class resultor(module):
             if verbose >= 3:
                 print "... Creating a root directory for save files"
             os.makedirs(self.root)
+        
+        for file in [self.results_file, self.error_file, self.cost_file, self.confusion_file,
+                     self.learning_rate, self.momentum]:
+            f = open(self.root + "/" + file, 'w')
+            f.close()
 
         if verbose >= 3:
-            print "... Resultor is initiliazed"
+            print ( "... Resultor is initiliazed" )
 
-    def process_results( self,
-                        cost,
-                        lr,
-                        mom,
-                        verbose = 2):
+    def process_results(    self,
+                            cost,
+                            lr,
+                            mom,                        
+                            verbose = 2 ):
         """
         This method will print results and also write them down in the appropriate files.
 
@@ -111,3 +116,34 @@ class resultor(module):
             lr: Learning Rate, is a float
             mom: Momentum, is a float.
         """
+        print ( ".. Cost                : " + str(cost) )
+        if verbose >= 3:
+            print ( "... Learning Rate       : " + str(lr) )
+            print ( "... Momentum            : " + str(mom) )
+
+        f = open(self.root + "/" + self.cost_file, 'a')
+        f.write(str(cost))
+        f.write('\n')
+        f.close()
+
+        f = open(self.root + "/" + self.learning_rate, 'a')
+        f.write(str(lr))
+        f.write('\n')
+        f.close()
+
+        f = open(self.root + "/" + self.momentum, 'a')
+        f.write(str(mom))
+        f.write('\n')        
+        f.close()    
+
+    def plot (self, verbose = 2):
+        """
+        This method will (should) plot all the values in the files.
+        """
+        print "TBD"
+
+    def update_plot (self, verbose = 2):
+        """
+        This method should update the open plots with costs and other values.
+        """
+        print "TBD"        

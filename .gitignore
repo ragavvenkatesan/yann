@@ -2,6 +2,8 @@
 *.pkl.gz
 *.pkl
 *.zip
+*.png
+*.mat
 .coverage
 /docs/build
 /yann.egg-info
@@ -11,8 +13,10 @@
 /tests/__pycache__/
 .cache
 .eggs
-*.png
-/visualizer
-/lenet5
+visualizer
+lenet5
 .vscode
-svhn
+/pantry/matlab/tests
+/pantry/matlab/train
+/pantry/matlab/valid
+resultor

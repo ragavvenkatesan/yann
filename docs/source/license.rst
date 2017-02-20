@@ -53,12 +53,12 @@ Credits and copyright attributions to other sources:
 *   Ofcourse, this toolbox contains code from numpy, Contains code from NumPy, 
     Copyright (c) 2005-2011, NumPy Developers. All rights reserved.
 
-*   Although none of the software was ever directly used, Lasagne played a 
-    signnificant role in the developement of yann. Part of the intention
+*   Lasagne played a signnificant role in the developement of yann. Part of the intention
     in begining to develop yann was that Lasagne was getting too large for the 
     authors to keep up. Lasagne therefore insipired some of the aspects of this toolbox. 
-    Although no pieces of code was used from Lasagne, some philosophies come from
-    there and therefore credit is due for Lasagne forums and issues section. 
+    One of the contributors who submitted the rotate layer, used code re-distributed from
+    Lasagne toolbox as well. So, in honoring their license, 
+    Copyright (c) 2014-2016 Lasagne contributors. 
 
 *   Credit is also due to developers of skdata, progressbar, networkx and developers of 
     all the other dependencies that helping in the creating of this toolbox. Go team OpenSource!

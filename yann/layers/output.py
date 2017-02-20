@@ -235,12 +235,12 @@ class objective_layer(layer):
 
     Args:
         loss: ``yann.network.layers.classifier_layer.loss()`` method, or some thenao variable
-                 if other types  of objective layers.
+                    if other types  of objective layers.
         labels: ``theano.shared`` variable of labels.
         objective: ``'nll'``, ``'cce'``, ``'nll'`` or ``''bce''`` or ``'hinge'`` for classifier
                 kayers. ``'value'``. Value will just use the value as
                 an objective and minimizes that. depends on what is the classifier layer being used.
-                 Each have their own  options. This is usually a string.
+                    Each have their own  options. This is usually a string.
         L1: Symbolic weight of the L1 added together
         L2: Sumbolic L2 of the weights added together
         l1_coeff: Coefficient to weight L1 by.

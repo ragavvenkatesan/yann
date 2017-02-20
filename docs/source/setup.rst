@@ -226,19 +226,6 @@ Dependencies for visualization
 
     pip insall matplotlib
 
-  For visualization of images, yann also uses 
-  `pylearn2 <http://deeplearning.net/software/pylearn2/>`_. Pylearn2 used to be a library that was 
-  supported by the developers of theano, but the developement on it was stopped due to overheads
-  from development of blocks and fuel. I still use pylearn2 only for visualization, so it shouldn't 
-  be affected from developement and such. It has a setup.py file which can be used for pip install
-  as follows:
-
-  .. code-block:: bash
-
-    pip install git+git://github.com/lisa-lab/pylearn2.git
-
-
-  
 cPickle, gzip and hdf5py 
 ------------------------
 
@@ -246,7 +233,7 @@ cPickle, gzip and hdf5py
   if not please install them.  Yann uses these for saving down models and such.
 
   For datasets, at the moment, yann uses cpickle. In the future, yann will migrate to hdf5 for 
-  datasets. Install hdf5py by running either,
+  datasets. We don't use hdf5py at the moment. Install hdf5py by running either,
 
   .. code-block:: bash
 

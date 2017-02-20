@@ -1,10 +1,10 @@
-"""
-This is a tutorial to setup any dataset in matlab format to be used by YANN.
-Still working on this. 
-"""
+from yann.utils.dataset import setup_dataset
+
 def cook_svhn_normalized( location, verbose = 1, **kwargs):
     """
-    This method demonstrates how to cook a dataset for yann from matlab.
+    This method demonstrates how to cook a dataset for yann from matlab. Refer to the 
+    ``pantry/matlab/setup_svhn.m`` file first to setup the dataset and make it ready for use with 
+    yann.
 
     Args:
 
@@ -26,12 +26,16 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
     if not 'data_params' in kwargs.keys():
 
         data_params = {
-                   "source"             : 'mat',
-                   "name"               : 'yann_svhn',
-                   "location"			: location,
+                   "source"             : 'matlab',
+                   # "name"               : 'yann_svhn', # some name.
+                   "location"			: location,    # some location to load from.  
                    "height"             : 32,
                    "width"              : 32,
-                   "channels"           : 3  }
+                   "channels"           : 3,
+                   "batches2test"       : 42,
+                   "batches2train"      : 56,
+                   "batches2validate"   : 28,
+                   "mini_batch_size"    : 500}
 
     else:
         data_params = kwargs['data_params']
@@ -53,3 +57,11 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
                             preprocess_init_args = preprocess_params,
                             verbose = 3)
     return dataset
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        raise Exception("Provide Dataset Location")
+    else:
+        location = sys.argv[1]
+    cook_svhn_normalized(location)

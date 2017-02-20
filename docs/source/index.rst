@@ -92,7 +92,13 @@ Quick Start
 
 The easiest way to get going with Yann is to follow this quick start guide. If you are not 
 satisfied and want a more detailed introduction to the toolbox, you may refer to the 
-:ref:`tutorial` and the :ref:`organization`.  
+:ref:`tutorial` and the :ref:`organization`.  This tutorial was also presented in CSE591 at ASU
+and the video of the presentation is available. 
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/0NFvfg8CItQ"
+     frameborder="0" allowfullscreen></iframe>
 
 To install in a quick fashion without much dependencies run the follwing command:
 

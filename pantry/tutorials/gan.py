@@ -13,10 +13,9 @@ def cook_mnist(  verbose = 1, **kwargs):
 	Wrapper to cook mnist dataset specifically for the gan. Will take as input,
 
 	Args:
-	
-		save_directory: which directory to save the cooked dataset onto.
-		dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
-		preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
+        save_directory: which directory to save the cooked dataset onto.
+        dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
+        preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
 
     Notes:
         By default, this will create a dataset that is not mean-subtracted.
