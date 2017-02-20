@@ -111,9 +111,23 @@ independently first and then run the above command. Note that this installer, do
 of options of the toolbox for which you need to go through the complete install described at the
 :ref:`setup` page.
 
+Verify that the installation of theano is indeed version 0.9 or greater by doing the following in 
+a python shell
+
+.. code-block:: python
+
+    import theano
+    theano.__version__ 
+
+If the version was not 0.9, you can install 0.9 by doing the following:
+
+.. code-block:: bash 
+
+    pip install --upgrade --no-deps git+git://github.com/Theano/Theano.git
+
 The start and the end of Yann toolbox is the :mod:`network` module. The :mod:`yann.network`.
 ``network`` object is where all the magic happens. Start by importing :mod:`network` and creating a
-``network`` object. 
+``network`` object in a python shell. 
 
 .. code-block:: python
 
