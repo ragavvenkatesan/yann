@@ -1,4 +1,6 @@
-from abstract import layer
+from yann.layers.abstract import layer, _dropout
+import numpy
+
 
 class input_layer (layer):
     """
@@ -28,21 +30,21 @@ class input_layer (layer):
         for connections.
 
     """
-    def __init__ (  self,
-                    mini_batch_size,
-                    x,
-                    id = -1,
-                    height=28,
-                    width=28,
-                    channels=1,
-                    mean_subtract = False,
-                    verbose = 2):
+    def __init__(self,
+                 mini_batch_size,
+                 x,
+                 id = -1,
+                 height = 28,
+                 width = 28,
+                 channels = 1,
+                 mean_subtract = False,
+                 verbose = 2):
 
-        if verbose >=3:
-            print "... Creating the input layer"
+        if verbose >= 3:
+            print("... Creating the input layer")
 
-        super(input_layer,self).__init__(id = id, type = 'input', verbose = verbose)
-        data_feeder = x.reshape((mini_batch_size, height, width, channels)).dimshuffle(0,3,1,2)
+        super(input_layer, self).__init__(id = id, type = 'input', verbose = verbose)
+        data_feeder = x.reshape((mini_batch_size, height, width, channels)).dimshuffle(0, 3, 1, 2)
                                 # the dim shuffle makes it mini_batch_size, channels height width order
         mean_subtracted_data_feeder = data_feeder - data_feeder.mean()
 
@@ -50,8 +52,9 @@ class input_layer (layer):
         self.output_shape = (mini_batch_size, channels, height, width)
         self.inference = self.output
 
-        if verbose >=3:
-            print "... Input layer is created with output shape " + str(self.output_shape)
+        if verbose >= 3:
+            print("... Input layer is created with output shape " + str(self.output_shape))
+
 
 class dropout_input_layer (input_layer):
     """
@@ -78,39 +81,39 @@ class dropout_input_layer (input_layer):
         ``input_layer.output_shape`` will tell you the output size.
 
     """
-    def __init__ (  self,
-                    mini_batch_size,
-                    id,
-                    x,
-                    dropout_rate = 0.5,
-                    height=28,
-                    width=28,
-                    channels=1,
-                    mean_subtract = False,
-                    rng = None,
-                    verbose = 2):
+    def __init__(self,
+                 mini_batch_size,
+                 id,
+                 x,
+                 dropout_rate = 0.5,
+                 height = 28,
+                 width = 28,
+                 channels = 1,
+                 mean_subtract = False,
+                 rng = None,
+                 verbose = 2):
 
         if verbose >= 3:
-            print "... set up the dropout input layer"
+            print("... set up the dropout input layer")
         if rng is None:
             rng = numpy.random
-        super(dropout_input_layer, self).__init__ (
+        super(dropout_input_layer, self).__init__(
                                             x = x,
                                             mini_batch_size = mini_batch_size,
                                             id = id,
-                                            height=height,
-                                            width=width,
-                                            channels=channels,
+                                            height = height,
+                                            width = width,
+                                            channels = channels,
                                             mean_subtract = mean_subtract,
-                                            verbose = verbose
-                                        )
+                                            verbose = verbose)
         if not dropout_rate == 0:
             self.output = _dropout(rng = rng,
-                                params = self.output,
-                                dropout_rate = dropout_rate)
+                                   params = self.output,
+                                   dropout_rate = dropout_rate)
 
-        if verbose >=3:
-            print "... Dropped out"
+        if verbose >= 3:
+            print("... Dropped out")
+
 
 if __name__ == '__main__':
     pass
