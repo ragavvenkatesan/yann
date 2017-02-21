@@ -207,7 +207,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
-                    # batch_norm = True,           
+                    batch_norm = True,           
                     regularize = True,                             
                     verbose = verbose
                     )
@@ -219,7 +219,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
-                    # batch_norm = True,
+                    batch_norm = True,
                     regularize = True,                    
                     verbose = verbose
                     )      

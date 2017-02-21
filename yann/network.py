@@ -2048,7 +2048,7 @@ class network(object):
         else:
             params = []
             for lyr in kwargs['active_layers']:
-                params.append(lyr.params)
+                params.append(lyr.active_params)
 
         if not 'resultor' in kwargs.keys():
             resultor = None

@@ -275,22 +275,22 @@ class gan (network):
 
         for lyr in generator_layers:
             self.generator_active_params = self.generator_active_params + \
-                                           self.dropout_layers[lyr].params
+                                           self.dropout_layers[lyr].active_params
 
         for lyr in discriminator_layers:
             self.discriminator_active_params = self.discriminator_active_params + \
-                                               self.dropout_layers[lyr].params
+                                               self.dropout_layers[lyr].active_params
         if self.softmax_head is True:
             for lyr in classifier_layers:
                 self.classifier_active_params = self.classifier_active_params + \
-                                                self.dropout_layers[lyr].params
+                                                self.dropout_layers[lyr].active_params
 
         if optimizer_params is None:
             optimizer_params =  {
-                            "momentum_type"       : 'polyak',
+                            "momentum_type"       : 'false',
                             "momentum_params"     : (0.9, 0.95, 30),
-                            "regularization"      : (0.0001, 0.0001),
-                            "optimizer_type"      : 'rmsprop',
+                            "regularization"      : (0.000, 0.000),
+                            "optimizer_type"      : 'sgd',
                                 }
 
         if datastream is None:
@@ -797,7 +797,7 @@ class gan (network):
                 for minibatch in xrange(self.mini_batches_per_batch[0]):
                     # All important part of the training function. Batch Train.
                     # This is the classifier for discriminator. I will run this later.
-
+                    
                     fake_cost = self.mini_batch_train_fake (minibatch, epoch_counter)
                     real_cost = self.mini_batch_train_real (minibatch, epoch_counter)
                     if self.softmax_head is True:

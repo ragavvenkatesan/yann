@@ -27,7 +27,7 @@ def cook_mnist(  verbose = 1, **kwargs):
         data_params = {
         "source"             : 'skdata',                                   
         "name"               : 'mnist',    
-        "location"			: '',                                      
+        "location"			 : '',                                      
         "mini_batch_size"    : 100,                                     
         "mini_batches_per_batch" : (500, 100, 100), 
         "batches2train"      : 1,                                      
@@ -47,7 +47,7 @@ def cook_mnist(  verbose = 1, **kwargs):
                 "normalize"     : True,
                 "ZCA"           : False,
                 "grayscale"     : False,
-                "zero_mean" 	: False,
+                "zero_mean" 	: True,
             }
     else:
         preprocess_params = kwargs['preprocess_params']
@@ -63,7 +63,7 @@ def cook_mnist(  verbose = 1, **kwargs):
             verbose = 3)
     return dataset
 
-def mlgan ( dataset= None, verbose = 1 ):             
+def shallow_gan ( dataset= None, verbose = 1 ):             
     """
     This function is a demo example of a generative adversarial network. 
     This is an example code. You should study this code rather than merely run it.  
@@ -128,69 +128,34 @@ def mlgan ( dataset= None, verbose = 1 ):
                                                  # the time. 
                     mean_subtract = False )
 
-    #G(z) contains params theta_g - 100 X 784 - creates images of 1 X 784
     net.add_layer ( type = "dot_product",
                     origin = "z",
-                    id = "G1",
-                    num_neurons = 1200,
-                    activation = 'relu',
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "dot_product",
-                    origin = "G1",
-                    id = "G2",
-                    num_neurons = 1200,
-                    activation = 'relu',
-                    verbose = verbose
-                    )                     
-    
-    net.add_layer ( type = "dot_product",
-                    origin = "G2",
                     id = "G(z)",
                     num_neurons = 784,
-                    activation = 'sigmoid',
+                    activation = 'tanh',
                     verbose = verbose
                     )  # This layer is the one that creates the images.
         
     #D(x) - Contains params theta_d creates features 1 X 800. 
     net.add_layer ( type = "dot_product",
-                    id = "D1",
+                    id = "D(x)",
                     origin = "x",
-                    num_neurons = 1200,
-                    activation = ('maxout','maxout',5),   
+                    num_neurons = 800,
+                    activation = 'relu',   
                     regularize = True,                                                         
                     verbose = verbose
                     )
 
     net.add_layer ( type = "dot_product",
-                    id = "Dz1",
-                    origin = "G(z)",
-                    input_params = net.dropout_layers["D1"].params, 
-                    num_neurons = 1200,
-                    activation = ('maxout','maxout',5),
-                    regularize = True,
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "dot_product",
-                    id = "D(x)",
-                    origin = "D1",
-                    num_neurons = 1200,
-                    activation = ('maxout','maxout',5),
-                    regularize = True,                    
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "dot_product",
                     id = "D(G(z))",
-                    origin = "Dz1",
-                    input_params = net.dropout_layers["D(x)"].params,   
-                    num_neurons = 1200,
-                    activation = ('maxout','maxout',5),
+                    origin = "G(z)",
+                    input_params = net.dropout_layers["D(x)"].params, 
+                    num_neurons = 800,
+                    activation = 'relu',
                     regularize = True,
                     verbose = verbose
                     )
+
 
     #C(D(x)) - This is the opposite of C(D(G(z))), real
     net.add_layer ( type = "dot_product",
@@ -257,16 +222,16 @@ def mlgan ( dataset= None, verbose = 1 ):
     
     net.cook (  objective_layers = ["classifier_obj","real_obj","fake_obj"],
                 optimizer_params = optimizer_params,
-                classifier_layers = ["D1", "D(x)", "softmax"],                                
-                discriminator_layers = ["D1","D(x)"],
-                generator_layers = ["G1","G(z)"], 
+                classifier_layers = ["D(x)", "softmax"],                                
+                discriminator_layers = ["D(x)"],
+                generator_layers = ["G(z)"], 
                 softmax_layer = "softmax",
                 verbose = verbose )
                     
-    learning_rates = (0.04, 0.001, 0.0001 )  
+    learning_rates = (0.04, 0.01, 0.001 )  
 
-    net.train( epochs = (50, 50 ), 
-               k = 5,  
+    net.train( epochs = (5, 5 ), 
+               k = 1,  
                pre_train_discriminator = 0,
                validate_after_epochs = 1,
                visualize_after_epochs = 1,
@@ -292,4 +257,4 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    mlgan ( dataset, verbose = 2 )
+    shallow_gan ( dataset, verbose = 2 )
