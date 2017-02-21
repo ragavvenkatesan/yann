@@ -14,13 +14,14 @@ import time
 
 import numpy
 import scipy.io
-import cPickle
-# for python3 compatability
-# import pickle as cPickle
+#import cPickle
+#for python3 compatability
+import pickle as cPickle
 import imp
 
 from image import *
 from yann.utils.image import preprocessing
+from yann.utils.image import check_type
 
 # for xrange python2 and 3 compatability
 try:

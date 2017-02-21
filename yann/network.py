@@ -1845,7 +1845,7 @@ class network(object):
             self.visualize_filters(epoch = epoch, verbose = verbose)
 
     def write_results(self, epoch = 0, verbose =2 ):
-        
+
         """
         This method will use the cooked visualizer to save down the visualizations
 
@@ -1855,7 +1855,7 @@ class network(object):
         if (epoch % self.write_results_after_epochs == 0):
             self.write_results(epoch = epoch, verbose = verbose)
             self.visualize_filters(epoch = epoch, verbose = verbose)
-    
+
     def cook(self, verbose = 2, **kwargs):
         """
         This function builds the backprop network, and makes the trainer, tester and validator
@@ -2051,6 +2051,7 @@ class network(object):
             else:
                 print(".. Cost                : " + str(numpy.mean(self.cost[-1 *
                                     self.batches2train * self.mini_batches_per_batch[0]:])))
+
         if verbose >= 3:
             print("... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
                                                                                  self.borrow)))

@@ -1,7 +1,8 @@
-from abstract import layer, _activate, _dropout
+from yann.layers.abstract import layer, _activate, _dropout
 import numpy
 import theano
 import theano.tensor as T
+
 
 class classifier_layer (layer):
     """
@@ -32,25 +33,24 @@ class classifier_layer (layer):
         The class also has in public ``w``, ``b`` and ``alpha`` which are also a list in ``params``,
         another property of this class.
     """
-    def __init__ (  self,
-                    input,
-                    input_shape,
-                    id,
-                    num_classes = 10,
-                    rng = None,
-                    input_params = None,
-                    borrow = True,
-                    activation = 'softmax',
-                    verbose = 2
-                    ):
+    def __init__(self,
+                 input,
+                 input_shape,
+                 id,
+                 num_classes = 10,
+                 rng = None,
+                 input_params = None,
+                 borrow = True,
+                 activation = 'softmax',
+                 verbose = 2):
 
-        super(classifier_layer,self).__init__(id = id, type = 'classifier', verbose = verbose)
+        super(classifier_layer, self).__init__(id = id, type = 'classifier', verbose = verbose)
 
         if rng is None:
             rng = numpy.random
 
-        if verbose >=3:
-            print "... Creating classifier layer"
+        if verbose >= 3:
+            print("... Creating classifier layer")
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         self.input = input
         # To copy weights previously created or some wierd initializations
@@ -58,19 +58,18 @@ class classifier_layer (layer):
             self.w = input_params[0]
             self.b = input_params[1]
         else:
-            self.w = theano.shared ( value=numpy.asarray(0.01 * rng.standard_normal(
+            self.w = theano.shared(value=numpy.asarray(0.01 * rng.standard_normal(
                                      size=(input_shape[1], num_classes)),
-                                     dtype=theano.config.floatX), name='weights' ,borrow = borrow)
-            self.b = theano.shared( value=numpy.zeros((num_classes,),
-                                        dtype=theano.config.floatX),
-                                     name='bias' ,borrow = borrow)
+                                     dtype=theano.config.floatX), name='weights', borrow = borrow)
+            self.b = theano.shared(value=numpy.zeros((num_classes,),
+                                        dtype=theano.config.floatX), name='bias', borrow = borrow)
 
         self.fit = T.dot(input, self.w) + self.b
-        self.p_y_given_x, softmax_shp = _activate ( x =  self.fit,
-                                                    activation = activation,
-                                                    input_size = num_classes,
-                                                    verbose = verbose,
-                                                    dimension = 2 )
+        self.p_y_given_x, softmax_shp = _activate(x = self.fit,
+                                                  activation = activation,
+                                                  input_size = num_classes,
+                                                  verbose = verbose,
+                                                  dimension = 2)
 
         # compute prediction as class whose probability is maximal in symbolic form
         self.predictions = T.argmax(self.p_y_given_x, axis=1)
@@ -87,8 +86,8 @@ class classifier_layer (layer):
         self.dropout_rate = 0
         self.batch_norm = False
 
-        if verbose >=3:
-            print "... Classifier layer is created with output shape " + str(self.output_shape)
+        if verbose >= 3:
+            print("... Classifier layer is created with output shape " + str(self.output_shape))
 
     def _negative_log_likelihood(self, y):
         """
@@ -105,7 +104,7 @@ class classifier_layer (layer):
         """
         return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
 
-    def _categorical_cross_entropy( self, y ):
+    def _categorical_cross_entropy(self, y):
         """
         Categorical cross-entropy of the classifier layer.
         Do not use this directly, use the ``loss`` method instead.
@@ -118,9 +117,9 @@ class classifier_layer (layer):
 
             theano variable: categorical_cross_entropy
         """
-        return T.mean(T.nnet.categorical_crossentropy(self.p_y_given_x,y))
+        return T.mean(T.nnet.categorical_crossentropy(self.p_y_given_x, y))
 
-    def _binary_cross_entropy ( self, y ):
+    def _binary_cross_entropy(self, y):
         """
         Binary cross entropy of the classifier layer.
         Do not use this directly, use the ``loss`` method instead.
@@ -133,7 +132,7 @@ class classifier_layer (layer):
 
             theano variable: Binary cross entropy
         """
-        return T.mean(T.nnet.binary_crossentropy(self.p_y_given_x,y))
+        return T.mean(T.nnet.binary_crossentropy(self.p_y_given_x, y))
 
     def errors(self, y):
         """
@@ -149,7 +148,7 @@ class classifier_layer (layer):
         """
         if y.ndim != self.predictions.ndim:
             raise TypeError('y should have the same shape as self.predictions',
-                ('y', target.type, 'predictions', self.predictions.type))
+                ('y', y.type, 'predictions', self.predictions.type))
         # check if y is of the correct datatype
         if y.dtype.startswith('int'):
             return T.sum(T.neq(self.predictions, y))
@@ -181,7 +180,7 @@ class classifier_layer (layer):
             theano variable: Hinge loss.
         """
         margin = y * self.fit
-        return self._hinge(margin).mean(axis=0).sum()
+        return self._hinge(margin).mean(axis = 0).sum()
 
     def loss(self, y, type):
         """
@@ -199,17 +198,17 @@ class classifier_layer (layer):
             theano symbolic variable: loss value.
         """
         if type == 'nll':
-            return self._negative_log_likelihood( y = y )
+            return self._negative_log_likelihood(y = y)
         elif type == 'cce':
-            return self._categorical_cross_entropy( y = y )
+            return self._categorical_cross_entropy(y = y)
         elif type == 'bce':
-            return self._binary_cross_entropy( y = y )
+            return self._binary_cross_entropy(y = y)
         elif type == 'hinge':
-            return self._hinge_loss( y = y )
+            return self._hinge_loss(y = y)
         else:
             raise Exception("Classifier layer does not support " + type + " loss")
 
-    def get_params (self , borrow = True, verbose = 2):
+    def get_params(self, borrow = True, verbose = 2):
         """
         This method returns the parameters of the layer in a numpy ndarray format.
 
@@ -228,7 +227,8 @@ class classifier_layer (layer):
             out.append(p.get_value(borrow = borrow))
         return out
 
-class objective_layer(layer):
+
+class objective_layer (layer):
     """
     This class is an objective layer. It just has a wrapper for loss function.
     I need this because I am making objective as a loss layer.
@@ -254,23 +254,23 @@ class objective_layer(layer):
         Use ``objective_layer.output`` and from this class.
 
     """
-    def __init__(   self,
-                    id,
-                    loss,
-                    labels = None,
-                    objective = 'nll',
-                    L1 = None,
-                    L2 = None,
-                    l1_coeff = 0.001,
-                    l2_coeff = 0.001,
-                    verbose = 2):
+    def __init__(self,
+                 id,
+                 loss,
+                 labels = None,
+                 objective = 'nll',
+                 L1 = None,
+                 L2 = None,
+                 l1_coeff = 0.001,
+                 l2_coeff = 0.001,
+                 verbose = 2):
         """
         Refer to the class description
         """
-        super(objective_layer,self).__init__(id = id, type = 'objective', verbose = verbose)
+        super(objective_layer, self).__init__(id = id, type = 'objective', verbose = verbose)
 
-        if verbose >=3:
-            print "... creating the objective_layer"
+        if verbose >= 3:
+            print("... creating the objective_layer")
         if objective == 'value':
             self.output = loss
         else:
@@ -282,8 +282,9 @@ class objective_layer(layer):
             self.output = self.output + l2_coeff * L2
         self.output_shape = (1,)
 
-        if verbose >=3:
-            print "... Objective_layer is created with output shape " + str(self.output_shape)
+        if verbose >= 3:
+            print("... Objective_layer is created with output shape " + str(self.output_shape))
+
 
 if __name__ == '__main__':
     pass
