@@ -1,11 +1,11 @@
 import numpy
-import cPickle
+import pickle as cPickle
 
 import theano
 import theano.tensor as T
 
 from yann.utils.dataset import create_shared_memory_dataset
-from yann.utils.dataset import check_type
+from yann.utils.image import check_type
 from yann.modules.abstract import module
 
 
