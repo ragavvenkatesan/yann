@@ -2,6 +2,7 @@ from abstract import layer, _activate, _dropout
 import numpy
 import theano
 import theano.tensor as T
+from theano.tensor.nnet.bn import batch_normalization_train, batch_normalization_test
 
 class dot_product_layer (layer):
     """
@@ -81,39 +82,75 @@ class dot_product_layer (layer):
             elif input_params[2] is None:
                 create = True
             if create is True:
-                alpha_values = numpy.ones((num_neurons,), dtype = theano.config.floatX)
-                self.alpha = theano.shared(value = alpha_values, name = 'batchnorm')
+                gamma_values = numpy.ones((1,num_neurons), dtype = theano.config.floatX)
+                self.gamma = theano.shared(value = gamma_values, name = 'gamma')
+                beta_values = numpy.zeros((1,num_neurons), dtype=theano.config.floatX)
+                self.beta = theano.shared(value=beta_values, name='beta')     
+                self.running_mean = theano.shared(
+                                    value=numpy.zeros((1,num_neurons), 
+                                    dtype=theano.config.floatX), 
+                                    name = 'population_mean', borrow = borrow)
+                self.running_var = theano.shared(
+                                    value=numpy.ones((1,num_neurons),
+                                    dtype=theano.config.floatX),
+                                    name = 'population_var', borrow=borrow)                                                           
             else:
-                self.alpha = input_params[2]
+                self.gamma = input_params[2]
+                self.beta = input_params[3]
+                self.running_mean = input_params [4]
+                self.running_var = input_params [5]
 
-        dot_product = T.dot(input, self.w)
+        linear_fit = T.dot(input, self.w) + self.b
 
-        if batch_norm is True:
-            std = dot_product.std( 0 )
-            mean = dot_product.mean( 0 )
-            std += 0.001 # To avoid divide by zero like fudge_factor
+        if batch_norm is True:                               
+            batch_norm_out,_,_,mean,var = batch_normalization_train (
+                                                  inputs = linear_fit,
+                                                  gamma = self.gamma,
+                                                  beta = self.beta,
+                                                  running_mean = self.running_mean,
+                                                  running_var = self.running_var) 
 
-            dot_product = dot_product - mean
-            dot_product = dot_product * ( self.alpha / std )
+            mean = theano.tensor.unbroadcast(mean,0)
+            var = theano.tensor.unbroadcast(var,0)
+            self.updates[self.running_mean] = mean
+            self.updates[self.running_var] = var + 0.001
 
-        dot_product = dot_product  + self.b
-        dot_product_shp = (input_shape[0], num_neurons)
-        self.output, self.output_shape = _activate (x= dot_product,
+            batch_norm_inference = batch_normalization_test (inputs = linear_fit,
+                                                            gamma = self.gamma,
+                                                            beta = self.beta,
+                                                            mean = self.running_mean,
+                                                            var = self.running_var  )
+        else:
+            batch_norm_out = linear_fit
+            batch_norm_inference = batch_norm_out
+
+        batch_norm_shp = (input_shape[0], num_neurons)
+        self.output, self.output_shape = _activate (x= batch_norm_out,
                                             activation = activation,
-                                            input_size = dot_product_shp,
+                                            input_size = batch_norm_shp,
+                                            verbose = verbose,
+                                            dimension = 1)
+
+        self.inference, _ = _activate (x= batch_norm_out,
+                                            activation = activation,
+                                            input_size = batch_norm_shp,
                                             verbose = verbose,
                                             dimension = 1)
 
         # parameters of the model
         if batch_norm is True:
-            self.params = [self.w, self.b, self.alpha]
+            self.params = [self.w, self.b, self.gamma, self.beta, 
+                                    self.running_mean, self.running_var]
+            self.active_params = [self.w, self.b, self.gamma, self.beta]                                    
         else:
             self.params = [self.w, self.b]
-
+            self.active_params = [self.w, self.b]
+            
         self.L1 = abs(self.w).sum()
-        if batch_norm is True: self.L1 = self.L1 + abs(self.alpha).sum()
+        # if batch_norm is True: self.L1 = self.L1 + abs(self.gamma).sum()
         self.L2 = (self.w**2).sum()
-        if batch_norm is True: self.L2 = self.L2 + (self.alpha**2).sum()
+        # if batch_norm is True: self.L2 = self.L2 + (self.gamma**2).sum()
+
         """
         Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network
         training by reducing internal covariate shift." arXiv preprint arXiv:1502.03167 (2015). """

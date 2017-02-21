@@ -70,7 +70,8 @@ class merge_layer (layer):
             elif len(input_shape[1]) == 4:
                 self.output_shape = (input_shape [0][0], input_shape[0][1] + input_shape[1][1],
                                         input_shape[2], input_shape[3])
-
+        self.inference = self.output
+        
     def loss(self, type = None):
         """
         This method will return the cost function of the merge layer. This can be used by the

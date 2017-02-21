@@ -4,6 +4,7 @@ This code is used to rotate the images given some angles between [0,1].
 Obliging License, credit and conditions for Lasagne: Some part of the file was
 directly reproduced from the Lasagne code base.
 
+Author: Anchit Agarwal
 
 LICENSE
 =======
@@ -88,6 +89,7 @@ class rotate_layer (layer):
             self.output = self._transform_affine(theta, input)
             self.output_shape = input_shape
             self.angle = angle
+            self.inference = self.output
 
     def _transform_affine(self, theta, input):
         num_batch, num_channels, height, width = input.shape

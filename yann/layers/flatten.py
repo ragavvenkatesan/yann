@@ -19,6 +19,7 @@ class flatten_layer (layer):
         super(flatten_layer,self).__init__(id = id, type = 'flatten', verbose = verbose)
         self.output = input.flatten(2)
         self.output_shape = (input_shape[0], input_shape[1] * input_shape[2] * input_shape[3])
+        self.inference = self.output
 
 class unflatten_layer (layer):
     """
@@ -40,6 +41,7 @@ class unflatten_layer (layer):
         super(unflatten_layer,self).__init__(id = id, type = 'unflatten', verbose = verbose)
         self.output = T.reshape(input, (input_shape[0], shape[2], shape[0], shape[1]))
         self.output_shape = (input_shape[0], shape[2], shape[0], shape[1])
+        self.inference = self.output
 
 if __name__ == '__main__':
     pass
