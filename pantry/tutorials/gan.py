@@ -90,7 +90,7 @@ def shallow_gan ( dataset= None, verbose = 1 ):
     visualizer_params = {
                     "root"       : '.',
                     "frequency"  : 1,
-                    "sample_size": 225,
+                    "sample_size": 100,
                     "rgb_filters": False,
                     "debug_functions" : False,
                     "debug_layers": True,  
@@ -240,6 +240,8 @@ def shallow_gan ( dataset= None, verbose = 1 ):
                early_terminate = True,
                verbose = verbose)
                            
+    return net
+
 if __name__ == '__main__':
     import sys
     dataset = None  
@@ -257,4 +259,4 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    shallow_gan ( dataset, verbose = 2 )
+    net = shallow_gan ( dataset, verbose = 2 )
