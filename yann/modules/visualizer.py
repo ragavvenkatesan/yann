@@ -2,19 +2,26 @@ static_printer_import = True
 dynamic_printer_import = True
 
 import os
-from abstract import module
-from yann.utils.dataset import rgb2gray, gray2rgb
+from yann.modules.abstract import module
+from yann.utils.image import rgb2gray, gray2rgb
 from matplotlib.image import imsave
 import numpy as np
+
+# for xrange python2 and 3 compatability
+try:
+    xrange
+except NameError:
+    xrange = range
 
 try:
     from theano.printing import pydotprint as static_theano_print
 except:
     static_printer_import = False
 try:
-    from theano.d3viz import d3viz as dynamic_theano_print # refer todo on top.
+    from theano.d3viz import d3viz as dynamic_theano_print  # refer todo on top.
 except:
     dynamic_printer_import = False
+
 
 def save_images(imgs, prefix, is_color, verbose = 2):
     """
@@ -41,7 +48,7 @@ def save_images(imgs, prefix, is_color, verbose = 2):
 
     #if vis is True:
     if verbose >= 3:
-        print "... Rasterizing"
+        print("... Rasterizing")
 
     raster = []
     count = 0
@@ -53,7 +60,7 @@ def save_images(imgs, prefix, is_color, verbose = 2):
                 is_color = False
 
             if imgs.shape[3] > 1 and imgs.shape[3] % 3 != 0:
-                filts = np.floor( imgs.shape[3] / 3) # consider only the first so an so channels
+                filts = np.floor(imgs.shape[3] / 3)  # consider only the first so an so channels
                 imgs = imgs[:,:,:,0:int(filts)*3]
 
         for i in xrange (imgs.shape[3]):
@@ -71,25 +78,25 @@ def save_images(imgs, prefix, is_color, verbose = 2):
             tile_shape = (int(tile_shape[0]), int(tile_shape[1]))
             if is_color is True:
                 I = np.array(tile_raster_images(
-                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                X = curr_image.reshape((curr_image.shape[0], curr_image.shape[1] * \
                                         curr_image.shape[2])),
                                     img_shape = (curr_image.shape[1], curr_image.shape[2]),
-                                    tile_shape = tile_shape ))
+                                    tile_shape = tile_shape))
                 if len(I.shape) == 3:
                     raster.append(rgb2gray(I))
                 else:
                     raster.append(I)
                 if count == 2:
-                    imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2],raster[i-1],raster[i]) )
+                    imsave(prefix + str(i) + ".jpg", gray2rgb(raster[i-2], raster[i-1], raster[i]))
                     count = -1
             else:
                 raster.append(np.array(tile_raster_images(
-                                X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
+                                X = curr_image.reshape((curr_image.shape[0], curr_image.shape[1] * \
                                         curr_image.shape[2])),
                                     img_shape = (curr_image.shape[1], curr_image.shape[2]),
-                                    tile_shape = tile_shape )))
+                                    tile_shape = tile_shape)))
                 assert len(raster[i].shape) == 2
-                imsave(prefix + str(i) + ".jpg",raster[i], cmap = 'gray')
+                imsave(prefix + str(i) + ".jpg", raster[i], cmap = 'gray')
             count = count + 1
 
     else:
@@ -109,12 +116,13 @@ def save_images(imgs, prefix, is_color, verbose = 2):
         raster.append(np.array(tile_raster_images(X = imgs, img_shape = (lt,lt),
                                                                     tile_shape = tile_shape)))
         is_color = False
-        imsave(prefix + "0.jpg",raster[0], cmap ='gray')
+        imsave(prefix + "0.jpg", raster[0], cmap ='gray')
     return raster
     #else:
     #    return None
 
-class visualizer(module):
+
+class visualizer (module):
     """
     Visualizer saves down images to visualize. The initilizer only initializes the directories
     for storing visuals. Three types of visualizations are saved down:
@@ -149,20 +157,20 @@ class visualizer(module):
     Returns:
         yann.modules.visualizer: A visualizer object.
     """
-    def __init__( self, visualizer_init_args, verbose = 2 ):
+    def __init__(self, visualizer_init_args, verbose = 2):
         if "id" in visualizer_init_args.keys():
             id = visualizer_init_args["id"]
         else:
             id = 'main'
-        super(visualizer,self).__init__(id = id, type = 'visualizer')
+        super(visualizer, self).__init__(id = id, type = 'visualizer')
 
         if verbose >= 3:
-            print "... Creating visualizer directories"
+            print("... Creating visualizer directories")
 
         if "root" in visualizer_init_args.keys():
             self.root         = visualizer_init_args ["root"] + "/visualizer"
         else:
-            self.root   = os.getcwd() + '/visualizer'
+            self.root         = os.getcwd() + '/visualizer'
 
         if "frequency" in visualizer_init_args.keys():
             self.frequency    = visualizer_init_args ["frequency" ]
@@ -217,12 +225,12 @@ class visualizer(module):
         if not os.path.exists(self.root + '/computational_graphs'):
             os.makedirs(self.root + '/computational_graphs')
             os.makedirs(self.root + '/computational_graphs/static')
-            os.makedirs(self.root + '/computational_graphs/dynamic') # refer the todo on top.
+            os.makedirs(self.root + '/computational_graphs/dynamic')  # refer the todo on top.
 
         if verbose >= 3:
-            print "... Visualizer is initiliazed"
+            print("... Visualizer is initiliazed")
 
-    def initialize (self, batch_size, verbose = 2):
+    def initialize(self, batch_size, verbose = 2):
         """
         Function that cooks the visualizer for some dataset.
 
@@ -235,11 +243,11 @@ class visualizer(module):
         np.random.shuffle(shuffle_batch_ind)
         self.indices = shuffle_batch_ind[0:self.sample_size]
 
-    def theano_function_visualizer( self,
-                                    function,
-                                    short_variable_names = False,
-                                    format ='pdf',
-                                    verbose = 2):
+    def theano_function_visualizer(self,
+                                   function,
+                                   short_variable_names = False,
+                                   format ='pdf',
+                                   verbose = 2):
         """
         This basically prints a visualization of any theano function using the in-built theano
         visualizer. It will save both a interactive html file and a plain old png file. This is
@@ -251,8 +259,8 @@ class visualizer(module):
             format: Any pydot supported format. Default is 'pdf'
             verbose: As usual.
         """
-        if verbose >=3:
-            print "... creating visualizations of computational graph"
+        if verbose >= 3:
+            print("... creating visualizations of computational graph")
         # this try and except is bad coding, but this seems to be OS dependent and I don't want to
         # bother with this.
 
@@ -265,7 +273,7 @@ class visualizer(module):
                                                         var_with_name_simple = short_variable_names)
             except:
                 if verbose >= 3:
-                    print "... Something is wrong with the setup of installers for pydot"
+                    print("... Something is wrong with the setup of installers for pydot")
 
         if dynamic_printer_import is True:
             filename = self.root + '/computational_graphs/dynamic/' + function.name
@@ -275,8 +283,7 @@ class visualizer(module):
                                                 # wrong with path. Refer todo on top of the code.
             except:
                 if verbose >= 3:
-                    print "... Something is wrong with the setup of installers for dv3viz"
-
+                    print("... Something is wrong with the setup of installers for dv3viz")
 
 
     def visualize_images(self, imgs, loc = None, verbose = 2):
@@ -289,7 +296,7 @@ class visualizer(module):
             verbose: as usual.
         """
         if verbose >=3 :
-            print "... saving down images"
+            print("... saving down images")
         if imgs.shape[0] == self.batch_size:
             imgs = imgs[self.indices]
 
@@ -297,9 +304,9 @@ class visualizer(module):
             loc = self.root + '/data/image_'
         else:
             loc = loc + '/image_'
-        imgs = save_images(   imgs = imgs,
-                            prefix = loc,
-                            is_color = self.rgb_filters)
+        imgs = save_images(imgs = imgs,
+                           prefix = loc,
+                           is_color = self.rgb_filters)
 
     def visualize_activities(self, layer_activities, epoch, index = 0, verbose = 2):
         """
@@ -311,30 +318,32 @@ class visualizer(module):
             verbose: as always
         """
         if verbose >= 3:
-            print "... Visualizing Activities"
+            print("... Visualizing Activities")
 
         loc = self.root + '/activities/epoch_' + str(epoch)
         if not os.path.exists(loc):
             os.makedirs(loc)
-        for id, activity in layer_activities.iteritems():
+            for id, activity in layer_activities.iteritems():
+                imgs = activity(index)
             if verbose >= 3:
-                print "... Visualizing Activities of id = %s" % id            
+                print("... Visualizing Activities :: id = %s" % id)
+                print("... Visualizing Activities of id = %s" % id)
             imgs = activity(index)
             if len(imgs.shape) == 2:
                 if not os.path.exists(loc + '/layer_' + id):
                     os.makedirs(loc + '/layer_' + id)
                 if not os.path.exists(loc + '/layer_' + id + '/straight'):
                     os.makedirs(loc + '/layer_' + id + '/straight')
-                self.visualize_images(  imgs = imgs,
-                                        loc = loc + '/layer_' + id + '/straight',
-                                        verbose = verbose )
+                self.visualize_images(imgs = imgs,
+                                      loc = loc + '/layer_' + id + '/straight',
+                                      verbose = verbose )
                 if not os.path.exists(loc + '/layer_' + id + '/transposed'):
                     os.makedirs(loc + '/layer_' + id + '/transposed')
-                self.visualize_images(  imgs = imgs.transpose(),
-                                        loc = loc + '/layer_' + id + '/transposed',
-                                        verbose = verbose )
+                self.visualize_images(imgs = imgs.transpose(),
+                                      loc = loc + '/layer_' + id + '/transposed',
+                                      verbose = verbose)
             elif len(imgs.shape) == 4:
-                imgs = imgs.transpose(0,2,3,1)
+                imgs = imgs.transpose(0, 2, 3, 1)
                 if not os.path.exists(loc + '/layer_' + id):
                     os.makedirs(loc + '/layer_' + id)
                 self.visualize_images(imgs, loc = loc + '/layer_' + id ,verbose = verbose)
@@ -349,7 +358,7 @@ class visualizer(module):
             verbose: as always
         """
         if verbose >= 3:
-            print "... Visualizing Layers"
+            print("... Visualizing Layers")
 
         loc = self.root + '/filters/epoch_' + str(epoch)
         if not os.path.exists(loc):
@@ -357,29 +366,29 @@ class visualizer(module):
         for id, layer in layers.iteritems():
             if layer.params is not None:
                 if verbose >= 3:
-                    print "... saving down visualization of layer " + id
+                    print("... saving down visualization of layer " + id)
 
                 imgs = layer.get_params()[0]
                 if len(imgs.shape) == 4:
                     if not os.path.exists(loc + '/layer_' + id):
                         os.makedirs(loc + '/layer_' + id)
-                    imgs = imgs.transpose(0,2,3,1)
-                    self.visualize_images(   imgs = imgs,
-                                             loc = loc + '/layer_' + id ,
-                                             verbose = verbose )
+                    imgs = imgs.transpose(0, 2, 3, 1)
+                    self.visualize_images(imgs = imgs,
+                                          loc = loc + '/layer_' + id ,
+                                          verbose = verbose)
                 elif len(imgs.shape) == 2:
                     if not os.path.exists(loc + '/layer_' + id):
                         os.makedirs(loc + '/layer_' + id)
                     if not os.path.exists(loc + '/layer_' + id + '/straight'):
                         os.makedirs(loc + '/layer_' + id + '/straight')
-                    self.visualize_images(   imgs = imgs,
-                                             loc = loc + '/layer_' + id + '/straight',
-                                             verbose = verbose )
+                    self.visualize_images(imgs = imgs,
+                                          loc = loc + '/layer_' + id + '/straight',
+                                          verbose = verbose)
                     if not os.path.exists(loc + '/layer_' + id + '/transposed'):
                         os.makedirs(loc + '/layer_' + id + '/transposed')
-                    self.visualize_images(   imgs = imgs.transpose(),
-                                             loc = loc + '/layer_' + id + '/transposed',
-                                             verbose = verbose )
+                    self.visualize_images(imgs = imgs.transpose(),
+                                          loc = loc + '/layer_' + id + '/transposed',
+                                          verbose = verbose)
 
 
 if __name__ == '__main__':

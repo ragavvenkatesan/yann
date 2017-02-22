@@ -15,6 +15,12 @@ except ImportError:
 if nx_installed is True:
     import networkx as nx
 
+# for xrange python2 and 3 compatability
+try:
+    xrange
+except NameError:
+    xrange = range
+
 import time
 from collections import OrderedDict
 
@@ -843,7 +849,7 @@ class network(object):
         self.dropout_layers[id] = flt(input = dropout_input, id = id, input_shape = input_shape)
         self.layers[id] = flt(input = input, id = id, input_shape = input_shape)
         self.inference_layers[id] = flt(input = inference_input, id = id, input_shape = input_shape)
-        
+
 
         self.dropout_layers[id].origin.append(origin)
         self.dropout_layers[origin].destination.append(id)
@@ -889,7 +895,7 @@ class network(object):
         self.layers[id] = flt(input = input, id = id, shape = shape, input_shape = input_shape)
         self.inference_layers[id] = flt(input = inference_input, id = id, shape = shape,
                                                                     input_shape = input_shape)
-        
+
 
         self.dropout_layers[id].origin.append(origin)
         self.dropout_layers[origin].destination.append(id)
@@ -995,15 +1001,15 @@ class network(object):
                                 )
         # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
         w = self.dropout_layers[id].w * (1 - dropout_rate)
-        b = self.dropout_layers[id].b 
+        b = self.dropout_layers[id].b
         layer_params = [w,b]
 
         if batch_norm is True:
             # Again, should I halve gamma because of dropout ???
-            gamma = self.dropout_layers[id].gamma 
+            gamma = self.dropout_layers[id].gamma
             beta = self.dropout_layers[id].beta
             mean = self.dropout_layers[id].running_mean
-            var = self.dropout_layers[id].running_var            
+            var = self.dropout_layers[id].running_var
             layer_params.append(gamma)
             layer_params.append(beta)
             layer_params.append(mean)
@@ -1033,7 +1039,7 @@ class network(object):
                             activation = activation,
                             batch_norm = batch_norm,
                             verbose = verbose
-                                )                                
+                                )
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
             self.L2 = self.L2 + self.layers[id].L2
@@ -1067,8 +1073,8 @@ class network(object):
         # If the last layer was not a MLP layer, flatten the output signal from there.
         if not len(self.layers[origin].output_shape) == 2:
             if verbose >= 3:
-                print "... Can't add a classifier layer to a 2D image, flattening the" + \
-                                                                                  " layer output."
+                print("... Can't add a classifier layer to a 2D image, flattening the" + \
+                                                                                  " layer output.")
             self.add_layer(type = 'flatten', origin = origin, verbose = verbose)
             origin = self.last_layer_created
 
@@ -1144,7 +1150,7 @@ class network(object):
                                     borrow = self.borrow,
                                     activation = activation,
                                     verbose = verbose
-                                )                                
+                                )
 
         if regularize is True:
             self.L1 = self.L1 + self.layers[id].L1
@@ -1299,7 +1305,7 @@ class network(object):
             self.layers[id].origin.append(origin)
             self.layers[origin].destination.append(id)
             self.inference_layers[id].origin.append(origin)
-            self.inference_layers[origin].destination.append(id)            
+            self.inference_layers[origin].destination.append(id)
 
     def _add_merge_layer(self, id, options, verbose = 2):
         """
@@ -1383,7 +1389,7 @@ class network(object):
             self.dropout_layers[lyr].destination.append(id)
             self.layers[lyr].destination.append(id)
             self.inference_layers[lyr].destination.append(id)
-            
+
 
     def _add_random_layer(self, id, options, verbose = 2):
         """
@@ -1450,7 +1456,7 @@ class network(object):
         input = self.layers[origin].output
         dropout_input = self.dropout_layers[origin].output
         inference_input = self.inference_layers[origin].inference
-        
+
         input_shape = self.layers[origin].output_shape
 
         if 'angle' in options.keys():
@@ -2178,8 +2184,9 @@ class network(object):
                                                                                  self.borrow)))
             print("... Momentum            : " + str(self.current_momentum(epoch)))
 
-        lr = self.learning_rate.get_value(borrow =  self.borrow)
-        mom = self.current_momentum(epoch)
+            lr = self.learning_rate.get_value(borrow =  self.borrow)
+            mom = self.current_momentum(epoch)
+
 
         self.cooked_resultor.process_results(cost = self.cost,
                                            lr = lr,

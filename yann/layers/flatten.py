@@ -1,4 +1,4 @@
-from abstract import layer
+from yann.layers.abstract import layer
 import theano.tensor as T
 
 class flatten_layer (layer):
