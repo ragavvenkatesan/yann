@@ -14,10 +14,20 @@ import time
 
 import numpy
 import scipy.io
-import cPickle
+#import cPickle
+#for python3 compatability
+import pickle as cPickle
 import imp
 
 from image import *
+from yann.utils.image import preprocessing
+from yann.utils.image import check_type
+
+# for xrange python2 and 3 compatability
+try:
+    xrange
+except NameError:
+    xrange = range
 
 try:
     imp.find_module('scipy')
@@ -43,33 +53,34 @@ import theano
 import theano.tensor as T
 from theano import shared
 
+from yann.utils.image import preprocessing
 from scipy.misc import imresize as imresize
 
 thismodule = sys.modules[__name__]
 
 def download_data (url, location):
-	"""
-	"""
-	import urllib2
-	file_name = url.split('/')[-1]
-	u = urllib2.urlopen(url)
-	f = open(location + file_name, 'wb')
-	meta = u.info()
-	file_size = int(meta.getheaders("Content-Length")[0])
-	print "Downloading: %s Bytes: %s" % (file_name, file_size)
-	file_size_dl = 0
-	block_sz = 8192
-	while True:
-		buffer = u.read(block_sz)
-		if not buffer:
-			break
+    """
+    """
+    import urllib2
+    file_name = url.split('/')[-1]
+    u = urllib2.urlopen(url)
+    f = open(location + file_name, 'wb')
+    meta = u.info()
+    file_size = int(meta.getheaders("Content-Length")[0])
+    print("Downloading: %s Bytes: %s" % (file_name, file_size))
+    file_size_dl = 0
+    block_sz = 8192
+    while True:
+        buffer = u.read(block_sz)
+        if not buffer:
+            break
 
-		file_size_dl += len(buffer)
-		f.write(buffer)
-		status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-		status = status + chr(8)*(len(status)+1)
-		print status,
-	f.close()    
+        file_size_dl += len(buffer)
+        f.write(buffer)
+        status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+        status = status + chr(8)*(len(status)+1)
+        print(status),
+    f.close()
 
 def load_cifar100 ():
     """
@@ -735,7 +746,7 @@ class setup_dataset (object):
                                 'skdata' : Download and setup from skdata
                                 'matlab' : Data is created and is being used from Matlab
                     "name" : necessary only for skdata
-                              supports 
+                              supports
                                 * ``'mnist'``
                                 * ``'mnist_noise1'``
                                 * ``'mnist_noise2'``
@@ -751,8 +762,8 @@ class setup_dataset (object):
                                 * ``'caltech101'``
                                 * ``'caltech256'``
                         Refer to original paper by Hugo Larochelle [1] for these dataset details.
-                        
-                    "location"                  : # necessary for 'pkl' and 'matlab'
+
+                    "location"                  : #necessary for 'pkl' and 'matlab'
                     "mini_batch_size"           : 500,
                     "mini_batches_per_batch"    : (100, 20, 20), # trianing, testing, validation
                     "batches2train"             : 1,
@@ -829,8 +840,8 @@ class setup_dataset (object):
         self.source              = dataset_init_args [ "source" ]
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
-            
-        elif self.source == 'matlab':
+
+        elif self.source == 'mat':
             self.location        = dataset_init_args [ "location" ]
 
         if "height" in dataset_init_args.keys():

@@ -15,7 +15,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.75, 0.97, 30),      
+                "momentum_params"     : (0.65, 0.97, 30),      
                 "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
                         }
@@ -100,7 +100,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "dot_product_2",
                     num_neurons = 1250,                    
                     activation = 'relu',  
-                    regularize = True,              
+                    regularize = True,    
                     verbose = verbose
                     ) 
     
@@ -118,7 +118,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     origin = "softmax",
                     objective = "nll",
                     datastream_origin = 'data', 
-                    regularization = (0.000, 0.001),                
+                    regularization = (0.0001, 0.0001),                
                     verbose = verbose
                     )
                     
@@ -133,7 +133,6 @@ def lenet5 ( dataset= None, verbose = 1 ):
               verbose = verbose
               )
     
-
     net.train( epochs = (40, 40 ), 
                validate_after_epochs = 1,
                training_accuracy = True,
@@ -143,6 +142,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                verbose = verbose)
 
     net.test(verbose = verbose)
+
 # Advaned version of the CNN
 def lenet_maxout ( dataset= None, verbose = 1 ):             
     """
@@ -158,7 +158,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'nesterov',             
-                "momentum_params"     : (0.5, 0.95, 30),      
+                "momentum_params"     : (0.75, 0.95, 30),      
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -175,8 +175,8 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     "frequency"  : 1,
                     "sample_size": 32,
                     "rgb_filters": True,
-                    "debug_functions" : True,
-                    "debug_layers": True,  # Since we are on steroids this time, print everything.
+                    "debug_functions" : False,
+                    "debug_layers": False,  # Since we are on steroids this time, print everything.
                     "id"         : 'main'
                         }                      
 
@@ -198,9 +198,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "input",
                     id = "input",
                     verbose = verbose, 
-                    origin = 'data', # if you didnt add a dataset module, now is 
-                                                 # the time. 
-                    mean_subtract = False )
+                    origin = 'data' )
     
     net.add_layer ( type = "conv_pool",
                     origin = "input",
@@ -223,7 +221,6 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     activation = ('maxout', 'maxout', 2),
                     batch_norm = True,
                     regularize = True,                    
-                    dropout_rate = 0, # because of maxout
                     verbose = verbose
                     )      
         
@@ -231,9 +228,10 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     origin = "conv_pool_2",
                     id = "dot_product_1",
                     num_neurons = 1250,
-                    regularize = True,                    
-                    activation = ('maxout', 'maxout', 2),
+                    activation = 'relu',
+                    dropout_rate = 0.5,
                     batch_norm = True,
+                    regularize = True,                                        
                     verbose = verbose
                     )
 
@@ -242,9 +240,9 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     id = "dot_product_2",
                     num_neurons = 1250,                    
                     activation = 'relu',
-                    batch_norm = True,
                     dropout_rate = 0.5,
-                    regularize = True,                    
+                    regularize = True,  
+                    batch_norm = True,                                      
                     verbose = verbose
                     ) 
     
@@ -260,8 +258,8 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
     net.add_layer ( type = "objective",
                     id = "obj",
                     origin = "softmax",
-                    objective = "cce",
-                    regularization = (0.000, 0.001),                                    
+                    objective = "nll",
+                    regularization = (0.0001, 0.0001),                                    
                     datastream_origin = 'data', 
                     verbose = verbose
                     )
@@ -304,11 +302,13 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        from yann.special.datasets import cook_cifar10  
-        data = cook_cifar10 (verbose = 2)
+        from yann.special.datasets import cook_cifar10 
+        from yann.special.datasets import cook_mnist 
+        # data = cook_cifar10 (verbose = 2)
+        data = cook_mnist()
         dataset = data.dataset_location()
 
-    lenet5 ( dataset, verbose = 2 )
+    # lenet5 ( dataset, verbose = 3 )
     lenet_maxout (dataset, verbose = 2)
      
 

@@ -79,6 +79,7 @@ class random_layer (layer):
         self.output_shape = num_neurons
         self.num_neurons = num_neurons
 
+        self.inference = self.output
         if verbose >=3:
             print("... Random layer is created with output shape " + str(self.output_shape))
 

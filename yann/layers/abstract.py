@@ -13,6 +13,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 # yet.
 from yann.core import activations
 import numpy
+from collections import OrderedDict
 
 class layer(object):
     """
@@ -27,7 +28,7 @@ class layer(object):
               ``'input'`` .. .
 
     Notes:
-        Use ``self.type``, ``self.origin``, self.destination``, ``self.output``,
+        Use ``self.type``, ``self.origin``, self.destination``, ``self.output``, ``self.inference``
             ``self.output_shape`` for outside calls and purposes.
     """
 
@@ -36,8 +37,10 @@ class layer(object):
         self.type = type
         self.origin = []  # this and destination will be added from outside.
         self.destination = [] # only None for now during initialization.
-        self.output = None
+        self.output = None  # this is the output during training
+        self.inference = None # this is the output during testing (batch norm made this happen)
         self.params = None
+        self.active_params = None
         self.output_shape = None
         self.num_neurons = None
         self.activation = 'identity'
@@ -45,6 +48,7 @@ class layer(object):
         self.batch_norm = False
         self.active = True # this flag is setup by the add_layer module
         # Every layer must have these properties.
+        self.updates = OrderedDict() # layer specific updates. 
         if verbose >= 3:
             print("... Initializing a new layer " + self.id + " of type " + self.type)
 

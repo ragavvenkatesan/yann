@@ -27,6 +27,20 @@ If it showed any errors, install ``numpy`` first. ``skdata`` has some issue that
 installed first. If you use anaconda, just install the numpy and scipy using ``conda install`` 
 instead of ``pip install``. This will setup the toolbox for all intentions and purposes.
 
+Verify that the installation of theano is indeed version 0.9 or greater by doing the following in 
+a python shell
+
+.. code-block:: python
+
+    import theano
+    theano.__version__ 
+
+If the version was not 0.9, you can install 0.9 by doing the following:
+
+.. code-block:: bash 
+
+    pip install --upgrade --no-deps git+git://github.com/Theano/Theano.git
+
 For a full-fledged installation procedure, don't do the above but run through the following set of 
 instructions. If you want to install all other supporting features like datasets, visualizers and 
 others, do the following: 
