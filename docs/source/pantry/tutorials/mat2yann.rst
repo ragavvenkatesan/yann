@@ -40,7 +40,7 @@ where, ``data_params`` contains information about the dataset thusly,
 .. code-block:: python
 
     data_params = {
-                   "source"             : 'mat',
+                   "source"             : 'matlab',
                    # "name"               : 'yann_svhn', # some name.
                    "location"			: location,    # some location to load from.  
                    "height"             : 32,
