@@ -18,7 +18,6 @@ class resultor(module):
                     "errors"    : "<error_file_name>.txt",
                     "costs"     : "<cost_file_name>.txt",
                     "confusion" : "<confusion_file_name>.txt",
-                    "network"   : "<network_save_file_name>.pkl"
                     "learning_rate" : "<learning_rate_file_name>.txt"
                     "momentum"  : <momentum_file_name>.txt
                     "visualize" : <bool>
@@ -57,9 +56,6 @@ class resultor(module):
         if not "confusion" in resultor_init_args.keys():
             resultor_init_args["confusion"] = "confusion.txt"
 
-        if not "network" in resultor_init_args.keys():
-            resultor_init_args["network"] = "network.pkl"
-
         if not "learning_rate" in resultor_init_args.keys():
             resultor_init_args["learning_rate"] = "learning_rate.txt"
 
@@ -80,8 +76,6 @@ class resultor(module):
                 self.cost_file              = value
             elif item == "confusion":
                 self.confusion_file         = value
-            elif item == "network":
-                self.network_file           = value
             elif item == "learning_rate":
                 self.learning_rate          = value
             elif item == "momentum":
@@ -146,4 +140,4 @@ class resultor(module):
         """
         This method should update the open plots with costs and other values.
         """
-        print "TBD"        
+        print "TBD"                    

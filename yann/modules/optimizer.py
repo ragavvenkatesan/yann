@@ -133,7 +133,7 @@ class optimizer(module):
         self.gradients = []
         for param in params:  
             if verbose >=3 :           
-                print ".. Estimating gradient of parameter ", 
+                print "... Estimating gradient of parameter ", 
                 print param 
             try:
                 gradient = T.grad( objective ,param)
@@ -165,7 +165,7 @@ class optimizer(module):
         velocities = []
         for param in params:
             if verbose >=3 :           
-                print ".. Estimating velocity  of parameter ",
+                print "... Estimating velocity  of parameter ",
                 print param 
             velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,
                                                                 dtype=theano.config.floatX))
@@ -176,7 +176,7 @@ class optimizer(module):
         accumulator_2 = []
         for param in params:
             if verbose >=3 :           
-                print ".. Accumulating gradinent of parameter " , 
+                print "... Accumulating gradinent of parameter " , 
                 print param 
             eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)
             accumulator_1.append(theano.shared(eps, borrow=True))
@@ -204,7 +204,7 @@ class optimizer(module):
         for velocity, gradient, acc_1 , acc_2, param in zip(velocities, self.gradients,
                                                         accumulator_1, accumulator_2, params):
             if verbose >=3 :           
-                print ".. Backprop of parameter ", 
+                print "... Backprop of parameter ", 
                 print param 
 
             if self.optimizer_type == 'adagrad':
