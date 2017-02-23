@@ -55,7 +55,7 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
     dataset = setup_dataset(dataset_init_args = data_params,
                             save_directory = save_directory,
                             preprocess_init_args = preprocess_params,
-                            verbose = 3)
+                            verbose = verbose)
     return dataset
 
 if __name__ == '__main__':
@@ -64,4 +64,4 @@ if __name__ == '__main__':
         raise Exception("Provide Dataset Location")
     else:
         location = sys.argv[1]
-    cook_svhn_normalized(location)
+    cook_svhn_normalized(location, verbose = 3)

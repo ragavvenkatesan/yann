@@ -838,10 +838,11 @@ class setup_dataset (object):
             print(". Setting up dataset ")
 
         self.source              = dataset_init_args [ "source" ]
+
         if self.source == 'skdata':
             self.name = dataset_init_args ["name"]
 
-        elif self.source == 'mat':
+        elif self.source == 'matlab':
             self.location        = dataset_init_args [ "location" ]
 
         if "height" in dataset_init_args.keys():
@@ -959,6 +960,8 @@ class setup_dataset (object):
                                         self.channels,
                                         self.preprocessor )
 
+                if verbose >=3: 
+                    print ("... Dumping batch " + str(batch))
                 # compute number of minibatches for training, validation and testing
                 f = open(self.root + "/" + type + "/" + 'batch_' + str(batch) + '.pkl', 'wb')
                 obj = (data_x, data_y )
