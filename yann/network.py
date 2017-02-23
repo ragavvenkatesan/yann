@@ -455,7 +455,6 @@ class network(object):
                     "errors"    : "errors.txt",
                     "costs"     : "costs.txt",
                     "confusion" : "confusion.txt",
-                    "network"   : "network.pkl",
                     "learning_rate" : "learning_rate.txt",
                     "momentum"  : "momentum.txt",
                     "visualize" : False,
@@ -2599,6 +2598,31 @@ class network(object):
 
             if verbose >= 2:
                 print(".. Mean testing error : " + str(testing_accuracy))
+
+    def get_params (self, verbose = 2):
+        """
+        This method returns a dictionary of layer weights and bias in numpy format.
+
+        Args:
+            verbose: Blah.. 
+
+        Returns:
+            OrderedDict: A dictionary of parameters. 
+
+        """
+        if verbose >=3:
+            print "... Collecting network parameters"
+        params = OrderedDict()
+        for lyr in self.dropout_layers.keys():
+            params_list = list()
+            if not self.dropout_layers[lyr].params is None:
+                for p in self.dropout_layers[lyr].params:
+                    if verbose >=3:
+                        print "... Collecting parameters of layer " + lyr                                
+                    params_list.append(p.get_value(borrow = True))
+                params[lyr] = params_list
+
+        return params 
 
 if __name__ == '__main__':
     pass

@@ -133,7 +133,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
               verbose = verbose
               )
     
-    net.train( epochs = (40, 40 ), 
+    net.train( epochs = (40, 40), 
                validate_after_epochs = 1,
                training_accuracy = True,
                learning_rates = learning_rates,               
@@ -207,7 +207,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
-                    batch_norm = True,           
+                    # batch_norm = True,           
                     regularize = True,                             
                     verbose = verbose
                     )
@@ -219,7 +219,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
-                    batch_norm = True,
+                    # batch_norm = True,
                     regularize = True,                    
                     verbose = verbose
                     )      
@@ -274,7 +274,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
               )
     #draw_network(net.graph, filename = 'lenet.png')    
     net.pretty_print()
-
+    
     net.train( epochs = (40, 40), 
                validate_after_epochs = 1,
                visualize_after_epochs = 1,
@@ -285,7 +285,7 @@ def lenet_maxout ( dataset= None, verbose = 1 ):
                verbose = verbose)
 
     net.test(verbose = verbose)
-    
+
     ## Boiler Plate ## 
 if __name__ == '__main__':
     import sys
@@ -308,7 +308,5 @@ if __name__ == '__main__':
         data = cook_mnist()
         dataset = data.dataset_location()
 
-    # lenet5 ( dataset, verbose = 3 )
-    lenet_maxout (dataset, verbose = 2)
-     
-
+    lenet5 ( dataset, verbose = 2 )
+    # lenet_maxout (dataset, verbose = 3)
