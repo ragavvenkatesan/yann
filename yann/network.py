@@ -2166,22 +2166,16 @@ class network(object):
         if self.cooked_datastream is None:
             raise Exception(" Cook first then run this.")
 
-        if verbose >=2 :
-            if len(self.cost) < self.batches2train * self.mini_batches_per_batch[0]:
-                print(".. Cost                : " + str(self.cost[-1]))
-            else:
-                print(".. Cost                : " + str(numpy.mean(self.cost[-1 *
-                                    self.batches2train * self.mini_batches_per_batch[0]:])))
-
-        if verbose >= 3:
-            print("... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
-                                                                                 self.borrow)))
-            print("... Momentum            : " + str(self.current_momentum(epoch)))
+        if len(self.cost) < self.batches2train * self.mini_batches_per_batch[0]:
+            cost = self.cost[-1]
+        else:
+            cost = numpy.mean(self.cost[-1 *
+                                self.batches2train * self.mini_batches_per_batch[0]:])
 
         lr = self.learning_rate.get_value(borrow =  self.borrow)
         mom = self.current_momentum(epoch)
 
-        self.cooked_resultor.process_results(cost = self.cost,
+        self.cooked_resultor.process_results(cost = cost,
                                            lr = lr,
                                            mom = mom,
                                            verbose = verbose)
