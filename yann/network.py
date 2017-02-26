@@ -2599,6 +2599,21 @@ class network(object):
             if verbose >= 2:
                 print(".. Mean testing error : " + str(testing_accuracy))
 
+    def deactivate_layer (self, id, verbose = 2):
+        """
+        This method will remove a layer's parameters from the active_layer dictionary.
+
+        Args:
+            id: Layer which you want to de activate.
+            verbose: as usual.
+
+        Notes:
+            If the network was cooked, it would have to be re-cooked after deactivation.
+        """
+        for param in self.dropout_layers[id].params:
+            if param in self.active_params:
+                self.active_params.remove(param)
+
     def get_params (self, verbose = 2):
         """
         This method returns a dictionary of layer weights and bias in numpy format.

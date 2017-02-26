@@ -14,9 +14,9 @@ import time
 
 import numpy
 import scipy.io
-#import cPickle
-#for python3 compatability
-import pickle as cPickle
+import cPickle
+# for python3 compatability
+# import pickle as cPickle
 import imp
 
 from image import *
