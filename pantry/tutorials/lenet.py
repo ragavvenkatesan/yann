@@ -143,6 +143,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
 
     net.test(verbose = verbose)
 
+    from yann.utils.pickle import pickle
+    pickle(net, 'network.pkl')
+    
 # Advaned version of the CNN
 def lenet_maxout ( dataset= None, verbose = 1 ):             
     """
