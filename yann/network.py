@@ -466,8 +466,8 @@ class network(object):
             }
 
         if not "id" in resultor_params.keys():
-            id = len(self.resultor) + 1
-            resultor_params["id"] = str(id)
+            id = str(len(self.resultor) + 1)
+            resultor_params["id"] = id
         else:
             id = resultor_params['id']
 
@@ -486,7 +486,7 @@ class network(object):
         """
         if not "id" in visualizer_params.keys():
             id = len(self.visualizer) + 1
-            visualizer_params["id"] = str(id)
+            visualizer_params["id"] = id
         else:
             id = visualizer_params['id']
         from yann.modules.visualizer import visualizer
@@ -504,8 +504,8 @@ class network(object):
             verbose: Similar to what is found in the rest of the toolbox.
         """
         if not "id" in optimizer_params.keys():
-            id = len(self.optimizer) + 1
-            optimizer_params["id"] = str(id)
+            id = str(len(self.optimizer) + 1)
+            optimizer_params["id"] = id
         else:
             id = optimizer_params['id']
         from yann.modules.optimizer import optimizer
@@ -522,8 +522,8 @@ class network(object):
             verbose: Similar to what is found in the rest of the toolbox.
         """
         if not "id" in dataset_params.keys():
-            id = len(self.datastream) + 1
-            dataset_params["id"] = str(id)
+            id = str(len(self.datastream) + 1)
+            dataset_params["id"] = id
         else:
             id = dataset_params['id']
 
