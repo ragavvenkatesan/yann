@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 #
 # yann documentation build configuration file, created by
@@ -29,8 +30,11 @@ try:
 except ImportError:
     from mock import Mock
 
-import theano
-# import theano.sandbox.cuda
+# Don't build or import any modules.
+ MOCK_MODULES = ['numpy', 'scipy', 'networkx', 'theano', 'progressbar', 'skdata', 'pillow',
+ 'matplotlib']
+ for mod_name in MOCK_MODULES:
+     sys.modules[mod_name] = mock.Mock()
 
 theano.config = Mock(device='gpu')
 # theano.sandbox.cuda.cuda_enabled = True
@@ -70,7 +74,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = u'Yann'
-copyright = u'2015-2016, Ragav Venkatesan'
+copyright = u'2015-2017, Ragav Venkatesan'
 author = u'Ragav Venkatesan'
 license = u'MIT License'
 
@@ -85,7 +89,7 @@ version = yann.__version__
 # The full version, including alpha/beta/rc tags.
 release = yann.__version__
 
-copyright = u'2015–2016, Ragav Venkatesan'
+copyright = u'2015–2017, Ragav Venkatesan'
 
 
 # There are two options for replacing |today|: either, you set today to some
