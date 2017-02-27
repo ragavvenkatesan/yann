@@ -34,7 +34,7 @@ except ImportError:
 MOCK_MODULES = ['numpy', 'scipy', 'networkx', 'theano', 'progressbar', 'skdata', 'pillow',
  'matplotlib']
 for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
+    sys.modules[mod_name] = Mock()
 
 theano.config = Mock(device='gpu')
 # theano.sandbox.cuda.cuda_enabled = True
