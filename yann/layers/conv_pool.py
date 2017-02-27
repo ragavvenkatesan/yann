@@ -43,8 +43,8 @@ class conv_pool_layer_2d (layer):
     Notes:
         Use ``conv_pool_layer_2d.output`` and ``conv_pool_layer_2d.output_shape`` from this class.
         ``L1`` and ``L2`` are also public and can also can be used for regularization.
-        The class also has in public ``w``, ``b`` and ``alpha``
-        which are also a list in ``params``, another property of this class.
+        The class also has in public ``w``, ``b``, ``gamam``, ``beta``,``running_mean`` and 
+        ``running_var`` which are also a list in ``params``, another property of this class.
     """
     # Why am I not using **kwargs here ? - I don't want to allow arbitrary forms for this function,
     # I want a particular form with various default inputs, ergo.
@@ -102,18 +102,19 @@ class conv_pool_layer_2d (layer):
                                     name ='filterbank' )
             self.b = theano.shared(value=numpy.zeros((nkerns,), dtype=theano.config.floatX),
                                      name = 'bias', borrow=borrow)
-            self.gamma = theano.shared(value=numpy.ones((1,channels,width,height),
-                                 dtype=theano.config.floatX), name = 'gamma', borrow = borrow)
-            self.beta = theano.shared(value=numpy.zeros((1,channels,width,height),
-                                 dtype=theano.config.floatX), name = 'beta', borrow=borrow)  
-            self.running_mean = theano.shared(
-                                value=numpy.zeros((1,channels,height,width), 
-                                dtype=theano.config.floatX), 
-                                name = 'population_mean', borrow = borrow)
-            self.running_var = theano.shared(
-                                value=numpy.ones((1,channels,height,width),
-                                dtype=theano.config.floatX),
-                                name = 'population_var', borrow=borrow)                                                                                               
+            if batch_norm is True:
+                self.gamma = theano.shared(value=numpy.ones((nkerns,),
+                                    dtype=theano.config.floatX), name = 'gamma', borrow = borrow)
+                self.beta = theano.shared(value=numpy.zeros((nkerns,),
+                                    dtype=theano.config.floatX), name = 'beta', borrow=borrow)  
+                self.running_mean = theano.shared(
+                                    value=numpy.zeros((nkerns,), 
+                                    dtype=theano.config.floatX), 
+                                    name = 'population_mean', borrow = borrow)
+                self.running_var = theano.shared(
+                                    value=numpy.ones((nkerns,),
+                                    dtype=theano.config.floatX),
+                                    name = 'population_var', borrow=borrow)                                                                                               
         else:
             self.w = init_w
             self.b = init_b
@@ -160,6 +161,7 @@ class conv_pool_layer_2d (layer):
                                                                 self.b.dimshuffle('x', 0, 'x', 'x'),
                                                   gamma = self.gamma,
                                                   beta = self.beta,
+                                                  axes ='spatial',
                                                   running_mean = self.running_mean,
                                                   running_var = self.running_var )
 
@@ -173,6 +175,7 @@ class conv_pool_layer_2d (layer):
                                                             self.b.dimshuffle('x', 0, 'x', 'x'),
                                                     gamma = self.gamma,
                                                     beta = self.beta,
+                                                    axes = 'spatial',
                                                     mean = self.running_mean,
                                                     var = self.running_var )
         else:

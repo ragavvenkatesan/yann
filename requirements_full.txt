@@ -6,4 +6,3 @@ pydotplus
 pygraphviz
 graphviz
 networkx
-matplotlib
