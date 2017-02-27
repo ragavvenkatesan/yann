@@ -275,6 +275,10 @@ class network(object):
         elif type == 'rotate':
             self._add_rotate_layer (id = id, options = kwargs, verbose = verbose)
 
+        elif type == 'batch_norm' or \
+             type == 'batchnorm' or \
+             type == 'normalization' :
+            self._add_batch_norm_layer (id = id, options = kwargs, verbose = verbose)
         else:
             raise Exception('No layer called ' + type + ' exists in yann')
 
@@ -292,7 +296,8 @@ class network(object):
             if len(attributes["output_shape"]) == 4:  # output is an image
                 node_shape = 'square'
                 num_neurons = attributes["output_shape"][1]  # number of kernels output
-                node_size = attributes["output_shape"][2] * attributes["output_shape"][3]
+                # node_size = attributes["output_shape"][2] * attributes["output_shape"][3]
+                node_size = 300 
             else:
                 node_shape = 'circle'
                 num_neurons = attributes['output_shape'][-1]
@@ -1477,6 +1482,120 @@ class network(object):
                             id = id,
                             angle = angle,
                             verbose = verbose)
+
+
+    def _add_batch_norm_layer(self, id, options, verbose = 2):
+        """
+        This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
+        Args:
+            options: Basically kwargs supplied to the add_layer function.
+            verbose: same as everywhere else on the toolbox
+        """
+        if verbose >=3:
+            print("... Adding a batch normalization layer")
+        if not 'origin' in options.keys():
+            if self.last_layer_created is None:
+                raise Exception("You can't create a batch norm layer without an" + \
+                                    " origin layer.")
+            else:
+                if verbose >=3:
+                    print ("... origin layer not provided, assuming the last layer created.")
+                origin = self.last_layer_created
+        else:
+            origin = options["origin"]
+
+        input_shape = self.layers[origin].output_shape
+
+        if not 'input_params' in options.keys():
+            if verbose >=3:
+                print("... No initial params for layer " + id + " assume None")
+            input_params = None
+        else:
+            input_params = options ["input_params"]
+
+        if not 'dropout_rate' in options.keys():
+            if verbose >=3:
+                print("... No dropout_rate set for layer " + id + " assume 0")
+            dropout_rate = 0
+        else:
+            dropout_rate = options ["dropout_rate"]
+
+        if verbose >=3:
+            print("... creating the dropout stream")
+        # Just create a dropout layer no matter what.
+
+        if not len(self.layers[origin].output_shape) == 2:
+            if verbose >= 3:
+                print("... Adding a 2D Batch norm layer")
+            #from yann.layers.batch_norm import dropout_batch_norm_layer_1d as dbnl
+            # I am deliberately making batch_norm not have dropout. I think this is best 
+            # because I am not sure if a batch norm only layer should have dropout in the first 
+            # place. Refer below too where I set droput_rate = 0 deliberately.                
+            from yann.layers.batch_norm import batch_norm_layer_2d as dbnl
+            from yann.layers.batch_norm import batch_norm_layer_2d as bnl
+
+        else:
+            if verbose >= 3:
+                print ("... Adding a 1D Batch norm layer")
+            #from yann.layers.batch_norm import dropout_batch_norm_layer_1d as dbnl
+            # I am deliberately making batch_norm not have dropout. I think this is best 
+            # because I am not sure if a batch norm only layer should have dropout in the first 
+            # place. Refer below too where I set droput_rate = 0 deliberately.
+            from yann.layers.batch_norm import batch_norm_layer_1d as dbnl
+            from yann.layers.batch_norm import batch_norm_layer_1d as bnl
+
+        self.dropout_layers[id] = dbnl (
+                                        input = self.dropout_layers[origin].output,
+                                        # dropout_rate = dropout_rate,
+                                        id = id,
+                                        input_shape = self.dropout_layers[origin].output_shape,
+                                        rng = self.rng,
+                                        borrow = self.borrow,
+                                        input_params = input_params,
+                                        verbose = verbose,
+                                        )
+        # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
+        dropout_rate = 0 
+        if dropout_rate >0:
+            gamma = self.dropout_layers[id].gamma * (1 - dropout_rate)
+        else:
+            gamma = self.dropout_layers[id].gamma
+        beta = self.dropout_layers[id].beta
+        running_mean = self.dropout_layers[id].running_mean
+        running_var = self.dropout_layers[id].running_var
+        
+        layer_params = [gamma, beta, running_mean, running_var]
+
+        if verbose >=3:
+            print("... creating the stable stream")
+
+        self.layers[id] = bnl (
+                            input = self.layers[origin].output,
+                            id = id,
+                            input_shape = self.layers[origin].output_shape,
+                            rng = self.rng,
+                            borrow = self.borrow,
+                            input_params = layer_params,
+                            verbose = verbose,
+                            )
+
+        self.inference_layers[id] = bnl (
+                            input = self.layers[origin].output,
+                            id = id,
+                            input_shape = self.layers[origin].output_shape,
+                            rng = self.rng,
+                            borrow = self.borrow,
+                            input_params = layer_params,
+                            verbose = verbose,
+                            )
+
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
+        self.inference_layers[id].origin.append(origin)
+        self.inference_layers[origin].destination.append(id)
 
     def _initialize_test_classifier(self, errors, verbose):
         """

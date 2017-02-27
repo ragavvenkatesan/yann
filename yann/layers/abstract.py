@@ -76,6 +76,15 @@ class layer(object):
         print(prefix_entry + "=================------------------")
         print(prefix_entry + " type: " + self.type)
         print(prefix_entry + " output shape: " + str(self.output_shape))
+        if self.batch_norm is True :
+            print prefix_entry + " batch norm is ON"
+        elif self.type == 'dot_product' or \
+             self.type == 'hidden' or  \
+             self.type == 'mlp' or  \
+             self.type == 'fully_connected' or \
+             self.type == 'conv_pool' or \
+             self.type == 'convolution':
+            print prefix_entry + " batch norm is OFF"        
         print(prefix_entry + "-----------------------------------")
 
         if nest is False:

@@ -18,6 +18,10 @@ that are accessible in ``yann``. It contains various layers including:
     * :mod:`flatten.flatten_layer`
     * :mod:`flatten.unflatten_layer`
     * :mod:`random.random_layer`
+    * :mod:`batch_norm.batch_norm_layer_2d` and
+        :mod:`batch_norm.dropout_batch_norm_layer_2d`        
+    * :mod:`batch_norm.batch_norm_layer_1d` and
+        :mod:`batch_norm.dropout_batch_norm_layer_1d`  
 
 All these are inherited classes from :mod:`layer` class, which is abstract.
 
@@ -36,5 +40,6 @@ Specific layers that can be used are
    output   
    random
    transform
+   batchnorm
 
 
