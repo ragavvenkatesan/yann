@@ -40,6 +40,6 @@ Specific layers that can be used are
    output   
    random
    transform
-   batchnorm
+   batch_norm
 
 
