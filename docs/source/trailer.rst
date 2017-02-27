@@ -17,10 +17,10 @@ After considerable effort being put in to make this toolbox modular, and testing
 using the toolbox on some of my own research. This toolbox, which began as a pet project is 
 something that I am now proud to share with the rest of DL community with.
 
-This toolbox is also used with the course `CSE 591: Introduction to Deep Learning for 
-Computer Vision`_ at ASU in Spring of 2017. With more features being added into the toolbox, I figured
-I would clean it up, formalize it and write some good documentation so that interested people could 
-use it after. Thus after being rechristened as Yann, this toolbox was born.
+This toolbox is also used with the course `CSE 591`_ at ASU in Spring of 2017. With more features 
+being added into the toolbox, I figured I would clean it up, formalize it and write some good 
+documentation so that interested people could use it after. Thus after being rechristened as Yann, 
+this toolbox was born.
 
 .. warning ::
     
@@ -139,6 +139,4 @@ Those marked * are not fully tested yet.
 .. _skdata's: https://jaberg.github.io/skdata/
 .. _Fuel: https://github.com/mila-udem/fuel
 .. _Sebastien Bubeck's: https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/
-.. _CSE 591: Introduction to Deep Learning for Computer Vision: http://www.ragav.net/cse591
-         
-
+.. _CSE 591: http://www.ragav.net/cse591

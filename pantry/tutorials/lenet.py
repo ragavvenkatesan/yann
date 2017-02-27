@@ -469,9 +469,9 @@ if __name__ == '__main__':
     if dataset is None:
         print " creating a new dataset to run through"
         from yann.special.datasets import cook_cifar10 
-        from yann.special.datasets import cook_mnist 
-        # data = cook_cifar10 (verbose = 2)
-        data = cook_mnist()
+        # from yann.special.datasets import cook_mnist 
+        data = cook_cifar10 (verbose = 2)
+        # data = cook_mnist()
         dataset = data.dataset_location()
 
     lenet5 ( dataset, verbose = 2 )
