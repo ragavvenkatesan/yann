@@ -10,9 +10,9 @@ networks. In batch norm we do the following:
 
     x = (\frac{x - \mu_b}{\sigma_b})\gamma + \beta
 
-:math: `x` is the input (and the output) of this operation, :math:`\mu_b` and :math:`\sigma_b`
+The :math:`x` is the input (and the output) of this operation, :math:`\mu_b` and :math:`\sigma_b`
 are the mean and the variance of the minibatch of :math:`x` supplied. :math:`\gamma` and 
-:math:`beta` are learnt using back propagation. This will also store a running mean and a running 
+:math:`\beta` are learnt using back propagation. This will also store a running mean and a running 
 variance, which is used during inference time. 
 
 By default batch normalization can be performed on convolution and dot product layers using 
