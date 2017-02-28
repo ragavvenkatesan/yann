@@ -2216,7 +2216,7 @@ class network(object):
             if verbose >= 3:
                 print("... datastream not provided, assuming " + self.last_datastream_created)
             datastream = self.last_datastream_created
-        else:
+        else:            
             if not datastream in self.datastream.keys():
                 raise Exception ("Datastream " + datastream + " not found.")
         self.cooked_datastream = self.datastream[datastream]
@@ -2235,7 +2235,6 @@ class network(object):
         self.cost = []
 
         self._cook_datastream(verbose = verbose)
-
         self._cook_optimizer(params = params,
                              optimizer = self.cooked_optimizer,
                              objective = self.dropout_cost,
@@ -2755,8 +2754,7 @@ class network(object):
                         print "... Collecting parameters of layer " + lyr                                
                     params_list.append(p.get_value(borrow = True))
                 params[lyr] = params_list
-
-        return params 
+        return params
 
 if __name__ == '__main__':
     pass

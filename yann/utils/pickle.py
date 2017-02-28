@@ -38,11 +38,23 @@ def load(infile, verbose = 2):
     if verbose >= 3:
         print "... Loading netowrk parameters"
     params_np = cPickle.load( open( infile, "rb" ) )
+    return shared_params (params_np)
 
-    for lyr in params_np:
+def shared_params (params, verbose = 2):
+    """
+    This will convert a loaded set of parameters to shared variables that could be 
+    passed as ``input_params`` to the ``add_layer`` method.
+
+    Args:
+        params: List from ``get_params`` method.
+    """
+    if verbose >= 3:
+        print "... Convering parameters to shared parameters"
+
+    for lyr in params:
         shared_list = list()
-        for p in params_np[lyr]:
-            ps = theano.shared(value = p, borrow=True )
+        for p in params[lyr]:
+            ps = theano.shared( value = p, borrow=True )
             shared_list.append(ps)
-        params [lyr] = shared_list 
+        params [lyr] = shared_list                     
     return params
