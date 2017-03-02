@@ -48,7 +48,7 @@ class resultor(module):
             resultor_init_args["results"] = "results.txt"
 
         if not "errors" in resultor_init_args.keys():
-            resultor_init_args["erros"] = "errors.txt"
+            resultor_init_args["errors"] = "errors.txt"
 
         if not "costs" in resultor_init_args.keys():
             resultor_init_args["costs"] = "costs.txt"

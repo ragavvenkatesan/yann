@@ -282,12 +282,13 @@ class objective_layer (layer):
         else:
             self.output = loss(y = labels, type = objective)
 
+    
         if L1 is not None:
             self.output = self.output + l1_coeff * L1
         if L2 is not None:
             self.output = self.output + l2_coeff * L2
-        self.output_shape = (1,)
 
+        self.output_shape = (1,)
         if verbose >= 3:
             print("... Objective_layer is created with output shape " + str(self.output_shape))
 

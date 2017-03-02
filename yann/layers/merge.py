@@ -12,10 +12,16 @@ class merge_layer (layer):
         x: a list of inputs (lenght must be two basically)
         input_shape: List of the shapes of all inputs.
         type: ``'error'`` creates an error layer.
-              other options are ``'sum'`` and ``'concatenate'``
+              other options are ``'sum'``, ``'batch'`` and ``'concatenate'``
         error: If the type was ``'error'``, then this variable is used.
                options include, ``'rmse'``, ``'l2'``, ``'l1'``,``'cross_entropy'``.
+        input_type: If this argument was ``'tensor'``,  we simply merge the ouptus,
+                if this was not provided or was ``'layer'``, this merges the outputs
+                of the two layers.
 
+    Notes:
+        ``'concatenate'`` concatenates the outputs on the channels where as ``'batch'`` concatenates
+        across the batches. It will increase the batchsize. 
     """
     def __init__ (  self,
                     x,
@@ -23,6 +29,7 @@ class merge_layer (layer):
                     id = -1,
                     type = 'error',
                     error = 'rmse',
+                    input_type = 'layer',
                     verbose = 2):
 
         super(merge_layer,self).__init__(id = id, type = 'merge', verbose = verbose)
@@ -47,11 +54,13 @@ class merge_layer (layer):
             self.output = error(x[0], x[1])
             self.output_shape = (1,)
 
+            """
             if len(input_shape) == 2:
                 self.num_neurons = self.output_shape[-1]
             elif len(input_shape) == 4:
                 self.num_neurons = self.output_shape[1]
-
+            """
+            
             self.generation = x[0] # I'm basically assuming that 0 is the generation in case
                                    # this was an auto encoder network.
 
@@ -69,7 +78,17 @@ class merge_layer (layer):
                 self.output_shape = (input_shape [0][0], input_shape[0][1] + input_shape[1][1])
             elif len(input_shape[1]) == 4:
                 self.output_shape = (input_shape [0][0], input_shape[0][1] + input_shape[1][1],
-                                        input_shape[2], input_shape[3])
+                                        input_shape[0][2], input_shape[0][3])
+
+        elif type == 'batch':
+            self.output = T.concatenate([x[0],x[1]], axis = 0)
+            if len(input_shape[0]) == 2:
+                self.output_shape = (input_shape [0][0] + input_shape[1][0] , input_shape[0][1] )
+            elif len(input_shape[1]) == 4:
+                self.output_shape = (input_shape [0][0] + input_shape[1][0], input_shape[0][1],
+                                        input_shape[0][2], input_shape[0][3])            
+        else:
+            raise Exception ( " This type is not allowed. " )            
         self.inference = self.output
         
     def loss(self, type = None):

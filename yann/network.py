@@ -119,15 +119,9 @@ class network(object):
 
         Todo:
             Need to add the following:
-            * Merge Layer: Concatenate, Embed, Add, max, mean
             * Inception Layer.
             * LSTM layer.
-            * MaskedConvPool Layer.
             * ...
-            * when ``type`` is ``'objective'``, I need to allow taking a loss between two layers to
-            be propagated. Right now ``origin`` has to be a classifier layer only. This needs to
-            change to be able to implement generality and mentor networks.
-            * basically objective has to be a flag for an error function if origin is a tuple.
 
 
         Args:
@@ -142,6 +136,7 @@ class network(object):
                   'flatten' - a layer that produces a flattened output of a block data.
                   'random' - a layer that produces random numbers.
                   'rotate' - a layer that rotate the input images.
+                  'tensor' - a layer that converts the input tensor as an input layer.
                   From now on everything is optional args..
             id: <string> how to identify the layer by.
                 Default is just layer number that starts with ``0``.
@@ -215,6 +210,7 @@ class network(object):
                type == 'loss' or \
                type == 'energy' or \
                type == 'connect' or \
+               type == 'tensor' or \
                type == 'join':
                 if verbose >= 3:
                     print("... Making learnable False as it is not provided")
@@ -269,6 +265,9 @@ class network(object):
         elif type == 'unflatten':
             self._add_unflatten_layer( id = id, options = kwargs, verbose = verbose)
 
+        elif type == 'tensor':
+            self._add_tensor_layer( id = id, options = kwargs, verbose = verbose)
+
         elif type == 'random':
             self._add_random_layer (id = id, options = kwargs, verbose = verbose)
 
@@ -293,14 +292,14 @@ class network(object):
         if not self.graph is None: # graph is being created
             attributes = self.layers[id]._graph_attributes()  # collect all attributes of layer
 
-            if len(attributes["output_shape"]) == 4:  # output is an image
+            if len(self.layers[id].output_shape) == 4:  # output is an image
                 node_shape = 'square'
-                num_neurons = attributes["output_shape"][1]  # number of kernels output
+                num_neurons = self.layers[id].output_shape[1]  # number of kernels output
                 # node_size = attributes["output_shape"][2] * attributes["output_shape"][3]
                 node_size = 300 
             else:
                 node_shape = 'circle'
-                num_neurons = attributes['output_shape'][-1]
+                num_neurons = self.layers[id].output_shape[-1]
                 node_size = 300   # why ? default.
 
             if num_neurons > max_neurons_to_display:
@@ -1309,7 +1308,7 @@ class network(object):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
 
-        Args:
+        Args:        
             options: Basically kwargs supplied to the add_layer function.
             verbose: simiar to everywhere on the toolbox.
 
@@ -1337,6 +1336,11 @@ class network(object):
         else:
             layer_type = options['layer_type']
 
+        if not 'input_type' in options.keys():
+            input_type = 'layer'
+        else:
+            input_type = options['input_type']
+
         if verbose >=3:
             print("... creating the dropout stream")
 
@@ -1344,51 +1348,80 @@ class network(object):
         inputs = []
         input_shape = []
 
-        for lyr in origin:
-            inputs.append ( self.dropout_layers[lyr].output )
-            input_shape.append (self.dropout_layers[lyr].output_shape)
+        if input_type == 'layer':
+            for lyr in origin:
+                inputs.append ( self.dropout_layers[lyr].output )
+                input_shape.append (self.dropout_layers[lyr].output_shape)
+        elif input_type == 'tensor':
+            for tensor in origin:
+                inputs.append ( tensor )
+            if not 'input_shape' in options.keys():
+                raise Exception ("If using tensor as a type, you need to supply input shapes")
+            else:
+                input_shape = options['input_shape']
 
         self.dropout_layers[id] = mrg(
                                     id = id,
                                     x = inputs,
                                     type = layer_type,
                                     error = error,
+                                    input_type = input_type,
                                     input_shape = input_shape,
                                     verbose = verbose )
         if verbose >=3:
             print("... creating the stable stream")
 
         inputs = [] # input_shape is going to remain the same from dropout to this.
-        for lyr in origin:
-            inputs.append(self.layers[lyr].output)
+        if input_type == 'layer':
+            for lyr in origin:
+                inputs.append(self.layers[lyr].output)
+                input_shape.append (self.layers[lyr].output_shape)
+        elif input_type == 'tensor':
+            for tensor in origin:
+                inputs.append ( tensor )
+            if not 'input_shape' in options.keys():
+                raise Exception ("If using tensor as a type, you need to supply input shapes")
+            else:
+                input_shape = options['input_shape']            
 
         self.layers[id] = mrg( id = id,
                                x = inputs,
                                error = error,
                                type = layer_type,
                                input_shape = input_shape,
+                               input_type = input_type,
                                verbose = verbose )
 
         inputs = [] # input_shape is going to remain the same from dropout to this.
-        for lyr in origin:
-            inputs.append(self.inference_layers[lyr].inference)
+        if input_type == 'layer':        
+            for lyr in origin:
+                inputs.append(self.inference_layers[lyr].inference)
+                input_shape.append (self.inference_layers[lyr].output_shape)
+        elif input_type == 'tensor':
+            for tensor in origin:
+                inputs.append ( tensor )
+            if not 'input_shape' in options.keys():
+                raise Exception ("If using tensor as a type, you need to supply input shapes")
+            else:
+                input_shape = options['input_shape']                      
 
         self.inference_layers[id] = mrg( id = id,
                                x = inputs,
                                error = error,
                                type = layer_type,
+                               input_type = input_type,
                                input_shape = input_shape,
                                verbose = verbose )
 
-        for lyr in origin:
-            self.dropout_layers[id].origin.append(lyr)
-            self.layers[id].origin.append(lyr)
-            self.inference_layers[id].origin.append(lyr)
-            self.dropout_layers[lyr].destination.append(id)
-            self.layers[lyr].destination.append(id)
-            self.inference_layers[lyr].destination.append(id)
+        if input_type == 'layer':
+            for lyr in origin:
+                self.dropout_layers[id].origin.append(lyr)
+                self.layers[id].origin.append(lyr)
+                self.inference_layers[id].origin.append(lyr)
+                self.dropout_layers[lyr].destination.append(id)
+                self.layers[lyr].destination.append(id)
+                self.inference_layers[lyr].destination.append(id)            
             
-
     def _add_random_layer(self, id, options, verbose = 2):
         """
         This is an internal function. Use ``add_layer`` instead of this from outside the class.
@@ -1483,6 +1516,59 @@ class network(object):
                             angle = angle,
                             verbose = verbose)
 
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
+
+    def _add_tensor_layer(self, id, options, verbose =2):
+        """
+        This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
+        Args:
+            options: Basically kwargs supplied to the add_layer function.
+            verbose: same as everywhere else on the toolbox
+        """
+        if verbose >=3:
+            print("... Adding a tensor layer")
+
+        if not 'input' in options.keys():
+            raise Exception ("Needs an input tensor")
+
+        if not 'input_shape' in options.keys():
+            raise Exception ("Needs an input shape")
+        
+        input = options['input']
+        input_shape = options ['input_shape']
+
+        if not 'dropout_rate' in options.keys():
+            if verbose >= 3:
+                print("... dropout_rate not provided. Assuming 0")
+            dropout_rate = 0
+        else:
+            dropout_rate = options ["dropout_rate"]
+
+        from yann.layers.input import dropout_tensor_layer as dil
+        from yann.layers.input import tensor_layer as il
+
+        self.dropout_layers[id] = dil (
+                            dropout_rate = dropout_rate,
+                            id = id,
+                            input = input,
+                            input_shape = input_shape,
+                            verbose =verbose)
+
+        self.layers[id] = il(
+                            id = id,
+                            input = input,
+                            input_shape = input_shape,
+                            verbose =verbose)
+
+        self.inference_layers[id] = il(
+                            id = id,
+                            input = input,
+                            input_shape = input_shape,
+                            verbose =verbose)
 
     def _add_batch_norm_layer(self, id, options, verbose = 2):
         """
@@ -1617,7 +1703,34 @@ class network(object):
             self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
             self.y: self.data_y[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})
 
+    def _initialize_confusion (self, classifier = None, verbose = 2):
+        """
+        Internal function to create the ``self.confusion_batch``  theano function.
+        ``net.cook`` will use this function.
 
+        Args:
+            datastream: as always
+            classifier: the classifier layer whose predictions are needed.
+            verbose: as always
+
+        """
+        if self.cooked_datastream is None:
+               raise Exception ("This needs to be run only after network is cooked")
+
+        if verbose>=3 :
+            print("... initializing confusion matrix function")   
+
+        _predictions = self.inference_layers[classifier].predictions
+        confusion = T.dot(self.y.T,_predictions)
+
+        index = T.lscalar('index')
+        self.mini_batch_confusion = theano.function(
+                inputs = [index],
+                outputs = confusion,
+                name = 'confuision matrix',
+                givens={
+            self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
+            self.y: self.data_y[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]})
 
     def _initialize_test_value(self, errors, verbose):
         """
@@ -1687,9 +1800,9 @@ class network(object):
             print("... initializing predict function")
 
         _predictions = self.inference_layers[classifier].predictions
+        self.num_classes_to_classify = self.inference_layers[classifier].output_shape[1]
 
         index = T.lscalar('index')
-
         self.mini_batch_predictions = theano.function(
                 inputs = [index],
                 outputs = _predictions,
@@ -2080,18 +2193,6 @@ class network(object):
             self.visualize_activities(epoch = epoch, verbose = verbose)
             self.visualize_filters(epoch = epoch, verbose = verbose)
 
-    def write_results(self, epoch = 0, verbose =2 ):
-
-        """
-        This method will use the cooked visualizer to save down the visualizations
-
-        Args:
-            epoch: supply the epoch number ( used to create directories to save
-        """
-        if (epoch % self.write_results_after_epochs == 0):
-            self.write_results(epoch = epoch, verbose = verbose)
-            self.visualize_filters(epoch = epoch, verbose = verbose)
-
     def cook(self, verbose = 2, **kwargs):
         """
         This function builds the backprop network, and makes the trainer, tester and validator
@@ -2247,6 +2348,8 @@ class network(object):
                                    verbose = verbose)
             self._initialize_posterior (classifier = classifier_layer,
                                    verbose = verbose)
+            self._initialize_confusion (classifier = classifier_layer,
+                                    verbose = verbose)
         else:
             self._initialize_test (value = objective_layer,
                                    verbose = verbose)
@@ -2335,7 +2438,7 @@ class network(object):
         input_layers = []
         # collect all begining of streams
         for id, layer in self.layers.iteritems():
-            if layer.type == 'input' or layer.type == 'random':
+            if layer.type == 'input' or layer.type == 'random' or layer.type =='tensor':
                 input_layers.append(id)
 
         for input_layer in input_layers:
@@ -2356,7 +2459,13 @@ class network(object):
 
         validation_errors = 0
         training_errors = 0
-
+        if self.network_type == 'classifier':
+            valid_confusion_matrix = numpy.zeros((self.num_classes_to_classify,
+                                                                self.num_classes_to_classify),
+                                                        dtype = theano.config.floatX)
+            train_confusion_matrix = numpy.zeros((self.num_classes_to_classify,
+                                                                self.num_classes_to_classify),
+                                                        dtype = theano.config.floatX)
         # Similar to the trianing loop
         if training_accuracy is True:
             total_mini_batches = self.batches2train * self.mini_batches_per_batch [0] \
@@ -2377,6 +2486,9 @@ class network(object):
             self._cache_data ( batch = batch , type = 'valid', verbose = verbose )
             for minibatch in xrange(self.mini_batches_per_batch[1]):
                 validation_errors = validation_errors + self.mini_batch_test (minibatch)
+                # if self.network_type == 'classifier':        
+                    # valid_confusion_matrix = valid_confusion_matrix + \
+                      #                                        self.mini_batch_confusion (minibatch)                
                 if verbose >= 3:
                     print("... validation error after mini batch " + str(batch_counter) + \
                                                               " is " + str(validation_errors))
@@ -2394,6 +2506,9 @@ class network(object):
 
                 for minibatch in xrange(self.mini_batches_per_batch[0]):
                     training_errors = training_errors + self.mini_batch_test (minibatch)
+                    # if self.network_type == 'classifier':                            
+                        # train_confusion_matrix = train_confusion_matrix + \
+                        #                                      self.mini_batch_confusion (minibatch)                                    
                     if verbose >= 3:
                         print("... training error after mini batch " + str(batch_counter) + \
                                                                       " is " + str(training_errors))

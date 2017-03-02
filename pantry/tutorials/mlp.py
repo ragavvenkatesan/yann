@@ -10,7 +10,7 @@ def mlp ( dataset, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.9, 0.95, 30),      
+                "momentum_params"     : (0.65, 0.9, 30),      
                 "regularization"      : (0.0001, 0.0001),       
                 "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
