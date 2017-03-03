@@ -112,7 +112,7 @@ class dot_product_layer (layer):
 
             mean = theano.tensor.unbroadcast(mean,0)
             var = theano.tensor.unbroadcast(var,0)
-            var = var + 0. 000001 
+            var = var + 0.000001 
             self.updates[self.running_mean] = mean
             self.updates[self.running_var] = var 
 
