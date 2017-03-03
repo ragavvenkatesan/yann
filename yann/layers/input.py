@@ -114,6 +114,78 @@ class dropout_input_layer (input_layer):
         if verbose >= 3:
             print("... Dropped out")
 
+class tensor_layer (layer):
+    """
+    This converts a theano tensor or a shared value into a layer. Simply the 
+    value becomes the layer's outptus.
+
+    Args:
+        input: some tensor
+        input_shape: shape of the tensor
+        verbose: Similar to all of the toolbox.
+
+    Notes:
+        Use ``input_layer.output`` to continue onwards with the network
+        ``input_layer.output_shape`` will tell you the output size.
+    """
+    def __init__(self,
+                 id,
+                 input,
+                 input_shape,
+                 verbose = 2):
+
+        if verbose >= 3:
+            print("... Creating the input layer")
+
+        super(tensor_layer, self).__init__(id = id, type = 'tensor', verbose = verbose)
+        self.output = input
+        self.output_shape = input_shape
+        self.inference = self.output
+
+        if verbose >= 3:
+            print("... Tensor layer is created with output shape " + str(self.output_shape))
+
+
+class dropout_tensor_layer (tensor_layer):
+    """
+    This converts a theano tensor or a shared value into a layer. Simply the 
+    value becomes the layer's outptus.
+
+    Args:
+        input: some tensor
+        input_shape: shape of the tensor
+        dropout_rate: default is 0.5, typically. 
+        rng: Random number generator
+        verbose: Similar to all of the toolbox.
+
+    Notes:
+        Use ``input_layer.output`` to continue onwards with the network
+        ``input_layer.output_shape`` will tell you the output size.
+    """
+    def __init__(self,
+                 id,
+                 input,           
+                 input_shape,  
+                 rng = None,               
+                 dropout_rate = 0.5,
+                 verbose = 2):
+
+        if verbose >= 3:
+            print("... set up the dropout tensor layer")
+        if rng is None:
+            rng = numpy.random
+        super(dropout_tensor_layer, self).__init__(
+                                            id = id,
+                                            input = input,
+                                            input_shape = input_shape,                                            
+                                            verbose = verbose)
+        if not dropout_rate == 0:
+            self.output = _dropout(rng = rng,
+                                   params = self.output,
+                                   dropout_rate = dropout_rate)
+
+        if verbose >= 3:
+            print("... Dropped out")
 
 if __name__ == '__main__':
     pass

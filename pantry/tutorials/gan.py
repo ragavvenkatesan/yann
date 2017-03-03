@@ -117,7 +117,6 @@ def shallow_gan ( dataset= None, verbose = 1 ):
                         distribution = 'normal',
                         mu = 0,
                         sigma = 1,
-                        limits = (0,1),
                         verbose = verbose)
     
     #x - inputs come from dataset 1 X 784
