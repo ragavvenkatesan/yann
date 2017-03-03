@@ -74,6 +74,7 @@ def save_images(imgs, prefix, is_color, verbose = 2):
                                 X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
                                         curr_image.shape[2])),
                                     img_shape = (curr_image.shape[1], curr_image.shape[2]),
+                                    tile_spacing = (5,5),
                                     tile_shape = tile_shape ))
                 if len(I.shape) == 3:
                     raster.append(rgb2gray(I))
@@ -87,6 +88,7 @@ def save_images(imgs, prefix, is_color, verbose = 2):
                                 X = curr_image.reshape((curr_image.shape[0],curr_image.shape[1] * \
                                         curr_image.shape[2])),
                                     img_shape = (curr_image.shape[1], curr_image.shape[2]),
+                                    tile_spacing = (5,5),                                    
                                     tile_shape = tile_shape )))
                 assert len(raster[i].shape) == 2
                 imsave(prefix + str(i) + ".jpg",raster[i], cmap = 'gray')
