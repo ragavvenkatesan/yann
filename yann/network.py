@@ -1760,7 +1760,7 @@ class network(object):
             datastream: as always
             classifier: the classifier layer to test out of.
             generator: if generator network, generator layer to test out of.
-            value: if value-based objective network, the value layer to test out of.
+            value: if value-based objective network, the value to test out of.
             verbose: as always
 
         """
@@ -1775,7 +1775,7 @@ class network(object):
             self._initialize_test_classifier(errors = _errors, verbose = verbose)
 
         elif 'value' in kwargs.keys():
-            _errors = self.inference_layers[kwargs['value']].inference
+            _errors = kwargs['value']
             self._initialize_test_value(errors = _errors, verbose = verbose)
 
         else:
@@ -2208,8 +2208,10 @@ class network(object):
                           Default is the last visualizer created.
             classifier_layer: supply the layer of classifier.
                           Default is the last classifier layer created.
-            objective_layer: Supply the layer id of layer that has the objective function.
+            objective_layers: Supply a list of layer ids of layers that has the objective function.
                           Default is last objective layer created if no classifier is provided.
+            objective_weights: Supply a list of weights to be multiplied by each value of the 
+                         objective layers. Default is 1.
             active_layers: Supply a list of active layers. If this parameter is supplied all
                            ``'learnabile'`` of all layers will be ignored and only these layers
                            will be trained. By default, all the learnable layers are used.
@@ -2257,10 +2259,15 @@ class network(object):
                 classifier_layer = None
                 self.network_type = 'value'
 
-        if not 'objective_layer' in kwargs.keys():
-            objective_layer = self.last_objective_layer_created
+        if not 'objective_layers' in kwargs.keys():
+            objective_layers = [self.last_objective_layer_created]
         else:
-            objective_layer = kwargs['objective_layer']
+            objective_layers = kwargs['objective_layers']
+
+        if not 'objective_weights' in kwargs.keys():
+            objective_weights = [1]*len(objective_layers)            
+        else:
+            objective_weights = kwargs['objective_weights']
 
         if not 'active_layers' in kwargs.keys():
             params = self.active_params
@@ -2322,19 +2329,27 @@ class network(object):
                 raise Exception ("Datastream " + datastream + " not found.")
         self.cooked_datastream = self.datastream[datastream]
 
-        if objective_layer is None:
+        if objective_layers is None:
             if self.last_objective_layer_created is None:
                 raise Exception ("Cannot build trainer without having an objective layer created")
             else:
-                objective_layer = self.last_objective_layer_created
+                objective_layers = self.last_objective_layer_created
+
+        try:
+            assert len(objective_layers) == len(objective_weights)
+        except:
+            raise Exception (" Number of objective weights and objective layers must match.")
 
         if verbose >=2 :
             print (".. All checks complete, cooking continues" )
 
-        self.cost = self.layers[objective_layer].output
-        self.dropout_cost = self.dropout_layers[objective_layer].output
-        self.cost = []
+        self.layer_cost = 0
+        self.dropout_cost = 0
+        for lyr, weight in zip(objective_layers, objective_weights):
+            self.layer_cost = self.layer_cost + weight * self.layers[lyr].output
+            self.dropout_cost = self.dropout_cost + weight * self.dropout_layers[lyr].output
 
+        self.cost = []
         self._cook_datastream(verbose = verbose)
         self._cook_optimizer(params = params,
                              optimizer = self.cooked_optimizer,
@@ -2351,9 +2366,10 @@ class network(object):
             self._initialize_confusion (classifier = classifier_layer,
                                     verbose = verbose)
         else:
-            self._initialize_test (value = objective_layer,
+            self._initialize_test (value = self.layer_cost,
                                    verbose = verbose)
-        self._initialize_train ( verbose = verbose )
+        self._initialize_train ( objective = self.dropout_cost,
+                                 verbose = verbose )
 
         self._cook_resultor(resultor = self.cooked_resultor, verbose = verbose)
         self._cook_visualizer(verbose = verbose) # always cook visualizer last.
