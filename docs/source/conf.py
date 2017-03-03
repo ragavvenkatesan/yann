@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 #
 # yann documentation build configuration file, created by
@@ -20,9 +19,6 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
-sys.path.insert(0, os.path.abspath('../../yann/'))
-sys.path.insert(0, os.path.abspath('../../pantry/'))
-
 
 # fool rtd into thinking a GPU is available, so all modules are importable
 try:
@@ -30,11 +26,8 @@ try:
 except ImportError:
     from mock import Mock
 
-# Don't build or import any modules.
-MOCK_MODULES = ['numpy', 'scipy', 'networkx', 'theano', 'progressbar', 'skdata', 'pillow',
- 'matplotlib']
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
+import theano
+# import theano.sandbox.cuda
 
 # theano.config = Mock(device='gpu')
 # theano.sandbox.cuda.cuda_enabled = True
@@ -74,8 +67,8 @@ master_doc = 'index'
 
 # General substitutions.
 project = u'Yann'
-copyright = u'2015-2017, Ragav Venkatesan'
-author = u'Ragav Venkatesan'
+copyright = u'2015-2017, Ragav Venkatesan and Other Yann Contributors'
+author = u'Ragav Venkatesan and Other Yann Contributors.'
 license = u'MIT License'
 
 import yann
@@ -88,9 +81,6 @@ import yann
 version = yann.__version__
 # The full version, including alpha/beta/rc tags.
 release = yann.__version__
-
-copyright = u'2015–2017, Ragav Venkatesan'
-
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:

@@ -72,7 +72,6 @@ def mlp ( dataset, verbose = 1 ):
     learning_rates = (0.05, 0.01, 0.001)  
 
     net.cook( optimizer = 'main',
-              objective_layer = 'obj',
               datastream = 'data',
               classifier = 'softmax',
               verbose = verbose
