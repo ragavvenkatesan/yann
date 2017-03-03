@@ -184,7 +184,11 @@ class network(object):
             angle:  Takes value between [0,1] to capture the angle between [0,180] degrees
                     Default is None. If None is specified, random number is generated from a uniform
                     distriibution between 0 and 1.
-            layer_type: If ``value`` supply, else it is default ``'discriminator'``
+            layer_type: If ``value`` supply, else it is default ``'discriminator'``. For other 
+                    layers, if the layer class takes an argument ``type``, supply that argument here
+                    as ``layer_type``. ``merge`` layer for instance will use this arugment as its
+                    ``type`` argument.
+
 
         """
         if not 'id' in kwargs.keys():
