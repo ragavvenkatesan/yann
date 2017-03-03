@@ -118,7 +118,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     )          
 
     learning_rates = (0, 0.1, 0.01)  
-    net.cook( objective_layer = 'obj',
+    net.cook( objective_layers = ['obj'],
               datastream = 'data',
               learning_rates = learning_rates,
               verbose = verbose

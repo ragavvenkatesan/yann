@@ -70,7 +70,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = 'relu',
-                    regularize = True,
+                    # regularize = True,
                     verbose = verbose
                     )
 
@@ -81,7 +81,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = 'relu',
-                    regularize = True,
+                    # regularize = True,
                     verbose = verbose
                     )      
 
@@ -91,7 +91,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "dot_product_1",
                     num_neurons = 1250,
                     activation = 'relu',
-                    regularize = True,
+                    # regularize = True,
                     verbose = verbose
                     )
 
@@ -100,7 +100,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "dot_product_2",
                     num_neurons = 1250,                    
                     activation = 'relu',  
-                    regularize = True,    
+                    # regularize = True,    
                     verbose = verbose
                     ) 
     
@@ -108,7 +108,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     id = "softmax",
                     origin = "dot_product_2",
                     num_classes = 10,
-                    regularize = True,
+                    # regularize = True,
                     activation = 'softmax',
                     verbose = verbose
                     )
@@ -126,14 +126,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
     net.pretty_print()  
     draw_network(net.graph, filename = 'lenet.png')   
 
-    net.cook( optimizer = 'main',
-              objective_layer = 'obj',
-              datastream = 'data',
-              classifier_layer = 'softmax',
-              verbose = verbose
-              )
+    net.cook()
     
-    net.train( epochs = (40, 40), 
+    net.train( epochs = (4, 4), 
                validate_after_epochs = 1,
                training_accuracy = True,
                learning_rates = learning_rates,               
@@ -268,16 +263,11 @@ def lenet_maxout_batchnorm_before_activation ( dataset= None, verbose = 1 ):
 
     learning_rates = (0.05, 0.001, 0.0001)  
 
-    net.cook( optimizer = 'main',
-              objective_layer = 'obj',
-              datastream = 'data',
-              classifier = 'softmax',
-              verbose = verbose
-              )
+    net.cook(  )
     #draw_network(net.graph, filename = 'lenet.png')    
     net.pretty_print()
     
-    net.train( epochs = (40, 40), 
+    net.train( epochs = (4, 4), 
                validate_after_epochs = 1,
                visualize_after_epochs = 1,
                training_accuracy = True,
@@ -432,16 +422,11 @@ def lenet_maxout_batchnorm_after_activation ( dataset= None, verbose = 1 ):
 
     learning_rates = (0.05, 0.001, 0.0001)  
 
-    net.cook( optimizer = 'main',
-              objective_layer = 'obj',
-              datastream = 'data',
-              classifier = 'softmax',
-              verbose = verbose
-              )
+    net.cook( )
     draw_network(net.graph, filename = 'lenet.png')    
     net.pretty_print()
     
-    net.train( epochs = (40, 40), 
+    net.train( epochs = (4, 4), 
                validate_after_epochs = 1,
                visualize_after_epochs = 1,
                training_accuracy = True,
@@ -475,5 +460,5 @@ if __name__ == '__main__':
         dataset = data.dataset_location()
 
     lenet5 ( dataset, verbose = 2 )
-    # lenet_maxout_batchnorm_before_activation (dataset, verbose = 2)
-    # lenet_maxout_batchnorm_after_activation (dataset, verbose = 2)
+    lenet_maxout_batchnorm_before_activation (dataset, verbose = 2)
+    lenet_maxout_batchnorm_after_activation (dataset, verbose = 2)
