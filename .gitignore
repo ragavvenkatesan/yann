@@ -20,3 +20,4 @@ lenet5
 /pantry/matlab/train
 /pantry/matlab/valid
 resultor
+clean.sh

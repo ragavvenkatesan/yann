@@ -85,8 +85,9 @@ class batch_norm_layer_2d (layer):
 
         mean = theano.tensor.unbroadcast(mean,0)
         var = theano.tensor.unbroadcast(var,0)
+        var = var + 0.000001
         self.updates[self.running_mean] = mean
-        self.updates[self.running_var] = var + 0.001
+        self.updates[self.running_var] = var
 
         self.inference = batch_normalization_test (
                                                 inputs = input,
@@ -237,8 +238,9 @@ class batch_norm_layer_1d (layer):
 
         mean = theano.tensor.unbroadcast(mean,0)
         var = theano.tensor.unbroadcast(var,0)
+        var = var + 0.0000001 
         self.updates[self.running_mean] = mean
-        self.updates[self.running_var] = var + 0.001
+        self.updates[self.running_var] = var
 
         self.inference = batch_normalization_test (
                                                 inputs = input,
