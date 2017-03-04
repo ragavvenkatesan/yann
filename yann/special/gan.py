@@ -63,7 +63,7 @@ class gan (network):
             else:
                 self.mini_batch_train_softmax = theano.function(
                         inputs = [index, self.cooked_softmax_optimizer.epoch],
-                        outputs = self.dropout_softmax_sot,
+                        outputs = self.dropout_softmax_cost,
                         name = 'train',
                         givens={
                 self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size],
@@ -72,34 +72,40 @@ class gan (network):
                         updates = self.cooked_softmax_optimizer.updates,
                         on_unused_input = 'ignore')
 
-        #D(x)
-        self.mini_batch_train_real = theano.function(
-                inputs = [index, self.cooked_real_optimizer.epoch],
-                outputs = self.dropout_real_cost,
+        #-0.5* log ( D(x) ) - 0.5* log ( 1- D (G (z)))
+        self.mini_batch_train_discriminator = theano.function(
+                inputs = [index, self.cooked_discriminator_optimizer.epoch],
+                outputs = self.dropout_D_cost,
                 name = 'train',
                 givens={
         self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size] },
-                updates = self.cooked_real_optimizer.updates,
+                updates = self.cooked_discriminator_optimizer.updates,
                 on_unused_input = 'ignore')
 
-        #D(G(z))
-        self.mini_batch_train_fake = theano.function(
-                inputs = [index, self.cooked_fake_optimizer.epoch],
-                outputs = self.dropout_fake_cost,
+        # -0.5 * log (D(G(z)))        
+        self.mini_batch_train_generator = theano.function(
+                inputs = [index, self.cooked_generator_optimizer.epoch],
+                outputs = self.dropout_G_cost,
                 name = 'train',
                 givens={
         self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size]},
-                updates = self.cooked_fake_optimizer.updates,
+                updates = self.cooked_generator_optimizer.updates,
                 on_unused_input = 'ignore')
 
-        #Update for G(z) weights
-        self.mini_batch_train_gen = theano.function(
-                inputs = [index, self.cooked_gen_optimizer.epoch],
-                outputs = self.dropout_gen_cost,
-                name = 'train',
+        self.mini_batch_discriminator_probability = theano.function(
+                inputs = [index],
+                outputs = self.discriminator_probability,
+                name = 'discriminator_probability',
                 givens={
         self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size] },
-                updates = self.cooked_gen_optimizer.updates,
+                on_unused_input = 'ignore')
+
+        self.mini_batch_generator_probability = theano.function(
+                inputs = [index],
+                outputs = self.generator_probability,
+                name = 'generator_probability',
+                givens={
+        self.x: self.data_x[ index * self.mini_batch_size:(index + 1) * self.mini_batch_size] },
                 on_unused_input = 'ignore')
 
     def cook_softmax_optimizer ( self, optimizer_params, verbose = 2):
@@ -123,73 +129,53 @@ class gan (network):
         self.softmax_decay_learning_rate = self.decay_learning_rate
         self.softmax_current_momentum = self.current_momentum
 
-    def cook_real_optimizer ( self, optimizer_params, verbose = 2):
+    def cook_discriminator ( self, optimizer_params, verbose = 2):
         """
         This method cooks the real optimizer.
 
         Args:
             verbose: as always
         """
-        optimizer_params["id"] = 'real_optimizer'
+        optimizer_params["id"] = 'discriminator_optimizer'
         if verbose >=3 :
             print("... Building the real classifier backprop network.")
         self.add_module( type = 'optimizer', params = optimizer_params, verbose =verbose )
-        self.cooked_real_optimizer = self.optimizer["real_optimizer"]
+        self.cooked_discriminator_optimizer = self.optimizer["discriminator_optimizer"]
 
         self._cook_optimizer(params = self.discriminator_active_params,
-                             objective = self.dropout_real_cost,
-                             optimizer = self.cooked_real_optimizer,
+                             objective = self.dropout_D_cost,
+                             optimizer = self.cooked_discriminator_optimizer,
                              verbose = verbose )
-        self.real_learning_rate = self.learning_rate
-        self.real_decay_learning_rate = self.decay_learning_rate
-        self.real_current_momentum = self.current_momentum
+        self.discriminator_learning_rate = self.learning_rate
+        self.discriminator_decay_learning_rate = self.decay_learning_rate
+        self.discriminator_current_momentum = self.current_momentum
 
-    def cook_fake_optimizer ( self, optimizer_params, verbose = 2):
+    def cook_generator ( self, optimizer_params, verbose = 2):
         """
         This method cooks the fake optimizer.
 
         Args:
             verbose: as always
         """
-        optimizer_params["id"] = 'fake_optimizer'
+        optimizer_params["id"] = 'generator_optimizer'
         if verbose >=3 :
             print("... Building the fake classifier backprop network.")
         self.add_module( type = 'optimizer', params = optimizer_params, verbose =verbose )
-        self.cooked_fake_optimizer = self.optimizer["fake_optimizer"]
-
-        self._cook_optimizer(params = self.discriminator_active_params,
-                             objective = self.dropout_fake_cost,
-                             optimizer = self.cooked_fake_optimizer,
-                             verbose = verbose )
-        self.fake_learning_rate = self.learning_rate
-        self.fake_decay_learning_rate = self.decay_learning_rate
-        self.fake_current_momentum = self.current_momentum
-
-    def cook_gen_optimizer ( self, optimizer_params, verbose = 2):
-        """
-        This method cooks the generator optimizer.
-
-        Args:
-            verbose: as always
-        """
-        optimizer_params["id"] = 'gen_optimizer'
-        if verbose >=3 :
-            print("... Building the generator classifier backprop network.")
-        self.add_module( type = 'optimizer', params = optimizer_params, verbose =verbose )
-        self.cooked_gen_optimizer = self.optimizer["gen_optimizer"]
+        self.cooked_generator_optimizer = self.optimizer["generator_optimizer"]
 
         self._cook_optimizer(params = self.generator_active_params,
-                             objective = self.dropout_gen_cost, # ascend on the same obj
-                             optimizer = self.cooked_gen_optimizer,
+                             objective = self.dropout_G_cost,
+                             optimizer = self.cooked_generator_optimizer,
                              verbose = verbose )
-        self.gen_learning_rate = self.learning_rate
-        self.gen_decay_learning_rate = self.decay_learning_rate
-        self.gen_current_momentum = self.current_momentum
+        self.generator_learning_rate = self.learning_rate
+        self.generator_decay_learning_rate = self.decay_learning_rate
+        self.generator_current_momentum = self.current_momentum
 
     def cook(   self,
                 objective_layers,
                 discriminator_layers,
                 generator_layers,
+                game_layers,                
                 softmax_layer = None,
                 classifier_layers = None,
                 optimizer_params = None,
@@ -207,14 +193,15 @@ class gan (network):
             visualizer: Supply a visualizer to cook with.
 
             objective_layers: Supply a tuple of layer ids of layers that have the objective
-                                functions (classification, real, fake)
+                              functions (classification, discriminator, generator)
 
             classifier: supply the classifier layer of the discriminator.
-            discriminator: supply the fake/real layer of the data stream.
+            discriminator: supply the discriminator layer of the data stream.
             generator: supply the last generator layer.
             generator_layers: list or tuple of all generator layers
             discriminator_layers: list or tuple of all discriminator layers
             classifier_layers: list or tuple of all classifier layers
+            game_layers: list or tuple of two layers. The first is D(G(z)) and the second is D(x)
             verbose: Similar to the rest of the toolbox.
 
 
@@ -307,6 +294,13 @@ class gan (network):
         self.cooked_datastream = self.datastream[datastream]
         self._cook_datastream(verbose = verbose)
 
+        if game_layers is None:
+            raise Exception("Need game layers")
+        else:
+            generator_sigmoid, discriminator_sigmoid = game_layers
+            self.generator_probability = self.dropout_layers[generator_sigmoid].output
+            self.discriminator_probability = self.dropout_layers[discriminator_sigmoid].output
+
         if self.softmax_head is True:
             self.data_y = self.cooked_datastream.data_y
             if self.cooked_datastream.svm is True:
@@ -318,22 +312,19 @@ class gan (network):
         if self.softmax_head is True:
             self.softmax_cost = self.layers[objective_layers[0]].output
             self.dropout_softmax_cost = self.dropout_layers[objective_layers[0]].output
-        self.real_cost = self.layers[objective_layers[1]].output
-        self.dropout_real_cost = self.dropout_layers[objective_layers[1]].output
-        self.fake_cost = self.layers[objective_layers[2]].output
-        self.dropout_fake_cost = self.dropout_layers[objective_layers[2]].output
-        self.gen_cost = -self.fake_cost
-        self.dropout_gen_cost = -self.dropout_fake_cost
+
+        self.D_cost = self.layers[objective_layers[1]].output
+        self.dropout_D_cost = self.dropout_layers[objective_layers[1]].output
+        self.G_cost = self.layers[objective_layers[2]].output
+        self.dropout_G_cost = self.dropout_layers[objective_layers[2]].output
 
         self._cook_datastream(verbose = verbose)
         if self.softmax_head is True:
             self.cook_softmax_optimizer(optimizer_params = optimizer_params,
                                         verbose = verbose)
-        self.cook_real_optimizer(   optimizer_params = optimizer_params,
+        self.cook_discriminator(   optimizer_params = optimizer_params,
                                     verbose = verbose)
-        self.cook_fake_optimizer(   optimizer_params = optimizer_params,
-                                    verbose = verbose)
-        self.cook_gen_optimizer(   optimizer_params = optimizer_params,
+        self.cook_generator(   optimizer_params = optimizer_params,
                                     verbose = verbose)
         if self.softmax_head is True:
             self._initialize_test (classifier = softmax_layer,
@@ -362,8 +353,7 @@ class gan (network):
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 
         self.gen_cost = []
-        self.real_cost = []
-        self.fake_cost = []
+        self.disc_cost = []
         self.softmax_cost = []
         self.cooked_visualizer = self.visualizer[visualizer]
         self._cook_visualizer(verbose = verbose) # always cook visualizer last.
@@ -407,35 +397,24 @@ class gan (network):
             epoch: Which epoch are we at ?
         """
 
+        discriminator_probability = self.mini_batch_discriminator_probability(0)
+        generator_probability = self.mini_batch_generator_probability(0)
+        
         if self.cooked_datastream is None:
             raise Exception(" Cook first then run this.")
 
-        if verbose >=2 :
-            if len(self.gen_cost) < self.batches2train * self.mini_batches_per_batch[0]:
-                print(".. Generator Cost                : " + str(self.gen_cost[-1]))
-            else:
-                print(".. Generator Cost                : " + str(numpy.mean(self.gen_cost[-1 *
-                                    self.batches2train * self.mini_batches_per_batch[0]:])))
-
-        if len(self.real_cost) < self.batches2train * self.mini_batches_per_batch[0]:
-            print(".. Discriminator Real Images Cost    : " + str(self.real_cost[-1]))
+        if len(discriminator_probability) < self.batches2train * self.mini_batches_per_batch[0]:
+            print(".. Discriminator Real Sigmoid D(x)   : " + str(discriminator_probability[-1]))
         else:
-            print(".. Discriminator Real Images Cost    : " + str(numpy.mean(self.real_cost[-1 *
-                                self.batches2train * self.mini_batches_per_batch[0]:])))
+            print(".. Discriminator Real Sigmoid D(x)   : " + str(numpy.mean(\
+             discriminator_probability[-1 * self.batches2train * self.mini_batches_per_batch[0]:])))
 
-
-        if len(self.fake_cost) < self.batches2train * self.mini_batches_per_batch[0]:
-            print(".. Discriminator Fake Images Cost    : " + str(self.fake_cost[-1]))
+        if len(generator_probability) < self.batches2train * self.mini_batches_per_batch[0]:
+            print(".. Generator Sigmoid D(G(z))         : " + str(generator_probability[-1]))
         else:
-            print(".. Discriminator Fake Images Cost    : " + str(numpy.mean(self.fake_cost[-1 *
-                                self.batches2train * self.mini_batches_per_batch[0]:])))
-        if self.softmax_head is True:
-            if len(self.softmax_cost) < self.batches2train * self.mini_batches_per_batch[0]:
-                print(".. Discriminator Softmax Cost        : " + str(self.softmax_cost[-1]))
-            else:
-                print(".. Discriminator Softmax Cost        : " + str(numpy.mean
-                      (self.softmax_cost[-1 * self.batches2train * self.mini_batches_per_batch[0]:])))
-
+            print(".. Generator Sigmoid D(G(z))         : " + str(numpy.mean(\
+                 generator_probability[-1 * self.batches2train * self.mini_batches_per_batch[0]:])))
+        
         if verbose >= 3:
             print("... Learning Rate       : " + str(self.learning_rate.get_value(borrow=\
                                                                                  self.borrow)))
@@ -671,9 +650,9 @@ class gan (network):
             if nan_flag is False:
                 if verbose >= 2:
                     if len(self.softmax_cost) < self.batches2train * self.mini_batches_per_batch[0]:
-                        print(".. Discriminator Softmax Cost        : " + str(self.softmax_cost[-1]))
+                        print(".. Discriminator Softmax Cost       : " + str(self.softmax_cost[-1]))
                     else:
-                        print(".. Discriminator Softmax Cost        : " + str(numpy.mean(
+                        print(".. Discriminator Softmax Cost       : " + str(numpy.mean(
                                                             self.softmax_cost[-1 *
                                             self.batches2train * self.mini_batches_per_batch[0]:])))
 
@@ -704,7 +683,7 @@ class gan (network):
                     if final_era is False:
                         if verbose >= 3:
                             print("... Patience ran out lowering learning rate.")
-                        new_lr = self.fake_learning_rate.get_value( borrow = self.borrow ) * 0.1
+                        new_lr = self.generator_learning_rate.get_value( borrow = self.borrow )*0.1
                         self._new_era(new_learning_rate = new_lr, verbose =verbose )
                         early_termination = False
                     else:
@@ -719,10 +698,11 @@ class gan (network):
 
         # Reset training for the main loop
 
-        self.real_learning_rate.set_value(learning_rates[1])
-        self.fake_learning_rate.set_value(learning_rates[1])
-        self.gen_learning_rate.set_value(learning_rates[1])
-
+        self.discriminator_learning_rate.set_value(learning_rates[1])
+        self.generator_learning_rate.set_value(learning_rates[1])
+        if self.softmax_head is True:
+            self.softmax_learning_rate.set_value(learning_rates[1])
+        
         patience_increase = 2
         improvement_threshold = 0.995
         best_iteration = 0
@@ -759,7 +739,7 @@ class gan (network):
                 if self.learning_rate.get_value(borrow = self.borrow) < learning_rates[era+1]:
                     if verbose >= 2:
                         print(".. Learning rate was already lower than specified. Not changing it.")
-                    new_lr = self.gen_learning_rate.get_value(borrow = self.borrow)
+                    new_lr = self.generator_learning_rate.get_value(borrow = self.borrow)
                 else:
                     new_lr = learning_rates[era+1]
                 self._new_era(new_learning_rate = new_lr, verbose = verbose)
@@ -797,30 +777,26 @@ class gan (network):
                 for minibatch in xrange(self.mini_batches_per_batch[0]):
                     # All important part of the training function. Batch Train.
                     # This is the classifier for discriminator. I will run this later.
-                    
-                    fake_cost = self.mini_batch_train_fake (minibatch, epoch_counter)
-                    real_cost = self.mini_batch_train_real (minibatch, epoch_counter)
                     if self.softmax_head is True:
                         softmax_cost = self.mini_batch_train_softmax (minibatch, epoch_counter)
-
+                    disc_cost = self.mini_batch_train_discriminator (minibatch, epoch_counter)
                     if minibatch % k == 0:
-                        gen_cost = self.mini_batch_train_gen (minibatch, epoch_counter)
+                        gen_cost = self.mini_batch_train_generator (minibatch, epoch_counter)
 
                     if numpy.isnan(gen_cost) or \
-                        numpy.isnan(fake_cost) or \
-                        numpy.isnan(real_cost):
+                        numpy.isnan(disc_cost):
                         nan_flag = True
-                        new_lr = self.gen_learning_rate.get_value( borrow = self.borrow ) * 0.1
+                        new_lr = self.generator_learning_rate.get_value( borrow = self.borrow )*0.1
                         self._new_era(new_learning_rate = new_lr, verbose =verbose )
                         if verbose >= 2:
                             print(".. NAN! Slowing learning rate by 10 times and restarting epoch.")
                         break
 
-                    self.fake_cost = self.fake_cost + [fake_cost]
-                    self.real_cost = self.real_cost + [real_cost]
+                    self.disc_cost = self.disc_cost + [disc_cost]
+                    self.gen_cost = self.gen_cost + [gen_cost]
+
                     if self.softmax_head is True:
                         self.softmax_cost = self.softmax_cost + [softmax_cost]
-                    self.gen_cost = self.gen_cost + [gen_cost]
 
                     total_mini_batches_done = total_mini_batches_done + 1
 
@@ -853,11 +829,10 @@ class gan (network):
                                                                     borrow = self.borrow,
                                                                     verbose = verbose)
 
-                #self.real_decay_learning_rate(learning_rates[0])
-                #self.fake_decay_learning_rate(learning_rates[0])
-                #self.gen_decay_learning_rate(learning_rates[0])
-                #if self.softmax_head is True:
-                #    self.softmax_decay_learning_rate(learning_rates[0])
+                self.discriminator_decay_learning_rate(learning_rates[0])
+                self.generator_decay_learning_rate(learning_rates[0])
+                if self.softmax_head is True:
+                    self.softmax_decay_learning_rate(learning_rates[0])
 
                 if patience < epoch_counter:
                     early_termination = True

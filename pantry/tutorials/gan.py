@@ -74,8 +74,8 @@ def shallow_gan ( dataset= None, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.5, 0.7, 50),      
-                "regularization"      : (0.000, 0.0001),       
+                "momentum_params"     : (0.65, 0.9, 50),      
+                "regularization"      : (0.000, 0.000),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -90,7 +90,7 @@ def shallow_gan ( dataset= None, verbose = 1 ):
     visualizer_params = {
                     "root"       : '.',
                     "frequency"  : 1,
-                    "sample_size": 100,
+                    "sample_size": 225,
                     "rgb_filters": False,
                     "debug_functions" : False,
                     "debug_layers": True,  
@@ -113,7 +113,7 @@ def shallow_gan ( dataset= None, verbose = 1 ):
     #z - latent space created by random layer
     net.add_layer(type = 'random',
                         id = 'z',
-                        num_neurons = (100,64), 
+                        num_neurons = (100,32), 
                         distribution = 'normal',
                         mu = 0,
                         sigma = 1,
@@ -140,7 +140,7 @@ def shallow_gan ( dataset= None, verbose = 1 ):
                     id = "D(x)",
                     origin = "x",
                     num_neurons = 800,
-                    activation = 'relu',   
+                    activation = 'relu',
                     regularize = True,                                                         
                     verbose = verbose
                     )
@@ -186,26 +186,38 @@ def shallow_gan ( dataset= None, verbose = 1 ):
                    )
     
     # objective layers 
-    # fake objective 
+    # discriminator objective 
+    net.add_layer (type = "tensor",
+                    input =  - 0.5 * T.mean(T.log(net.layers['real'].output)) - \
+                                  0.5 * T.mean(T.log(1-net.layers['fake'].output)),
+                    input_shape = (1,),
+                    id = "discriminator_task"
+                    )
+
     net.add_layer ( type = "objective",
-                    id = "fake_obj",
-                    origin = "fake", # this is useless anyway.
+                    id = "discriminator_obj",
+                    origin = "discriminator_task",
                     layer_type = 'value',
-                    objective = T.mean(T.log(net.layers['fake'].output)),
+                    objective = net.dropout_layers['discriminator_task'].output,
                     datastream_origin = 'data', 
                     verbose = verbose
                     )
-    #real objective 
+    #generator objective 
+    net.add_layer (type = "tensor",
+                    input =  - 0.5 * T.mean(T.log(net.layers['fake'].output)),
+                    input_shape = (1,),
+                    id = "objective_task"
+                    )
     net.add_layer ( type = "objective",
-                    id = "real_obj",
-                    origin = "real", # this is useless anyway.
+                    id = "generator_obj",
                     layer_type = 'value',
-                    objective = -T.mean(T.log(net.layers['real'].output)),
+                    origin = "objective_task",
+                    objective = net.dropout_layers['objective_task'].output,
                     datastream_origin = 'data', 
                     verbose = verbose
-                    )                
-    #softmax objective.
-    
+                    )   
+
+    #softmax objective.    
     net.add_layer ( type = "objective",
                     id = "classifier_obj",
                     origin = "softmax",
@@ -215,23 +227,24 @@ def shallow_gan ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
     
-    # from yann.utils.graph import draw_network
-    # draw_network(net.graph, filename = 'gan.png')    
-    # net.pretty_print()
+    from yann.utils.graph import draw_network
+    draw_network(net.graph, filename = 'gan.png')    
+    net.pretty_print()
     
-    net.cook (  objective_layers = ["classifier_obj","real_obj","fake_obj"],
+    net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                 optimizer_params = optimizer_params,
-                classifier_layers = ["D(x)", "softmax"],                                
                 discriminator_layers = ["D(x)"],
                 generator_layers = ["G(z)"], 
+                classifier_layers = ["D(x)", "softmax"],                                                
                 softmax_layer = "softmax",
+                game_layers = ("fake", "real"),
                 verbose = verbose )
                     
-    learning_rates = (0.04, 0.01, 0.001 )  
+    learning_rates = (0.05, 0.01 )  
 
-    net.train( epochs = (5, 5 ), 
-               k = 1,  
-               pre_train_discriminator = 0,
+    net.train( epochs = (20), 
+               k = 2,  
+               pre_train_discriminator = 3,
                validate_after_epochs = 1,
                visualize_after_epochs = 1,
                training_accuracy = True,
