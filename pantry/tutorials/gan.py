@@ -353,9 +353,10 @@ def deep_gan (dataset, verbose = 1 ):
     #D(x) - Contains params theta_d creates features 1 X 800. 
     # Discriminator Layers
     net.add_layer ( type = "unflatten",
-                                origin = "G(z)",
-                                shape = (28,28),
-                                verbose = verbose )
+                    origin = "G(z)",
+                    id = "G(z)-unflattened",
+                    shape = (28,28),
+                    verbose = verbose )
 
     net.add_layer ( type = "conv_pool",
                     id = "D1-x",
@@ -369,7 +370,7 @@ def deep_gan (dataset, verbose = 1 ):
 
     net.add_layer ( type = "conv_pool",
                     id = "D1-z",
-                    origin = "G(z)",
+                    origin = "G(z)-unflattened",
                     num_neurons = 20,
                     filter_shape = (5,5),
                     activation = 'relu',
