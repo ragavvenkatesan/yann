@@ -266,6 +266,9 @@ def deep_gan (dataset, verbose = 1 ):
 
     Returns:
         net: A Network object.
+
+    Notes:
+        This is not setup properly therefore does not learn at the moment.
     """
     if verbose >=2:
         print (".. Creating a GAN network")
@@ -330,7 +333,7 @@ def deep_gan (dataset, verbose = 1 ):
                     origin = "z",
                     id = "G1",
                     num_neurons = 128,
-                    activation = 'tanh',
+                    activation = 'relu',
                     verbose = verbose
                     ) 
 
@@ -338,7 +341,7 @@ def deep_gan (dataset, verbose = 1 ):
                     origin = "G1",
                     id = "G2",
                     num_neurons = 384,
-                    activation = 'tanh',
+                    activation = 'relu',
                     verbose = verbose
                     )
 
