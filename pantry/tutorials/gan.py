@@ -276,7 +276,7 @@ def deep_gan (dataset, verbose = 1 ):
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
                 "momentum_params"     : (0.65, 0.9, 50),      
-                "regularization"      : (0.000, 0.000),       
+                "regularization"      : (0.0001, 0.0001),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -334,6 +334,7 @@ def deep_gan (dataset, verbose = 1 ):
                     id = "G1",
                     num_neurons = 128,
                     activation = 'relu',
+                    batch_norm = True,
                     verbose = verbose
                     ) 
 
@@ -342,6 +343,7 @@ def deep_gan (dataset, verbose = 1 ):
                     id = "G2",
                     num_neurons = 384,
                     activation = 'relu',
+                    batch_norm = True,
                     verbose = verbose
                     )
 
@@ -364,20 +366,24 @@ def deep_gan (dataset, verbose = 1 ):
     net.add_layer ( type = "conv_pool",
                     id = "D1-x",
                     origin = "x",
-                    num_neurons = 20,
-                    filter_shape = (5,5),                        
-                    activation = 'relu',
-                    regularize = True,                                                         
+                    num_neurons = 40,
+                    filter_shape = (5,5),  
+                    poolsize = (2,2),                      
+                    activation = ('maxout', 'maxout', 2),
+                    regularize = True,      
+                    batch_norm = True,                                                   
                     verbose = verbose
                     )
 
     net.add_layer ( type = "conv_pool",
                     id = "D1-z",
                     origin = "G(z)-unflattened",
-                    num_neurons = 20,
+                    num_neurons = 40,
                     filter_shape = (5,5),
-                    activation = 'relu',
+                    poolsize = (2,2),
+                    activation = ('maxout', 'maxout', 2)
                     regularize = True,  
+                    batch_norm = True,
                     input_params = net.dropout_layers['D1-x'].params,                                                       
                     verbose = verbose
                     )
@@ -385,20 +391,24 @@ def deep_gan (dataset, verbose = 1 ):
     net.add_layer ( type = "conv_pool",
                     id = "D2-x",
                     origin = "D1-x",
-                    num_neurons = 50,
-                    filter_shape = (2,2),
-                    activation = 'relu',
-                    regularize = True,                                                         
+                    num_neurons = 100,
+                    filter_shape = (3,3),
+                    poolsize = (2,2),
+                    activation = ('maxout', 'maxout', 2)
+                    regularize = True,   
+                    batch_norm = True,                                                     
                     verbose = verbose
                     )
 
     net.add_layer ( type = "conv_pool",
                     id = "D2-z",
                     origin = "D1-z",
-                    num_neurons = 50,
-                    activation = 'relu',
-                    filter_shape = (2,2),                        
+                    num_neurons = 100,
+                    activation = ('maxout', 'maxout', 2)
+                    filter_shape = (3,3),  
+                    poolsize = (2,2),                      
                     regularize = True,  
+                    batch_norm = True,                     
                     input_params = net.dropout_layers['D2-x'].params,                                                       
                     verbose = verbose
                     )
@@ -408,7 +418,9 @@ def deep_gan (dataset, verbose = 1 ):
                     origin = "D2-x",
                     num_neurons = 800,
                     activation = 'relu',
-                    regularize = True,                                                         
+                    regularize = True,  
+                    batch_norm = True,
+                    dropout_rate = 0.5,                                                       
                     verbose = verbose
                     )
 
@@ -419,6 +431,8 @@ def deep_gan (dataset, verbose = 1 ):
                     num_neurons = 800,
                     activation = 'relu',
                     regularize = True,
+                    batch_norm = True,
+                    dropout_rate = 0.5,                       
                     verbose = verbose
                     )
 
@@ -427,7 +441,9 @@ def deep_gan (dataset, verbose = 1 ):
                     origin = "D3-x",
                     num_neurons = 800,
                     activation = 'relu',
-                    regularize = True,                                                         
+                    regularize = True,       
+                    batch_norm = True,
+                    dropout_rate = 0.5,                                                                         
                     verbose = verbose
                     )
 
@@ -438,6 +454,8 @@ def deep_gan (dataset, verbose = 1 ):
                     num_neurons = 800,
                     activation = 'relu',
                     regularize = True,
+                    batch_norm = True,
+                    dropout_rate = 0.5,                       
                     verbose = verbose
                     )
 
