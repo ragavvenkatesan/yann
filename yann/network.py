@@ -1724,8 +1724,14 @@ class network(object):
         if verbose>=3 :
             print("... initializing confusion matrix function")   
 
+        _classes = T.scalar('num_classes')
         _predictions = self.inference_layers[classifier].predictions
-        confusion = T.dot(self.y.T,_predictions)
+        _labels = self.y 
+
+        confusion = T.dot(  T.eq( _predictions.dimshuffle(0, 'x'), \
+                            T.arange(self.num_classes_to_classify).astype('int32')).T, \
+                            T.eq( _labels.dimshuffle(0,'x'), \
+                            T.arange(self.num_classes_to_classify).astype('int32')))
 
         index = T.lscalar('index')
         self.mini_batch_confusion = theano.function(
@@ -2506,9 +2512,9 @@ class network(object):
             self._cache_data ( batch = batch , type = 'valid', verbose = verbose )
             for minibatch in xrange(self.mini_batches_per_batch[1]):
                 validation_errors = validation_errors + self.mini_batch_test (minibatch)
-                # if self.network_type == 'classifier':        
-                    # valid_confusion_matrix = valid_confusion_matrix + \
-                      #                                        self.mini_batch_confusion (minibatch)                
+                if self.network_type == 'classifier':        
+                    valid_confusion_matrix = valid_confusion_matrix + \
+                                                            self.mini_batch_confusion (minibatch)                
                 if verbose >= 3:
                     print("... validation error after mini batch " + str(batch_counter) + \
                                                               " is " + str(validation_errors))
@@ -2526,9 +2532,9 @@ class network(object):
 
                 for minibatch in xrange(self.mini_batches_per_batch[0]):
                     training_errors = training_errors + self.mini_batch_test (minibatch)
-                    # if self.network_type == 'classifier':                            
-                        # train_confusion_matrix = train_confusion_matrix + \
-                        #                                      self.mini_batch_confusion (minibatch)                                    
+                    if self.network_type == 'classifier':                            
+                        train_confusion_matrix = train_confusion_matrix + \
+                                                             self.mini_batch_confusion (minibatch)                                    
                     if verbose >= 3:
                         print("... training error after mini batch " + str(batch_counter) + \
                                                                       " is " + str(training_errors))
@@ -2540,6 +2546,9 @@ class network(object):
         if show_progress is True:
             bar.finish()
 
+        """
+        TODO: The following piece of code should move to resultor
+        """
         total_valid_samples = (self.batches2validate*self.mini_batches_per_batch[1]* \
                                                                             self.mini_batch_size)
         total_train_samples = (self.batches2train*self.mini_batches_per_batch[0]* \
@@ -2594,6 +2603,10 @@ class network(object):
                 if verbose >= 2:
                     print(".. Best validation error")
 
+        self.cooked_resultor.print_confusion (epoch = epoch,
+                                              train = train_confusion_matrix,
+                                              valid = valid_confusion_matrix,
+                                              verbose = verbose)
         return best
 
 
@@ -2652,12 +2665,12 @@ class network(object):
             training_accuracy = kwargs["training_accuracy"]
 
         if not 'early_terminate' in kwargs.keys():
-            patience = 5
+            patience = 2
         else:
-            if kwargs["early_terminate"] is True:
+            if kwargs["early_terminate"] is False:
                 patience = numpy.inf
             else:
-                patience = 5
+                patience = 2
         # (initial_learning_rate, fine_tuning_learning_rate, annealing)
         if not 'learning_rates' in kwargs.keys():
             learning_rates = (0.05, 0.01, 0.001)
