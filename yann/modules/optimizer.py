@@ -230,10 +230,10 @@ class optimizer(module):
             elif self.optimizer_type == 'adam':
                 """ Kingma, Diederik, and Jimmy Ba. "Adam: A method for stochastic optimization."
                      arXiv preprint arXiv:1412.6980 (2014)."""
-                if not self.momentum_type == '_adam':
+                if not self.momentum_type == 'adam':
                     if verbose >= 3 and not self.momentum_type == 'false':
                         print "... ADAM doesn't need explicit momentum. Momentum is removed."
-                    self.momentum_type = '_adam'
+                    self.momentum_type = 'adam'
 
 
                 current_acc_2 = b1 * acc_2 + (1-b1) * gradient
@@ -241,7 +241,7 @@ class optimizer(module):
                 self.updates[acc_2] = current_acc_2
                 self.updates[acc_1] = current_acc_1
 
-            if self.momentum_type == '_adam':
+            if self.momentum_type == 'adam':
                 self.updates[velocity] = a * current_acc_2 / (T.sqrt(current_acc_1) +
                                                                                  fudge_factor)
 

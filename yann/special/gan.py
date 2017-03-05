@@ -404,9 +404,9 @@ class gan (network):
             raise Exception(" Cook first then run this.")
 
         if len(discriminator_probability) < self.batches2train * self.mini_batches_per_batch[0]:
-            print(".. Discriminator Real Sigmoid D(x)   : " + str(discriminator_probability[-1]))
+            print(".. Discriminator Sigmoid D(x)   : " + str(discriminator_probability[-1]))
         else:
-            print(".. Discriminator Real Sigmoid D(x)   : " + str(numpy.mean(\
+            print(".. Discriminator Sigmoid D(x)   : " + str(numpy.mean(\
              discriminator_probability[-1 * self.batches2train * self.mini_batches_per_batch[0]:])))
 
         if len(generator_probability) < self.batches2train * self.mini_batches_per_batch[0]:
