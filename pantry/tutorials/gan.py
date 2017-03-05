@@ -433,7 +433,7 @@ def deep_gan (dataset, verbose = 1 ):
                     verbose = verbose
                     )
 
-    """
+    
     #C(D(x)) - This is the opposite of C(D(G(z))), real
     net.add_layer ( type = "classifier",
                     id = "softmax",
@@ -442,7 +442,7 @@ def deep_gan (dataset, verbose = 1 ):
                     activation = 'softmax',
                     verbose = verbose
                 )
-    """
+    
     # objective layers 
     # discriminator objective 
     net.add_layer (type = "tensor",
@@ -474,7 +474,7 @@ def deep_gan (dataset, verbose = 1 ):
                     datastream_origin = 'data', 
                     verbose = verbose
                     )   
-    """
+    
     #softmax objective.    
     net.add_layer ( type = "objective",
                     id = "classifier_obj",
@@ -484,17 +484,17 @@ def deep_gan (dataset, verbose = 1 ):
                     datastream_origin = 'data', 
                     verbose = verbose
                     )
-    """
+    
     # from yann.utils.graph import draw_network
     # draw_network(net.graph, filename = 'gan.png')    
     net.pretty_print()
     
-    net.cook (  objective_layers = [None, "discriminator_obj", "generator_obj"],
+    net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                 optimizer_params = optimizer_params,
                 discriminator_layers = ["D1-x","D2-x"],
                 generator_layers = ["G1","G2","G(z)"], 
-                # classifier_layers = ["D1-x","D2-x","softmax"],                                                
-                # softmax_layer = "softmax",
+                classifier_layers = ["D1-x","D2-x","softmax"],                                                
+                softmax_layer = "softmax",
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
                     
