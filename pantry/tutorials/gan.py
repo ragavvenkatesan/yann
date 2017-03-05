@@ -334,7 +334,7 @@ def deep_gan (dataset, verbose = 1 ):
                     id = "G1",
                     num_neurons = 128,
                     activation = 'relu',
-                    batch_norm = True,
+                    # batch_norm = True,
                     verbose = verbose
                     ) 
 
@@ -343,7 +343,7 @@ def deep_gan (dataset, verbose = 1 ):
                     id = "G2",
                     num_neurons = 384,
                     activation = 'relu',
-                    batch_norm = True,
+                    # batch_norm = True,
                     verbose = verbose
                     )
 
@@ -371,7 +371,7 @@ def deep_gan (dataset, verbose = 1 ):
                     pool_size = (2,2),                      
                     activation = ('maxout', 'maxout', 2),
                     regularize = True,      
-                    batch_norm = True,                                                   
+                    # batch_norm = True,                                                   
                     verbose = verbose
                     )
 
@@ -383,7 +383,7 @@ def deep_gan (dataset, verbose = 1 ):
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
                     regularize = True,  
-                    batch_norm = True,
+                    # batch_norm = True,
                     input_params = net.dropout_layers['D1-x'].params,                                                       
                     verbose = verbose
                     )
@@ -396,7 +396,7 @@ def deep_gan (dataset, verbose = 1 ):
                     pool_size = (2,2),
                     activation = ('maxout', 'maxout', 2),
                     regularize = True,   
-                    batch_norm = True,                                                     
+                    # batch_norm = True,                                                     
                     verbose = verbose
                     )
 
@@ -408,7 +408,7 @@ def deep_gan (dataset, verbose = 1 ):
                     filter_shape = (3,3),  
                     pool_size = (2,2),                      
                     regularize = True,  
-                    batch_norm = True,                     
+                    # batch_norm = True,                     
                     input_params = net.dropout_layers['D2-x'].params,                                                       
                     verbose = verbose
                     )
@@ -419,7 +419,7 @@ def deep_gan (dataset, verbose = 1 ):
                     num_neurons = 800,
                     activation = 'relu',
                     regularize = True,  
-                    batch_norm = True,
+                    # batch_norm = True,
                     dropout_rate = 0.5,                                                       
                     verbose = verbose
                     )
@@ -431,7 +431,7 @@ def deep_gan (dataset, verbose = 1 ):
                     num_neurons = 800,
                     activation = 'relu',
                     regularize = True,
-                    batch_norm = True,
+                    # batch_norm = True,
                     dropout_rate = 0.5,                       
                     verbose = verbose
                     )
@@ -442,7 +442,7 @@ def deep_gan (dataset, verbose = 1 ):
                     num_neurons = 800,
                     activation = 'relu',
                     regularize = True,       
-                    batch_norm = True,
+                    # batch_norm = True,
                     dropout_rate = 0.5,                                                                         
                     verbose = verbose
                     )
@@ -453,8 +453,8 @@ def deep_gan (dataset, verbose = 1 ):
                     input_params = net.dropout_layers["D4-x"].params, 
                     num_neurons = 800,
                     activation = 'relu',
+                    # batch_norm = True,
                     regularize = True,
-                    batch_norm = True,
                     dropout_rate = 0.5,                       
                     verbose = verbose
                     )
@@ -547,7 +547,7 @@ def deep_gan (dataset, verbose = 1 ):
     learning_rates = (0.05, 0.01 )  
 
     net.train( epochs = (20), 
-            k = 2,  
+            k = 5,  
             pre_train_discriminator = 3,
             validate_after_epochs = 1,
             visualize_after_epochs = 1,
