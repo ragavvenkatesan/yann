@@ -441,7 +441,7 @@ class gan (network):
 
         index = T.lscalar('index')
         self.layer_activities_created = True
-        for id, _layer in self.layers.iteritems():
+        for id, _layer in self.inference_layers.iteritems():
             if verbose >=3 :
                 print("... collecting the activities of layer " + id)
             activity = _layer.output
