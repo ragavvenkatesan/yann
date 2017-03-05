@@ -268,15 +268,18 @@ def deep_gan (dataset, verbose = 1 ):
         net: A Network object.
 
     Notes:
-        This is not setup properly therefore does not learn at the moment.
+        This is not setup properly therefore does not learn at the moment. This network here mimics
+        Ian Goodfellow's original code and implementation for MNIST adapted from his source code:
+        https://github.com/goodfeli/adversarial/blob/master/mnist.yaml .It might not be a perfect 
+        replicaiton, but I tried as best as I could.
     """
     if verbose >=2:
         print (".. Creating a GAN network")
 
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.65, 0.9, 50),      
-                "regularization"      : (0.0001, 0.0001),       
+                "momentum_params"     : (0.5, 0.7, 20),      
+                "regularization"      : (0.000, 0.000),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -314,10 +317,11 @@ def deep_gan (dataset, verbose = 1 ):
     #z - latent space created by random layer
     net.add_layer(type = 'random',
                         id = 'z',
-                        num_neurons = (100,32), 
+                        num_neurons = (100,10), 
                         distribution = 'normal',
                         mu = 0,
                         sigma = 1,
+                        # limits = (0,1),
                         verbose = verbose)
     
     #x - inputs come from dataset 1 X 784
@@ -332,7 +336,7 @@ def deep_gan (dataset, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "z",
                     id = "G1",
-                    num_neurons = 128,
+                    num_neurons = 1200,
                     activation = 'relu',
                     # batch_norm = True,
                     verbose = verbose
@@ -341,7 +345,7 @@ def deep_gan (dataset, verbose = 1 ):
     net.add_layer ( type = "dot_product",
                     origin = "G1",
                     id = "G2",
-                    num_neurons = 384,
+                    num_neurons = 1200,
                     activation = 'relu',
                     # batch_norm = True,
                     verbose = verbose
@@ -363,106 +367,57 @@ def deep_gan (dataset, verbose = 1 ):
                     shape = (28,28),
                     verbose = verbose )
 
-    net.add_layer ( type = "conv_pool",
+
+    net.add_layer ( type = "dot_product",
                     id = "D1-x",
                     origin = "x",
-                    num_neurons = 40,
-                    filter_shape = (5,5),  
-                    pool_size = (2,2),                      
-                    activation = ('maxout', 'maxout', 2),
-                    regularize = True,      
-                    # batch_norm = True,                                                   
+                    num_neurons = 1200,
+                    activation = ('maxout','maxout',5),
+                    regularize = True,  
+                    # batch_norm = True,
+                    # dropout_rate = 0.5,                                                       
                     verbose = verbose
                     )
 
-    net.add_layer ( type = "conv_pool",
+    net.add_layer ( type = "dot_product",
                     id = "D1-z",
                     origin = "G(z)-unflattened",
-                    num_neurons = 40,
-                    filter_shape = (5,5),
-                    pool_size = (2,2),
-                    activation = ('maxout', 'maxout', 2),
-                    regularize = True,  
+                    input_params = net.dropout_layers["D1-x"].params, 
+                    num_neurons = 1200,
+                    activation = ('maxout','maxout',5),
+                    regularize = True,
                     # batch_norm = True,
-                    input_params = net.dropout_layers['D1-x'].params,                                                       
+                    # dropout_rate = 0.5,                       
                     verbose = verbose
                     )
 
-    net.add_layer ( type = "conv_pool",
+    net.add_layer ( type = "dot_product",
                     id = "D2-x",
                     origin = "D1-x",
-                    num_neurons = 100,
-                    net = (3,3),
-                    pool_size = (2,2),
-                    activation = ('maxout', 'maxout', 2),
-                    regularize = True,   
-                    # batch_norm = True,                                                     
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "conv_pool",
-                    id = "D2-z",
-                    origin = "D1-z",
-                    num_neurons = 100,
-                    activation = ('maxout', 'maxout', 2),
-                    filter_shape = (3,3),  
-                    pool_size = (2,2),                      
-                    regularize = True,  
-                    # batch_norm = True,                     
-                    input_params = net.dropout_layers['D2-x'].params,                                                       
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "dot_product",
-                    id = "D3-x",
-                    origin = "D2-x",
-                    num_neurons = 800,
-                    activation = 'relu',
-                    regularize = True,  
-                    # batch_norm = True,
-                    dropout_rate = 0.5,                                                       
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "dot_product",
-                    id = "D3-z",
-                    origin = "D2-z",
-                    input_params = net.dropout_layers["D3-x"].params, 
-                    num_neurons = 800,
-                    activation = 'relu',
-                    regularize = True,
-                    # batch_norm = True,
-                    dropout_rate = 0.5,                       
-                    verbose = verbose
-                    )
-
-    net.add_layer ( type = "dot_product",
-                    id = "D4-x",
-                    origin = "D3-x",
-                    num_neurons = 800,
-                    activation = 'relu',
+                    num_neurons = 1200,
+                    activation = ('maxout','maxout',5),
                     regularize = True,       
                     # batch_norm = True,
-                    dropout_rate = 0.5,                                                                         
+                    # dropout_rate = 0.5,                                                                         
                     verbose = verbose
                     )
 
     net.add_layer ( type = "dot_product",
-                    id = "D4-z",
-                    origin = "D3-z",
-                    input_params = net.dropout_layers["D4-x"].params, 
-                    num_neurons = 800,
-                    activation = 'relu',
-                    # batch_norm = True,
+                    id = "D2-z",
+                    origin = "D1-z",
+                    input_params = net.dropout_layers["D2-x"].params, 
+                    num_neurons = 1200,
+                    activation = ('maxout','maxout',5),
                     regularize = True,
-                    dropout_rate = 0.5,                       
+                    # dropout_rate = 0.5,          
+                    # batch_norm = True,                    
                     verbose = verbose
                     )
 
     #C(D(x)) - This is the opposite of C(D(G(z))), real
     net.add_layer ( type = "dot_product",
                     id = "D(x)",
-                    origin = "D4-x",
+                    origin = "D2-x",
                     num_neurons = 1,
                     activation = 'sigmoid',
                     verbose = verbose
@@ -471,23 +426,23 @@ def deep_gan (dataset, verbose = 1 ):
     #C(D(G(z))) fake - the classifier for fake/real that always predicts fake 
     net.add_layer ( type = "dot_product",
                     id = "D(G(z))",
-                    origin = "D4-z",
+                    origin = "D2-z",
                     num_neurons = 1,
                     activation = 'sigmoid',
                     input_params = net.dropout_layers["D(x)"].params,                   
                     verbose = verbose
                     )
 
-    
+    """
     #C(D(x)) - This is the opposite of C(D(G(z))), real
     net.add_layer ( type = "classifier",
                     id = "softmax",
-                    origin = "D4-x",
+                    origin = "D2-x",
                     num_classes = 10,
                     activation = 'softmax',
                     verbose = verbose
                 )
-    
+    """
     # objective layers 
     # discriminator objective 
     net.add_layer (type = "tensor",
@@ -519,7 +474,7 @@ def deep_gan (dataset, verbose = 1 ):
                     datastream_origin = 'data', 
                     verbose = verbose
                     )   
-
+    """
     #softmax objective.    
     net.add_layer ( type = "objective",
                     id = "classifier_obj",
@@ -529,26 +484,25 @@ def deep_gan (dataset, verbose = 1 ):
                     datastream_origin = 'data', 
                     verbose = verbose
                     )
-    
-    from yann.utils.graph import draw_network
-    draw_network(net.graph, filename = 'gan.png')    
+    """
+    # from yann.utils.graph import draw_network
+    # draw_network(net.graph, filename = 'gan.png')    
     net.pretty_print()
     
-    net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", \
-                                                                            "generator_obj"],
+    net.cook (  objective_layers = [None, "discriminator_obj", "generator_obj"],
                 optimizer_params = optimizer_params,
-                discriminator_layers = ["D1-x","D2-x","D3-x","D4-x"],
+                discriminator_layers = ["D1-x","D2-x"],
                 generator_layers = ["G1","G2","G(z)"], 
-                classifier_layers = ["D1-x","D2-x","D3-x","D4-x", "softmax"],                                                
-                softmax_layer = "softmax",
+                # classifier_layers = ["D1-x","D2-x","softmax"],                                                
+                # softmax_layer = "softmax",
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
                     
-    learning_rates = (0.05, 0.01 )  
+    learning_rates = (0.00004, 0.001 )  
 
     net.train( epochs = (20), 
-            k = 5,  
-            pre_train_discriminator = 3,
+            k = 1, 
+            pre_train_discriminator = 0,
             validate_after_epochs = 1,
             visualize_after_epochs = 1,
             training_accuracy = True,
