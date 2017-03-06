@@ -92,7 +92,7 @@ class resultor(module):
                 print "... Creating a root directory for save files"
             os.makedirs(self.root)
         
-        for file in [self.results_file, self.error_file, self.cost_file, self.confusion_file,
+        for file in [self.results_file, self.error_file, self.cost_file,
                      self.learning_rate, self.momentum]:
             f = open(self.root + "/" + file, 'w')
             f.close()
@@ -163,7 +163,7 @@ class resultor(module):
                 print "... Creating a root directory for saving confusions"
             os.makedirs(self.root + '/confusion')
 
-        location = self.root + '/confusion/' + '/epoch_' + str(epoch)        
+        location = self.root + '/confusion' + '/epoch_' + str(epoch)        
         if not os.path.exists( location ):
             if verbose >=3 :
                 print "... Making the epoch directory"
