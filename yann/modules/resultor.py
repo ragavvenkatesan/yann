@@ -1,5 +1,6 @@
 import os
 from abstract import module
+import matplotlib.pyplot as plt
 
 class resultor(module):
     """
@@ -17,7 +18,6 @@ class resultor(module):
                     "results"   : "<results_file_name>.txt",
                     "errors"    : "<error_file_name>.txt",
                     "costs"     : "<cost_file_name>.txt",
-                    "confusion" : "<confusion_file_name>.txt",
                     "learning_rate" : "<learning_rate_file_name>.txt"
                     "momentum"  : <momentum_file_name>.txt
                     "visualize" : <bool>
@@ -29,6 +29,9 @@ class resultor(module):
 
     Returns:
         yann.modules.resultor: A resultor object
+
+    TODO:
+        Remove the input file names, assume file names as default. 
 
     """
     def __init__( self, resultor_init_args, verbose = 1):
@@ -54,7 +57,7 @@ class resultor(module):
             resultor_init_args["costs"] = "costs.txt"
 
         if not "confusion" in resultor_init_args.keys():
-            resultor_init_args["confusion"] = "confusion.txt"
+            resultor_init_args["confusion"] = "confusion"
 
         if not "learning_rate" in resultor_init_args.keys():
             resultor_init_args["learning_rate"] = "learning_rate.txt"
@@ -89,7 +92,7 @@ class resultor(module):
                 print "... Creating a root directory for save files"
             os.makedirs(self.root)
         
-        for file in [self.results_file, self.error_file, self.cost_file, self.confusion_file,
+        for file in [self.results_file, self.error_file, self.cost_file,
                      self.learning_rate, self.momentum]:
             f = open(self.root + "/" + file, 'w')
             f.close()
@@ -130,14 +133,71 @@ class resultor(module):
         f.write('\n')        
         f.close()    
 
-    def plot (self, verbose = 2):
-        """
-        This method will (should) plot all the values in the files.
-        """
-        print "TBD"
-
     def update_plot (self, verbose = 2):
         """
-        This method should update the open plots with costs and other values.
+        TODO:
+
+            This method should update the open plots with costs and other values. Ideally, a browser
+            based system should be implemented, such as using mpl3d or using bokeh. This system
+            should open opne browser where it should update realtime the cost of training, validation
+            and testing accuracies per epoch, display the visualizations of filters, some indication
+            of the weight of gradient trained, confusion matrices, learning rate and momentum plots
+            etc. 
         """
         print "TBD"                    
+    
+    def print_confusion (self, epoch=0, train = None, valid = None, verbose = 2):
+        """
+        This method will print the confusion matrix down in files. 
+
+        Args:
+            epoch: This is used merely to create a directory for each epoch so that there is a copy.
+            train: training confusion matrix as gained by the validate method.
+            valid: validation confusion amtrix as gained by the validate method.
+            verbose: As usual.
+        """
+        if verbose >=3:
+            print ("... Printing confusion matrix")
+        if not os.path.exists(self.root + '/confusion'):
+            if verbose >= 3:
+                print "... Creating a root directory for saving confusions"
+            os.makedirs(self.root + '/confusion')
+
+        location = self.root + '/confusion' + '/epoch_' + str(epoch)        
+        if not os.path.exists( location ):
+            if verbose >=3 :
+                print "... Making the epoch directory"
+            os.makedirs (location)
+
+        if verbose >=3 :
+            print ("... Saving down the confusion matrix")
+
+        self._store_confusion_img (confusion = train,
+                              filename = location + '/train_confusion.png',
+                              verbose = 2)
+
+        self._store_confusion_img (confusion = valid,
+                              filename = location + '/valid_confusion.png',
+                              verbose = 2)
+
+    def _store_confusion_img (self, confusion, filename, verbose = 2):
+        """
+        Convert a normalized confusion matrix into an image and save it down.
+
+        Args:
+            confusion: confusion matrix.
+            filename: save the image at the location as a png file.
+            verbose: as usual.
+        """
+        if verbose >= 3:
+            print ("... Saving the file down")
+        confusion = confusion / confusion.max() 
+        fig = plt.figure()
+        plt.matshow(confusion)
+        plt.title('Confusion matrix')
+        plt.set_cmap('Greens')
+        plt.colorbar()
+        plt.ylabel('True labels')
+        plt.xlabel('Predicated labels')
+        plt.savefig(filename)
+        plt.close('all')

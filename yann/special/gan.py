@@ -171,7 +171,7 @@ class gan (network):
         self.generator_decay_learning_rate = self.decay_learning_rate
         self.generator_current_momentum = self.current_momentum
 
-    def cook(   self,
+    def cook( self,
                 objective_layers,
                 discriminator_layers,
                 generator_layers,
@@ -230,6 +230,11 @@ class gan (network):
         else:
             datastream = kwargs['datastream']
 
+        if not 'resultor' in kwargs.keys():
+            resultor = None
+        else:
+            resultor = kwargs['resultor']
+
         if not 'params' in kwargs.keys():
             params = None
         else:
@@ -249,6 +254,20 @@ class gan (network):
                 raise Exception ("Datastream " + datastream + " not found.")
         self.cooked_datastream = self.datastream[datastream]
 
+        if resultor is None:
+            if self.last_resultor_created is None:
+                if verbose >= 3:
+                    print('... No resultor setup, creating a defualt one.')
+                self.add_module( type = 'resultor', verbose =verbose )
+            else:
+                if verbose >= 3:
+                    print("... resultor not provided, assuming " + self.last_resultor_created)
+            resultor = self.last_resultor_created
+        else:
+            if not resultor in self.resultor.keys():
+                raise Exception ("Resultor " + resultor + " not found.")
+        self.cooked_resultor = self.resultor[resultor]
+        
         self.generator_active_params = []
         self.discriminator_active_params = []
 
@@ -326,13 +345,16 @@ class gan (network):
                                     verbose = verbose)
         self.cook_generator(   optimizer_params = optimizer_params,
                                     verbose = verbose)
+                                
         if self.softmax_head is True:
             self._initialize_test (classifier = softmax_layer,
                                    verbose = verbose)
             self._initialize_predict ( classifier = softmax_layer,
                                      verbose = verbose)
             self._initialize_posterior (classifier = softmax_layer,
-                                       verbose = verbose)
+                                       verbose = verbose)            
+            self._initialize_confusion (classifier = softmax_layer,
+                                    verbose = verbose)
 
         self.initialize_train ( verbose = verbose )
         self.validation_accuracy = []
@@ -356,6 +378,7 @@ class gan (network):
         self.disc_cost = []
         self.softmax_cost = []
         self.cooked_visualizer = self.visualizer[visualizer]
+        self._cook_resultor(resultor = self.cooked_resultor, verbose = verbose)        
         self._cook_visualizer(verbose = verbose) # always cook visualizer last.
         self.visualize (epoch = 0, verbose = verbose)
         # Cook Resultor.
@@ -375,11 +398,9 @@ class gan (network):
         if self.softmax_head is True:
             self.softmax_learning_rate.set_value(numpy.asarray(new_learning_rate,
                                                         dtype = theano.config.floatX))
-        self.real_learning_rate.set_value(numpy.asarray(new_learning_rate,
+        self.generator_learning_rate.set_value(numpy.asarray(new_learning_rate,
                                                         dtype = theano.config.floatX))
-        self.fake_learning_rate.set_value(numpy.asarray(new_learning_rate,
-                                                        dtype = theano.config.floatX))
-        self.gen_learning_rate.set_value(numpy.asarray(new_learning_rate,
+        self.discriminator_learning_rate.set_value(numpy.asarray(new_learning_rate,
                                                         dtype = theano.config.floatX))
         # copying and removing only active_params. Is that a porblem ?
         copy_params ( source = self.best_params, destination = self.active_params ,
@@ -404,9 +425,9 @@ class gan (network):
             raise Exception(" Cook first then run this.")
 
         if len(discriminator_probability) < self.batches2train * self.mini_batches_per_batch[0]:
-            print(".. Discriminator Real Sigmoid D(x)   : " + str(discriminator_probability[-1]))
+            print(".. Discriminator Sigmoid D(x)   : " + str(discriminator_probability[-1]))
         else:
-            print(".. Discriminator Real Sigmoid D(x)   : " + str(numpy.mean(\
+            print(".. Discriminator Sigmoid D(x)   : " + str(numpy.mean(\
              discriminator_probability[-1 * self.batches2train * self.mini_batches_per_batch[0]:])))
 
         if len(generator_probability) < self.batches2train * self.mini_batches_per_batch[0]:
