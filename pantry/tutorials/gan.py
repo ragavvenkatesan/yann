@@ -4,6 +4,10 @@ Implementation from
 Goodfellow, Ian, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, 
 Aaron Courville, and Yoshua Bengio. "Generative adversarial nets." In Advances in Neural Information
  Processing Systems, pp. 2672-2680. 2014.
+
+ Todo:
+
+    Deconvolutional GAN is throwing a wierd error. 
 """
 from yann.special.gan import gan 
 from theano import tensor as T 

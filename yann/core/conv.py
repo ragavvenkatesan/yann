@@ -222,5 +222,14 @@ class deconvolver_2d(object):
                                     )
         self.out_shp = (_out_height, _out_width)
 
+        # Check by using the reverse on a convolution shape, the actual size. 
+        _,_,_in_height,_in_width = conv_shape (image_shape = output_shape,
+                                                kernel_shape = filter_shape,
+                                                border_mode = border_mode,
+                                                subsample = subsample)  
+
+        if not _in_height == image_shape [2] and _in_width == image_shape [3]:
+            raise Exception (" This dimensionality of th output image cannot be achieved.")
+
 if __name__ == '__main__':
     pass

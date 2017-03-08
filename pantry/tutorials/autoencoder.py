@@ -1,12 +1,14 @@
 """
 TODO:
 
-    Need a validation and testing thats better than just measuring rmse. Can't find something great.
+    * Need a validation and testing thats better than just measuring rmse. Can't find something 
+      great.
+    * Loss increases after 3 epochs.
     
 """
 from yann.network import network
 
-def autoencoder ( dataset= None, verbose = 1 ):
+def autoencoder ( dataset= None, verbose = 1 ):             
     """
     This function is a demo example of a sparse autoencoder. 
     This is an example code. You should study this code rather than merely run it.  
@@ -27,16 +29,16 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     "sample_size": 32,
                     "rgb_filters": False,
                     "debug_functions" : False,
-                    "debug_layers": False,  
+                    "debug_layers": True,  
                     "id"         : 'main'
                         }  
                       
     # intitialize the network    
     optimizer_params =  {        
-                "momentum_type"       : 'nesterov',             
-                "momentum_params"     : (0.65, 0.95, 30),      
+                "momentum_type"       : 'polyak',             
+                "momentum_params"     : (0.5, 0.95, 20),      
                 "regularization"      : (0.0001, 0.0001),       
-                "optimizer_type"      : 'rmsprop',                
+                "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
                     }
     net = network(   borrow = True,
@@ -71,8 +73,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     origin = "flatten",
                     id = "encoder",
                     num_neurons = 64,
-                    activation = 'tanh',
-                    # regularize = True,
+                    activation = 'relu',
                     verbose = verbose
                     )
 
@@ -80,7 +81,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     origin = "encoder",
                     id = "decoder",
                     num_neurons = 784,
-                    activation = 'tanh',
+                    activation = 'relu',
                     input_params = [net.dropout_layers['encoder'].w.T, None],
                     # Use the same weights but transposed for decoder. 
                     learnable = False,                    
@@ -117,7 +118,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )          
 
-    learning_rates = (0.05, 0.1, 0.01)  
+    learning_rates = (0.001, 0.1, 0.001)  
     net.cook( objective_layers = ['obj'],
               datastream = 'data',
               learning_rates = learning_rates,
@@ -126,7 +127,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
 
     # from yann.utils.graph import draw_network
     # draw_network(net.graph, filename = 'autoencoder.png')    
-    # net.pretty_print()
+    net.pretty_print()
 
     net.train( epochs = (10, 10), 
                validate_after_epochs = 1,
@@ -200,7 +201,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (1,1),
                     activation = 'tanh',
-                    regularize = False,   
+                    regularize = True,   
                     #stride = (2,2),                          
                     verbose = verbose
                     )
@@ -226,7 +227,6 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     id = "encoder",
                     num_neurons = 128,
                     activation = 'tanh',
-                    batch_norm = True,           
                     dropout_rate = 0.5,                        
                     regularize = True,
                     verbose = verbose
@@ -277,7 +277,6 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     pool_size = (1,1),
                     output_shape = (28,28,1),
                     activation = 'tanh',
-                    regularize = True,    
                     input_params = [net.dropout_layers['conv'].w, None],        
                     learnable = False,              
                     #stride = (2,2),
@@ -330,7 +329,7 @@ if __name__ == '__main__':
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
-            from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist  
+            from yann.special.datasets import cook_mnist_normalized as cook_mnist  
             data = cook_mnist (verbose = 2)
             dataset = data.dataset_location()
         else:
@@ -340,9 +339,9 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist  
+        from yann.special.datasets import cook_mnist_normalized as cook_mnist  
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    autoencoder ( dataset, verbose = 2 )
+    #autoencoder ( dataset, verbose = 2 )
     convolutional_autoencoder ( dataset , verbose = 2 )
