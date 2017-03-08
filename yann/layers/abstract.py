@@ -91,7 +91,7 @@ class layer(object):
             print(prefix_entry + " origin: " + self.origin)
             print(prefix_entry + " destination: " + self.destination)
 
-        if self.type == 'conv_pool':
+        if self.type == 'conv_pool' or 'convolution' or 'deconvolution' or 'deconv' or 'conv':
             self.prefix_entry = prefix_entry
             self.prefix = prefix
 
