@@ -127,7 +127,8 @@ class network(object):
         Args:
             type: <string> options include
                   'input' or 'data' - which indicates an input layer.
-                  'conv_pool' or 'fully_connected' - indicates a convolutional - pooling layer
+                  'conv_pool' or 'convolution' - indicates a convolutional - pooling layer
+                  'deconv' or 'deconvolution' - indicates a fractional stride convoltuion layer
                   'dot_product' or 'hidden' or 'mlp' or 'fully_connected' - indicates a hidden fully
                   connected layer
                   'classifier' or 'softmax' or 'output' or 'label' - indicates a classifier layer
@@ -235,6 +236,11 @@ class network(object):
         elif type == 'conv_pool' or \
              type == 'convolution':
             self._add_conv_layer(id = id, options = kwargs, verbose = verbose)
+            self.params = self.params + self.dropout_layers[id].params
+
+        elif type == 'deconv' or \
+             type == 'deconvolution':
+            self._add_deconv_layer(id = id, options = kwargs, verbose = verbose)
             self.params = self.params + self.dropout_layers[id].params
 
         elif type == 'dot_product' or \
@@ -651,12 +657,12 @@ class network(object):
 
         input_shape = self.layers[origin].output_shape
 
-        if not 'num_neurons' in options.keys():
+        if not 'num_neurons' in options.keys():            
             if verbose >=3:
                 print("... num_neurons not provided for layer " + id + ". Asumming 20")
             num_neurons = 20
         else:
-            nkerns = options ["num_neurons"]
+            num_neurons = options ["num_neurons"]
 
         if not 'filter_size' in options.keys():
             if verbose >=3:
@@ -738,7 +744,7 @@ class network(object):
         self.dropout_layers[id] = dcpl2d (
                                         input = self.dropout_layers[origin].output,
                                         dropout_rate = dropout_rate,
-                                        nkerns = nkerns,
+                                        nkerns = num_neurons,
                                         id = id,
                                         input_shape = self.dropout_layers[origin].output_shape,
                                         filter_shape = filter_size,
@@ -776,7 +782,7 @@ class network(object):
 
         self.layers[id] = cpl2d (
                             input = self.layers[origin].output,
-                            nkerns = nkerns,
+                            nkerns = num_neurons,
                             id = id,
                             input_shape = self.layers[origin].output_shape,
                             filter_shape = filter_size,
@@ -794,12 +800,216 @@ class network(object):
 
         self.inference_layers[id] = cpl2d (
                             input = self.inference_layers[origin].inference,
-                            nkerns = nkerns,
+                            nkerns = num_neurons,
                             id = id,
                             input_shape = self.layers[origin].output_shape,
                             filter_shape = filter_size,
                             poolsize = pool_size,
                             pooltype = pool_type,
+                            batch_norm = batch_norm,
+                            border_mode = border_mode,
+                            stride = stride,
+                            rng = self.rng,
+                            borrow = self.borrow,
+                            activation = activation,
+                            input_params = layer_params,
+                            verbose = verbose,
+                                )
+
+        if regularize is True:
+            self.L1 = self.L1 + self.layers[id].L1
+            self.L2 = self.L2 + self.layers[id].L2
+
+        self.dropout_layers[id].origin.append(origin)
+        self.dropout_layers[origin].destination.append(id)
+        self.layers[id].origin.append(origin)
+        self.layers[origin].destination.append(id)
+        self.inference_layers[id].origin.append(origin)
+        self.inference_layers[origin].destination.append(id)
+
+    def _add_deconv_layer(self, id, options, verbose = 2):
+        """
+        This is an internal function. Use ``add_layer`` instead of this from outside the class.
+
+        Args:
+            options: Basically kwargs supplied to the add_layer function.
+            verbose: same as everywhere else on the toolbox
+        
+        Todo:
+            Implement unpooling using this.
+        """
+        if verbose >=3:
+            print("... Adding a de-convolution layer")
+        if not 'origin' in options.keys():
+            if self.last_layer_created is None:
+                raise Exception("You can't create a deconvolutional layer without an" + \
+                                    " origin layer.")
+            else:
+                if verbose >=3:
+                    print ("... origin layer not provided, assuming the last layer created.")
+                origin = self.last_layer_created
+        else:
+            origin = options["origin"]
+
+        input_shape = self.layers[origin].output_shape
+
+        if not 'num_neurons' in options.keys():
+            if verbose >=3:
+                print("... num_neurons not provided for layer " + id + ". Asumming 20")
+            num_neurons = 20
+        else:
+            num_neurons = options ["num_neurons"]
+
+        if not 'output_shape' in options.keys():
+            raise Exception ('output shape not provided for the deconv layer')
+        else:
+            output_shape = options ["output_shape"]
+
+        if not 'filter_size' in options.keys():
+            if verbose >=3:
+                print("... filter_size not provided for layer " + id + ". Asumming (3,3)")
+            filter_size = (3,3)
+        else:
+            filter_size = options ["filter_size"]
+
+        if not 'activation' in options.keys():
+            if verbose >=3:
+                print("... Activations not provided for layer " + id + ". Using ReLU")
+            activation = 'relu'
+        else:
+            activation = options ["activation"]
+
+        if not 'border_mode' in options.keys():
+            if verbose >=3:
+                print("... no border_mode setup, going with default")
+            border_mode = 'valid'
+        else:
+            border_mode = options ["border_mode"]
+
+        if not 'stride' in options.keys():
+            if verbose >=3:
+                print("... No stride provided for layer " + id + ". Using (1,1)")
+            stride = (1,1)
+        else:
+            stride = options ["stride"]
+
+        if not 'batch_norm' in options.keys():
+            if verbose >=3:
+                print("... No batch norm provided for layer " + id + ". Batch norm is off")
+            batch_norm = False
+        else:
+            batch_norm = options["batch_norm"]
+        """
+        if not 'pool_size' in options.keys():
+            if verbose >=3:
+                print("... No pool size provided for layer " + id + " assume (1,1)")
+            pool_size = (1,1)
+        else:
+            pool_size = options ["pool_size"]
+
+        if not 'pool_type' in options.keys():
+            if verbose >=3:
+                print("... No pool type provided for layer " + id + " assume max")
+            pool_type = 'max'
+        else:
+            pool_type = options ["pool_type"]
+        """
+        if not 'input_params' in options.keys():
+            if verbose >=3:
+                print("... No initial params for layer " + id + " assume None")
+            input_params = None
+        else:
+            input_params = options ["input_params"]
+
+        if not 'dropout_rate' in options.keys():
+            if verbose >=3:
+                print("... No dropout_rate set for layer " + id + " assume 0")
+            dropout_rate = 0
+        else:
+            dropout_rate = options ["dropout_rate"]
+
+        if not 'regularize' in options.keys():
+            if verbose >=3:
+                print ("... No regularize set for layer " + id + " assume False")
+            regularize = False
+        else:
+            regularize = options ["regularize"]
+
+        if verbose >=3:
+            print("... creating the dropout stream")
+        # Just create a dropout layer no matter what.
+
+        from yann.layers.conv_pool import dropout_deconv_layer_2d as dcpl2d
+        from yann.layers.conv_pool import deconv_layer_2d as cpl2d
+
+        self.dropout_layers[id] = dcpl2d (
+                                        input = self.dropout_layers[origin].output,
+                                        dropout_rate = dropout_rate,
+                                        nkerns = num_neurons,
+                                        id = id,
+                                        input_shape = self.dropout_layers[origin].output_shape,
+                                        filter_shape = filter_size,
+                                        # poolsize = pool_size,
+                                        # pooltype = pool_type,
+                                        output_shape = output_shape,
+                                        batch_norm = batch_norm,
+                                        border_mode = border_mode,
+                                        stride = stride,
+                                        rng = self.rng,
+                                        borrow = self.borrow,
+                                        activation = activation,
+                                        input_params = input_params,
+                                        verbose = verbose,
+                                        )
+        # If dropout_rate is 0, this is just a wasted multiplication by 1, but who cares.
+        if dropout_rate >0:
+            w = self.dropout_layers[id].w * (1 - dropout_rate)
+        else:
+            w = self.dropout_layers[id].w
+        b = self.dropout_layers[id].b
+
+        layer_params = [w,b]
+        if batch_norm is True:
+            # should I halve the gamma for batch norm ?
+            gamma = self.dropout_layers[id].gamma
+            beta = self.dropout_layers[id].beta
+            mean = self.dropout_layers[id].running_mean
+            var = self.dropout_layers[id].running_var
+            layer_params.append(gamma)
+            layer_params.append(beta)
+            layer_params.append(mean)
+            layer_params.append(var)
+        if verbose >=3:
+            print("... creating the stable stream")
+
+        self.layers[id] = cpl2d (
+                            input = self.layers[origin].output,
+                            nkerns = num_neurons,
+                            id = id,
+                            input_shape = self.layers[origin].output_shape,
+                            filter_shape = filter_size,
+                            # poolsize = pool_size,
+                            # pooltype = pool_type,
+                            output_shape = output_shape,
+                            batch_norm = batch_norm,
+                            border_mode = border_mode,
+                            stride = stride,
+                            rng = self.rng,
+                            borrow = self.borrow,
+                            activation = activation,
+                            input_params = layer_params,
+                            verbose = verbose,
+                                )
+
+        self.inference_layers[id] = cpl2d (
+                            input = self.inference_layers[origin].inference,
+                            nkerns = num_neurons,
+                            id = id,
+                            input_shape = self.layers[origin].output_shape,
+                            filter_shape = filter_size,
+                            # poolsize = pool_size,
+                            # pooltype = pool_type,
+                            output_shape = output_shape,
                             batch_norm = batch_norm,
                             border_mode = border_mode,
                             stride = stride,
@@ -2578,6 +2788,11 @@ class network(object):
                 if verbose >= 2:
                     print(".. Best validation accuracy")
 
+            self.cooked_resultor.print_confusion (epoch = epoch,
+                                                train = train_confusion_matrix,
+                                                valid = valid_confusion_matrix,
+                                                verbose = verbose)
+                                                
         elif self.network_type == 'generator':
             validation_accuracy = validation_errors / total_valid_samples
             self.validation_accuracy = self.validation_accuracy + [validation_accuracy]
@@ -2603,10 +2818,6 @@ class network(object):
                 if verbose >= 2:
                     print(".. Best validation error")
 
-        self.cooked_resultor.print_confusion (epoch = epoch,
-                                              train = train_confusion_matrix,
-                                              valid = valid_confusion_matrix,
-                                              verbose = verbose)
         return best
 
 
