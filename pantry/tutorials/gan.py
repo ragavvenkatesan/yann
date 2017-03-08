@@ -63,7 +63,7 @@ def cook_mnist(  verbose = 1, **kwargs):
             verbose = 3)
     return dataset
 
-def shallow_gan ( dataset= None, verbose = 1 ):             
+def shallow_gan ( dataset= None, verbose = 1 ):
     """
     This function is a demo example of a generative adversarial network. 
     This is an example code. You should study this code rather than merely run it.  
