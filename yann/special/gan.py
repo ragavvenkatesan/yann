@@ -464,9 +464,18 @@ class gan (network):
         self.layer_activities_created = True
         for id, _layer in self.inference_layers.iteritems():
             if verbose >=3 :
-                print("... collecting the activities of layer " + id)
-            activity = _layer.output
-            if self.softmax_head is True:
+                print("... collecting the activities of layer " + id)             
+            activity = _layer.output            
+
+            out = True
+            """ This would avoid printing the layer that has only one output
+            if len(_layer.output_shape) == 2:
+                if _layer.output_shape[1] == 1:
+                    out = False
+            elif _layer.output_shape == (1,):
+                out = False
+            """
+            if self.softmax_head is True and out is True:
                 self.layer_activities[id] = theano.function(
                             name = 'layer_activity_' + id,
                             inputs = [index],
@@ -479,7 +488,7 @@ class gan (network):
                                             self.cooked_datastream.mini_batch_size:(index + 1) *
                                                         self.cooked_datastream.mini_batch_size]},
                                             on_unused_input = 'ignore')
-            else:
+            elif out is True:
                 self.layer_activities[id] = theano.function(
                             name = 'layer_activity_' + id,
                             inputs = [index],

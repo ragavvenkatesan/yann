@@ -655,8 +655,6 @@ class network(object):
         else:
             origin = options["origin"]
 
-        input_shape = self.layers[origin].output_shape
-
         if not 'num_neurons' in options.keys():            
             if verbose >=3:
                 print("... num_neurons not provided for layer " + id + ". Asumming 20")
@@ -741,12 +739,14 @@ class network(object):
         from yann.layers.conv_pool import dropout_conv_pool_layer_2d as dcpl2d
         from yann.layers.conv_pool import conv_pool_layer_2d as cpl2d
 
+        input_shape = self.layers[origin].output_shape
+
         self.dropout_layers[id] = dcpl2d (
                                         input = self.dropout_layers[origin].output,
                                         dropout_rate = dropout_rate,
                                         nkerns = num_neurons,
                                         id = id,
-                                        input_shape = self.dropout_layers[origin].output_shape,
+                                        input_shape = input_shape,
                                         filter_shape = filter_size,
                                         poolsize = pool_size,
                                         pooltype = pool_type,
@@ -784,7 +784,7 @@ class network(object):
                             input = self.layers[origin].output,
                             nkerns = num_neurons,
                             id = id,
-                            input_shape = self.layers[origin].output_shape,
+                            input_shape = input_shape,
                             filter_shape = filter_size,
                             poolsize = pool_size,
                             pooltype = pool_type,
@@ -802,7 +802,7 @@ class network(object):
                             input = self.inference_layers[origin].inference,
                             nkerns = num_neurons,
                             id = id,
-                            input_shape = self.layers[origin].output_shape,
+                            input_shape = input_shape,
                             filter_shape = filter_size,
                             poolsize = pool_size,
                             pooltype = pool_type,
