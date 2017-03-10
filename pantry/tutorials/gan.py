@@ -583,14 +583,6 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                         sigma = 1,
                         # limits = (0,1),
                         verbose = verbose)
-    
-    #x - inputs come from dataset 1 X 784
-    net.add_layer ( type = "input",
-                    id = "x",
-                    verbose = verbose, 
-                    datastream_origin = 'data', # if you didnt add a dataset module, now is 
-                                                # the time. 
-                    mean_subtract = False )
 
     # Generator layers
     net.add_layer ( type = "dot_product",
@@ -598,6 +590,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "G1",
                     num_neurons = 1200,
                     activation = 'relu',
+                    regularize = True,
                     # batch_norm = True,
                     verbose = verbose
                     ) 
@@ -607,6 +600,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "G2",
                     num_neurons = 1440,
                     activation = 'relu',
+                    regularize = True,
                     # batch_norm = True,
                     verbose = verbose
                     )
@@ -637,14 +631,23 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     filter_size = (3,3),
                     output_shape = (28,28,1),
                     activation = 'tanh',
-                    regularize = True,    
+                    # regularize = True,    
                     stride = (1,1),
                     verbose = verbose
                     )
-        
+    
+    #x - inputs come from dataset 1 X 784
+    net.add_layer ( type = "input",
+                    id = "x",
+                    verbose = verbose, 
+                    datastream_origin = 'data', # if you didnt add a dataset module, now is 
+                                                # the time. 
+                    mean_subtract = False )
+
     #D(x) - Contains params theta_d creates features 1 X 800. 
     # Discriminator Layers
     # add first convolutional layer
+
     net.add_layer ( type = "conv_pool",
                     origin = "x",
                     id = "D1-x",
@@ -652,7 +655,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = 'relu',
-                    # regularize = True,
+                    regularize = True,
                     verbose = verbose
                     )
 
@@ -663,30 +666,32 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = 'relu',
-                    # regularize = True,
+                    regularize = True,
                     input_params = net.dropout_layers["D1-x"].params,
                     verbose = verbose
                     )
-
+    
     net.add_layer ( type = "conv_pool",
                     origin = "D1-x",
+                    # origin = "x",
                     id = "D2-x",
                     num_neurons = 50,
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = 'relu',
-                    # regularize = True,
+                    regularize = True,
                     verbose = verbose
                     )      
 
     net.add_layer ( type = "conv_pool",
                     origin = "D1-z",
+                    # origin = "G(z)",
                     id = "D2-z",
                     num_neurons = 50,
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = 'relu',
-                    # regularize = True,
+                    regularize = True,
                     input_params = net.dropout_layers["D2-x"].params,
                     verbose = verbose
                     )      
@@ -695,22 +700,22 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "D3-x",
                     origin = "D2-x",
                     num_neurons = 1200,
-                    activation = ('maxout','maxout',5),
+                    activation = 'relu',
                     regularize = True,  
                     # batch_norm = True,
-                    # dropout_rate = 0.5,                                                       
+                    dropout_rate = 0.5,                                                       
                     verbose = verbose
                     )
 
     net.add_layer ( type = "dot_product",
                     id = "D3-z",
                     origin = "D2-z",
-                    input_params = net.dropout_layers["D1-x"].params, 
+                    input_params = net.dropout_layers["D3-x"].params, 
                     num_neurons = 1200,
-                    activation = ('maxout','maxout',5),
+                    activation = 'relu',
                     regularize = True,
                     # batch_norm = True,
-                    # dropout_rate = 0.5,                       
+                    dropout_rate = 0.5,                       
                     verbose = verbose
                     )
 
@@ -718,21 +723,21 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "D4-x",
                     origin = "D3-x",
                     num_neurons = 1200,
-                    activation = ('maxout','maxout',5),
+                    activation = 'relu',
                     regularize = True,       
                     # batch_norm = True,
-                    # dropout_rate = 0.5,                                                                         
+                    dropout_rate = 0.5,                                                                         
                     verbose = verbose
                     )
 
     net.add_layer ( type = "dot_product",
                     id = "D4-z",
                     origin = "D3-z",
-                    input_params = net.dropout_layers["D2-x"].params, 
+                    input_params = net.dropout_layers["D4-x"].params, 
                     num_neurons = 1200,
-                    activation = ('maxout','maxout',5),
+                    activation = 'relu',
                     regularize = True,
-                    # dropout_rate = 0.5,          
+                    dropout_rate = 0.5,          
                     # batch_norm = True,                    
                     verbose = verbose
                     )
@@ -814,9 +819,9 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
     
     net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                 optimizer_params = optimizer_params,
-                discriminator_layers = ["D1-x","D2-x","D3-x","D4-x"],
+                discriminator_layers = ["D1-x", "D2-x","D3-x","D4-x"],
                 generator_layers = ["G1","G2","G3","G(z)"], 
-                classifier_layers = ["D1-x","D2-x","D3-x","D4-x","softmax"],                                                
+                classifier_layers = ["D1-x", "D2-x","D3-x","D4-x","softmax"],                                                
                 softmax_layer = "softmax",
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
@@ -855,4 +860,4 @@ if __name__ == '__main__':
 
     # net = shallow_gan ( dataset, verbose = 2 )
     # net = deep_gan ( dataset, verbose = 2 )    
-    net = deep_deconvolutional_gan ( dataset, verbose = 3 )        
+    net = deep_deconvolutional_gan ( dataset, verbose = 2 )        
