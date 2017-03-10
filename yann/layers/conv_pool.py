@@ -123,7 +123,7 @@ class conv_pool_layer_2d (layer):
                 self.beta = init_beta
                 self.running_mean = init_mean
                 self.running_var = init_var
-
+        
         # Perform the convolution part
         convolver  = convolver_2d (
                         input = input,
@@ -483,7 +483,7 @@ class deconv_layer_2d (layer):
                            )
 
         conv_out = convolver.out
-        conv_out_shp = (mini_batch_size, channels, convolver.out_shp[0], convolver.out_shp[1])
+        conv_out_shp = o_shp
 
         self.conv_out = conv_out        
         if not poolsize == (1,1):
