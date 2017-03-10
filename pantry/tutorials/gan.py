@@ -12,61 +12,6 @@ Aaron Courville, and Yoshua Bengio. "Generative adversarial nets." In Advances i
 from yann.special.gan import gan 
 from theano import tensor as T 
 
-def cook_mnist(  verbose = 1, **kwargs):
-    """
-	Wrapper to cook mnist dataset specifically for the gan. Will take as input,
-
-	Args:
-        save_directory: which directory to save the cooked dataset onto.
-        dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`		
-        preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
-
-    Notes:
-        By default, this will create a dataset that is not mean-subtracted.
-	"""
-    from yann.utils.dataset import setup_dataset
-
-    if not 'data_params' in kwargs.keys():
-
-        data_params = {
-        "source"             : 'skdata',                                   
-        "name"               : 'mnist',    
-        "location"			 : '',                                      
-        "mini_batch_size"    : 100,                                     
-        "mini_batches_per_batch" : (500, 100, 100), 
-        "batches2train"      : 1,                                      
-        "batches2test"       : 1,                                      
-        "batches2validate"   : 1,                                        
-        "height"             : 28,                                       
-        "width"              : 28,                                       
-        "channels"           : 1  }    
-
-    else:
-        data_params = kwargs['data_params']
-
-    if not 'preprocess_params' in kwargs.keys():
-
-        # parameters relating to preprocessing.
-        preprocess_params = { 
-                "normalize"     : True,
-                "ZCA"           : False,
-                "grayscale"     : False,
-                "zero_mean" 	: True,
-            }
-    else:
-        preprocess_params = kwargs['preprocess_params']
-
-    if not 'save_directory' in kwargs.keys():
-        save_directory = '_datasets'
-    else:
-        save_directory = kwargs ['save_directory']
-
-    dataset = setup_dataset(dataset_init_args = data_params,
-            save_directory = save_directory,
-            preprocess_init_args = preprocess_params,
-            verbose = 3)
-    return dataset
-
 def shallow_gan ( dataset= None, verbose = 1 ):
     """
     This function is a demo example of a generative adversarial network. 
@@ -514,32 +459,36 @@ def deep_gan (dataset, verbose = 1 ):
             early_terminate = True,
             verbose = verbose)
 
-def deep_deconvolutional_gan (dataset, verbose = 1 ):
+def deep_deconvolutional_gan (dataset,
+                              regularize = True,
+                              batch_norm = False,
+                              dropout_rate = None,
+                              verbose = 1 ):
     """
     This function is a demo example of a generative adversarial network. 
     This is an example code. You should study this code rather than merely run it.  
     This method uses a few deconvolutional layers as was used in the DCGAN paper.
 
-    Args: 
+    Args:         
         dataset: Supply a dataset.    
+        regularize: ``True`` (default) supplied to layer arguments
+        batch_norm: ``True`` (default) supplied to layer arguments
+        dropout_rate: ``None`` (default) supplied to layer arguments
         verbose: Similar to the rest of the dataset.
 
     Returns:
         net: A Network object.
 
     Notes:
-        This is not setup properly therefore does not learn at the moment. This network here mimics
-        Ian Goodfellow's original code and implementation for MNIST adapted from his source code:
-        https://github.com/goodfeli/adversarial/blob/master/mnist.yaml .It might not be a perfect 
-        replicaiton, but I tried as best as I could.
+        This is not setup properly therefore does not learn at the moment. 
     """
     if verbose >=2:
         print (".. Creating a GAN network")
 
     optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.5, 0.7, 20),      
-                "regularization"      : (0.000, 0.000),       
+                "momentum_type"       : 'nesterov',             
+                "momentum_params"     : (0.65, 0.65, 20),      
+                "regularization"      : (0.0001, 0.0001),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
@@ -577,7 +526,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
     #z - latent space created by random layer
     net.add_layer(type = 'random',
                         id = 'z',
-                        num_neurons = (100,10), 
+                        num_neurons = (100,100), 
                         distribution = 'normal',
                         mu = 0,
                         sigma = 1,
@@ -590,8 +539,8 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "G1",
                     num_neurons = 1200,
                     activation = 'relu',
-                    regularize = True,
-                    # batch_norm = True,
+                    regularize = regularize,
+                    batch_norm = batch_norm,
                     verbose = verbose
                     ) 
 
@@ -600,8 +549,8 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "G2",
                     num_neurons = 1440,
                     activation = 'relu',
-                    regularize = True,
-                    # batch_norm = True,
+                    regularize = regularize,
+                    batch_norm = batch_norm,
                     verbose = verbose
                     )
 
@@ -609,6 +558,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     origin = "G2",
                     id = "G2-unflatten",
                     shape = (12, 12, 10),
+                    batch_norm = batch_norm,
                     verbose = verbose
                     )
 
@@ -617,9 +567,10 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "G3",
                     num_neurons = 10,
                     filter_size = (3,3),
-                    output_shape = (26,26,20),
+                    output_shape = (26,26,32),
                     activation = 'relu',
-                    regularize = True,    
+                    regularize = regularize,    
+                    batch_norm = batch_norm,
                     stride = (2,2),
                     verbose = verbose
                     )
@@ -627,11 +578,11 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
     net.add_layer ( type = "deconv",
                     origin = "G3",
                     id = "G(z)",
-                    num_neurons = 20,
+                    num_neurons = 32,
                     filter_size = (3,3),
                     output_shape = (28,28,1),
                     activation = 'tanh',
-                    # regularize = True,    
+                    # regularize = regularize,    
                     stride = (1,1),
                     verbose = verbose
                     )
@@ -655,7 +606,8 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = 'relu',
-                    regularize = True,
+                    regularize = regularize,
+                    batch_norm = batch_norm,                    
                     verbose = verbose
                     )
 
@@ -666,7 +618,8 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     filter_size = (5,5),
                     pool_size = (2,2),
                     activation = 'relu',
-                    regularize = True,
+                    regularize = regularize,
+                    batch_norm = batch_norm,
                     input_params = net.dropout_layers["D1-x"].params,
                     verbose = verbose
                     )
@@ -679,7 +632,8 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = 'relu',
-                    regularize = True,
+                    regularize = regularize,
+                    batch_norm = batch_norm,                    
                     verbose = verbose
                     )      
 
@@ -691,7 +645,8 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     filter_size = (3,3),
                     pool_size = (2,2),
                     activation = 'relu',
-                    regularize = True,
+                    regularize = regularize,
+                    batch_norm = batch_norm,                    
                     input_params = net.dropout_layers["D2-x"].params,
                     verbose = verbose
                     )      
@@ -701,9 +656,9 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     origin = "D2-x",
                     num_neurons = 1200,
                     activation = 'relu',
-                    regularize = True,  
-                    # batch_norm = True,
-                    dropout_rate = 0.5,                                                       
+                    regularize = regularize,  
+                    batch_norm = batch_norm,
+                    dropout_rate = dropout_rate,                                                       
                     verbose = verbose
                     )
 
@@ -713,9 +668,9 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     input_params = net.dropout_layers["D3-x"].params, 
                     num_neurons = 1200,
                     activation = 'relu',
-                    regularize = True,
-                    # batch_norm = True,
-                    dropout_rate = 0.5,                       
+                    regularize = regularize,
+                    batch_norm = batch_norm,
+                    dropout_rate = dropout_rate,                       
                     verbose = verbose
                     )
 
@@ -724,9 +679,9 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     origin = "D3-x",
                     num_neurons = 1200,
                     activation = 'relu',
-                    regularize = True,       
-                    # batch_norm = True,
-                    dropout_rate = 0.5,                                                                         
+                    regularize = regularize,       
+                    batch_norm = batch_norm,
+                    dropout_rate = dropout_rate,                                                                         
                     verbose = verbose
                     )
 
@@ -736,9 +691,9 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     input_params = net.dropout_layers["D4-x"].params, 
                     num_neurons = 1200,
                     activation = 'relu',
-                    regularize = True,
-                    dropout_rate = 0.5,          
-                    # batch_norm = True,                    
+                    regularize = regularize,
+                    dropout_rate = dropout_rate,          
+                    batch_norm = batch_norm,                    
                     verbose = verbose
                     )
 
@@ -748,6 +703,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     origin = "D4-x",
                     num_neurons = 1,
                     activation = 'sigmoid',
+                    regularize = regularize,
                     verbose = verbose
                     )
 
@@ -757,6 +713,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     origin = "D4-z",
                     num_neurons = 1,
                     activation = 'sigmoid',
+                    regularize = regularize,
                     input_params = net.dropout_layers["D(x)"].params,                   
                     verbose = verbose
                     )
@@ -767,6 +724,7 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                     id = "softmax",
                     origin = "D4-x",
                     num_classes = 10,
+                    regularize = regularize,
                     activation = 'softmax',
                     verbose = verbose
                 )
@@ -826,11 +784,11 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
                     
-    learning_rates = (0.00004, 0.001 )  
+    learning_rates = (0.00004, 0.01 )  
 
     net.train( epochs = (20), 
-            k = 1, 
-            pre_train_discriminator = 0,
+            k = 3, 
+            pre_train_discriminator = 3,
             validate_after_epochs = 1,
             visualize_after_epochs = 1,
             training_accuracy = True,
@@ -842,11 +800,14 @@ def deep_deconvolutional_gan (dataset, verbose = 1 ):
 
 
 if __name__ == '__main__':
+    
+    from yann.special.datasets import cook_mnist_normalized_zero_mean as cm 
     import sys
+
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
-            data = cook_mnist (verbose = 2)
+            data = cm (verbose = 2)
             dataset = data.dataset_location()
         else:
             dataset = sys.argv[1]
@@ -855,9 +816,13 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        data = cook_mnist (verbose = 2)
-        dataset = data.dataset_location()
+        data = cm (verbose = 2)
+        dataset = data.dataset_location() 
 
-    # net = shallow_gan ( dataset, verbose = 2 )
-    # net = deep_gan ( dataset, verbose = 2 )    
-    net = deep_deconvolutional_gan ( dataset, verbose = 2 )        
+    net = shallow_gan ( dataset, verbose = 2 )
+    net = deep_gan ( dataset, verbose = 2 )           
+    net = deep_deconvolutional_gan ( batch_norm = True,
+                                     dropout_rate = 0.5,
+                                     regularize = True,
+                                     dataset = dataset,
+                                     verbose = 2 )        
