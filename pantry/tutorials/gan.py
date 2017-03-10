@@ -487,7 +487,7 @@ def deep_deconvolutional_gan (dataset,
 
     optimizer_params =  {        
                 "momentum_type"       : 'nesterov',             
-                "momentum_params"     : (0.65, 0.65, 20),      
+                "momentum_params"     : (0.9, 0.99, 20),      
                 "regularization"      : (0.0001, 0.0001),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
@@ -787,7 +787,7 @@ def deep_deconvolutional_gan (dataset,
     learning_rates = (0.00004, 0.01 )  
 
     net.train( epochs = (20), 
-            k = 3, 
+            k = 1, 
             pre_train_discriminator = 3,
             validate_after_epochs = 1,
             visualize_after_epochs = 1,
@@ -819,8 +819,8 @@ if __name__ == '__main__':
         data = cm (verbose = 2)
         dataset = data.dataset_location() 
 
-    net = shallow_gan ( dataset, verbose = 2 )
-    net = deep_gan ( dataset, verbose = 2 )           
+    # net = shallow_gan ( dataset, verbose = 2 )
+    # net = deep_gan ( dataset, verbose = 2 )           
     net = deep_deconvolutional_gan ( batch_norm = True,
                                      dropout_rate = 0.5,
                                      regularize = True,
