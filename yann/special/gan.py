@@ -810,7 +810,7 @@ class gan (network):
                     if self.softmax_head is True:
                         softmax_cost = self.mini_batch_train_softmax (minibatch, epoch_counter)
                     disc_cost = self.mini_batch_train_discriminator (minibatch, epoch_counter)
-                    if minibatch % k == 0:
+                    if (minibatch + 1) * (batch + 1 ) * (epoch_counter + 1) % k == 0:
                         gen_cost = self.mini_batch_train_generator (minibatch, epoch_counter)
 
                     if numpy.isnan(gen_cost) or \
