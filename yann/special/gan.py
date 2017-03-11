@@ -752,7 +752,7 @@ class gan (network):
             change_era = epochs + 1
 
         final_era = False
-
+        gen_cost = 0.
         # main loop
         while (epoch_counter < total_epochs) and (not early_termination):
             nan_flag = False
