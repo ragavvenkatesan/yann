@@ -1935,13 +1935,15 @@ class network(object):
             print("... initializing confusion matrix function")   
 
         _classes = T.scalar('num_classes')
-        _predictions = self.inference_layers[classifier].predictions
-        _labels = self.y 
+        _predictions = self.inference_layers[classifier].predictions.dimshuffle(0, 'x')
+        _labels = self.y.dimshuffle(0, 'x')
+        _order = T.arange(self.num_classes_to_classify)
 
-        confusion = T.dot(  T.eq( _predictions.dimshuffle(0, 'x'), \
-                            T.arange(self.num_classes_to_classify).astype('int32')).T, \
-                            T.eq( _labels.dimshuffle(0,'x'), \
-                            T.arange(self.num_classes_to_classify).astype('int32')))
+        oneHot_labels = T.eq(_labels, _order).astype('int32')
+        oneHot_predictions = T.eq(_predictions, _order).astype('int32')
+
+        confusion = T.dot(oneHot_labels.T, oneHot_predictions)
+        # confusion_normalized = confusion / confusion.sum(axis = 0)     
 
         index = T.lscalar('index')
         self.mini_batch_confusion = theano.function(
