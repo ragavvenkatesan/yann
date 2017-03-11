@@ -57,10 +57,10 @@ data = x (1:length(x) - throw_away,:);
 labels = y (1:length(y) - throw_away) - 1; % because labels go from 1-10
 
 total_batches = length(labels) / batch_size;
-test_size = total_batches / 3;
+test_size = 130;
 remain = total_batches - test_size; 
 
-train_size = 2* remain / 3;
+train_size = 1000;
 remain = remain - train_size;
 valid_size = remain; 
 

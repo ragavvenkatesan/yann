@@ -191,13 +191,13 @@ class resultor(module):
         """
         if verbose >= 3:
             print ("... Saving the file down")
-        confusion = confusion / confusion.max() 
+        confusion = confusion / confusion.sum(axis = 1)
         fig = plt.figure()
         plt.matshow(confusion)
         plt.title('Confusion matrix')
-        plt.set_cmap('Greens')
+        plt.set_cmap('GnBu')
         plt.colorbar()
         plt.ylabel('True labels')
-        plt.xlabel('Predicated labels')
+        plt.xlabel('Predicted labels')
         plt.savefig(filename)
         plt.close('all')
