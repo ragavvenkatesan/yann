@@ -191,7 +191,7 @@ class resultor(module):
         """
         if verbose >= 3:
             print ("... Saving the file down")
-        confusion = confusion / confusion.sum(axis = 0)
+        confusion = confusion / confusion.sum(axis = 1)
         fig = plt.figure()
         plt.matshow(confusion)
         plt.title('Confusion matrix')
