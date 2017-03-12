@@ -468,7 +468,7 @@ class network(object):
                     "results"   : "results.txt",
                     "errors"    : "errors.txt",
                     "costs"     : "costs.txt",
-                    "confusion" : "confusion.txt",
+                    "confusion" : "confusion.eps",
                     "learning_rate" : "learning_rate.txt",
                     "momentum"  : "momentum.txt",
                     "visualize" : False,

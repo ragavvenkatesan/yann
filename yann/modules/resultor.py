@@ -1,6 +1,7 @@
 import os
 from abstract import module
 import matplotlib.pyplot as plt
+import numpy
 
 class resultor(module):
     """
@@ -57,7 +58,7 @@ class resultor(module):
             resultor_init_args["costs"] = "costs.txt"
 
         if not "confusion" in resultor_init_args.keys():
-            resultor_init_args["confusion"] = "confusion"
+            resultor_init_args["confusion"] = "confusion.eps"
 
         if not "learning_rate" in resultor_init_args.keys():
             resultor_init_args["learning_rate"] = "learning_rate.txt"
@@ -173,11 +174,11 @@ class resultor(module):
             print ("... Saving down the confusion matrix")
 
         self._store_confusion_img (confusion = train,
-                              filename = location + '/train_confusion.png',
+                              filename = location + '/train_confusion.eps',
                               verbose = 2)
 
         self._store_confusion_img (confusion = valid,
-                              filename = location + '/valid_confusion.png',
+                              filename = location + '/valid_confusion.eps',
                               verbose = 2)
 
     def _store_confusion_img (self, confusion, filename, verbose = 2):
@@ -186,14 +187,16 @@ class resultor(module):
 
         Args:
             confusion: confusion matrix.
-            filename: save the image at the location as a png file.
+            filename: save the image at the location as a file.
             verbose: as usual.
         """
         if verbose >= 3:
             print ("... Saving the file down")
-        confusion = confusion / confusion.sum(axis = 1)
-        fig = plt.figure()
+        confusion = confusion / confusion.sum(axis = 1)[:,None]
+        fig = plt.figure(figsize=(4, 4), dpi=1200)
         plt.matshow(confusion)
+        for (i, j), z in numpy.ndenumerate(confusion):
+            plt.text(j, i, '{:0.2f}'.format(z), ha='center', va='center', fontsize=10, color = 'm')        
         plt.title('Confusion matrix')
         plt.set_cmap('GnBu')
         plt.colorbar()
