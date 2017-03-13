@@ -3041,6 +3041,11 @@ class network(object):
         labels = []
         total_mini_batches =  self.batches2test * self.mini_batches_per_batch[2]
 
+        if self.network_type == 'classifier':
+            test_confusion_matrix = numpy.zeros((self.num_classes_to_classify,
+                                                                self.num_classes_to_classify),
+                                                        dtype = theano.config.floatX)
+
         if show_progress is True:
             bar = progressbar.ProgressBar(maxval=total_mini_batches, \
                   widgets=[progressbar.AnimatedMarker(), \
@@ -3056,6 +3061,8 @@ class network(object):
                 predictions = predictions + self.mini_batch_predictions(minibatch).tolist()
                 if self.network_type == 'classifier':
                     posteriors = posteriors + self.mini_batch_posterior(minibatch).tolist()
+                    test_confusion_matrix = test_confusion_matrix + \
+                                                             self.mini_batch_confusion (minibatch)                     
                 if verbose >= 3:
                     print("... testing error after mini batch " + str(batch_counter) + \
                                                               " is " + str(wrong))
@@ -3066,10 +3073,13 @@ class network(object):
         if show_progress is True:
             bar.finish()
 
+        self.cooked_resultor.print_confusion (epoch = 'fin',
+                                            test = test_confusion_matrix,
+                                            verbose = verbose)
+
         total_samples = total_mini_batches * self.mini_batch_size
         if self.network_type == 'classifier':
             testing_accuracy = (total_samples - wrong)*100. / total_samples
-
             if verbose >= 2:
                 print(".. Testing accuracy : " + str(testing_accuracy))
         elif self.network_type == 'generator':

@@ -147,7 +147,7 @@ class resultor(module):
         """
         print "TBD"                    
     
-    def print_confusion (self, epoch=0, train = None, valid = None, verbose = 2):
+    def print_confusion (self, epoch=0, train = None, valid = None, test = None, verbose = 2):
         """
         This method will print the confusion matrix down in files. 
 
@@ -155,6 +155,7 @@ class resultor(module):
             epoch: This is used merely to create a directory for each epoch so that there is a copy.
             train: training confusion matrix as gained by the validate method.
             valid: validation confusion amtrix as gained by the validate method.
+            test: testing confusion matrix as gained by the test method.
             verbose: As usual.
         """
         if verbose >=3:
@@ -173,12 +174,18 @@ class resultor(module):
         if verbose >=3 :
             print ("... Saving down the confusion matrix")
 
-        self._store_confusion_img (confusion = train,
+        if not train is None:
+            self._store_confusion_img (confusion = train,
                               filename = location + '/train_confusion.eps',
                               verbose = 2)
-
-        self._store_confusion_img (confusion = valid,
+        if not valid is None:
+            self._store_confusion_img (confusion = valid,
                               filename = location + '/valid_confusion.eps',
+                              verbose = 2)
+
+        if not test is None:
+            self._store_confusion_img (confusion = test,
+                              filename = location + '/test_confusion.eps',
                               verbose = 2)
 
     def _store_confusion_img (self, confusion, filename, verbose = 2):
@@ -190,14 +197,19 @@ class resultor(module):
             filename: save the image at the location as a file.
             verbose: as usual.
         """
+        corrects = numpy.trace(confusion)       
+        total_samples = numpy.sum(confusion)
+        accuracy = 100 * corrects / float(total_samples)
         if verbose >= 3:
             print ("... Saving the file down")
         confusion = confusion / confusion.sum(axis = 1)[:,None]
         fig = plt.figure(figsize=(4, 4), dpi=1200)
         plt.matshow(confusion)
         for (i, j), z in numpy.ndenumerate(confusion):
-            plt.text(j, i, '{:0.2f}'.format(z), ha='center', va='center', fontsize=10, color = 'm')        
-        plt.title('Confusion matrix')
+            plt.text(j, i, '{:0.2f}'.format(z), ha='center', va='center', fontsize=10, color = 'm') 
+
+        plt.title('Accuracy: ' + str(int(corrects)) + '/' + str(int(total_samples)) + \
+                                                ' = ' + str(round(accuracy,2)) + '%')
         plt.set_cmap('GnBu')
         plt.colorbar()
         plt.ylabel('True labels')
