@@ -3133,7 +3133,7 @@ class network(object):
                 if verbose >=3:
                     print "... Collecting parameters of layer " + lyr                    
                 params_list = self.dropout_layers[lyr].get_params()                                            
-            params[lyr] = params_list
+                params[lyr] = params_list
         return params
 
     def save_params (self, epoch = 0, verbose = 2):
