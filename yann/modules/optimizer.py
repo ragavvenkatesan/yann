@@ -134,7 +134,7 @@ class optimizer(module):
         for param in params:  
             if verbose >=3 :           
                 print "... Estimating gradient of parameter ", 
-                print param.name 
+                print param 
             try:
                 gradient = T.grad( objective ,param)
                 self.gradients.append ( gradient )
