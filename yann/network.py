@@ -15,7 +15,7 @@ except ImportError:
 if nx_installed is True:
     import networkx as nx
 
-import time
+import time, os
 from collections import OrderedDict
 
 import numpy
@@ -2831,6 +2831,7 @@ class network(object):
         Args:
             epochs: ``(num_epochs for each learning rate... )`` to train Default is ``(20, 20)``
             validate_after_epochs: 1, after how many epochs do you want to validate ?
+            save_after_epochs: 1, Save network after that many epochs of training.            
             show_progress: default is ``True``, will display a clean progressbar.
                              If ``verbose`` is ``3`` or more - False
             early_terminate: ``True`` will allow early termination.
@@ -2860,6 +2861,11 @@ class network(object):
             self.visualize_after_epochs = self.validate_after_epochs
         else:
             self.visualize_after_epochs = kwargs['visualize_after_epochs']
+
+        if not 'save_after_epochs' in kwargs.keys():
+            self.save_after_epochs = self.validate_after_epochs
+        else:
+            self.save_after_epochs = kwargs['save_after_epochs']
 
         if not 'show_progress' in kwargs.keys():
             show_progress = True
@@ -2995,6 +3001,7 @@ class network(object):
                                         verbose = verbose )
                 self.visualize ( epoch = epoch_counter , verbose = verbose )
                 self.print_status ( epoch = epoch_counter, verbose=verbose )
+                self.save_params ( epoch = epoch_counter, verbose = verbose )                
 
                 if best is True:
                     copy_params(source = self.active_params, destination= nan_insurance ,
@@ -3127,5 +3134,20 @@ class network(object):
                 params[lyr] = params_list
         return params
 
+    def save_params (self, epoch = 0, verbose = 2):
+        """
+        This method will save down a list of network parameters
+        
+        Args:
+            verbose: As usual
+            epoch: epoch.
+        """
+
+        from yann.utils.pickle import pickle
+        if not os.path.exists (self.cooked_resultor.root + '/params'):
+            os.makedirs (self.cooked_resultor.root + '/params')    
+
+        filename = self.cooked_resultor.root + '/params/epoch_' + str(epoch) + '.pkl'        
+        pickle(net = self, filename = filename, verbose=verbose)    
 if __name__ == '__main__':
     pass
