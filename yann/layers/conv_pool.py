@@ -87,6 +87,10 @@ class conv_pool_layer_2d (layer):
             if batch_norm is True:
                 if input_params [2] is None:
                     create_bn = True
+        else:
+            create_w = True
+            create_b = True
+            create_bn = True
 
         mini_batch_size  = input_shape[0]
         channels   = input_shape[1]
@@ -404,7 +408,11 @@ class deconv_layer_2d (layer):
             if batch_norm is True:
                 if input_params [2] is None:
                     create_bn = True
-
+        else:
+            create_w = True
+            create_b = True
+            create_bn = True
+            
         mini_batch_size  = input_shape[0]
         channels   = input_shape[1]
         width      = input_shape[3]
