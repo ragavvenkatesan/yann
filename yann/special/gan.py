@@ -530,6 +530,7 @@ class gan (network):
             k : how many discriminator updates for every generator update.
             learning_rates: (annealing_rate, learning_rates ... ) length must be one more than
                             ``epochs`` Default is ``(0.05, 0.01, 0.001)``
+            save_after_epochs: 1, Save network after that many epochs of training.
             pre_train_discriminator: If you want to pre-train the discriminator to make it stay
                                     ahead of the generator for making predictions. This will only
                                     train the softmax layer loss and not the fake or real loss.
@@ -563,6 +564,11 @@ class gan (network):
             self.visualize_after_epochs = self.validate_after_epochs
         else:
             self.visualize_after_epochs = kwargs['visualize_after_epochs']
+
+        if not 'save_after_epochs' in kwargs.keys():
+            self.save_after_epochs = self.validate_after_epochs
+        else:
+            self.save_after_epochs = kwargs['save_after_epochs']
 
         if not 'show_progress' in kwargs.keys():
             show_progress = True
@@ -606,7 +612,7 @@ class gan (network):
 
         if self.softmax_head is True:
             self.softmax_learning_rate.set_value(learning_rates[1])
-
+            
         patience_increase = 2
         improvement_threshold = 0.995
         best_iteration = 0
@@ -849,6 +855,7 @@ class gan (network):
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,
                                         verbose = verbose )
+                self.save_params ( epoch = epoch_counter, verbose = verbose )
                 self.visualize ( epoch = epoch_counter , verbose = verbose)
 
                 if best is True:

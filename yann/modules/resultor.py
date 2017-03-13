@@ -104,7 +104,8 @@ class resultor(module):
     def process_results(    self,
                             cost,
                             lr,
-                            mom,                        
+                            mom,    
+                            params = None,                    
                             verbose = 2 ):
         """
         This method will print results and also write them down in the appropriate files.

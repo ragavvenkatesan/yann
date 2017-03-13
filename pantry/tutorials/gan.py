@@ -1166,7 +1166,7 @@ if __name__ == '__main__':
         dataset = data.dataset_location() 
 
     net = shallow_gan_mnist ( dataset, verbose = 2 )
-    net = deep_gan_svhn_cifar ( dataset, verbose = 2 )           
+    net = deep_gan_mnist ( dataset, verbose = 2 )           
     net = deep_deconvolutional_gan_cifar ( batch_norm = True,
                                      dropout_rate = 0.5,
                                      regularize = True,

@@ -74,14 +74,19 @@ class conv_pool_layer_2d (layer):
             rng = numpy.random
 
         # To copy weights previously created or some wierd initializations
-        if input_params is not None:
-            init_w = input_params[0]
-            init_b = input_params[1]
+
+        create_w = False
+        create_b = False
+        create_bn = False
+
+        if not input_params is None:
+            if input_params[0] is None:
+                create_w = True
+            if input_params[1] is None:
+                create_b = True
             if batch_norm is True:
-                init_gamma = input_params[2]
-                init_beta = input_params[3]
-                init_mean = input_params[4]
-                init_var = input_params[5]
+                if input_params [2] is None:
+                    create_bn = True
 
         mini_batch_size  = input_shape[0]
         channels   = input_shape[1]
@@ -91,18 +96,22 @@ class conv_pool_layer_2d (layer):
         # Initialize the parameters of this layer.
         w_shp = (nkerns, channels, filter_shape[0], filter_shape[1])
 
-        if input_params is None:
-            # fan_in = filter_shape[0]*filter_shape[1]
-            # fan_out = filter_shape[0]*filter_shape[1] / numpy.prod(poolsize)
-            # w_bound = numpy.sqrt(6. / (fan_in + fan_out))
+        if create_w is True:
             self.w = theano.shared(value=
-                   # numpy.asarray(rng.uniform(low=-w_bound, high=w_bound, size =w_shp),
                    numpy.asarray( 0.01 * rng.standard_normal( size=w_shp),
                                     dtype=theano.config.floatX ), borrow=borrow,
                                     name ='filterbank' )
+        else:
+            self.w = input_params[0]
+
+        if create_b is True:
             self.b = theano.shared(value=numpy.zeros((nkerns,), dtype=theano.config.floatX),
                                      name = 'bias', borrow=borrow)
-            if batch_norm is True:
+        else:
+            self.b = input_params[1]
+
+        if batch_norm is True:
+            if create_bn is True:
                 self.gamma = theano.shared(value=numpy.ones((nkerns,),
                                     dtype=theano.config.floatX), name = 'gamma', borrow = borrow)
                 self.beta = theano.shared(value=numpy.zeros((nkerns,),
@@ -115,14 +124,11 @@ class conv_pool_layer_2d (layer):
                                     value=numpy.ones((nkerns,),
                                     dtype=theano.config.floatX),
                                     name = 'population_var', borrow=borrow)                                                                                               
-        else:
-            self.w = init_w
-            self.b = init_b
-            if batch_norm is True:
-                self.gamma = init_gamma
-                self.beta = init_beta
-                self.running_mean = init_mean
-                self.running_var = init_var
+            else:
+                self.gamma = input_params[2]
+                self.beta = input_params[3]
+                self.running_mean = input_params[4]
+                self.running_var = input_params[5]
         
         # Perform the convolution part
         convolver  = convolver_2d (
@@ -242,25 +248,6 @@ class conv_pool_layer_2d (layer):
         print self.prefix_entry + "-----------------------------------"
 
         return prefix
-
-    def get_params (self , borrow = True, verbose = 2):
-        """
-        This method returns the parameters of the layer in a numpy ndarray format.
-
-        Args:
-            borrow : Theano borrow, default is True.
-            verbose: As always
-
-        Notes:
-            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
-            have used get_value( borrow = True ), but I can't do this because some parameters are
-            theano.tensor.var.TensorVariable which needs to be run through eval.
-        """
-        out = []
-
-        for p in self.params:
-            out.append(p.get_value(borrow = borrow))
-        return out
 
 class dropout_conv_pool_layer_2d(conv_pool_layer_2d):
     """
@@ -404,15 +391,19 @@ class deconv_layer_2d (layer):
         if rng is None:
             rng = numpy.random
 
+        create_w = False
+        create_b = False
+        create_bn = False
+        
         # To copy weights previously created or some wierd initializations
-        if input_params is not None:
-            init_w = input_params[0]
-            init_b = input_params[1]
+        if not input_params is None:
+            if input_params[0] is None:
+                create_w = True
+            if input_params[1] is None:
+                create_b = True
             if batch_norm is True:
-                init_gamma = input_params[2]
-                init_beta = input_params[3]
-                init_mean = input_params[4]
-                init_var = input_params[5]
+                if input_params [2] is None:
+                    create_bn = True
 
         mini_batch_size  = input_shape[0]
         channels   = input_shape[1]
@@ -424,18 +415,22 @@ class deconv_layer_2d (layer):
         w_shp = (nkerns, output_shape[2], filter_shape[0], filter_shape[1])
         o_shp = (input_shape[0],output_shape[2],output_shape[0],output_shape[1])
 
-        if input_params is None:
-            # fan_in = filter_shape[0]*filter_shape[1]
-            # fan_out = filter_shape[0]*filter_shape[1] / numpy.prod(poolsize)
-            # w_bound = numpy.sqrt(6. / (fan_in + fan_out))
+        if create_w is True:
             self.w = theano.shared(value=
-                   # numpy.asarray(rng.uniform(low=-w_bound, high=w_bound, size =w_shp),
                    numpy.asarray( 0.01 * rng.standard_normal( size=w_shp),
                                     dtype=theano.config.floatX ), borrow=borrow,
                                     name ='filterbank' )
+        else:
+            self.w = input_params[0]
+
+        if create_b is True:                                    
             self.b = theano.shared(value=numpy.zeros((output_shape[2],), dtype=theano.config.floatX),
                                      name = 'bias', borrow=borrow)
-            if batch_norm is True:
+        else:
+            self.b = input_params[1]
+
+        if batch_norm is True:
+            if create_bn is True:
                 self.gamma = theano.shared(value=numpy.ones((output_shape[2],),
                                     dtype=theano.config.floatX), name = 'gamma', borrow = borrow)
                 self.beta = theano.shared(value=numpy.zeros((output_shape[2],),
@@ -448,28 +443,12 @@ class deconv_layer_2d (layer):
                                     value=numpy.ones((output_shape[2],),
                                     dtype=theano.config.floatX),
                                     name = 'population_var', borrow=borrow)                                                                                               
-        else:
-            if init_w is None: # I need to do this the same way I did fully connected.
-                self.w = theano.shared(value=
-                   # numpy.asarray(rng.uniform(low=-w_bound, high=w_bound, size =w_shp),
-                   numpy.asarray( 0.01 * rng.standard_normal( size=w_shp),
-                                    dtype=theano.config.floatX ), borrow=borrow,
-                                    name ='filterbank' ) 
             else:
-                self.w = init_w            
-            
-            if init_b is None:
-                self.b = theano.shared(value=numpy.zeros((output_shape[2],), 
-                                        dtype=theano.config.floatX),
-                                        name = 'bias', borrow=borrow)      
-            else:          
-                self.b = init_b
-            if batch_norm is True:
-                self.gamma = init_gamma
-                self.beta = init_beta
-                self.running_mean = init_mean
-                self.running_var = init_var
-
+                self.gamma = input_params[2]
+                self.beta = input_params[3]
+                self.running_mean = input_params[4]
+                self.running_var = input_params[5]
+        
         # Perform the convolution part
         convolver  = deconvolver_2d (
                         input = input,
@@ -595,25 +574,6 @@ class deconv_layer_2d (layer):
         print self.prefix_entry + "-----------------------------------"
 
         return prefix
-
-    def get_params (self , borrow = True, verbose = 2):
-        """
-        This method returns the parameters of the layer in a numpy ndarray format.
-
-        Args:
-            borrow : Theano borrow, default is True.
-            verbose: As always
-
-        Notes:
-            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
-            have used get_value( borrow = True ), but I can't do this because some parameters are
-            theano.tensor.var.TensorVariable which needs to be run through eval.
-        """
-        out = []
-
-        for p in self.params:
-            out.append(p.get_value(borrow = borrow))
-        return out
 
 class dropout_deconv_layer_2d(deconv_layer_2d):
     """

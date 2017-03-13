@@ -2,13 +2,13 @@ import cPickle
 import theano
 from collections import OrderedDict
 
-def pickle(net, name, verbose = 2):
+def pickle(net, filename, verbose = 2):
     """
     This method saves the weights of all the layers.
 
     Args:
         net: A yann network object
-        name: What is the name of the file to pickle the network as.
+        filename: What is the name of the file to pickle the network as.
         verbose: Blah..
     """
     if verbose >= 3:
@@ -18,7 +18,7 @@ def pickle(net, name, verbose = 2):
     if verbose >= 3:
         print "... Dumping netowrk parameters"
 
-    f = open(name, 'wb')                   
+    f = open(filename, 'wb')                   
     cPickle.dump(params, f, protocol = cPickle.HIGHEST_PROTOCOL)
     f.close()     
 
