@@ -3127,13 +3127,11 @@ class network(object):
             print "... Collecting network parameters"
         params = OrderedDict()
         for lyr in self.dropout_layers.keys():
-            params_list = list()
             if not self.dropout_layers[lyr].params is None:
-                for p in self.dropout_layers[lyr].params:
-                    if verbose >=3:
-                        print "... Collecting parameters of layer " + lyr                                
-                    params_list.append(p.get_value(borrow = True))
-                params[lyr] = params_list
+                if verbose >=3:
+                    print "... Collecting parameters of layer " + lyr                    
+                params_list = self.dropout_layers[lyr].get_params()                                            
+            params[lyr] = params_list
         return params
 
     def save_params (self, epoch = 0, verbose = 2):
