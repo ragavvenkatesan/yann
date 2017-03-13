@@ -2935,7 +2935,7 @@ class network(object):
                 if self.learning_rate.get_value(borrow = self.borrow) < learning_rates[era+1]:
                     if verbose >= 2:
                         print(".. Learning rate was already lower than specified. Not changing it.")
-                        print(".. Old learning rate was :" + str(self.learning_rate.get_value(borrow = self.borrow))
+                        print(".. Old learning rate was :" + str(self.learning_rate.get_value(borrow = self.borrow)))
                         print(".. Was trying to change to: " + str(learning_rates[era+1]))
                     new_lr = self.learning_rate.get_value(borrow = self.borrow)
                 else:
