@@ -102,25 +102,6 @@ class batch_norm_layer_2d (layer):
         self.active_params = [self.gamma, self.beta]
         self.input_shape = input_shape
         self.output_shape = input_shape 
-        
-    def get_params (self , borrow = True, verbose = 2):
-        """
-        This method returns the parameters of the layer in a numpy ndarray format.
-
-        Args:
-            borrow : Theano borrow, default is True.
-            verbose: As always
-
-        Notes:
-            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
-            have used get_value( borrow = True ), but I can't do this because some parameters are
-            theano.tensor.var.TensorVariable which needs to be run through eval.
-        """
-        out = []
-
-        for p in self.params:
-            out.append(p.get_value(borrow = borrow))
-        return out
 
 class dropout_batch_norm_layer_2d(batch_norm_layer_2d):
     """
@@ -254,25 +235,6 @@ class batch_norm_layer_1d (layer):
         self.active_params = [self.gamma, self.beta]
         self.input_shape = input_shape
         self.output_shape = input_shape 
-        
-    def get_params (self , borrow = True, verbose = 2):
-        """
-        This method returns the parameters of the layer in a numpy ndarray format.
-
-        Args:
-            borrow : Theano borrow, default is True.
-            verbose: As always
-
-        Notes:
-            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
-            have used get_value( borrow = True ), but I can't do this because some parameters are
-            theano.tensor.var.TensorVariable which needs to be run through eval.
-        """
-        out = []
-
-        for p in self.params:
-            out.append(p.get_value(borrow = borrow))
-        return out
 
 class dropout_batch_norm_layer_1d(batch_norm_layer_2d):
     """

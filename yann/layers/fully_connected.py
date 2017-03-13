@@ -50,12 +50,24 @@ class dot_product_layer (layer):
         if rng is None:
             rng = numpy.random
 
-        create = False
-        if input_params is None:
-            create = True
-        elif input_params[0] is None:
-            create = True
-        if create is True:
+        create_w = False
+        create_b = False
+        create_bn = False
+
+        if not input_params is None:
+            if input_params[0] is None:
+                create_w = True
+            if input_params[1] is None:
+                create_b = True
+            if batch_norm is True:
+                if input_params [2] is None:
+                    create_bn = True
+        else:
+            create_w = True
+            create_b = True
+            create_bn = True
+
+        if create_w is True:
             w_values = numpy.asarray(0.01 * rng.standard_normal(
                 size=(input_shape[1], num_neurons)), dtype=theano.config.floatX)
             if activation == 'sigmoid':
@@ -64,24 +76,14 @@ class dot_product_layer (layer):
         else:
             self.w = input_params[0]
 
-        create = False
-        if input_params is None:
-            create = True
-        elif input_params[1] is None:
-            create = True
-        if create is True:
+        if create_b is True:
             b_values = numpy.zeros((num_neurons,), dtype=theano.config.floatX)
             self.b = theano.shared(value=b_values, name='bias')
         else:
             self.b = input_params[1]
 
         if batch_norm is True:
-            create = False
-            if input_params is None:
-                create = True
-            elif input_params[2] is None:
-                create = True
-            if create is True:
+            if create_bn is True:
                 gamma_values = numpy.ones((1,num_neurons), dtype = theano.config.floatX)
                 self.gamma = theano.shared(value = gamma_values, name = 'gamma')
                 beta_values = numpy.zeros((1,num_neurons), dtype=theano.config.floatX)
@@ -162,28 +164,6 @@ class dot_product_layer (layer):
         self.num_neurons = num_neurons
         self.activation = activation
         self.batch_norm = batch_norm
-
-    def get_params (self , borrow = True, verbose = 2):
-        """
-        This method returns the parameters of the layer in a numpy ndarray format.
-
-        Args:
-            borrow : Theano borrow, default is True.
-            verbose: As always
-
-        Notes:
-            This is a slow method, because we are taking the values out of GPU. Ordinarily, I should
-            have used get_value( borrow = True ), but I can't do this because some parameters are
-            theano.tensor.var.TensorVariable which needs to be run through eval.
-        """
-        out = []
-
-        for p in self.params:
-            try:
-                out.append(p.get_value(borrow = borrow))
-            except:
-                out.append(p.eval())
-        return out
 
 class dropout_dot_product_layer (dot_product_layer):
     """
