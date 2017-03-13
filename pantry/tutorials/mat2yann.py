@@ -32,9 +32,9 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
                    "height"             : 32,
                    "width"              : 32,
                    "channels"           : 3,
-                   "batches2test"       : 42,
-                   "batches2train"      : 56,
-                   "batches2validate"   : 28,
+                   "batches2test"       : 13,
+                   "batches2train"      : 100,
+                   "batches2validate"   : 13,
                    "mini_batch_size"    : 500}
 
     else:
@@ -47,7 +47,7 @@ def cook_svhn_normalized( location, verbose = 1, **kwargs):
                             "normalize"     : True,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            "zero_mean"     : False,
+                            "zero_mean"     : True,
                         }
     else:
         preprocess_params = kwargs['preprocess_params']

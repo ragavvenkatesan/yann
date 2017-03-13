@@ -15,7 +15,7 @@ except ImportError:
 if nx_installed is True:
     import networkx as nx
 
-import time
+import time, os
 from collections import OrderedDict
 
 import numpy
@@ -468,7 +468,7 @@ class network(object):
                     "results"   : "results.txt",
                     "errors"    : "errors.txt",
                     "costs"     : "costs.txt",
-                    "confusion" : "confusion.txt",
+                    "confusion" : "confusion.eps",
                     "learning_rate" : "learning_rate.txt",
                     "momentum"  : "momentum.txt",
                     "visualize" : False,
@@ -1935,13 +1935,15 @@ class network(object):
             print("... initializing confusion matrix function")   
 
         _classes = T.scalar('num_classes')
-        _predictions = self.inference_layers[classifier].predictions
-        _labels = self.y 
+        _predictions = self.inference_layers[classifier].predictions.dimshuffle(0, 'x')
+        _labels = self.y.dimshuffle(0, 'x')
+        _order = T.arange(self.num_classes_to_classify)
 
-        confusion = T.dot(  T.eq( _predictions.dimshuffle(0, 'x'), \
-                            T.arange(self.num_classes_to_classify).astype('int32')).T, \
-                            T.eq( _labels.dimshuffle(0,'x'), \
-                            T.arange(self.num_classes_to_classify).astype('int32')))
+        oneHot_labels = T.eq(_labels, _order).astype('int32')
+        oneHot_predictions = T.eq(_predictions, _order).astype('int32')
+
+        confusion = T.dot(oneHot_labels.T, oneHot_predictions)
+        # confusion_normalized = confusion / confusion.sum(axis = 0)     
 
         index = T.lscalar('index')
         self.mini_batch_confusion = theano.function(
@@ -2829,6 +2831,7 @@ class network(object):
         Args:
             epochs: ``(num_epochs for each learning rate... )`` to train Default is ``(20, 20)``
             validate_after_epochs: 1, after how many epochs do you want to validate ?
+            save_after_epochs: 1, Save network after that many epochs of training.            
             show_progress: default is ``True``, will display a clean progressbar.
                              If ``verbose`` is ``3`` or more - False
             early_terminate: ``True`` will allow early termination.
@@ -2858,6 +2861,11 @@ class network(object):
             self.visualize_after_epochs = self.validate_after_epochs
         else:
             self.visualize_after_epochs = kwargs['visualize_after_epochs']
+
+        if not 'save_after_epochs' in kwargs.keys():
+            self.save_after_epochs = self.validate_after_epochs
+        else:
+            self.save_after_epochs = kwargs['save_after_epochs']
 
         if not 'show_progress' in kwargs.keys():
             show_progress = True
@@ -2927,6 +2935,8 @@ class network(object):
                 if self.learning_rate.get_value(borrow = self.borrow) < learning_rates[era+1]:
                     if verbose >= 2:
                         print(".. Learning rate was already lower than specified. Not changing it.")
+                        print(".. Old learning rate was :" + str(self.learning_rate.get_value(borrow = self.borrow)))
+                        print(".. Was trying to change to: " + str(learning_rates[era+1]))
                     new_lr = self.learning_rate.get_value(borrow = self.borrow)
                 else:
                     new_lr = learning_rates[era+1]
@@ -2993,6 +3003,7 @@ class network(object):
                                         verbose = verbose )
                 self.visualize ( epoch = epoch_counter , verbose = verbose )
                 self.print_status ( epoch = epoch_counter, verbose=verbose )
+                self.save_params ( epoch = epoch_counter, verbose = verbose )                
 
                 if best is True:
                     copy_params(source = self.active_params, destination= nan_insurance ,
@@ -3039,6 +3050,11 @@ class network(object):
         labels = []
         total_mini_batches =  self.batches2test * self.mini_batches_per_batch[2]
 
+        if self.network_type == 'classifier':
+            test_confusion_matrix = numpy.zeros((self.num_classes_to_classify,
+                                                                self.num_classes_to_classify),
+                                                        dtype = theano.config.floatX)
+
         if show_progress is True:
             bar = progressbar.ProgressBar(maxval=total_mini_batches, \
                   widgets=[progressbar.AnimatedMarker(), \
@@ -3054,6 +3070,8 @@ class network(object):
                 predictions = predictions + self.mini_batch_predictions(minibatch).tolist()
                 if self.network_type == 'classifier':
                     posteriors = posteriors + self.mini_batch_posterior(minibatch).tolist()
+                    test_confusion_matrix = test_confusion_matrix + \
+                                                             self.mini_batch_confusion (minibatch)                     
                 if verbose >= 3:
                     print("... testing error after mini batch " + str(batch_counter) + \
                                                               " is " + str(wrong))
@@ -3064,10 +3082,13 @@ class network(object):
         if show_progress is True:
             bar.finish()
 
+        self.cooked_resultor.print_confusion (epoch = 'fin',
+                                            test = test_confusion_matrix,
+                                            verbose = verbose)
+
         total_samples = total_mini_batches * self.mini_batch_size
         if self.network_type == 'classifier':
             testing_accuracy = (total_samples - wrong)*100. / total_samples
-
             if verbose >= 2:
                 print(".. Testing accuracy : " + str(testing_accuracy))
         elif self.network_type == 'generator':
@@ -3106,14 +3127,27 @@ class network(object):
             print "... Collecting network parameters"
         params = OrderedDict()
         for lyr in self.dropout_layers.keys():
-            params_list = list()
             if not self.dropout_layers[lyr].params is None:
-                for p in self.dropout_layers[lyr].params:
-                    if verbose >=3:
-                        print "... Collecting parameters of layer " + lyr                                
-                    params_list.append(p.get_value(borrow = True))
-                params[lyr] = params_list
+                if verbose >=3:
+                    print "... Collecting parameters of layer " + lyr                    
+                params_list = self.dropout_layers[lyr].get_params()                                            
+            params[lyr] = params_list
         return params
 
+    def save_params (self, epoch = 0, verbose = 2):
+        """
+        This method will save down a list of network parameters
+        
+        Args:
+            verbose: As usual
+            epoch: epoch.
+        """
+
+        from yann.utils.pickle import pickle
+        if not os.path.exists (self.cooked_resultor.root + '/params'):
+            os.makedirs (self.cooked_resultor.root + '/params')    
+
+        filename = self.cooked_resultor.root + '/params/epoch_' + str(epoch) + '.pkl'        
+        pickle(net = self, filename = filename, verbose=verbose)    
 if __name__ == '__main__':
     pass
