@@ -2608,7 +2608,7 @@ class network(object):
         for param in params:
             self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
 
-    def print_status (self, epoch , verbose = 2):
+    def print_status (self, epoch , print_lr = False, verbose = 2):
         """
         This function prints the cost of the current epoch, learning rate and momentum of the
         network at the moment. This also calls the resultor to process results.
@@ -2633,9 +2633,11 @@ class network(object):
         lr = self.learning_rate.get_value(borrow =  self.borrow)
         mom = self.current_momentum(epoch)
 
+        if print_lr is True:
+            verbose = 3
         self.cooked_resultor.process_results(cost = cost,
                                            lr = lr,
-                                           mom = mom,
+                                           mom = mom,                                           
                                            verbose = verbose)
 
     def _print_layer (self, id, prefix = " ", nest = True, last = True):
@@ -2908,7 +2910,7 @@ class network(object):
         epoch_counter = 0
         early_termination = False
         iteration= 0
-        era = 0
+        era = 0  
         if isinstance(epochs, int):
             total_epochs = epochs
             change_era = epochs + 1
@@ -3002,7 +3004,7 @@ class network(object):
                                         show_progress = show_progress,
                                         verbose = verbose )
                 self.visualize ( epoch = epoch_counter , verbose = verbose )
-                self.print_status ( epoch = epoch_counter, verbose=verbose )
+                self.print_status ( epoch = epoch_counter, print_lr = True, verbose=verbose )
                 self.save_params ( epoch = epoch_counter, verbose = verbose )                
 
                 if best is True:
@@ -3018,8 +3020,8 @@ class network(object):
                 if patience < epoch_counter:
                     early_termination = True
                     if final_era is False:
-                        if verbose >= 3:
-                            print("... Patience ran out lowering learning rate.")
+                        if verbose >= 2:
+                            print(".. Patience ran out lowering learning rate.")
                         new_lr = self.learning_rate.get_value( borrow = self.borrow ) * 0.1
                         self._new_era(new_learning_rate = new_lr, verbose =verbose )
                         early_termination = False
@@ -3131,7 +3133,7 @@ class network(object):
                 if verbose >=3:
                     print "... Collecting parameters of layer " + lyr                    
                 params_list = self.dropout_layers[lyr].get_params()                                            
-            params[lyr] = params_list
+                params[lyr] = params_list
         return params
 
     def save_params (self, epoch = 0, verbose = 2):
