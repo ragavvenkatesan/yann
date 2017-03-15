@@ -52,15 +52,15 @@ mkdir('valid');
 % Going to throw away 420 samples.
 throw_away = 420; 
 batch_size = 500;
+test_size = 130;
+train_size = 1000;
 
 data = x (1:length(x) - throw_away,:);
 labels = y (1:length(y) - throw_away) - 1; % because labels go from 1-10
 
 total_batches = length(labels) / batch_size;
-test_size = 130;
 remain = total_batches - test_size; 
 
-train_size = 1000;
 remain = remain - train_size;
 valid_size = remain; 
 
