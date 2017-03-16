@@ -436,7 +436,7 @@ class split_all(setup_dataset):
         if verbose >= 2:
             print ( ".. creating data " + type )
         
-        batches = self.batches2train
+        batches = self.batches2train *self.mini_batches_per_batch
         new = True
         for batch in xrange(batches):		# for each batch_i file....
             if verbose >= 3:
@@ -487,14 +487,14 @@ class split_all(setup_dataset):
             end_index = start_index + self.cache_images[0]
             data2save = (data_x [start_index:end_index,], data_y[start_index:end_index,] )
             pickle_dataset(loc = loc, data = data2save, batch=batch)
-            
+
             
         batches = self.batches2validate
         type = 'valid'
         if verbose >= 2:
             print ( ".. creating data " + type )
 
-        batches = self.batches2validate
+        batches = self.batches2validate * self.mini_batches_per_batch
         new = True
         del(data_x)
         del(data_y)
@@ -556,7 +556,7 @@ class split_all(setup_dataset):
         type = 'train'
         if verbose >= 2:
             print ( ".. creating data " + type )
-        batches = self.batches2test
+        batches = self.batches2test * self.mini_batches_per_batch
         new = True
         del(data_x)
         del(data_y)
