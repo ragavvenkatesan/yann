@@ -22,6 +22,7 @@ class resultor(module):
                     "learning_rate" : "<learning_rate_file_name>.txt"
                     "momentum"  : <momentum_file_name>.txt
                     "visualize" : <bool>
+                    "print_confusion" : <bool>
                     "id"        : id of the resultor
                                 }
 
@@ -69,6 +70,9 @@ class resultor(module):
         if not "viualize" in resultor_init_args.keys():
             resultor_init_args["visualize"] = True
 
+        if not"print_confusion" in resultor_init_args.keys():
+            resultor_init_args["print_confusion"] = False
+
         for item, value in resultor_init_args.iteritems():
             if item == "root":
                 self.root                   = value
@@ -84,6 +88,8 @@ class resultor(module):
                 self.learning_rate          = value
             elif item == "momentum":
                 self.momentum               = value
+            elif item == "print_confusion":
+                self.print_confusion        = value
 
 
         if not hasattr(self, 'root'): raise Exception('root variable has not been provided. \
@@ -159,35 +165,37 @@ class resultor(module):
             test: testing confusion matrix as gained by the test method.
             verbose: As usual.
         """
-        if verbose >=3:
-            print ("... Printing confusion matrix")
-        if not os.path.exists(self.root + '/confusion'):
-            if verbose >= 3:
-                print "... Creating a root directory for saving confusions"
-            os.makedirs(self.root + '/confusion')
+        if self.print_confusion is True:
 
-        location = self.root + '/confusion' + '/epoch_' + str(epoch)        
-        if not os.path.exists( location ):
+            if verbose >=3:
+                print ("... Printing confusion matrix")
+            if not os.path.exists(self.root + '/confusion'):
+                if verbose >= 3:
+                    print "... Creating a root directory for saving confusions"
+                os.makedirs(self.root + '/confusion')
+
+            location = self.root + '/confusion' + '/epoch_' + str(epoch)        
+            if not os.path.exists( location ):
+                if verbose >=3 :
+                    print "... Making the epoch directory"
+                os.makedirs (location)
+
             if verbose >=3 :
-                print "... Making the epoch directory"
-            os.makedirs (location)
+                print ("... Saving down the confusion matrix")
 
-        if verbose >=3 :
-            print ("... Saving down the confusion matrix")
+            if not train is None:
+                self._store_confusion_img (confusion = train,
+                                  filename = location + '/train_confusion.eps',
+                                  verbose = 2)
+            if not valid is None:
+                self._store_confusion_img (confusion = valid,
+                                  filename = location + '/valid_confusion.eps',
+                                  verbose = 2)
 
-        if not train is None:
-            self._store_confusion_img (confusion = train,
-                              filename = location + '/train_confusion.eps',
-                              verbose = 2)
-        if not valid is None:
-            self._store_confusion_img (confusion = valid,
-                              filename = location + '/valid_confusion.eps',
-                              verbose = 2)
-
-        if not test is None:
-            self._store_confusion_img (confusion = test,
-                              filename = location + '/test_confusion.eps',
-                              verbose = 2)
+            if not test is None:
+                self._store_confusion_img (confusion = test,
+                                  filename = location + '/test_confusion.eps',
+                                  verbose = 2)
 
     def _store_confusion_img (self, confusion, filename, verbose = 2):
         """

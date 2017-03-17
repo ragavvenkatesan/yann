@@ -971,7 +971,188 @@ class split_only_train(setup_dataset):
         cPickle.dump(dataset_args, f, protocol=2)
         f.close()        
 
-    def _split_data (self, data):
+    def _mat2yann (self, verbose = 1):
+        """
+        Interal function. Use this to create matlab image datasets
+        This is modfied for the split dataset from the original ``setup_dataset`` class.
+        """
+        if verbose >=2:
+            print (".. Creating a split dataset")
+
+        type = 'train'
+        if verbose >= 2:
+            print ( ".. creating data " + type )
+        
+        batches = self.batches2train
+        new = True
+        for batch in xrange(batches):       # for each batch_i file....
+            if verbose >= 3:
+                print ( "... batch " +str(batch) )
+
+            data_x_batch, data_y_batch = load_data_mat(location = self.location, 
+                                                batch = batch, 
+                                                type_set = type,
+                                                height = self.height,
+                                                width = self.width,
+                                                channels = self.channels)
+            if new is True:
+                data_x = data_x_batch
+                data_y = data_y_batch
+                new = False
+            else:
+                data_x = numpy.concatenate( (data_x, data_x_batch) , axis = 0)
+                data_y = numpy.concatenate( (data_y, data_y_batch) , axis = 0)
+
+        data_x, data_y  = self._split_data (( data_x, data_y ), y1 = False )
+        data_x = preprocessing ( data = data_x,
+                                height = self.height,
+                                width = self.width,
+                                channels = self.channels,
+                                args = self.preprocessor )
+
+        training_sample_size = data_x.shape[0]
+        training_mini_batches_available  = int(numpy.floor(training_sample_size / self.mini_batch_size))
+
+        if training_mini_batches_available < self.batches2train * self.mini_batches_per_batch[0]:
+            #self.mini_batches_per_batch = ( training_batches_available/self.batches2train,
+            #                                self.mini_batches_per_batch [1],
+            #                                self.mini_batches_per_batch [2] )
+            self.batches2train = int(numpy.floor(training_mini_batches_available / self.mini_batches_per_batch[0]))         
+
+        loc = self.root + "/train/"
+        data_x = check_type(data_x, theano.config.floatX)
+        data_y = check_type(data_y, theano.config.floatX)
+
+        for batch in xrange(self.batches2train):
+            start_index = batch * self.cache_images[0]
+            end_index = start_index + self.cache_images[0]
+            data2save = (data_x [start_index:end_index,], data_y[start_index:end_index,] )
+            pickle_dataset(loc = loc, data = data2save, batch=batch)
+
+            
+        type = 'valid'
+        if verbose >= 2:
+            print ( ".. creating data " + type )
+        batches = self.batches2validate
+        new = True
+        del(data_x)
+        del(data_y)
+
+        for batch in xrange(batches):       # for each batch_i file....
+            if verbose >= 3:
+                print ( "... batch " +str(batch) )
+
+            data_x_batch, data_y_batch = load_data_mat(location = self.location, 
+                                                batch = batch, 
+                                                type_set = type,
+                                                height = self.height,
+                                                width = self.width,
+                                                channels = self.channels)
+
+            if new is True:
+                data_x = data_x_batch
+                data_y = data_y_batch
+                new = False
+            else:
+                data_x = numpy.concatenate( (data_x, data_x_batch) , axis = 0)
+                data_y = numpy.concatenate( (data_y, data_y_batch) , axis = 0)
+
+        # data_x, data_y  = self._split_data (( data_x, data_y ), y1 = False )
+        data_x = preprocessing ( data = data_x,
+                                height = self.height,
+                                width = self.width,
+                                channels = self.channels,
+                                args = self.preprocessor )
+
+
+        validation_sample_size = data_x.shape[0]
+        validation_mini_batches_available = int(numpy.floor(
+                                                validation_sample_size / self.mini_batch_size))
+
+        if validation_mini_batches_available < self.batches2validate * self.mini_batches_per_batch[1]:
+            self.batches2validate = int(numpy.floor(validation_mini_batches_available \
+                                    / self.mini_batches_per_batch[1]))
+
+        loc = self.root + "/valid/"
+        data_x = check_type(data_x, theano.config.floatX)
+        data_y = check_type(data_y, theano.config.floatX)
+
+        for batch in xrange(self.batches2validate):
+            start_index = batch * self.cache_images[1]
+            end_index = start_index + self.cache_images[1]
+            data2save = (data_x [start_index:end_index,], data_y[start_index:end_index,] )
+            pickle_dataset(loc = loc, data = data2save, batch=batch)
+
+        type = 'train'
+        if verbose >= 2:
+            print ( ".. creating data " + type )
+        batches = self.batches2test
+        new = True
+        del(data_x)
+        del(data_y)
+
+        for batch in xrange(batches):       # for each batch_i file....
+            if verbose >= 3:
+                print ( "... batch " +str(batch) )
+
+            data_x_batch, data_y_batch = load_data_mat(location = self.location, 
+                                                batch = batch, 
+                                                type_set = type,
+                                                height = self.height,
+                                                width = self.width,
+                                                channels = self.channels)
+            if new is True:
+                data_x = data_x_batch
+                data_y = data_y_batch
+                new = False
+            else:
+                data_x = numpy.concatenate( (data_x, data_x_batch) , axis = 0)
+                data_y = numpy.concatenate( (data_y, data_y_batch) , axis = 0)
+
+        # data_x, data_y  = self._split_data (( data_x, data_y ), y1 = False )
+        data_x = preprocessing ( data = data_x,
+                                height = self.height,
+                                width = self.width,
+                                channels = self.channels,
+                                args = self.preprocessor )
+
+        testing_sample_size = data_x.shape[0]
+        testing_mini_batches_available = int(numpy.floor(testing_sample_size / self.mini_batch_size))
+
+        if testing_mini_batches_available < self.batches2test * self.mini_batches_per_batch[2]:
+            self.batches2test = int(numpy.floor(testing_mini_batches_available \
+                                    / self.mini_batches_per_batch[2]))
+
+        loc = self.root + "/test/"
+        data_x = check_type(data_x, theano.config.floatX)
+        data_y = check_type(data_y, theano.config.floatX)
+
+        for batch in xrange(self.batches2test):
+            start_index = batch * self.cache_images[2]
+            end_index = start_index + self.cache_images[2]
+            data2save = (data_x [start_index:end_index,], data_y[start_index:end_index,] )
+            pickle_dataset(loc = loc, data = data2save, batch=batch)
+
+        dataset_args = {
+                "location"                  : self.root,
+                "mini_batch_size"           : self.mini_batch_size,
+                "cache_batches"             : self.mini_batches_per_batch,
+                "batches2train"             : self.batches2train,
+                "batches2test"              : self.batches2test,
+                "batches2validate"          : self.batches2validate,
+                "height"                    : self.height,
+                "width"                     : self.width,
+                "channels"              : 1 if self.preprocessor ["grayscale"] else self.channels,
+                "cache"                     : self.cache,
+                "splits"                    : self.splits
+                }
+
+        assert ( self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]) )
+        f = open(self.root +  '/data_params.pkl', 'wb')
+        cPickle.dump(dataset_args, f, protocol=2)
+        f.close()
+
+    def _split_data (self, data, y1 = True):
         """
         This is an internal method that will split the datasets.
 
@@ -982,7 +1163,10 @@ class split_only_train(setup_dataset):
             tuple: split data in the same format as data.
         """
         n_shots = self.splits["p"]
-        data_x, data_y, data_y1  = data
+        if y1 is True:
+            data_x, data_y, data_y1  = data
+        else:
+            data_x, data_y = data
         locs = numpy.zeros(len(data_y), dtype = bool)
         for label in xrange(self.n_classes + 1):
             temp = numpy.zeros(len(data_y), dtype = bool)                                                
@@ -990,17 +1174,19 @@ class split_only_train(setup_dataset):
             if label in self.splits["shot"]:
                 count = 0        
                 for element in xrange(len(temp)):
-                    if temp[element] == True:    # numpy needs == rather than 'is'     
+                    if temp[element] == True:    # numpy needs == rather than 'is'               
                         count = count + 1
-                    if count > n_shots:	                     	            
-                        temp[element] = False	
-                        		     
+                    if count > n_shots:                                     
+                        temp[element] = False   
+                                     
             locs[temp] = True
         data_x = data_x[locs]
         data_y = data_y[locs]
-        data_y1 = data_y1[locs]   
-        return (data_x, data_y, data_y1)  
-
+        if y1 is True:
+            data_y1 = data_y1[locs]
+            return (data_x, data_y, data_y1)  
+        else:
+            return (data_x, data_y)
 
 
 if __name__ == '__main__':
