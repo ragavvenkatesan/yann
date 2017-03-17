@@ -71,7 +71,7 @@ class resultor(module):
             resultor_init_args["visualize"] = True
 
         if not"print_confusion" in resultor_init_args.keys():
-            resultor_init_args["print_confusion"] = False
+            resultor_init_args["print_confusion"] = True
 
         for item, value in resultor_init_args.iteritems():
             if item == "root":
