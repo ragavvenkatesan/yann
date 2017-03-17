@@ -436,7 +436,7 @@ class split_all(setup_dataset):
         if verbose >= 2:
             print ( ".. creating data " + type )
         
-        batches = self.batches2train *self.mini_batches_per_batch
+        batches = self.batches2train
         new = True
         for batch in xrange(batches):		# for each batch_i file....
             if verbose >= 3:
@@ -464,19 +464,13 @@ class split_all(setup_dataset):
                                 args = self.preprocessor )
 
         training_sample_size = data_x.shape[0]
-        training_batches_available  = int(numpy.floor(training_sample_size / self.mini_batch_size))
+        training_mini_batches_available  = int(numpy.floor(training_sample_size / self.mini_batch_size))
 
-        if training_batches_available < self.batches2train * self.mini_batches_per_batch[0]:
-            self.mini_batches_per_batch = ( training_batches_available/self.batches2train,
-                                            self.mini_batches_per_batch [1],
-                                            self.mini_batches_per_batch [2] )
-
-        if self.batches2train * self.mini_batches_per_batch[0] < self.cache_images[0]:
-            self.cache_images = (self.mini_batches_per_batch[0] * self.mini_batch_size, \
-                                        self.cache_images[1],  self.cache_images[2])
-
-        data_x = data_x[:self.cache_images[0]]
-        data_y = data_y[:self.cache_images[0]]                
+        if training_mini_batches_available < self.batches2train * self.mini_batches_per_batch[0]:
+            #self.mini_batches_per_batch = ( training_batches_available/self.batches2train,
+            #                                self.mini_batches_per_batch [1],
+            #                                self.mini_batches_per_batch [2] )
+            self.batches2train = int(numpy.floor(training_mini_batches_available / self.mini_batches_per_batch[0]))         
 
         loc = self.root + "/train/"
         data_x = check_type(data_x, theano.config.floatX)
@@ -489,12 +483,10 @@ class split_all(setup_dataset):
             pickle_dataset(loc = loc, data = data2save, batch=batch)
 
             
-        batches = self.batches2validate
         type = 'valid'
         if verbose >= 2:
             print ( ".. creating data " + type )
-
-        batches = self.batches2validate * self.mini_batches_per_batch
+        batches = self.batches2validate
         new = True
         del(data_x)
         del(data_y)
@@ -527,21 +519,12 @@ class split_all(setup_dataset):
 
 
         validation_sample_size = data_x.shape[0]
-        validation_batches_available = int(numpy.floor(
+        validation_mini_batches_available = int(numpy.floor(
                                                 validation_sample_size / self.mini_batch_size))
 
-        if validation_batches_available < self.batches2validate * self.mini_batches_per_batch[1]:
-            self.mini_batches_per_batch = ( self.mini_batches_per_batch [0],
-                                            validation_batches_available/self.batches2validate,
-                                            self.mini_batches_per_batch [2] )
-
-        if self.batches2validate * self.mini_batches_per_batch[1] < self.cache_images[1]:
-            self.cache_images = (   self.cache_images[0],\
-                                    self.mini_batches_per_batch[1] * self.mini_batch_size, \
-                                    self.cache_images[2])
-
-        data_x = data_x[:self.cache_images[1]]
-        data_y = data_y[:self.cache_images[1]]
+        if validation_mini_batches_available < self.batches2validate * self.mini_batches_per_batch[1]:
+            self.batches2validate = int(numpy.floor(validation_mini_batches_available \
+                                    / self.mini_batches_per_batch[1]))
 
         loc = self.root + "/valid/"
         data_x = check_type(data_x, theano.config.floatX)
@@ -556,7 +539,7 @@ class split_all(setup_dataset):
         type = 'train'
         if verbose >= 2:
             print ( ".. creating data " + type )
-        batches = self.batches2test * self.mini_batches_per_batch
+        batches = self.batches2test
         new = True
         del(data_x)
         del(data_y)
@@ -587,20 +570,11 @@ class split_all(setup_dataset):
                                 args = self.preprocessor )
 
         testing_sample_size = data_x.shape[0]
-        testing_batches_available = int(numpy.floor(testing_sample_size / self.mini_batch_size))
+        testing_mini_batches_available = int(numpy.floor(testing_sample_size / self.mini_batch_size))
 
-        if testing_batches_available < self.batches2test * self.mini_batches_per_batch[2]:
-            self.mini_batches_per_batch = ( self.mini_batches_per_batch [0],
-                                            self.mini_batches_per_batch [1],
-                                            testing_batches_available/self.batches2test )
-
-        if self.batches2test * self.mini_batches_per_batch[2] < self.cache_images[2]:
-            self.cache_images = (   self.cache_images[0],\
-                                    self.cache_images[1], \
-                                    self.mini_batches_per_batch[2] * self.mini_batch_size )
-
-        data_x = data_x[:self.cache_images[2]]
-        data_y = data_y[:self.cache_images[2]]
+        if testing_mini_batches_available < self.batches2test * self.mini_batches_per_batch[2]:
+            self.batches2test = int(numpy.floor(testing_mini_batches_available \
+                                    / self.mini_batches_per_batch[2]))
 
         loc = self.root + "/test/"
         data_x = check_type(data_x, theano.config.floatX)

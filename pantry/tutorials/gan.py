@@ -1121,7 +1121,7 @@ def deep_deconvolutional_lsgan(dataset,
     # from yann.utils.graph import draw_network
     # draw_network(net.graph, filename = 'gan.png')    
     net.pretty_print()
-    
+
     net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                 optimizer_params = optimizer_params,
                 discriminator_layers = ["D1-x", "D2-x","D3-x","D4-x"],
@@ -1131,11 +1131,11 @@ def deep_deconvolutional_lsgan(dataset,
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
                     
-    learning_rates = (0.04, 0.0001 )  
+    learning_rates = (0.04, 0.01 )  
 
     net.train( epochs = (20), 
             k = 2, 
-            pre_train_discriminator = 1,
+            pre_train_discriminator = 0,
             validate_after_epochs = 1,
             visualize_after_epochs = 1,
             training_accuracy = True,
