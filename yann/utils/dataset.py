@@ -986,7 +986,7 @@ class setup_dataset (object):
                 "channels"              : 1 if self.preprocessor ["grayscale"] else self.channels,
                 "cache"                 : self.cache,
                 }
-        
+                
         assert ( self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]) )
         f = open(self.root +  '/data_params.pkl', 'wb')
         cPickle.dump(dataset_args, f, protocol=2)
