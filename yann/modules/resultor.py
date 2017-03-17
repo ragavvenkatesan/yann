@@ -22,7 +22,7 @@ class resultor(module):
                     "learning_rate" : "<learning_rate_file_name>.txt"
                     "momentum"  : <momentum_file_name>.txt
                     "visualize" : <bool>
-                    "print_confusion" : <bool>
+                    "save_confusion" : <bool>
                     "id"        : id of the resultor
                                 }
 
@@ -70,8 +70,8 @@ class resultor(module):
         if not "viualize" in resultor_init_args.keys():
             resultor_init_args["visualize"] = True
 
-        if not"print_confusion" in resultor_init_args.keys():
-            resultor_init_args["print_confusion"] = False
+        if not"save_confusion" in resultor_init_args.keys():
+            resultor_init_args["save_confusion"] = True
 
         for item, value in resultor_init_args.iteritems():
             if item == "root":
@@ -88,8 +88,8 @@ class resultor(module):
                 self.learning_rate          = value
             elif item == "momentum":
                 self.momentum               = value
-            elif item == "print_confusion":
-                self.print_confusion        = value
+            elif item == "save_confusion":
+                self.save_confusion        = value
 
 
         if not hasattr(self, 'root'): raise Exception('root variable has not been provided. \
@@ -165,7 +165,7 @@ class resultor(module):
             test: testing confusion matrix as gained by the test method.
             verbose: As usual.
         """
-        if self.print_confusion is True:
+        if self.save_confusion is True:
 
             if verbose >=3:
                 print ("... Printing confusion matrix")
