@@ -1,6 +1,73 @@
 from yann.utils.dataset import *
 import numpy
 
+class combine_split_datasets (object):
+
+    def __init__(self, loc, verbose = 1, **kwargs):
+    """
+    This will combine two split datasets into one.
+
+    Todo:
+        Extend it for non-split datasets also.
+
+    Args:
+        loc: A tuple of a list of locations of two dataset to be blended.
+        verbose: As always
+    """        
+        self.loc1 = loc[0]
+        self.loc2 - loc[1]
+
+        if verbose >= 3:
+            print("... Initializing dataset 1")
+
+        f = open(loc1 + '/data_params.pkl', 'rb')
+        data_params_1 = cPickle.load(f)
+        f.close()    
+
+        data_splits_1 = data_params_1['splits']
+        if data_splits_1['p'] == 0:
+            self.n_classes_1 = len (data_splits_1['base'])
+        else:
+            self.n_classes_1 = len (data_splits_1['base']) + len(data_splits_1['shot'])
+
+        self.mini_batches_per_batch_1  = data_params_1 [ "cache_batches" ]
+        self.batches2train_1       = data_params_1 [ "batches2train" ]
+        self.batches2test_1      = data_params_1 [ "batches2test" ]
+        self.batches2validate_1    = data_params_1 [ "batches2validate" ]
+        self.cache_1               = data_params_1 [ "cache" ]
+
+        if verbose >= 3:
+            print("... Initializing dataset 2")
+
+        f = open(loc1 + '/data_params.pkl', 'rb')
+        data_params_2 = cPickle.load(f)
+        f.close()  
+
+        data_splits_2 = data_params_2['splits']
+        if data_splits_2['p'] == 0:
+            self.n_classes_2 = len (data_splits_2['base'])
+        else:
+            self.n_classes_2 = len (data_splits_2['base']) + len(data_splits_2['shot'])
+
+        self.mini_batches_per_batch_2  = data_params_2 [ "cache_batches" ]
+        self.batches2train_2       = data_params_2 [ "batches2train" ]
+        self.batches2test_2      = data_params_2 [ "batches2test" ]
+        self.batches2validate_2    = data_params_2 [ "batches2validate" ]
+        self.cache_2               = data_params_2 [ "cache" ]
+
+        # Why is this necessary ?
+        assert data_params_1 [ "mini_batch_size" ] == data_params_2 [ "mini_batch_size" ]
+        self.mini_batch_size = data_params_1['mini_batch_size']
+
+        assert data_params_1 [ "height" ] == data_params_2 [ "height" ]      
+        self.height              = data_params_1 [ "height" ]
+
+        assert data_params_1 [ "width" ] == data_params_2 [ "width" ]        
+        self.width               = data_params_1 [ "width" ]
+
+        assert data_params_1 [ "channels" ] == data_params_2 [ "channels" ]        
+        self.channels            = data_params_1 [ "channels" ]
+
 def cook_mnist_normalized(  verbose = 1, **kwargs):
     """
     Wrapper to cook mnist dataset. Will take as input,
