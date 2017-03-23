@@ -464,13 +464,15 @@ class split_all(setup_dataset):
                                 args = self.preprocessor )
 
         training_sample_size = data_x.shape[0]
-        training_mini_batches_available  = int(numpy.floor(training_sample_size / self.mini_batch_size))
+        training_mini_batches_available  = int(numpy.floor(training_sample_size / \
+                                                                             self.mini_batch_size))
 
         if training_mini_batches_available < self.batches2train * self.mini_batches_per_batch[0]:
             #self.mini_batches_per_batch = ( training_batches_available/self.batches2train,
             #                                self.mini_batches_per_batch [1],
             #                                self.mini_batches_per_batch [2] )
-            self.batches2train = int(numpy.floor(training_mini_batches_available / self.mini_batches_per_batch[0]))         
+            self.batches2train = int(numpy.floor(training_mini_batches_available / \
+                                                                    self.mini_batches_per_batch[0]))         
 
         loc = self.root + "/train/"
         data_x = check_type(data_x, theano.config.floatX)
