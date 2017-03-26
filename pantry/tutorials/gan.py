@@ -233,7 +233,7 @@ def deep_gan_mnist (dataset, verbose = 1 ):
                 "momentum_type"       : 'polyak',             
                 "momentum_params"     : (0.5, 0.7, 20),      
                 "regularization"      : (0.000, 0.000),       
-                "optimizer_type"      : 'rmsprop',                
+                "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
                         }
 
@@ -270,7 +270,7 @@ def deep_gan_mnist (dataset, verbose = 1 ):
     #z - latent space created by random layer
     net.add_layer(type = 'random',
                         id = 'z',
-                        num_neurons = (100,10), 
+                        num_neurons = (100,32), 
                         distribution = 'normal',
                         mu = 0,
                         sigma = 1,
@@ -455,7 +455,7 @@ def deep_gan_mnist (dataset, verbose = 1 ):
 
     net.train( epochs = (20), 
             k = 1, 
-            pre_train_discriminator = 0,
+            pre_train_discriminator = 3,
             validate_after_epochs = 1,
             visualize_after_epochs = 1,
             training_accuracy = True,
@@ -491,10 +491,10 @@ def deep_deconvolutional_gan(dataset,
         print (".. Creating a GAN network")
 
     optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
+                "momentum_type"       : 'false',             
                 "momentum_params"     : (0.51, 0.95, 40),      
                 "regularization"      : (0.00001, 0.00001),       
-                "optimizer_type"      : 'adagrad',                
+                "optimizer_type"      : 'adam',                
                 "id"                  : "main"
                         }
 
@@ -789,7 +789,7 @@ def deep_deconvolutional_gan(dataset,
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
                     
-    learning_rates = (0.0004, 0.001 )  
+    learning_rates = (0.0004, 0.0001 )  
 
     net.train( epochs = (20), 
             k = 1, 
@@ -1131,10 +1131,10 @@ def deep_deconvolutional_lsgan(dataset,
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
                     
-    learning_rates = (0.04, 0.01 )  
+    learning_rates = (0.04, 0.001 )  
 
     net.train( epochs = (20), 
-            k = 2, 
+            k = 1, 
             pre_train_discriminator = 0,
             validate_after_epochs = 1,
             visualize_after_epochs = 1,
@@ -1148,7 +1148,7 @@ def deep_deconvolutional_lsgan(dataset,
 
 if __name__ == '__main__':
     
-    #from yann.special.datasets import cook_mnist_normalized_zero_mean as c 
+    # from yann.special.datasets import cook_mnist_normalized_zero_mean as c 
     from yann.special.datasets import cook_cifar10_normalized_zero_mean as c
     import sys
 
@@ -1169,11 +1169,11 @@ if __name__ == '__main__':
 
     # net = shallow_gan_mnist ( dataset, verbose = 2 )
     # net = deep_gan_mnist ( dataset, verbose = 2 )           
-    """net = deep_deconvolutional_gan ( batch_norm = True,
+    net = deep_deconvolutional_gan ( batch_norm = True,
                                      dropout_rate = 0.5,
                                      regularize = True,
                                      dataset = dataset,
-                                     verbose = 2 )"""
+                                     verbose = 2 )
     net = deep_deconvolutional_lsgan ( batch_norm = True,
                                      dropout_rate = 0.5,
                                      regularize = True,

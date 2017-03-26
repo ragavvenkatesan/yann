@@ -14,9 +14,9 @@ def lenet5 ( dataset= None, verbose = 1 ):
         verbose: Similar to the rest of the dataset.
     """
     optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
+                "momentum_type"       : 'nesterov',             
                 "momentum_params"     : (0.65, 0.97, 30),      
-                "optimizer_type"      : 'adagrad',                
+                "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
                         }
 
@@ -25,7 +25,7 @@ def lenet5 ( dataset= None, verbose = 1 ):
                             "svm"       : False, 
                             "n_classes" : 10,
                             "id"        : 'data'
-                    }
+                      }
 
     visualizer_params = {
                     "root"       : 'lenet5',
@@ -122,24 +122,25 @@ def lenet5 ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )
                     
-    learning_rates = (0.05, 0.01, 0.001)  
+    learning_rates = (0.05, .0001, 0.001)  
     net.pretty_print()  
-    draw_network(net.graph, filename = 'lenet.png')   
+    # draw_network(net.graph, filename = 'lenet.png')   
 
     net.cook()
-    
-    net.train( epochs = (4, 4), 
+
+    net.train( epochs = (20, 20), 
                validate_after_epochs = 1,
                training_accuracy = True,
                learning_rates = learning_rates,               
                show_progress = True,
                early_terminate = True,
+               patience = 2,
                verbose = verbose)
 
     net.test(verbose = verbose)
     
 # Advaned versions of the CNN
-def lenet_maxout_batchnorm_before_activation ( dataset= None, verbose = 1 ):             
+def lenet_maxout_batchnorm_before_activation ( dataset= None, verbose = 1 ):
     """
     This is a version with nesterov momentum and rmsprop instead of the typical sgd. 
     This also has maxout activations for convolutional layers, dropouts on the last
@@ -278,7 +279,7 @@ def lenet_maxout_batchnorm_before_activation ( dataset= None, verbose = 1 ):
 
     net.test(verbose = verbose)
 
-def lenet_maxout_batchnorm_after_activation ( dataset= None, verbose = 1 ):             
+def lenet_maxout_batchnorm_after_activation ( dataset= None, verbose = 1 ):
     """
     This is a version with nesterov momentum and rmsprop instead of the typical sgd. 
     This also has maxout activations for convolutional layers, dropouts on the last
@@ -444,7 +445,10 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
             from yann.special.datasets import cook_cifar10 
+            from yann.special.datasets import cook_mnist
+            
             data = cook_cifar10 (verbose = 2)
+            # data = cook_mnist()        
             dataset = data.dataset_location()
         else:
             dataset = sys.argv[1]
@@ -454,7 +458,8 @@ if __name__ == '__main__':
     if dataset is None:
         print " creating a new dataset to run through"
         from yann.special.datasets import cook_cifar10 
-        # from yann.special.datasets import cook_mnist 
+        from yann.special.datasets import cook_mnist 
+        
         data = cook_cifar10 (verbose = 2)
         # data = cook_mnist()
         dataset = data.dataset_location()

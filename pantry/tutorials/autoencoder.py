@@ -3,7 +3,6 @@ TODO:
 
     * Need a validation and testing thats better than just measuring rmse. Can't find something 
       great.
-    * Loss increases after 3 epochs.
     
 """
 from yann.network import network
@@ -73,7 +72,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     origin = "flatten",
                     id = "encoder",
                     num_neurons = 64,
-                    activation = 'relu',
+                    activation = 'tanh',
                     verbose = verbose
                     )
 
@@ -81,7 +80,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     origin = "encoder",
                     id = "decoder",
                     num_neurons = 784,
-                    activation = 'relu',
+                    activation = 'tanh',
                     input_params = [net.dropout_layers['encoder'].w.T, None],
                     # Use the same weights but transposed for decoder. 
                     learnable = False,                    
@@ -307,7 +306,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     verbose = verbose
                     )          
 
-    learning_rates = (0, 0.01, 0.001)  
+    learning_rates = (0.04, 0.0001, 0.00001)  
     net.cook( objective_layers = ['obj'],
               datastream = 'data',
               learning_rates = learning_rates,
@@ -329,7 +328,7 @@ if __name__ == '__main__':
     dataset = None  
     if len(sys.argv) > 1:
         if sys.argv[1] == 'create_dataset':
-            from yann.special.datasets import cook_mnist_normalized as cook_mnist  
+            from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist  
             data = cook_mnist (verbose = 2)
             dataset = data.dataset_location()
         else:
@@ -339,9 +338,9 @@ if __name__ == '__main__':
     
     if dataset is None:
         print " creating a new dataset to run through"
-        from yann.special.datasets import cook_mnist_normalized as cook_mnist  
+        from yann.special.datasets import cook_mnist_normalized_zero_mean as cook_mnist  
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    #autoencoder ( dataset, verbose = 2 )
+    # autoencoder ( dataset, verbose = 2 )
     convolutional_autoencoder ( dataset , verbose = 2 )

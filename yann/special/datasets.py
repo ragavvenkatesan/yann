@@ -1,9 +1,8 @@
 from yann.utils.dataset import *
 import numpy
+import os
 
 class combine_split_datasets (object):
-
-    def __init__(self, loc, verbose = 1, **kwargs):
     """
     This will combine two split datasets into one.
 
@@ -13,14 +12,21 @@ class combine_split_datasets (object):
     Args:
         loc: A tuple of a list of locations of two dataset to be blended.
         verbose: As always
-    """        
+    """     
+    def __init__(self, loc, verbose = 1, **kwargs):
+        """
+        Initializer method.
+        """
+        if verbose >= 2:
+            print (".. Initializing combining datasets")
+
         self.loc1 = loc[0]
-        self.loc2 - loc[1]
+        self.loc2 = loc[1]
 
         if verbose >= 3:
             print("... Initializing dataset 1")
 
-        f = open(loc1 + '/data_params.pkl', 'rb')
+        f = open(self.loc1 + '/data_params.pkl', 'rb')
         data_params_1 = cPickle.load(f)
         f.close()    
 
@@ -39,7 +45,7 @@ class combine_split_datasets (object):
         if verbose >= 3:
             print("... Initializing dataset 2")
 
-        f = open(loc1 + '/data_params.pkl', 'rb')
+        f = open(self.loc2 + '/data_params.pkl', 'rb')
         data_params_2 = cPickle.load(f)
         f.close()  
 
@@ -67,6 +73,159 @@ class combine_split_datasets (object):
 
         assert data_params_1 [ "channels" ] == data_params_2 [ "channels" ]        
         self.channels            = data_params_1 [ "channels" ]
+
+        save_directory = '_datasets'
+        self.id = str(randint(11111,99999))
+        self.key_root = '/_dataset_'
+        self.root = save_directory + self.key_root + self.id
+        if not os.path.exists(save_directory):
+            os.mkdir(save_directory)        
+        os.mkdir(self.root)
+        os.mkdir(self.root + "/train" )
+        os.mkdir(self.root + "/test"  )
+        os.mkdir(self.root + "/valid" )        
+
+        self.combine ( verbose = verbose ) 
+
+    def combine (self, verbose = 1):
+        """
+        Thie method runs the combine.
+
+        Args:
+            verbose: As Always
+        """
+        if verbose >= 2:
+            print (".. Begining combining")
+        self._combine_and_save ( type = 'train', verbose = 2 )
+        self._combine_and_save ( type = 'test', verbose = 2 )
+        self._combine_and_save ( type = 'valid', verbose = 2 )
+        self._combine_parameters ( verbose = 2 )
+
+    def _combine_parameters (self, verbose = 1 ):
+        """
+        This method prints the last parameter file
+        """
+        self.cache =  not( self.batches2train_1 == 1 and
+                           self.batches2test_1 == 1 and
+                           self.batches2validate_1 == 1 and 
+                           self.batches2train_2 == 1 and
+                           self.batches2test_2 == 1 and
+                           self.batches2validate_2 == 1 )
+
+        dataset_args = {
+                "location"                  : self.root,
+                "mini_batch_size"           : self.mini_batch_size,
+                "cache_batches"             : self.mini_batches_per_batch_1 + \
+                                              self.mini_batches_per_batch_2,
+                "batches2train"             : max(self.batches2train_1, self.batches2train_2),
+                "batches2test"              : max(self.batches2test_1, self.batches2test_2),
+                "batches2validate"          : max(self.batches2validate_1, self.batches2validate_2),
+                "height"                    : self.height,
+                "width"                     : self.width,
+                "channels"              : self.channels,
+                "cache"                 : self.cache,
+                }
+
+        f = open(self.root +  '/data_params.pkl', 'wb')
+        cPickle.dump(dataset_args, f, protocol=2)
+        f.close()
+
+    def _combine_and_save ( self, type = 'train', verbose = 1 ):
+        """
+        This is an internal methof that would combine the training data.
+        """
+        if type == 'train':
+            n_batches_1 = self.batches2train_1
+            n_batches_2 = self.batches2train_2
+        elif type == 'test':
+            n_batches_1 = self.batches2test_1
+            n_batches_2 = self.batches2test_2
+        else:
+            n_batches_1 = self.batches2validate_1
+            n_batches_2 = self.batches2validate_2
+
+        rollback = 0        
+        for batch in xrange(max(n_batches_1,n_batches_2)):
+            data = self.load_data ( type = type,  batch = 0, verbose = verbose)
+            data_x_1, data_y_1, data_x_2, data_y_2 = data
+            data_y_2 = self._convert_labels ( labels = data_y_2, verbose = verbose )
+            data_x = numpy.concatenate( (data_x_1, data_x_2), axis = 0 )
+            data_y = numpy.concatenate( (data_y_1, data_y_2), axis = 0 )
+            self.save_data(data_x = data_x, data_y = data_y, type = type )
+        
+        self._combine_parameters ()
+    def _convert_labels ( self, labels, verbose = 1):
+        """
+        This method convert the labels from old to new for the second dataset. Only works for 
+        second dataset, not for the first dataset.
+
+        Args:
+            verbose: As usual.
+        """ 
+        return labels + self.n_classes_1
+
+    def save_data (self, data_x, data_y, type = 'train', batch = 0, verbose = 2):
+        """
+        Saves down a batch of data. 
+        """
+        if verbose >=3: 
+            print ("... Dumping batch " + str(batch))
+        # compute number of minibatches for training, validation and testing
+        f = open( self.root + "/" + type + "/" + 'batch_' + str(batch) + '.pkl', 'wb')
+        obj = (data_x, data_y )
+        cPickle.dump(obj, f, protocol=2)
+        f.close() 
+
+    def load_data(self, type = 'train', batch = 0, verbose = 2):
+        """
+        Will load the data from the file and will return the data. Will supply two batches one from
+        each set respectively.
+
+        Args:
+            type: ``train``, ``test`` or ``valid``.
+                  default is ``train``
+            batch: Supply an integer
+
+            verbose: Simliar to verbose in toolbox.
+
+        Todo:
+            Create and load dataset for type = 'x'
+
+        Returns:
+            numpy.ndarray: ``data_x, data_y``
+        """
+        if verbose >= 3:
+            print("... loading " + type + " data batch " + str(batch))
+
+        f = open(self.loc1 + '/' + type + '/batch_' + str(batch) +'.pkl', 'rb')
+
+        data_x_1 , data_y_1 = cPickle.load(f)
+        f.close()
+
+        data_x_1 = check_type (data_x_1, theano.config.floatX)
+        data_y_1 = check_type (data_y_1, theano.config.floatX)
+        # Theano recommends storing on gpus only as floatX and casts them to ints during use.
+        # I don't know why, but I am following their recommendations blindly.
+
+        if verbose >= 3:
+            print("... data from set 1 is loaded")
+
+        if verbose >= 3:
+            print("... loading " + type + " data batch " + str(batch))
+
+        f = open(self.loc2+ '/' + type + '/batch_' + str(batch) +'.pkl', 'rb')
+
+        data_x_2 , data_y_2 = cPickle.load(f)
+        f.close()
+
+        data_x_2 = check_type (data_x_2, theano.config.floatX)
+        data_y_2 = check_type (data_y_2, theano.config.floatX)
+        # Theano recommends storing on gpus only as floatX and casts them to ints during use.
+        # I don't know why, but I am following their recommendations blindly.
+        if verbose >= 3:
+            print("... data from set 2 is loaded")
+
+        return (data_x_1, data_y_1, data_x_2, data_y_2)
 
 def cook_mnist_normalized(  verbose = 1, **kwargs):
     """

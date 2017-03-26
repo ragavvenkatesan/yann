@@ -510,13 +510,14 @@ class gan (network):
         """
         if self.softmax_head is True:
             self.network_type = 'classifier'
-            best = super(gan,self).validate(epoch = epoch,
+            best, better = super(gan,self).validate(epoch = epoch,
                                     training_accuracy = training_accuracy,
                                     show_progress = show_progress,
                                     verbose = verbose)
         else:
             best = True
-        return best
+            better = True
+        return best, better
     def train ( self, verbose, **kwargs):
         """
         Training function of the network. Calling this will begin training.
@@ -697,7 +698,7 @@ class gan (network):
                                                                              borrow=  self.borrow)))
                         print("... Momentum            : " + str(self.current_momentum(epoch)))
 
-                best = self.validate(   epoch = epoch_counter,
+                best, better = self.validate(   epoch = epoch_counter,
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,
                                         verbose = verbose )
@@ -740,6 +741,7 @@ class gan (network):
             self.softmax_learning_rate.set_value(learning_rates[1])
         
         patience_increase = 2
+        patience = numpy.inf
         improvement_threshold = 0.995
         best_iteration = 0
         epoch_counter = 0
@@ -851,7 +853,7 @@ class gan (network):
                 if verbose >= 2:
                     self.print_status ( epoch = epoch_counter, verbose = verbose )
 
-                best = self.validate(   epoch = epoch_counter,
+                best, better = self.validate(   epoch = epoch_counter,
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,
                                         verbose = verbose )
