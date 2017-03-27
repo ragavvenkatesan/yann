@@ -85,7 +85,14 @@ class combine_split_datasets (object):
         os.mkdir(self.root + "/test"  )
         os.mkdir(self.root + "/valid" )        
 
-        self.combine ( verbose = verbose ) 
+        self.splits = { "base"              : list(range(self.n_classes_1)) + [ x + \
+                                                self.n_classes_1 for x in \
+                                                list(range(self.n_classes_2)) ] ,
+                        "shot"              : [],
+                        "p"                 : 0
+                    }    
+
+        self.combine ( verbose = verbose )  
 
     def combine (self, verbose = 1):
         """
@@ -124,6 +131,7 @@ class combine_split_datasets (object):
                 "width"                     : self.width,
                 "channels"              : self.channels,
                 "cache"                 : self.cache,
+                "splits"                : self.splits,
                 }
 
         f = open(self.root +  '/data_params.pkl', 'wb')
@@ -146,7 +154,8 @@ class combine_split_datasets (object):
 
         rollback = 0        
         for batch in xrange(max(n_batches_1,n_batches_2)):
-            data = self.load_data ( type = type,  batch = 0, verbose = verbose)
+            data = self.load_data ( type = type,  batch = batch, n_batches_1 = n_batches_1, \
+                                            n_batches_2 = n_batches_2, verbose = verbose)
             data_x_1, data_y_1, data_x_2, data_y_2 = data
             data_y_2 = self._convert_labels ( labels = data_y_2, verbose = verbose )
             data_x = numpy.concatenate( (data_x_1, data_x_2), axis = 0 )
@@ -154,6 +163,7 @@ class combine_split_datasets (object):
             self.save_data(data_x = data_x, data_y = data_y, type = type )
         
         self._combine_parameters ()
+
     def _convert_labels ( self, labels, verbose = 1):
         """
         This method convert the labels from old to new for the second dataset. Only works for 
@@ -173,10 +183,12 @@ class combine_split_datasets (object):
         # compute number of minibatches for training, validation and testing
         f = open( self.root + "/" + type + "/" + 'batch_' + str(batch) + '.pkl', 'wb')
         obj = (data_x, data_y )
+        obj = shuffle (obj)
         cPickle.dump(obj, f, protocol=2)
         f.close() 
+    
 
-    def load_data(self, type = 'train', batch = 0, verbose = 2):
+    def load_data(self, n_batches_1, n_batches_2, type = 'train', batch = 0,verbose = 2):
         """
         Will load the data from the file and will return the data. Will supply two batches one from
         each set respectively.
@@ -185,7 +197,8 @@ class combine_split_datasets (object):
             type: ``train``, ``test`` or ``valid``.
                   default is ``train``
             batch: Supply an integer
-
+            n_batches_1: Number of batches in dataset 1
+            n_batches_2: Number of batches in dataset 2
             verbose: Simliar to verbose in toolbox.
 
         Todo:
@@ -196,8 +209,9 @@ class combine_split_datasets (object):
         """
         if verbose >= 3:
             print("... loading " + type + " data batch " + str(batch))
-
-        f = open(self.loc1 + '/' + type + '/batch_' + str(batch) +'.pkl', 'rb')
+        
+        batch_load = batch % n_batches_1
+        f = open(self.loc1 + '/' + type + '/batch_' + str(batch_load) +'.pkl', 'rb')
 
         data_x_1 , data_y_1 = cPickle.load(f)
         f.close()
@@ -213,7 +227,8 @@ class combine_split_datasets (object):
         if verbose >= 3:
             print("... loading " + type + " data batch " + str(batch))
 
-        f = open(self.loc2+ '/' + type + '/batch_' + str(batch) +'.pkl', 'rb')
+        batch_load = batch % n_batches_2
+        f = open(self.loc2+ '/' + type + '/batch_' + str(batch_load) +'.pkl', 'rb')
 
         data_x_2 , data_y_2 = cPickle.load(f)
         f.close()

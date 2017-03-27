@@ -57,7 +57,26 @@ from yann.utils.image import preprocessing
 from scipy.misc import imresize as imresize
 
 thismodule = sys.modules[__name__]
+def shuffle ( data , verbose = 1):
+    """
+    Method shuffles the dataset with x and y
 
+    Args: 
+        data: Either a tuple of a nd array. If tuple, will assume x and y.
+
+    Returns:
+        data: Shuffled version of the same.
+
+    Notes:
+        Obnly tuple works at the moment.
+    """
+    from numpy.random import permutation    
+    data_x, data_y = data
+    perm = permutation(data_x.shape[0])
+    data_x = data_x[perm]
+    data_y = data_y[perm]
+    return (data_x, data_y)
+    
 def download_data (url, location):
     """
     """
