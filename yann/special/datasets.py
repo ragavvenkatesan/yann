@@ -2,7 +2,7 @@ from yann.utils.dataset import *
 import numpy
 import os
 
-class combine_split_datasets (object):
+class combine_split_datasets_train_only (object):
     """
     This will combine two split datasets into one.
 
@@ -12,6 +12,12 @@ class combine_split_datasets (object):
     Args:
         loc: A tuple of a list of locations of two dataset to be blended.
         verbose: As always
+    
+    Notes:
+        At this moment, mini_batches_per_batch and mini_batch_size of both datasets must be the 
+        same.
+        This only splits the train data with shot. The test and valid hold both. 
+        This is designed for the incremental learning.
     """     
     def __init__(self, loc, verbose = 1, **kwargs):
         """
@@ -83,18 +89,26 @@ class combine_split_datasets (object):
         os.mkdir(self.root)
         os.mkdir(self.root + "/train" )
         os.mkdir(self.root + "/test"  )
-        os.mkdir(self.root + "/valid" )        
+        os.mkdir(self.root + "/valid" )          
 
-        self.splits = { "base"              : list(range(self.n_classes_1)) + [ x + \
+        if not 'splits' in kwargs.keys():
+            self.splits = { "base"              :  [ x + \
                                                 self.n_classes_1 for x in \
                                                 list(range(self.n_classes_2)) ] ,
-                        "shot"              : [],
+                        "shot"              : list(range(self.n_classes_1)),
                         "p"                 : 0
-                    }    
-
+                    }              
+        else:
+            self.splits = kwargs ['splits']
+        
+        assert self.mini_batches_per_batch_1 == self.mini_batches_per_batch_2
+        self.mini_batches_per_batch = (self.mini_batches_per_batch_2[0],
+                                       self.mini_batches_per_batch_2[1] * 2,
+                                       self.mini_batches_per_batch_2[2] * 2)
         self.combine ( verbose = verbose )  
-
-    def combine (self, verbose = 1):
+        print ("Dataset " + self.id + " is combined and makde")
+        
+    def combine(self, verbose = 1):
         """
         Thie method runs the combine.
 
@@ -131,6 +145,7 @@ class combine_split_datasets (object):
                 "width"                     : self.width,
                 "channels"              : self.channels,
                 "cache"                 : self.cache,
+                "mini_batches_per_batch": self.mini_batches_per_batch,
                 "splits"                : self.splits,
                 }
 
@@ -152,15 +167,19 @@ class combine_split_datasets (object):
             n_batches_1 = self.batches2validate_1
             n_batches_2 = self.batches2validate_2
 
-        rollback = 0        
         for batch in xrange(max(n_batches_1,n_batches_2)):
             data = self.load_data ( type = type,  batch = batch, n_batches_1 = n_batches_1, \
                                             n_batches_2 = n_batches_2, verbose = verbose)
             data_x_1, data_y_1, data_x_2, data_y_2 = data
             data_y_2 = self._convert_labels ( labels = data_y_2, verbose = verbose )
-            data_x = numpy.concatenate( (data_x_1, data_x_2), axis = 0 )
-            data_y = numpy.concatenate( (data_y_1, data_y_2), axis = 0 )
-            self.save_data(data_x = data_x, data_y = data_y, type = type )
+
+            if not type == 'train':
+                data_x = numpy.concatenate( (data_x_1, data_x_2), axis = 0 )
+                data_y = numpy.concatenate( (data_y_1, data_y_2), axis = 0 )
+            else:
+                data_x = data_x_2
+                data_y = data_y_2              
+            self.save_data(data_x = data_x, data_y = data_y, type = type, batch = batch )
         
         self._combine_parameters ()
 
@@ -207,10 +226,10 @@ class combine_split_datasets (object):
         Returns:
             numpy.ndarray: ``data_x, data_y``
         """
-        if verbose >= 3:
-            print("... loading " + type + " data batch " + str(batch))
+        batch_load = batch % n_batches_1        
+        if verbose >= 1:
+            print("... loading " + type + " data batch " + str(batch_load))
         
-        batch_load = batch % n_batches_1
         f = open(self.loc1 + '/' + type + '/batch_' + str(batch_load) +'.pkl', 'rb')
 
         data_x_1 , data_y_1 = cPickle.load(f)
@@ -224,10 +243,10 @@ class combine_split_datasets (object):
         if verbose >= 3:
             print("... data from set 1 is loaded")
 
-        if verbose >= 3:
-            print("... loading " + type + " data batch " + str(batch))
-
         batch_load = batch % n_batches_2
+        if verbose >= 1:
+            print("... loading " + type + " data batch " + str(batch_load))
+
         f = open(self.loc2+ '/' + type + '/batch_' + str(batch_load) +'.pkl', 'rb')
 
         data_x_2 , data_y_2 = cPickle.load(f)
