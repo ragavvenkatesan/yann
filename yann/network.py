@@ -2716,7 +2716,7 @@ class network(object):
         """
         best = False
         if  not (epoch % self.validate_after_epochs == 0) :
-            return best
+            return (False, False)
 
         validation_errors = 0
         training_errors = 0

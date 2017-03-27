@@ -510,6 +510,8 @@ class gan (network):
         """
         if self.softmax_head is True:
             self.network_type = 'classifier'
+            import pdb
+            pdb.set_trace()
             best, better = super(gan,self).validate(epoch = epoch,
                                     training_accuracy = training_accuracy,
                                     show_progress = show_progress,
