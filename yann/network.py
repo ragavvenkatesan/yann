@@ -2847,7 +2847,7 @@ class network(object):
         if validation_errors > self.best_validation_errors * 0.95:
             better = True
 
-        return best, better
+        return (best, better)
 
     def train(self, verbose = 2, **kwargs):
         """

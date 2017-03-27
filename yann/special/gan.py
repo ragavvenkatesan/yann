@@ -517,7 +517,7 @@ class gan (network):
         else:
             best = True
             better = True
-        return best, better
+        return (best, better)
     def train ( self, verbose, **kwargs):
         """
         Training function of the network. Calling this will begin training.

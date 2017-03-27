@@ -1148,8 +1148,8 @@ def deep_deconvolutional_lsgan(dataset,
 
 if __name__ == '__main__':
     
-    # from yann.special.datasets import cook_mnist_normalized_zero_mean as c 
-    from yann.special.datasets import cook_cifar10_normalized_zero_mean as c
+    from yann.special.datasets import cook_mnist_normalized_zero_mean as c 
+    # from yann.special.datasets import cook_cifar10_normalized_zero_mean as c
     import sys
 
     dataset = None  
@@ -1167,7 +1167,7 @@ if __name__ == '__main__':
         data = c (verbose = 2)
         dataset = data.dataset_location() 
 
-    # net = shallow_gan_mnist ( dataset, verbose = 2 )
+    net = shallow_gan_mnist ( dataset, verbose = 2 )
     # net = deep_gan_mnist ( dataset, verbose = 2 )           
     net = deep_deconvolutional_gan ( batch_norm = True,
                                      dropout_rate = 0.5,
