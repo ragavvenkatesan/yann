@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import theano
 import theano.tensor as T
 from theano.ifelse import ifelse
@@ -7,14 +7,6 @@ from abstract import module
 
 class optimizer(module):
     """
-
-    Todo:
-
-        * AdaDelta
-
-    Warning:
-        Adam is not fully tested.
-
     Optimizer is an important module of the toolbox. Optimizer creates the protocols required
     for learning. ``yann``'s optimizer supports the following optimization techniques:
 
@@ -22,11 +14,12 @@ class optimizer(module):
         * AdaGrad [1]
         * RmsProp [2]
         * Adam [3]
+        * Adadelta [4]
 
     Optimizer also supports the following momentum techniques:
 
-        * Polyak [4]
-        * Nesterov [5]
+        * Polyak [5]
+        * Nesterov [6]
 
     .. [#]   John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods for
              online learning and stochastic optimization. JMLR
@@ -35,6 +28,8 @@ class optimizer(module):
              arXiv:1502.04390v1
     .. [#]   Kingma, Diederik, and Jimmy Ba. "Adam: A method for stochastic optimization."
              arXiv preprint arXiv:1412.6980 (2014).
+    .. [#]   Zeiler, Matthew D. "ADADELTA: an adaptive learning rate method." arXiv preprint 
+             arXiv:1212.5701 (2012).
     .. [#]   Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of
              iteration methods." USSR Computational Mathematics and Mathematical Physics 4.5
              (1964): 1-17. Implementation was adapted from Sutskever, Ilya, et al. "On the
@@ -92,6 +87,9 @@ class optimizer(module):
             self.momentum_type   = optimizer_init_args [ "momentum_type" ]
         else:
             self.momentum_type                   = 'false'
+        
+        if self.momentum_type == 'false':
+            self.momentum = None
 
         if "optimizer_type" in optimizer_init_args.keys():
             self.optimizer_type = optimizer_init_args [ "optimizer_type" ]
@@ -101,19 +99,27 @@ class optimizer(module):
         if verbose >= 3:
             print "... Optimizer is initiliazed"
 
-        if verbose>=3 :
-            print "... Applying momentum"
-
         self.epoch = T.scalar('epoch')
-        self.momentum = ifelse(self.epoch <= self.momentum_epoch_end,
-                        self.momentum_start * (1.0 - self.epoch / self.momentum_epoch_end) +
-                        self.momentum_end * (self.epoch / self.momentum_epoch_end),
-                        self.momentum_end)
 
         if verbose>=3 :
             print "... Creating learning rate"
         # just setup something for now. Trainer will reinitialize
-        self.learning_rate = theano.shared(numpy.asarray(0.1,dtype=theano.config.floatX))
+        self.learning_rate = theano.shared(np.asarray(0.1,dtype=theano.config.floatX))
+
+    def _init_momentum (self, verbose = 2):
+        """
+        Intitializes momentum 
+
+        Args:
+            verbose: as always
+        """
+        if verbose>=3 :
+            print "... Setting up momentum"
+
+        self.momentum = ifelse(self.epoch <= self.momentum_epoch_end,
+                        self.momentum_start * (1.0 - self.epoch / self.momentum_epoch_end) +
+                        self.momentum_end * (self.epoch / self.momentum_epoch_end),
+                        self.momentum_end)
 
     def calculate_gradients(self, params, objective, verbose = 1):
         """
@@ -131,7 +137,8 @@ class optimizer(module):
             print "... Estimating gradients"
 
         self.gradients = []
-        for param in params:  
+        self.params = params
+        for param in self.params:  
             if verbose >=3 :           
                 print "... Estimating gradient of parameter ", 
                 print param 
@@ -143,166 +150,259 @@ class optimizer(module):
                 raise Exception ("Cannot learn a layer that is disconnected with objective. " +
                         "Try cooking again by making the particular layer learnable as False")
 
-
-    def create_updates(self, params, verbose = 1):
+    def _polyak (self, verbose = 1):  
         """
-        This basically creates all the updates and update functions which trainers can iterate
-        upon.
+        Apply polyak momentum
 
-        Todo:
-            Need to modularize this method more. I need to split these into many methods one for
-            each type of optimizer. if-then breaks are fine for now.
+        Args: 
+            verbose: as usual 
 
-        Args:
-            params: Supply learnable active parameters of a network.
-            objective: supply a theano graph connecting the params to a loss
-            verbose: Just as always
-        """
-
-        # accumulate velocities for momentum
-        if verbose >=3:
-            print "... creating internal parameters for all the optimizations"
-        velocities = []
-        for param in params:
-            if verbose >=3 :           
-                print "... Estimating velocity  of parameter ",
-                print param 
-            velocity = theano.shared(numpy.zeros(param.get_value(borrow=True).shape,
-                                                                dtype=theano.config.floatX))
-            velocities.append(velocity)
-
-        # these are used for second order optimizers.
-        accumulator_1 =[]
-        accumulator_2 = []
-        for param in params:
-            if verbose >=3 :           
-                print "... Accumulating gradinent of parameter " , 
-                print param 
-            eps = numpy.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)
-            accumulator_1.append(theano.shared(eps, borrow=True))
-            accumulator_2.append(theano.shared(eps, borrow=True))
-
-        # these are used for adam.
-        timestep = theano.shared(numpy.asarray(0., dtype=theano.config.floatX))
-        delta_t = timestep + 1
-        b1=0.9                       # for ADAM
-        b2=0.999                     # for ADAM
-        a = T.sqrt (   1-  b2  **  delta_t )   /   (   1   -   b1  **  delta_t )     # for ADAM
-
-        # to avoid division by zero
-        fudge_factor = 1e-7
-        if verbose>=3:
-            print "... Building backprop network."
-
-        # This is copied straight from my old toolbox: Samosa. I hope this is working correctly.
-        # There might be a better way to have written these... different methods for different
-        # optimizers perhaps ?
-        if verbose >=3 :
-            print "... Applying " + self.optimizer_type
-            print "... Applying " + self.momentum_type
-        self.updates = OrderedDict()
-        for velocity, gradient, acc_1 , acc_2, param in zip(velocities, self.gradients,
-                                                        accumulator_1, accumulator_2, params):
-            if verbose >=3 :           
-                print "... Backprop of parameter ", 
-                print param 
-
-            if self.optimizer_type == 'adagrad':
-
-                """ Adagrad implemented from paper:
-                John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
-                for online learning and stochastic optimization. JMLR
-                """
-                current_acc_1 = acc_1 + T.sqr(gradient) # Accumulates Gradient
-                self.updates[acc_1] = current_acc_1          # updates accumulation at timestamp
-
-            elif self.optimizer_type == 'rmsprop':
-                """ Tieleman, T. and Hinton, G. (2012):
-                Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
-                Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)"""
-                rms_rho = 0.9
-                current_acc_1 = rms_rho * acc_1 + (1 - rms_rho) * T.sqr(gradient)
-                self.updates[acc_1] = current_acc_1
-
-            elif self.optimizer_type == 'sgd':
-                current_acc_1 = 1.
-
-            elif self.optimizer_type == 'adam':
-                """ Kingma, Diederik, and Jimmy Ba. "Adam: A method for stochastic optimization."
-                     arXiv preprint arXiv:1412.6980 (2014)."""
-                if not self.momentum_type == 'adam':
-                    if verbose >= 3 and not self.momentum_type == 'false':
-                        print "... ADAM doesn't need explicit momentum. Momentum is removed."
-                    self.momentum_type = 'adam'
-
-
-                current_acc_2 = b1 * acc_2 + (1-b1) * gradient
-                current_acc_1 = b2 * acc_1 + (1-b2) * T.sqr( gradient )
-                self.updates[acc_2] = current_acc_2
-                self.updates[acc_1] = current_acc_1
-
-            if self.momentum_type == 'adam':
-                self.updates[velocity] = a * current_acc_2 / (T.sqrt(current_acc_1) +
-                                                                                 fudge_factor)
-
-            elif self.momentum_type == 'false':               # no momentum
-                self.updates[velocity] = - (self.learning_rate / T.sqrt(current_acc_1 +
-                                                                     fudge_factor)) * gradient
-            elif self.momentum_type == 'polyak':       # if polyak momentum
-                """ Momentum implemented from paper:
+        Notes:
+                Momentum implemented from paper:
                 Polyak, Boris Teodorovich. "Some methods of speeding up the convergence of
                 iteration methods."  USSR Computational Mathematics and Mathematical
                 Physics 4.5 (1964): 1-17.
 
                 Adapted from Sutskever, Ilya, Hinton et al. "On the importance of initialization
                 and momentum in deep learning.", Proceedings of the 30th international
-                conference on machine learning (ICML-13). 2013. equation (1) and equation (2)"""
+                conference on machine learning (ICML-13). 2013. equation (1) and equation (2)        
+        """
+        self._init_momentum () 
+        if verbose>=3 :
+            print "... Applying polyak momentum"
+        for param in self.params:
+            if verbose >=3 :           
+                print "... Momentum of parameter " , 
+                print param                         
+            velocity = theano.shared(np.zeros(param.shape.eval(), dtype=theano.config.floatX))
+            step = self.momentum * velocity + self.updates[param]
+            self.updates[velocity] = step - param
+            self.updates[param] = step
 
-                self.updates[velocity] = self.momentum * velocity - (1.- self.momentum) * \
-                                 ( self.learning_rate / T.sqrt(current_acc_1 + fudge_factor)) \
-                                                                                    * gradient
+    def _nesterov (self, verbose = 1):
+        """
+        Apply Nesterov momentum
 
-            elif self.momentum_type == 'nesterov':             # Nestrov accelerated gradient
-                """Nesterov, Yurii. "A method of solving a convex programming problem with
+        Args: 
+            verbose: as usual 
+
+        Notes:
+                Nesterov, Yurii. "A method of solving a convex programming problem with
                 convergence rate O (1/k2)." Soviet Mathematics Doklady. Vol. 27. No. 2. 1983.
                 Adapted from
                 https://blogs.princeton.edu/imabandit/2013/04/01/acceleratedgradientdescent/
 
                 Instead of using past params we use the current params as described in this link
-                https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,"""
+                https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617,
+        """
+        self._init_momentum () 
+        if verbose>=3 :
+            print "... Applying nesterov momentum"
 
-                self.updates[velocity] = self.momentum * velocity - (1.-self.momentum) * \
-                                ( self.learning_rate / T.sqrt(current_acc_1 + fudge_factor)) \
-                                                                                    * gradient
-                self.updates[param] = self.momentum * self.updates[velocity]
+        for param in self.params:
+            if verbose >=3 :           
+                print "... Momentum of parameter " , 
+                print param                         
+            velocity = theano.shared(np.zeros(param.shape.eval(), dtype=theano.config.floatX))
+            step = self.momentum * velocity + self.updates[param] - param
+            self.updates[velocity] = step
+            self.updates[param] = self.momentum * step + self.updates[param]
 
-            else:
-                if verbose >= 3:
-                    print "... Unrecognized mometum type, switching to no momentum."
-                self.momentum_type = 'false'
-                self.updates[velocity] = - (self.learning_rate / T.sqrt(current_acc_1 +
-                                                                    fudge_factor))  * gradient
-            stepped_param = param + self.updates[velocity]
-            if self.momentum_type == 'nesterov':
-                stepped_param = stepped_param + self.updates[param]
+    def _adam (self, rho=0.9, beta=0.999, verbose = 1):
+        """
+        Apply ADAM updates.
 
-            column_norm = True #This I don't fully understand if
-                                #its needed after BN is implemented.
-                                # This is been around since my first ever
-                                # implementation of samosa, and I haven't tested it out.
-            if param.get_value(borrow=True).ndim == 2 and column_norm is True:
-                """ constrain the norms of the COLUMNs of the weight, according to
-                https://github.com/BVLC/caffe/issues/109 """
-                col_norms = T.sqrt(T.sum(T.sqr(stepped_param), axis=0))
+        Args: 
+            rho: Suppy as was mentioned in the paper. Sometimes refered to also as beta1 (0.9)
+            beta: Supply as was mentioend in paper, sometimes refered to as beta2 (0.999)
+            verbose: is as usual
+
+        Notes: 
+                Kingma, Diederik, and Jimmy Ba. "Adam: A method for stochastic optimization."
+                 arXiv preprint arXiv:1412.6980 (2014).            
+        """      
+        if verbose>=3 :
+            print "... Applying ADAM"
+
+        one = T.constant(1)          
+        t_accumulate = theano.shared(np.asarray(0., dtype = theano.config.floatX))
+        t_current = t_accumulate + 1
+        a_current = self.learning_rate * T.sqrt( one - beta ** t_current ) / (one-rho ** t_current)
+
+        for param, gradient in zip(self.params, self.gradients):
+            if verbose >=3 :           
+                print "... Momentum of parameter " , 
+                print param             
+            m_accumulate = theano.shared(np.zeros(param.shape.eval(), dtype=theano.config.floatX))
+            v_accumulate = theano.shared(np.zeros(param.shape.eval(), dtype=theano.config.floatX))
+            m_current = rho * m_accumulate + (one-rho) * gradient
+            v_current = beta * v_accumulate + (one-beta) * gradient ** 2
+            step = a_current * m_current / (T.sqrt(v_current) + 1e-8)
+            self.updates[m_accumulate] = m_current
+            self.updates[v_accumulate] = v_current
+            self.updates[param] = param - step
+
+        self.updates[t_accumulate] = t_current
+     
+    def _sgd (self, verbose = 1):
+        """
+        Apply sgd updates.
+
+        Args: 
+            verbose: is as usual
+        """
+        if verbose>=3 :
+            print "... Applying SGD"        
+        for param, gradient in zip (self.params, self.gradients):
+            if verbose >=3 :           
+                print "... Backprop of parameter " , 
+                print param             
+            self.updates[param] = param  - self.learning_rate  * gradient
+
+    def _rmsprop (self, rho=0.9, verbose = 1):
+        """
+        Apply rmsprop updates.
+
+        Args: 
+            rho: suppy as was mentioned in the slides.
+            verbose: is as usual
+
+        Notes: 
+            Applied as per:
+                [1] Tieleman, T. and Hinton, G. (2012):
+                Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
+                Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)
+        """     
+        if verbose>=3 :
+            print "... Applying RMSPROP"        
+        accumulator =[]
+        one = T.constant(1)
+        for param in self.params:
+            if verbose >=3 :           
+                print "... Accumulating gradinent of parameter " , 
+                print param 
+            eps = np.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)
+            accumulator.append(theano.shared(eps, borrow=True))
+
+        for param, gradient, accumulate in zip(self.params, self.gradients, accumulator):
+            if verbose >=3 :           
+                print "... Backprop of parameter " , 
+                print param             
+            current_accumulate = rho * accumulate + (one - rho) * T.sqr(gradient)
+            self.updates[accumulate] = current_accumulate
+            self.updates[param] = param - (self.learning_rate * gradient / T. sqrt ( \
+                                                        current_accumulate + 1e-8 ))
+                        
+    def _adagrad (self, verbose = 1):
+        """
+        Apply adagrad updates.
+
+        Args: 
+            verbose: is as usual
+
+        Notes: 
+            Applied as per:
+                John Duchi, Elad Hazan, and Yoram Singer. 2011. Adaptive subgradient methods
+                for online learning and stochastic optimization. JMLR
+        """     
+        if verbose>=3 :
+            print "... Applying AdaGrad"        
+        accumulator =[]
+        one = T.constant(1)
+        for param in self.params:
+            if verbose >=3 :           
+                print "... Accumulating gradinent of parameter " , 
+                print param 
+            eps = np.zeros_like(param.get_value(borrow=True), dtype=theano.config.floatX)
+            accumulator.append(theano.shared(eps, borrow=True))
+
+        for param, gradient, accumulate in zip(self.params, self.gradients, accumulator):
+            if verbose >=3 :           
+                print "... Backprop of parameter " , 
+                print param             
+            current_accumulate = accumulate +  T.sqr(gradient)
+            self.updates[accumulate] = current_accumulate
+            self.updates[param] = param - (self.learning_rate * gradient / T. sqrt ( \
+                                                        current_accumulate + 1e-8 ))
+
+        
+    def _adadelta (self, rho = 0.95, verbose = 1 ):
+        """
+        Apply adadelta updates.
+
+        Args:
+            rho: As described in paper.
+            verbose: As usual
+        
+        Notes:
+            Zeiler, Matthew D. "ADADELTA: an adaptive learning rate method." arXiv preprint 
+            arXiv:1212.5701 (2012).
+        """
+        one = T.constant(1)
+        if verbose>=3 :
+            print "... Applying AdaDelta"  
+        for param, gradient in zip(self.params, self.gradients):
+            accumulate = theano.shared(np.zeros(param.shape.eval(), dtype=theano.config.floatX))
+            delta = theano.shared(np.zeros(param.shape.eval(), dtype=theano.config.floatX))
+            current_accumulate = rho * accumulate + (one - rho) * gradient ** 2
+            self.updates[accumulate] = current_accumulate
+            step = (gradient * T.sqrt(delta + 1e-8) / T.sqrt(current_accumulate + 1e-8))
+            self.updates[param] = param - self.learning_rate * step
+            current_delta = rho * delta + (one - rho) * step ** 2
+            self.updates[delta] = current_delta
+
+    def _constrain (self, verbose = 1):
+        """
+        constrain the norms of the COLUMNs of the weight, according to
+        https://github.com/BVLC/caffe/issues/109      
+
+        Args:
+            verbose: As usual    
+        """
+        if verbose >= 3:
+            print ("... Applying constraints")
+        for param in self.params:
+            if param.get_value(borrow=True).ndim == 2: 
+                col_norms = T.sqrt(T.sum(T.sqr(self.updates[param]), axis=0))
                 desired_norms = T.clip(col_norms, 0, T.sqrt(15))
-                scale = desired_norms / (fudge_factor + col_norms)
-                self.updates[param] = stepped_param * scale
-            else:
-                self.updates[param] = stepped_param
+                scale = desired_norms / (1e-8 + col_norms)
+                self.updates[param] = self.updates[param] * scale
+      
+    def create_updates(self, verbose = 1):
+        """
+        This basically creates all the updates and update functions which trainers can iterate
+        upon.
 
-        if self.optimizer_type == 'adam':
-           self.updates[timestep] = delta_t
+        Args:
+            verbose: Just as always
+        """
+        if verbose>=3 :
+            print "... Creating backprop"        
+        self.updates = OrderedDict()
 
 
+        if verbose >=3 :
+            print "... Applying " + self.optimizer_type
+            print "... Applying " + self.momentum_type
+
+        if self.optimizer_type == 'adagrad':
+            self._adagrad(verbose = verbose)
+        elif self.optimizer_type == 'rmsprop':
+            self._rmsprop(verbose = verbose)
+        elif self.optimizer_type == 'sgd':
+            self._sgd(verbose = verbose)
+        elif self.optimizer_type == 'adam':
+            self._adam(verbose = verbose)
+        elif self.optimizer_type == 'adadelta':
+            self._adadelta(verbose = verbose)
+        else:
+            self._sgd(verbose = verbose)
+
+        if self.momentum_type == 'polyak':       
+            self._polyak(verbose = verbose)
+        if self.momentum_type == 'nesterov':      
+            self._nesterov(verbose = verbose)
+        
+        self._constrain(verbose = verbose)
 if __name__ == '__main__':
     pass

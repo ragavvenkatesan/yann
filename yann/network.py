@@ -25,6 +25,18 @@ import theano.tensor as T
 import yann
 from yann.core.operators import copy_params
 
+def _sink ( **kwargs ):
+    """
+    This function is a dummy for theano functions to return ``None``
+
+    Args:
+        Takes any input and returns ``None``
+
+    Returns:
+        None
+    """
+    return None
+
 max_neurons_to_display = 7
 
 class network(object):
@@ -1077,7 +1089,7 @@ class network(object):
             verbose: as usual
         """
         if verbose >= 3:
-            print("... Adding a flatten layer")
+            print("... Adding an unflatten layer")
         if not 'origin' in options.keys():
             if self.last_layer_created is None:
                 raise Exception("You can't create a flatten without a layer to flatten.")
@@ -2186,14 +2198,17 @@ class network(object):
                         name = 'annealing',
                         updates={self.learning_rate: self.learning_rate - self.learning_rate *
                                                                             anneal_rate })
-        self.current_momentum = theano.function ( inputs =[optimizer.epoch],
-                                                         outputs = optimizer.momentum,
-                                                         name = 'momentum' )
-
-        optimizer.calculate_gradients(params = params,
+        optimizer.calculate_gradients( params = params,
                                        objective = objective,
                                        verbose = verbose)
-        optimizer.create_updates (params = params, verbose = verbose)
+        optimizer.create_updates ( verbose = verbose)
+
+        if not optimizer.momentum is None:
+            self.current_momentum = theano.function ( inputs =[optimizer.epoch],
+                                                            outputs = optimizer.momentum,
+                                                            name = 'momentum' )
+        else:
+            self.current_momentum = _sink
 
         # add layer specific updates on to the main optimizer updates.
         for lyr in self.dropout_layers:
@@ -2415,6 +2430,24 @@ class network(object):
             self.visualize_activities(epoch = epoch, verbose = verbose)
             self.visualize_filters(epoch = epoch, verbose = verbose)
 
+    def _cook_cost (self, objective_layers, objective_weights, verbose = 2):
+        """
+        This method will cook costs 
+
+        Args: 
+            objective_layers: 
+            verbose : as usual
+        """
+        if verbose >= 3:
+            print ("... Cooking cost")
+
+        self.layer_cost = 0
+        self.dropout_cost = 0
+        for lyr, weight in zip(objective_layers, objective_weights):
+            self.layer_cost = self.layer_cost + weight * self.layers[lyr].output
+            self.dropout_cost = self.dropout_cost + weight * self.dropout_layers[lyr].output
+        self.cost = []
+
     def cook(self, verbose = 2, **kwargs):
         """
         This function builds the backprop network, and makes the trainer, tester and validator
@@ -2565,13 +2598,9 @@ class network(object):
         if verbose >=2 :
             print (".. All checks complete, cooking continues" )
 
-        self.layer_cost = 0
-        self.dropout_cost = 0
-        for lyr, weight in zip(objective_layers, objective_weights):
-            self.layer_cost = self.layer_cost + weight * self.layers[lyr].output
-            self.dropout_cost = self.dropout_cost + weight * self.dropout_layers[lyr].output
-
-        self.cost = []
+        self._cook_cost ( objective_layers = objective_layers,
+                          objective_weights = objective_weights,
+                          verbose = verbose)
         self._cook_datastream(verbose = verbose)
         self._cook_optimizer(params = params,
                              optimizer = self.cooked_optimizer,
@@ -2597,18 +2626,7 @@ class network(object):
         self._cook_visualizer(verbose = verbose) # always cook visualizer last.
         self.visualize (epoch = 0, verbose = verbose)
 
-        self.validation_accuracy = []
-        self.best_validation_errors = numpy.inf
-        self.best_training_errors = numpy.inf
-        self.training_accuracy = []
-        self.best_params = []
-        # Let's bother only about learnable params. This avoids the problem when weights are
-        # shared
-
-        for param in params:
-            self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
-
-    def print_status (self, epoch , print_lr = False, verbose = 2):
+    def print_status (self, epoch,  print_lr = False, verbose = 2):
         """
         This function prints the cost of the current epoch, learning rate and momentum of the
         network at the moment. This also calls the resultor to process results.
@@ -2631,13 +2649,16 @@ class network(object):
                                 self.batches2train * self.mini_batches_per_batch[0]:])
 
         lr = self.learning_rate.get_value(borrow =  self.borrow)
-        mom = self.current_momentum(epoch)
+        if not self.cooked_optimizer.momentum is None:
+            mom = self.current_momentum(epoch = epoch)
+        else:
+            mom = None
 
         if print_lr is True:
             verbose = 3
         self.cooked_resultor.process_results(cost = cost,
                                            lr = lr,
-                                           mom = mom,                                           
+                                           mom = mom, 
                                            verbose = verbose)
 
     def _print_layer (self, id, prefix = " ", nest = True, last = True):
@@ -2695,7 +2716,7 @@ class network(object):
         """
         best = False
         if  not (epoch % self.validate_after_epochs == 0) :
-            return best
+            return (False, False)
 
         validation_errors = 0
         training_errors = 0
@@ -2822,9 +2843,11 @@ class network(object):
                 if verbose >= 2:
                     print(".. Best validation error")
 
-        return best
+        better = False
+        if validation_errors > self.best_validation_errors * 0.95:
+            better = True
 
-
+        return (best, better)
 
     def train(self, verbose = 2, **kwargs):
         """
@@ -2886,7 +2909,7 @@ class network(object):
             training_accuracy = kwargs["training_accuracy"]
 
         if not 'early_terminate' in kwargs.keys():
-            patience = 2
+            patience = 10
         else:
             if kwargs["early_terminate"] is False:
                 patience = numpy.inf
@@ -2905,12 +2928,22 @@ class network(object):
 
         self.learning_rate.set_value(learning_rates[1])
         patience_increase = 2
-        improvement_threshold = 0.995
         best_iteration = 0
         epoch_counter = 0
         early_termination = False
         iteration= 0
         era = 0  
+        self.validation_accuracy = []
+        self.best_validation_errors = numpy.inf
+        self.best_training_errors = numpy.inf
+        self.training_accuracy = []
+        self.best_params = []
+        # Let's bother only about learnable params. This avoids the problem when weights are
+        # shared
+
+        for param in self.active_params:
+            self.best_params.append(theano.shared(param.get_value(borrow = self.borrow)))
+                    
         if isinstance(epochs, int):
             total_epochs = epochs
             change_era = epochs + 1
@@ -2999,7 +3032,7 @@ class network(object):
 
             # post training items for one loop of batches.
             if nan_flag is False:
-                best = self.validate(   epoch = epoch_counter,
+                best, better = self.validate(   epoch = epoch_counter,
                                         training_accuracy = training_accuracy,
                                         show_progress = show_progress,
                                         verbose = verbose )
@@ -3016,6 +3049,11 @@ class network(object):
                 # self.resultor.something() # this function is dummy now. But resultor should use
                 # self.visualizer.soemthing() # Again visualizer shoudl do something.
                 self.decay_learning_rate(learning_rates[0])
+
+                if better is True:
+                    patience = max(patience, epoch_counter + patience_increase)
+                    if verbose >= 3:
+                        print ("... Patience :" + str(patience))
 
                 if patience < epoch_counter:
                     early_termination = True
