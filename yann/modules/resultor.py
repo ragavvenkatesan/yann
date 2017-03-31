@@ -215,7 +215,7 @@ class resultor(module):
         fig = plt.figure(figsize=(4, 4), dpi=1200)
         plt.matshow(confusion)
         for (i, j), z in numpy.ndenumerate(confusion):
-            plt.text(j, i, '{:0.2f}'.format(z), ha='center', va='center', fontsize=10, color = 'm') 
+            plt.text(j, i, '{:0.2f}'.format(z), ha='center', va='center', fontsize=5, color = 'm') 
 
         plt.title('Accuracy: ' + str(int(corrects)) + '/' + str(int(total_samples)) + \
                                                 ' = ' + str(round(accuracy,2)) + '%')
