@@ -31,6 +31,10 @@ class gan (network):
     This class is inherited from the network class and has its own methods modified in support of gan
     networks.
 
+    Todo:
+        Sumith Chintala says that its better to seperate generator and dataset when training 
+        discriminator. Do that. 
+        
     Args:
         Same as the network class
     """
