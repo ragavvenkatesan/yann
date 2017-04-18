@@ -43,9 +43,6 @@ class network(object):
     """
     Todo:
 
-        * Origin to be taken from another network outside of this one.
-        * Need to expand beyond just ``classifier`` type networks.
-
     Class definition for the class :mod:`network`:
 
     All network properties, network variables and functionalities are initialized using this
