@@ -1,62 +1,76 @@
 import unittest
-import numpy as np
+import numpy
 import theano
-import theano.tensor as T
 from yann.layers.input import input_layer as il
-from yann.network import network
-
-
+from yann.layers.input import dropout_input_layer as dil
+from yann.layers.input import tensor_layer as tl
+from yann.layers.input import dropout_tensor_layer as dtl
+import yann
 class TestInput(unittest.TestCase):
-    def setUp(self):
-        self.verbose = 3
-        from yann.special.datasets import cook_mnist
-        data = cook_mnist (verbose = self.verbose)
-        self.dataset = data.dataset_location()
-        self.dataset_id = data.id
-        dataset_params  = {
-                        "dataset"   :  self.dataset,
-                        "svm"       :  False, 
-                        "n_classes" : 10,
-                        "id"        : 'data'
-                }
 
-        self.dataset_size = data.mini_batch_size
-        self.dataset_height = data.height
-        self.dataset_width = data.width
-        self.dataset_channels = data.channels
-        self.dataset_params  = {
-                        "dataset"   :  self.dataset,
-                        "svm"       :  False, 
-                        "n_classes" : 10,
-                        "id"        : 'data'
-                }               
-        from yann.modules.datastream import datastream
-        self.datastream = {}
-        self.datastream[0] = datastream ( dataset_init_args = self.dataset_params, verbose = self.verbose)
-    def test_dataset(self):
-    #    self.layer = il(
-    #                     x = self.datastream[0].x,
-    #                     mini_batch_size = self.dataset_size,
-    #                     id = self.dataset_id,
-    #                     height = self.dataset_height,
-    #                     width = self.dataset_width,
-    #                     channels = self.dataset_channels,
-    #                     mean_subtract = False,
-    #                     verbose = self.verbose)
-           self.layer = il(
-                        x = self.datastream[0].x,
-                        mini_batch_size = self.datastream[0].mini_batch_size,
-                        id = self.datastream[0].id,
-                        height = self.datastream[0].height,
-                        width = self.datastream[0].width,
-                        channels = self.datastream[0].channels,
-                        mean_subtract = False,
-                        verbose = self.verbose)
-        #    print(self.layer.id)
-        #    print(self.layer.print_layer("", True, True ))
-        #    print(self.layer.output_shape)
-           self.assertEqual(self.layer.id,"data")
-        #    net = network(   borrow = True,
-        #              verbose = self.verbose ) 
-        #    net.add_layer(self.layer)
-        #    net.pretty_print()
+    def setUp(self):
+        numpy.random.seed(0)
+        self.verbose = 3
+        self.input_layer_name = "input"
+        self.input_dropout_layer_name = "dinput"
+        self.input_tensor_layer_name = "tinput"
+        self.input_dropout_tensor_layer_name = "dtinput"
+        self.dropout_rate = 1
+        self.rng = None
+        self.mean_subtract = False
+        self.input_shape = (1,1,10,10)
+        self.input_ndarray = numpy.random.rand(1,1,10,10)
+        self.output_dropout_ndarray= numpy.zeros((1,1,10,10))
+        self.input_tensor = theano.shared(self.input_ndarray)
+    def test1_input_layer(self):
+        self.layer = il(
+                x = self.input_tensor,
+                mini_batch_size = self.input_ndarray.shape[0],
+                id = self.input_layer_name,
+                height = self.input_ndarray.shape[2],
+                width = self.input_ndarray.shape[3],
+                channels = self.input_ndarray.shape[1],
+                mean_subtract = self.mean_subtract,
+                verbose = self.verbose)
+        self.assertTrue(numpy.allclose(self.layer.output.eval(), self.input_ndarray))
+        self.assertEqual(self.layer.output_shape,self.input_ndarray.shape)
+        self.assertEqual(self.layer.id,self.input_layer_name)
+
+    def test2_dropout_input_layert(self):
+        self.dlayer = dil(
+                x = self.input_tensor,
+                mini_batch_size = self.input_ndarray.shape[0],
+                id = self.input_dropout_layer_name,
+                height = self.input_ndarray.shape[2],
+                width = self.input_ndarray.shape[3],
+                channels = self.input_ndarray.shape[1],
+                mean_subtract = self.mean_subtract,
+                dropout_rate= self.dropout_rate,
+                verbose = self.verbose)
+        self.assertTrue(numpy.allclose(self.dlayer.output.eval(), self.output_dropout_ndarray))
+        self.assertEqual(self.dlayer.output_shape,self.input_ndarray.shape)
+        self.assertEqual(self.dlayer.id,self.input_dropout_layer_name)
+
+    def test3_tensor_layer(self):
+        self.tlayer = tl(
+                id = self.input_tensor_layer_name,
+                input = self.input_tensor,
+                input_shape = self.input_shape,
+                verbose = self.verbose)
+        self.assertTrue(numpy.allclose(self.tlayer.output.eval(), self.input_ndarray))
+        self.assertEqual(self.tlayer.output_shape,self.input_ndarray.shape)
+        self.assertEqual(self.tlayer.id,self.input_tensor_layer_name)
+
+    def test4_dropout_tensor_layer(self):
+        self.dtlayer = dtl(
+                dropout_rate = self.dropout_rate,
+                rng = self.rng,
+                id = self.input_dropout_tensor_layer_name,
+                input = self.input_tensor,
+                input_shape = self.input_shape,
+                verbose = self.verbose)
+
+        self.assertTrue(numpy.allclose(self.dtlayer.output.eval(), self.output_dropout_ndarray))
+        self.assertEqual(self.dtlayer.output_shape,self.input_ndarray.shape)
+        self.assertEqual(self.dtlayer.id,self.input_dropout_tensor_layer_name)
+
