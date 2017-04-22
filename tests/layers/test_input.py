@@ -1,7 +1,6 @@
 import unittest
 import numpy
 import theano
-import theano.sandbox.cuda
 from yann.layers.input import input_layer as il
 from yann.layers.input import dropout_input_layer as dil
 from yann.layers.input import tensor_layer as tl
