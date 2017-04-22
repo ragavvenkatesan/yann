@@ -1,11 +1,17 @@
 import unittest
 import numpy
 import theano
+import theano.sandbox.cuda
 from yann.layers.input import input_layer as il
 from yann.layers.input import dropout_input_layer as dil
 from yann.layers.input import tensor_layer as tl
 from yann.layers.input import dropout_tensor_layer as dtl
-import yann
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock,patch
+
+
 class TestInput(unittest.TestCase):
 
     def setUp(self):
@@ -22,6 +28,7 @@ class TestInput(unittest.TestCase):
         self.input_ndarray = numpy.random.rand(1,1,10,10)
         self.output_dropout_ndarray= numpy.zeros((1,1,10,10))
         self.input_tensor = theano.shared(self.input_ndarray)
+
     def test1_input_layer(self):
         self.layer = il(
                 x = self.input_tensor,
@@ -33,10 +40,13 @@ class TestInput(unittest.TestCase):
                 mean_subtract = self.mean_subtract,
                 verbose = self.verbose)
         self.assertTrue(numpy.allclose(self.layer.output.eval(), self.input_ndarray))
+        self.assertTrue(numpy.allclose(self.layer.inference.eval(), self.input_ndarray))
         self.assertEqual(self.layer.output_shape,self.input_ndarray.shape)
         self.assertEqual(self.layer.id,self.input_layer_name)
 
-    def test2_dropout_input_layert(self):
+    @patch('yann.layers.input._dropout')
+    def test2_dropout_input_layert(self,mock_dropout):
+        mock_dropout.return_value = self.input_ndarray
         self.dlayer = dil(
                 x = self.input_tensor,
                 mini_batch_size = self.input_ndarray.shape[0],
@@ -47,7 +57,7 @@ class TestInput(unittest.TestCase):
                 mean_subtract = self.mean_subtract,
                 dropout_rate= self.dropout_rate,
                 verbose = self.verbose)
-        self.assertTrue(numpy.allclose(self.dlayer.output.eval(), self.output_dropout_ndarray))
+        self.assertTrue(numpy.allclose(self.dlayer.output, self.input_ndarray))
         self.assertEqual(self.dlayer.output_shape,self.input_ndarray.shape)
         self.assertEqual(self.dlayer.id,self.input_dropout_layer_name)
 
@@ -58,10 +68,13 @@ class TestInput(unittest.TestCase):
                 input_shape = self.input_shape,
                 verbose = self.verbose)
         self.assertTrue(numpy.allclose(self.tlayer.output.eval(), self.input_ndarray))
+        self.assertTrue(numpy.allclose(self.tlayer.inference.eval(), self.input_ndarray))
         self.assertEqual(self.tlayer.output_shape,self.input_ndarray.shape)
         self.assertEqual(self.tlayer.id,self.input_tensor_layer_name)
 
-    def test4_dropout_tensor_layer(self):
+    @patch('yann.layers.input._dropout')
+    def test4_dropout_tensor_layer(self,mock_dropout):
+        mock_dropout.return_value = self.input_ndarray
         self.dtlayer = dtl(
                 dropout_rate = self.dropout_rate,
                 rng = self.rng,
@@ -69,8 +82,6 @@ class TestInput(unittest.TestCase):
                 input = self.input_tensor,
                 input_shape = self.input_shape,
                 verbose = self.verbose)
-
-        self.assertTrue(numpy.allclose(self.dtlayer.output.eval(), self.output_dropout_ndarray))
+        self.assertTrue(numpy.allclose(self.dtlayer.output, self.input_ndarray))
         self.assertEqual(self.dtlayer.output_shape,self.input_ndarray.shape)
         self.assertEqual(self.dtlayer.id,self.input_dropout_tensor_layer_name)
-
