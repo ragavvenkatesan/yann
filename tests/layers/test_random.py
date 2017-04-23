@@ -6,6 +6,7 @@ try:
     from unittest.mock import Mock
 except ImportError:
     from mock import Mock,patch
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 class TestRandom(unittest.TestCase):
     def setUp(self):
@@ -33,9 +34,13 @@ class TestRandom(unittest.TestCase):
         self.output_shape = (self.input_shape[0], self.classes)
         self.sample = numpy.ones((1,1,2,2))
         self.input_params_all = (self.sample,self.sample)
+        rng = numpy.random
+        self.rs = RandomStreams(rng.randint(1,2147462468))
 
+    @patch('yann.layers.random.RandomStreams')
     @patch('yann.layers.random.RandomStreams.binomial')
-    def test1_random_binomial(self,mock_binomial):
+    def test1_random_binomial(self,mock_binomial,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_binomial.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
