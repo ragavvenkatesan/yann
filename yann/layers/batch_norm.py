@@ -255,6 +255,7 @@ class dropout_batch_norm_layer_1d(batch_norm_layer_2d):
                    input_shape,
                    id,
                    rng = None,
+                   borrow = True,
                    input_params = None,
                    dropout_rate = 0,
                    verbose = 2,
