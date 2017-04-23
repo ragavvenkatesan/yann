@@ -52,9 +52,10 @@ class TestRandom(unittest.TestCase):
         self.assertEqual(self.random_layer.id,self.random_layer_name)
         self.assertTrue(numpy.allclose(self.random_layer.output,self.input_ndarray))
 
-
+    @patch('yann.layers.random.RandomStreams')
     @patch('yann.layers.random.RandomStreams.binomial')
-    def test2_random_binomial_p(self,mock_binomial):
+    def test2_random_binomial_p(self,mock_binomial,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_binomial.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
@@ -66,8 +67,10 @@ class TestRandom(unittest.TestCase):
         self.assertEqual(self.random_layer.id,self.random_layer_name)
         self.assertTrue(numpy.allclose(self.random_layer.output,self.input_ndarray))
 
+    @patch('yann.layers.random.RandomStreams')
     @patch('yann.layers.random.RandomStreams.uniform')
-    def test3_random_uniform(self,mock_uniform):
+    def test3_random_uniform(self,mock_uniform,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_uniform.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
@@ -79,9 +82,10 @@ class TestRandom(unittest.TestCase):
         self.assertEqual(self.random_layer.id,self.random_layer_name)
         self.assertTrue(numpy.allclose(self.random_layer.output,self.input_ndarray))
 
-
+    @patch('yann.layers.random.RandomStreams')
     @patch('yann.layers.random.RandomStreams.uniform')
-    def test4_random_uniform_limits(self,mock_uniform):
+    def test4_random_uniform_limits(self,mock_uniform,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_uniform.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
@@ -93,8 +97,10 @@ class TestRandom(unittest.TestCase):
         self.assertEqual(self.random_layer.id,self.random_layer_name)
         self.assertTrue(numpy.allclose(self.random_layer.output,self.input_ndarray))
 
+    @patch('yann.layers.random.RandomStreams')   
     @patch('yann.layers.random.RandomStreams.normal')
-    def test5_random_gaussian(self,mock_normal):
+    def test5_random_gaussian(self,mock_normal,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_normal.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
@@ -106,8 +112,10 @@ class TestRandom(unittest.TestCase):
         self.assertEqual(self.random_layer.id,self.random_layer_name)
         self.assertTrue(numpy.allclose(self.random_layer.output,self.input_ndarray))
 
+    @patch('yann.layers.random.RandomStreams')
     @patch('yann.layers.random.RandomStreams.normal')
-    def test6_random_normal(self,mock_normal):
+    def test6_random_normal(self,mock_normal,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_normal.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
@@ -120,8 +128,10 @@ class TestRandom(unittest.TestCase):
         self.assertTrue(numpy.allclose(self.random_layer.output,self.input_ndarray))
 
 
+    @patch('yann.layers.random.RandomStreams')
     @patch('yann.layers.random.RandomStreams.normal')
-    def test7_random_normal_mu_sigma(self,mock_normal):
+    def test7_random_normal_mu_sigma(self,mock_normal,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_normal.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
@@ -133,8 +143,10 @@ class TestRandom(unittest.TestCase):
         self.assertEqual(self.random_layer.id,self.random_layer_name)
         self.assertTrue(numpy.allclose(self.random_layer.output,self.input_ndarray))
 
+    @patch('yann.layers.random.RandomStreams')
     @patch('yann.layers.random.RandomStreams.normal')
-    def test7_random_gaussian_mu_sigma(self,mock_normal):
+    def test7_random_gaussian_mu_sigma(self,mock_normal,mock_random_streams):
+        mock_random_streams.return_value = self.rs
         mock_normal.return_value = self.input_ndarray
         self.random_layer = rl(
                     num_neurons=10,
