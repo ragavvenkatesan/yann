@@ -1,3 +1,4 @@
+#Mixed out  code in activations has error
 """
 test_activations.py - Unit tests for YANN core activation functions
 defined in yann/core/activations.py
@@ -8,6 +9,10 @@ import numpy as np
 import theano
 import theano.tensor as T
 import yann.core.activations as A
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock,patch
 
 
 class TestActivations(unittest.TestCase):
@@ -31,6 +36,13 @@ class TestActivations(unittest.TestCase):
                                      [-1, 2, -3, 4, 5],
                                      [-1, 2, -3, 4, 5]],
                                     dtype=theano.config.floatX)
+        np.random.seed(0)
+        self.input_size = (1,1,10,10)
+        self.input_size_min = (1,1)
+        self.input_ndarray = np.random.rand(1, 1, 5, 5)
+        self.input_tensor = theano.shared(self.input_ndarray)
+        self.input_zeros = np.zeros((1,1,5,5))
+        self.maxout_size = 1
 
     def test_abs(self):
         expected_array = np.array([[1.,  2.,  3.,  4.,  5.],
@@ -122,3 +134,36 @@ class TestActivations(unittest.TestCase):
         theano_result = A.Squared(self.theano_input).eval({self.theano_input: self.numpy_input})
         self.assertEqual(theano_result.shape, expected_array.shape)
         self.assertTrue(np.allclose(theano_result, expected_array))
+
+    def test__max1d_stride(self):
+        self.assertTrue(np.allclose(A._max1d_stride(self.theano_input,0,1).eval({self.theano_input: self.numpy_input}),self.numpy_input))
+
+    def test__max2d_stride(self):
+        self.assertTrue(np.allclose(A._max2d_stride(self.input_ndarray,0,1),self.input_ndarray))
+
+
+    def test_maxout(self):
+        out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'maxout', dimension = 2)
+        self.assertTrue(np.allclose(out, self.input_zeros))
+        self.assertTrue(out_shp,self.input_size)
+
+    def test_meanout(self):
+        out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'meanout', dimension = 2)
+        self.assertTrue(np.allclose(out, self.input_zeros))
+        self.assertTrue(out_shp,self.input_size)
+
+    #def test_mixedout(self):
+    #    out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'mixedout', dimension = 2)
+    #    self.assertTrue(np.allclose(out, self.input_zeros))
+    #    self.assertTrue(out_shp,self.input_size)
+
+
+    def test_maxout(self):
+        out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size_min, type = 'maxout', dimension = 1)
+        self.assertTrue(np.allclose(out, self.input_zeros))
+        self.assertTrue(out_shp,self.input_size_min)
+
+    def test_meanout(self):
+        out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size_min, type = 'meanout', dimension = 1)
+        self.assertTrue(np.allclose(out, self.input_zeros))
+        self.assertTrue(out_shp,self.input_size_min)
