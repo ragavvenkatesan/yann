@@ -43,5 +43,5 @@ class unflatten_layer (layer):
         self.output_shape = (input_shape[0], shape[2], shape[0], shape[1])
         self.inference = self.output
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

@@ -1,4 +1,3 @@
-# dropout_batch_norm_layer_2d and 1d has issue with borrow
 import unittest
 import numpy
 import theano
@@ -86,21 +85,21 @@ class TestBtachNorm2d(unittest.TestCase):
         self.assertTrue(numpy.allclose(self.batch_norm_layer_2d_val.output,self.output_train))
         self.assertTrue(numpy.allclose(self.batch_norm_layer_2d_val.inference,self.output_test))
 
-    # @patch('yann.layers.batch_norm._dropout')
-    # def test3_dropout_batch_norm_layer_2d(self,mock_dropout):
-    #     mock_dropout.return_value = self.input_ndarray
-    #     self.dropout_batch_norm_layer_2d = dbn(
-    #                         input = self.input_tensor,
-    #                         id = self.dropout_batch_norm_layer_2,
-    #                         input_shape = self.input_shape,
-    #                         rng = self.rng,
-    #                         input_params = None,
-    #                         dropout_rate= self.dropout_rate,
-    #                         verbose = self.verbose
-    #     )
-    #     self.assertTrue(numpy.allclose(self.dropout_batch_norm_layer_2d.output, self.input_ndarray))
-    #     self.assertEqual(self.dropout_batch_norm_layer_2d.output_shape,self.input_ndarray.shape)
-    #     self.assertEqual(self.dropout_batch_norm_layer_2d.id,self.dropout_batch_norm_layer_2)
+    @patch('yann.layers.batch_norm._dropout')
+    def test3_dropout_batch_norm_layer_2d(self,mock_dropout):
+        mock_dropout.return_value = self.input_ndarray
+        self.dropout_batch_norm_layer_2d = dbn(
+                            input = self.input_tensor,
+                            id = self.dropout_batch_norm_layer_2,
+                            input_shape = self.input_shape,
+                            rng = self.rng,
+                            input_params = None,
+                            dropout_rate= self.dropout_rate,
+                            verbose = self.verbose
+        )
+        self.assertTrue(numpy.allclose(self.dropout_batch_norm_layer_2d.output, self.input_ndarray))
+        self.assertEqual(self.dropout_batch_norm_layer_2d.output_shape,self.input_ndarray.shape)
+        self.assertEqual(self.dropout_batch_norm_layer_2d.id,self.dropout_batch_norm_layer_2)
 
     @patch('theano.tensor.unbroadcast')
     @patch('yann.layers.batch_norm.batch_normalization_test')
@@ -148,21 +147,21 @@ class TestBtachNorm2d(unittest.TestCase):
         self.assertTrue(numpy.allclose(self.batch_norm_layer_1d.inference,self.output_test))
 
 
-    # @patch('yann.layers.batch_norm._dropout')
-    # def test6_dropout_batch_norm_layer_1d(self,mock_dropout):
-    #     mock_dropout.return_value = self.input_ndarray
-    #     self.dropout_batch_norm_layer_1d = dbn1(
-    #                         input = self.input_tensor,
-    #                         id = self.dropout_batch_norm_layer_1,
-    #                         input_shape = self.input_shape,
-    #                         rng = self.rng,
-    #                         input_params = None,
-    #                         dropout_rate= self.dropout_rate,
-    #                         verbose = self.verbose,
-    #                         borrow = self.borrow
-    #     )
-    #     self.assertTrue(numpy.allclose(self.dropout_batch_norm_layer_1d.output, self.input_ndarray))
-    #     self.assertEqual(self.dropout_batch_norm_layer_1d.output_shape,self.input_ndarray.shape)
-    #     self.assertEqual(self.dropout_batch_norm_layer_1d.id,self.dropout_batch_norm_layer_1)
+    @patch('yann.layers.batch_norm._dropout')
+    def test6_dropout_batch_norm_layer_1d(self,mock_dropout):
+        mock_dropout.return_value = self.input_ndarray
+        self.dropout_batch_norm_layer_1d = dbn1(
+                            input = self.input_tensor,
+                            id = self.dropout_batch_norm_layer_1,
+                            input_shape = self.input_shape,
+                            rng = self.rng,
+                            input_params = None,
+                            dropout_rate= self.dropout_rate,
+                            verbose = self.verbose,
+                            borrow = self.borrow
+        )
+        self.assertTrue(numpy.allclose(self.dropout_batch_norm_layer_1d.output, self.input_ndarray))
+        self.assertEqual(self.dropout_batch_norm_layer_1d.output_shape,self.input_ndarray.shape)
+        self.assertEqual(self.dropout_batch_norm_layer_1d.id,self.dropout_batch_norm_layer_1)
 
 

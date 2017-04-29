@@ -1,6 +1,7 @@
 import unittest
 import numpy
 import theano
+import theano.tensor as T
 from yann.layers.abstract import layer as l,_dropout,_activate
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
@@ -112,3 +113,87 @@ class TestAbstract(unittest.TestCase):
         mock_softmax.return_value = self.input_ndarray
         self.out,self.out_shape = _activate(self.input_ndarray,("softmax",1),self.input_shape,self.verbose)
         self.assertTrue(numpy.allclose(self.out,self.input_ndarray))
+
+
+    def test13_abstract_layer_print_layer(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "conv",
+                verbose = self.verbose)
+        self.attributes = self.layer._graph_attributes()
+        self.layer.output_shape = self.input_shape
+        self.layer.origin =  "input"
+        self.layer.destination = "classifier"
+        self.layer.batch_norm = True
+        self.layer.print_layer(prefix = " ", nest = False, last = True, verbose = self.verbose)
+        self.assertTrue(len(self.layer.prefix)>0)
+
+    def test14_abstract_layer_print_layer(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "conv",
+                verbose = self.verbose)
+        self.attributes = self.layer._graph_attributes()
+        self.layer.output_shape = self.input_shape
+        self.layer.origin =  "input"
+        self.layer.destination = "classifier"
+        self.layer.batch_norm = False
+        self.layer.print_layer(prefix = " ", nest = False, last = False, verbose = self.verbose)
+        self.assertTrue(len(self.layer.prefix)>0)
+
+    def test15_abstract_layer_print_layer(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "convolution",
+                verbose = self.verbose)
+        self.attributes = self.layer._graph_attributes()
+        self.layer.output_shape = self.input_shape
+        self.layer.origin =  "input"
+        self.layer.destination = "classifier"
+        self.layer.batch_norm = False
+        self.layer.print_layer(prefix = " ", nest = False, last = False, verbose = self.verbose)
+        self.assertTrue(len(self.layer.prefix)>0)
+
+    def test16_abstract_layer_get_params(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "conv",
+                verbose = self.verbose)
+        self.layer.params = [self.input_tensor,self.input_tensor]
+        out = self.layer.get_params(borrow=True,verbose=self.verbose)
+        self.assertTrue(numpy.allclose(out,[self.input_ndarray,self.input_ndarray]))
+
+    def test17_abstract_layer_get_params(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "conv",
+                verbose = self.verbose)
+        self.val = T.dot(self.input_tensor,self.input_tensor)
+        self.layer.params = [self.val]
+        out = self.layer.get_params(borrow=True,verbose=self.verbose)
+        self.assertTrue(numpy.allclose(out,self.val.eval()))
+
+    def test18_abstract_layer_get_params(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "conv",
+                verbose = self.verbose)
+        self.val = T.dot(self.input_tensor,self.input_tensor)
+        self.layer.params = [self.val]
+        self.layer.output_shape = self.input_shape
+        self.layer.num_neurons = 10
+        self.layer.activation = ('ReLu')
+        out = self.layer.get_params(borrow=True,verbose=self.verbose)
+        self.assertTrue(numpy.allclose(out,self.val.eval()))
+
+    def test19_abstract_layer_graph_attributes(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "input",
+                verbose = self.verbose)
+        self.layer.output_shape = self.input_shape
+        self.layer.num_neurons = 10
+        self.layer.activation = ('Relu', 'maxout')
+        self.attributes = self.layer._graph_attributes()
+        self.assertEqual(self.attributes['id'], self.abstract_layer_name)
+        self.assertEqual(self.attributes['num_neurons'], 10)
