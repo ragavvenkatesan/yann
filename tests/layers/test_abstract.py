@@ -143,7 +143,21 @@ class TestAbstract(unittest.TestCase):
         print (self.layer.prefix)
         self.assertTrue(len(self.layer.prefix)>0)
 
-    def test15_abstract_layer_get_params(self):
+    def test15_abstract_layer_print_layer(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "convolution",
+                verbose = self.verbose)
+        self.attributes = self.layer._graph_attributes()
+        self.layer.output_shape = self.input_shape
+        self.layer.origin =  "input"
+        self.layer.destination = "classifier"
+        self.layer.batch_norm = False
+        self.layer.print_layer(prefix = " ", nest = False, last = False, verbose = self.verbose)
+        print (self.layer.prefix)
+        self.assertTrue(len(self.layer.prefix)>0)
+
+    def test16_abstract_layer_get_params(self):
         self.layer = l(
                 id = self.abstract_layer_name,
                 type= "conv",
@@ -152,12 +166,25 @@ class TestAbstract(unittest.TestCase):
         out = self.layer.get_params(borrow=True,verbose=self.verbose)
         self.assertTrue(numpy.allclose(out,[self.input_ndarray,self.input_ndarray]))
 
-    def test16_abstract_layer_get_params(self):
+    def test17_abstract_layer_get_params(self):
         self.layer = l(
                 id = self.abstract_layer_name,
                 type= "conv",
                 verbose = self.verbose)
         self.val = T.dot(self.input_tensor,self.input_tensor)
         self.layer.params = [self.val]
+        out = self.layer.get_params(borrow=True,verbose=self.verbose)
+        self.assertTrue(numpy.allclose(out,self.val.eval()))
+
+    def test18_abstract_layer_get_params(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "conv",
+                verbose = self.verbose)
+        self.val = T.dot(self.input_tensor,self.input_tensor)
+        self.layer.params = [self.val]
+        self.layer.output_shape = self.input_shape
+        self.layer.num_neurons = 10
+        self.layer.activation = ('ReLu')
         out = self.layer.get_params(borrow=True,verbose=self.verbose)
         self.assertTrue(numpy.allclose(out,self.val.eval()))
