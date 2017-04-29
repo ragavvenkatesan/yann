@@ -126,7 +126,6 @@ class TestAbstract(unittest.TestCase):
         self.layer.destination = "classifier"
         self.layer.batch_norm = True
         self.layer.print_layer(prefix = " ", nest = False, last = True, verbose = self.verbose)
-        print (self.layer.prefix)
         self.assertTrue(len(self.layer.prefix)>0)
 
     def test14_abstract_layer_print_layer(self):
@@ -140,7 +139,6 @@ class TestAbstract(unittest.TestCase):
         self.layer.destination = "classifier"
         self.layer.batch_norm = False
         self.layer.print_layer(prefix = " ", nest = False, last = False, verbose = self.verbose)
-        print (self.layer.prefix)
         self.assertTrue(len(self.layer.prefix)>0)
 
     def test15_abstract_layer_print_layer(self):
@@ -154,7 +152,6 @@ class TestAbstract(unittest.TestCase):
         self.layer.destination = "classifier"
         self.layer.batch_norm = False
         self.layer.print_layer(prefix = " ", nest = False, last = False, verbose = self.verbose)
-        print (self.layer.prefix)
         self.assertTrue(len(self.layer.prefix)>0)
 
     def test16_abstract_layer_get_params(self):
@@ -188,3 +185,15 @@ class TestAbstract(unittest.TestCase):
         self.layer.activation = ('ReLu')
         out = self.layer.get_params(borrow=True,verbose=self.verbose)
         self.assertTrue(numpy.allclose(out,self.val.eval()))
+
+    def test19_abstract_layer_graph_attributes(self):
+        self.layer = l(
+                id = self.abstract_layer_name,
+                type= "input",
+                verbose = self.verbose)
+        self.layer.output_shape = self.input_shape
+        self.layer.num_neurons = 10
+        self.layer.activation = ('Relu', 'maxout')
+        self.attributes = self.layer._graph_attributes()
+        self.assertEqual(self.attributes['id'], self.abstract_layer_name)
+        self.assertEqual(self.attributes['num_neurons'], 10)

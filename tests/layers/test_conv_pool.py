@@ -44,7 +44,8 @@ class TestConvPool(unittest.TestCase):
         self.dropout_rate = 1
         self.default_param_value = [1.]
         self.custom_param_value = [1., 1.,1.]
-
+        self.pool_size_mismatch_exception_msg = " Unpool operation not yet supported be deconv layer"
+        self.activation_tuple_exception_msg = "Deconvolution layer does not support maxout activation"
 
     @patch('theano.tensor.unbroadcast')
     @patch('yann.layers.conv_pool._activate')
@@ -257,3 +258,162 @@ class TestConvPool(unittest.TestCase):
                 verbose = self.verbose)
         self.assertTrue(numpy.allclose(self.ddcplayer.output, self.input_ndarray))
         self.assertEqual(self.ddcplayer.id,self.dropout_deconv_pool_layer_2d_name)
+
+    @patch('theano.tensor.unbroadcast')
+    @patch('yann.layers.conv_pool._activate')
+    @patch('yann.layers.conv_pool.batch_normalization_test')
+    @patch('yann.layers.conv_pool.batch_normalization_train')
+    def test11_conv_pool_layer_2d_ip_vals(self,mock_batch_normalization_train,mock_batch_normalization_test,mock_activate,mock_unbroadcast):
+        mock_unbroadcast.return_value = 1
+        mock_activate.return_value = (self.input_ndarray, self.input_shape)
+        mock_batch_normalization_train.return_value = (self.output_train,1,1,1,1)
+        mock_batch_normalization_test.return_value =self.output_test
+        self.conv_pool_layer_2d = cl(
+                            input = self.input_tensor,
+                            id = self.conv_pool_layer_2d_name,
+                            input_shape = self.input_shape,
+                            nkerns=10,
+                            verbose = self.verbose,
+                            input_params= self.input_params,
+                            poolsize= (1,1),
+                            batch_norm = True
+        )
+        self.assertEqual(self.conv_pool_layer_2d.id,self.conv_pool_layer_2d_name)
+        self.assertEqual(self.conv_pool_layer_2d.output_shape,self.input_shape)
+        self.assertTrue(numpy.allclose(self.conv_pool_layer_2d.output,self.input_ndarray))
+        self.assertTrue(numpy.allclose(self.conv_pool_layer_2d.inference,self.input_ndarray))
+
+    @patch('theano.tensor.unbroadcast')
+    @patch('yann.layers.conv_pool._activate')
+    @patch('yann.layers.conv_pool.batch_normalization_test')
+    @patch('yann.layers.conv_pool.batch_normalization_train')
+    def test12_conv_pool_layer_print_layer(self,mock_batch_normalization_train,mock_batch_normalization_test,mock_activate,mock_unbroadcast):
+        mock_unbroadcast.return_value = 1
+        mock_activate.return_value = (self.input_ndarray, self.input_shape)
+        mock_batch_normalization_train.return_value = (self.output_train,1,1,1,1)
+        mock_batch_normalization_test.return_value =self.output_test
+        self.layer = cl(
+                            input = self.input_tensor,
+                            id = self.conv_pool_layer_2d_name,
+                            input_shape = self.input_shape,
+                            nkerns=10,
+                            verbose = self.verbose,
+                            batch_norm = True
+        )
+        self.attributes = self.layer._graph_attributes()
+        self.layer.output_shape = self.input_shape
+        self.layer.origin = "input"
+        self.layer.destination = "classifier"
+        self.layer.batch_norm = False
+        self.layer.filter_shape = (1,1)
+        self.layer.input_shape = (1,1,10,10)
+        self.layer.poolsize = (1,1)
+        self.layer.stride = (1,1)
+        self.layer.print_layer(prefix=" ", nest=False, last=False)
+        self.assertTrue(len(self.layer.prefix) > 0)
+
+    @patch('theano.tensor.unbroadcast')
+    @patch('yann.layers.conv_pool._activate')
+    @patch('yann.layers.conv_pool.batch_normalization_test')
+    @patch('yann.layers.conv_pool.batch_normalization_train')
+    def test13_deconv_pool_layer_2d_ip_vals(self,mock_batch_normalization_train,mock_batch_normalization_test,mock_activate,mock_unbroadcast):
+        mock_unbroadcast.return_value = 1
+        mock_activate.return_value = (self.input_ndarray, self.input_shape)
+        mock_batch_normalization_train.return_value = (self.output_train,1,1,1,1)
+        mock_batch_normalization_test.return_value =self.output_test
+        self.deconv_pool_layer_2d = dl(
+                            input = self.input_tensor,
+                            id = self.deconv_pool_layer_2d_name,
+                            input_shape = self.input_shape,
+                            output_shape=self.input_shape,
+                            nkerns=10,
+                            verbose = self.verbose,
+                            input_params= self.input_params,
+                            batch_norm = True
+        )
+        self.assertEqual(self.deconv_pool_layer_2d.id,self.deconv_pool_layer_2d_name)
+        self.assertEqual(self.deconv_pool_layer_2d.output_shape,self.input_shape)
+        self.assertTrue(numpy.allclose(self.deconv_pool_layer_2d.output,self.input_ndarray))
+        self.assertTrue(numpy.allclose(self.deconv_pool_layer_2d.inference,self.input_ndarray))
+
+    @patch('theano.tensor.unbroadcast')
+    @patch('yann.layers.conv_pool._activate')
+    @patch('yann.layers.conv_pool.batch_normalization_test')
+    @patch('yann.layers.conv_pool.batch_normalization_train')
+    def test14_deconv_pool_layer_2d_pool_size_mismatch_exception(self,mock_batch_normalization_train,mock_batch_normalization_test,mock_activate,mock_unbroadcast):
+        mock_unbroadcast.return_value = 1
+        mock_activate.return_value = (self.input_ndarray, self.input_shape)
+        mock_batch_normalization_train.return_value = (self.output_train,1,1,1,1)
+        mock_batch_normalization_test.return_value =self.output_test
+        try:
+            self.deconv_pool_layer_2d = dl(
+                                input = self.input_tensor,
+                                id = self.deconv_pool_layer_2d_name,
+                                input_shape = self.input_shape,
+                                output_shape=self.input_shape,
+                                nkerns=10,
+                                verbose = self.verbose,
+                                input_params= self.input_params,
+                                poolsize= (2,2),
+                                batch_norm = True
+            )
+            self.assertEqual(True,False)
+        except Exception,c:
+            self.assertEqual(c.message,self.pool_size_mismatch_exception_msg)
+
+    @patch('theano.tensor.unbroadcast')
+    @patch('yann.layers.conv_pool._activate')
+    @patch('yann.layers.conv_pool.batch_normalization_test')
+    @patch('yann.layers.conv_pool.batch_normalization_train')
+    def test15_deconv_pool_layer_2d_activation_tuple_exception(self,mock_batch_normalization_train,mock_batch_normalization_test,mock_activate,mock_unbroadcast):
+        mock_unbroadcast.return_value = 1
+        mock_activate.return_value = (self.input_ndarray, self.input_shape)
+        mock_batch_normalization_train.return_value = (self.output_train,1,1,1,1)
+        mock_batch_normalization_test.return_value =self.output_test
+        try:
+            self.deconv_pool_layer_2d = dl(
+                            input = self.input_tensor,
+                            id = self.deconv_pool_layer_2d_name,
+                            input_shape = self.input_shape,
+                            output_shape=self.input_shape,
+                            nkerns=10,
+                            verbose = self.verbose,
+                            input_params= self.input_params,
+                            batch_norm = False,
+                            activation= ('maxout','RelU')
+        )
+            self.assertEqual(True,False)
+        except Exception,c:
+            print(c.message)
+            self.assertEqual(c.message,self.activation_tuple_exception_msg)
+
+    @patch('theano.tensor.unbroadcast')
+    @patch('yann.layers.conv_pool._activate')
+    @patch('yann.layers.conv_pool.batch_normalization_test')
+    @patch('yann.layers.conv_pool.batch_normalization_train')
+    def test15_deconv_pool_layer_2d_print_layer(self,mock_batch_normalization_train,mock_batch_normalization_test,mock_activate,mock_unbroadcast):
+        mock_unbroadcast.return_value = 1
+        mock_activate.return_value = (self.input_ndarray, self.input_shape)
+        mock_batch_normalization_train.return_value = (self.output_train,1,1,1,1)
+        mock_batch_normalization_test.return_value =self.output_test
+        self.layer = dl(
+                            input = self.input_tensor,
+                            id = self.deconv_pool_layer_2d_name,
+                            input_shape = self.input_shape,
+                            output_shape=self.input_shape,
+                            nkerns=10,
+                            verbose = self.verbose,
+                            input_params= self.input_params,
+                            batch_norm = True
+        )
+        self.attributes = self.layer._graph_attributes()
+        self.layer.output_shape = self.input_shape
+        self.layer.origin = "input"
+        self.layer.destination = "classifier"
+        self.layer.batch_norm = False
+        self.layer.filter_shape = (1,1)
+        self.layer.input_shape = (1,1,10,10)
+        self.layer.poolsize = (1,1)
+        self.layer.stride = (1,1)
+        self.layer.print_layer(prefix=" ", nest=False, last=False)
+        self.assertTrue(len(self.layer.prefix) > 0)

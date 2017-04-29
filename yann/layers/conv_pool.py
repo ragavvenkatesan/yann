@@ -666,5 +666,5 @@ class dropout_deconv_layer_2d(deconv_layer_2d):
             print "... Dropped out"
         self.dropout_rate = dropout_rate
 
-if __name__ == '__main__':
+if __name__ == '__main__': #pragma: no cover
     pass

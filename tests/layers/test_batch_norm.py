@@ -1,4 +1,3 @@
-# dropout_batch_norm_layer_2d and 1d has issue with borrow
 import unittest
 import numpy
 import theano
