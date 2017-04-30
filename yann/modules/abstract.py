@@ -21,5 +21,5 @@ class module(object):
             print("... Initializing a new module " + self.id + " of type " + self.type)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

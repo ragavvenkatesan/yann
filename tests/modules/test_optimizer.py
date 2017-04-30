@@ -274,6 +274,20 @@ class TestOptimizer(unittest.TestCase):
             self.opt.optimizer_type ="adadelta"
             self.opt.momentum_type ="polyak"
             self.opt.create_updates(verbose=self.verbose)
+            self.opt.optimizer_type = "else"
+            self.opt.create_updates(verbose=self.verbose)
             self.assertEqual(True, True)
         except Exception,c:
             self.assertEqual(True,False)
+        
+    @patch('theano.shared')
+    @patch('theano.tensor.scalar')
+    def test13_optimizer_no_init(self,mock_scalar,mock_shared):
+        mock_shared.return_value = self.learning_val
+        mock_scalar.return_value = self.scalar_value
+        optimizer_params = {
+        }
+        self.opt = opt(
+                optimizer_init_args = optimizer_params,
+                verbose = self.verbose)
+        self.assertEqual(self.opt.id,'-1')

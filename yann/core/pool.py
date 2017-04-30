@@ -35,7 +35,7 @@ def _maxrandpool ( input, ds, p, ignore_border = False ):
     return T.reshape(pooled_vectors, out_shp, ndim = 4 )
 
 class pooler_2d(object):
-    """
+    """ #pragma: no cover
     function that performs pooling
 
     Args:
@@ -104,5 +104,5 @@ class pooler_2d(object):
         # ignore_border has some issue. False seems to pull things off GPU.
         self.out_shp = (img_shp[0], img_shp[1], _out_height, _out_width)
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

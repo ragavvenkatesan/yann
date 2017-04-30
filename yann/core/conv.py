@@ -14,13 +14,13 @@ from theano.tensor.nnet.abstract_conv import conv2d_grad_wrt_inputs as deconv2d
 from theano.tensor.nnet.abstract_conv import get_conv_output_shape as conv_shape
 
 class convolver_2d(object):
-    """
+    """ #pragma: no cover
     Class that performs convolution
 
     This class basically performs convolution. These ouputs can be probed using the
     convolution layer if needed. This keeps things simple.
 
-    Args:
+    Args: #pragma: no cover
         input:  This variable should either ``thenao.tensor4`` (``theano.matrix``
                 reshaped also works) variable or an output from a pervious layer which is
                 a ``theano.tensor4`` convolved with a ``theano.shared``. The input should
@@ -44,7 +44,7 @@ class convolver_2d(object):
         border_mode: The input to this can be either ``'same'`` or other theano defaults
 
 
-    Notes:
+    Notes: #pragma: no cover
         * ``conv2d.out`` output, Output that could be provided as
           output to the next layer or to other convolutional layer options.
           The size of the outut depends on border mode and subsample
@@ -76,7 +76,7 @@ class convolver_2d(object):
         this funciton, ``theano.conv2d`` doesn't support``same`` convolutions
         on the GPU. For everything else, ``theano`` default will be used.
 
-    TODO:
+    TODO: #pragma: no cover
         Implement ``border_mode = 'same'`` for libgpuarray backend. As of now only supports
         CUDA backend.
 
@@ -116,12 +116,12 @@ class convolver_2d(object):
         self.out_shp = (_out_height, _out_width)
 
 class deconvolver_2d(object):
-    """
+    """ #pragma: no cover
     class that performs deconvolution
 
     This class basically performs convolution.  
 
-    Args:
+    Args: #pragma: no cover
         input:  This variable should either ``thenao.tensor4`` (``theano.matrix``
                 reshaped also works) variable or an output from a pervious layer which is
                 a ``theano.tensor4`` convolved with a ``theano.shared``. The input should
@@ -147,7 +147,7 @@ class deconvolver_2d(object):
         border_mode: The input to this can be either ``'same'`` or other theano defaults
 
 
-    Notes:
+    Notes: #pragma: no cover
         * ``conv2d.out`` output, Output that could be provided as
           output to the next layer or to other convolutional layer options.
           The size of the outut depends on border mode and subsample
@@ -179,7 +179,7 @@ class deconvolver_2d(object):
         this funciton, ``theano.conv2d`` doesn't support``same`` convolutions
         on the GPU. For everything else, ``theano`` default will be used.
 
-    TODO:
+    TODO: #pragma: no cover
         Implement ``border_mode = 'same'`` and full for libgpuarray backend. As of now only supports
         CUDA backend.
             
@@ -231,5 +231,5 @@ class deconvolver_2d(object):
         if not _in_height == image_shape [2] and _in_width == image_shape [3]:
             raise Exception (" This dimensionality of th output image cannot be achieved.")
 
-if __name__ == '__main__':
+if __name__ == '__main__': #pragma: no cover
     pass

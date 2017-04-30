@@ -1,4 +1,3 @@
-#Mixed out  code in activations has error
 """
 test_activations.py - Unit tests for YANN core activation functions
 defined in yann/core/activations.py
@@ -152,12 +151,6 @@ class TestActivations(unittest.TestCase):
         self.assertTrue(np.allclose(out, self.input_zeros))
         self.assertTrue(out_shp,self.input_size)
 
-    #def test_mixedout(self):
-    #    out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'mixedout', dimension = 2)
-    #    self.assertTrue(np.allclose(out, self.input_zeros))
-    #    self.assertTrue(out_shp,self.input_size)
-
-
     def test_maxout(self):
         out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size_min, type = 'maxout', dimension = 1)
         self.assertTrue(np.allclose(out, self.input_zeros))
@@ -167,3 +160,13 @@ class TestActivations(unittest.TestCase):
         out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size_min, type = 'meanout', dimension = 1)
         self.assertTrue(np.allclose(out, self.input_zeros))
         self.assertTrue(out_shp,self.input_size_min)
+
+
+    def test_maxout_2d(self):
+        out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'maxout', dimension = 2)
+        self.assertTrue(out_shp,self.input_size)
+
+    def test_maxout_mixedout(self):
+        out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'mixedout', dimension = 1)
+        self.assertTrue(np.allclose(out, self.input_zeros))
+        self.assertTrue(out_shp,self.input_size)
