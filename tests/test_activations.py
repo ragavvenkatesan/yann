@@ -165,8 +165,3 @@ class TestActivations(unittest.TestCase):
     def test_maxout_2d(self):
         out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'maxout', dimension = 2)
         self.assertTrue(out_shp,self.input_size)
-
-    def test_maxout_mixedout(self):
-        out,out_shp = A.Maxout(self.input_zeros, self.maxout_size, self.input_size, type = 'mixedout', dimension = 1)
-        self.assertTrue(np.allclose(out, self.input_zeros))
-        self.assertTrue(out_shp,self.input_size)
