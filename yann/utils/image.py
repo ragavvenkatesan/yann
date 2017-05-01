@@ -1,4 +1,10 @@
 import numpy
+import imp
+try:
+    imp.find_module('scipy')
+    scipy_installed = True
+except ImportError: #pragma: no cover
+    scipy_installed = False
 
 def rgb2gray(rgb):
     """
@@ -45,7 +51,7 @@ def gray2rgb(r, g, b, channels_dim = 3):
     if channels_dim == 3:
         return out
     elif channels_dim == 1:
-        return out.transpose((0,3,1,2))
+        return out.transpose((2,0,1))
 
 
 def preprocessing( data, height, width, channels, args):
@@ -98,7 +104,7 @@ def preprocessing( data, height, width, channels, args):
         data = rgb2gray(data)
         out_shp = (shp[0], shp[1]*shp[2])
 
-    if len(shp) == 2 and out_shp_flag is False:
+    if len(shp) == 2 and out_shp_flag is False: #pragma: no cover
         out_shp = shp
 
     if gray is False and len(shp) == 4 and out_shp_flag is False:
@@ -121,8 +127,10 @@ def preprocessing( data, height, width, channels, args):
     if ZCA is True:
 
         sigma = numpy.dot(data.T,data) / data.shape[1]
-        if scipy_installed is False:
+        if scipy_installed is False: #pragma: no cover
             raise Exception("Scipy needs to be installed for performing ZCA")
+        else:
+            from scipy import linalg
         U, S, V = linalg.svd(sigma)
         # data_rotated = numpy.dot(U.T, data) , full_matrices = True
         temp = numpy.dot(U, numpy.diag(1/numpy.sqrt(S + 1e-7)))
