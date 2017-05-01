@@ -116,7 +116,7 @@ class convolver_2d(object):
         self.out_shp = (_out_height, _out_width)
 
 class deconvolver_2d(object):
-    """ #pragma: no cover
+    """
     class that performs deconvolution
 
     This class basically performs convolution.  
