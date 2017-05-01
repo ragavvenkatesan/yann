@@ -40,7 +40,7 @@ def shallow_gan_mnist ( dataset= None, verbose = 1 ):
                     }
 
     visualizer_params = {
-                    "root"       : '.',
+                    "root"       : 'shallow_gan/',
                     "frequency"  : 1,
                     "sample_size": 225,
                     "rgb_filters": False,
@@ -245,7 +245,7 @@ def deep_gan_mnist (dataset, verbose = 1 ):
                     }
 
     visualizer_params = {
-                    "root"       : '.',
+                    "root"       : 'deep_gan/',
                     "frequency"  : 1,
                     "sample_size": 225,
                     "rgb_filters": False,
@@ -506,7 +506,7 @@ def deep_deconvolutional_gan(dataset,
                     }
 
     visualizer_params = {
-                    "root"       : '.',
+                    "root"       : 'dcgan/',
                     "frequency"  : 1,
                     "sample_size": 225,
                     "rgb_filters": True,
@@ -848,7 +848,7 @@ def deep_deconvolutional_lsgan(dataset,
                     }
 
     visualizer_params = {
-                    "root"       : '.',
+                    "root"       : 'lsgan/',
                     "frequency"  : 1,
                     "sample_size": 225,
                     "rgb_filters": True,
@@ -1168,7 +1168,7 @@ if __name__ == '__main__':
         dataset = data.dataset_location() 
 
     net = shallow_gan_mnist ( dataset, verbose = 2 )
-    # net = deep_gan_mnist ( dataset, verbose = 2 )           
+    net = deep_gan_mnist ( dataset, verbose = 2 )           
     net = deep_deconvolutional_gan ( batch_norm = True,
                                      dropout_rate = 0.5,
                                      regularize = True,

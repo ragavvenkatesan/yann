@@ -53,6 +53,9 @@ class network(object):
     Provide any or all of the following arguments. Appropriate errors will be thrown if the
     parameters are not supplied correctly.
 
+    Todo:
+        * posteriors in a classifier layers is not really a probability. Need to fix this.
+
     Args:
         verbose             : Similar to any 3-level verbose in the toolbox.
         type                : option takes only 'classifier' for now. Will add 'encoders'
