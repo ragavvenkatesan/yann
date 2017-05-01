@@ -35,7 +35,7 @@ def _maxrandpool ( input, ds, p, ignore_border = False ):
     return T.reshape(pooled_vectors, out_shp, ndim = 4 )
 
 class pooler_2d(object):
-    """ #pragma: no cover
+    """ 
     function that performs pooling
 
     Args:
