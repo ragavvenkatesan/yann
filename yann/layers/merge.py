@@ -1,4 +1,4 @@
-from abstract import layer
+from abstract import layer,_dropout
 from yann.core.errors import rmse, l1, cross_entropy
 import numpy
 from theano import tensor as T
@@ -131,6 +131,8 @@ class dropout_merge_layer (merge_layer):
                     input_shape,
                     id = -1,
                     error = 'rmse',
+                    rng = None,
+                    dropout_rate = 0.5,
                     verbose = 2):
 
         if verbose >= 3:
@@ -144,7 +146,6 @@ class dropout_merge_layer (merge_layer):
                                             id = id,
                                             verbose = verbose
                                         )
-        dropout_rate = 0
         if not dropout_rate == 0:
             self.output = _dropout(rng = rng,
                                 params = self.output,
@@ -153,5 +154,5 @@ class dropout_merge_layer (merge_layer):
         if verbose >=3:
             print "... Dropped out"
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

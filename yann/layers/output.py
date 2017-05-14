@@ -269,7 +269,7 @@ class objective_layer (layer):
                  L2 = None,
                  l1_coeff = 0.001,
                  l2_coeff = 0.001,
-                 verbose = 2):
+                 verbose = 2): #pragma: no cover
         """
         Refer to the class description
         """
@@ -293,5 +293,5 @@ class objective_layer (layer):
             print("... Objective_layer is created with output shape " + str(self.output_shape))
 
         self.inference = self.output
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

@@ -214,5 +214,5 @@ def _activate (x, activation, input_size, verbose = 2, **kwargs):
 
     return (out, out_shp)
 
-if __name__ == '__main__':
+if __name__ == '__main__': #pragma: no cover
     pass

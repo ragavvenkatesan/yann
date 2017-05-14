@@ -230,5 +230,5 @@ class dropout_dot_product_layer (dot_product_layer):
         if verbose >=3:
             print "... Dropped out"
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

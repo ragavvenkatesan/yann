@@ -122,6 +122,7 @@ class dropout_batch_norm_layer_2d(batch_norm_layer_2d):
                    input_shape,
                    id,
                    rng = None,
+                   borrow = True,
                    input_params = None,
                    dropout_rate = 0,
                    verbose = 2,
@@ -255,6 +256,7 @@ class dropout_batch_norm_layer_1d(batch_norm_layer_2d):
                    input_shape,
                    id,
                    rng = None,
+                   borrow = True,
                    input_params = None,
                    dropout_rate = 0,
                    verbose = 2,
@@ -281,5 +283,5 @@ class dropout_batch_norm_layer_1d(batch_norm_layer_2d):
             print "... Dropped out"
         self.dropout_rate = dropout_rate
 
-if __name__ == '__main__':
+if __name__ == '__main__': #pragma: no cover
     pass
