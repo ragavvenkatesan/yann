@@ -2506,9 +2506,13 @@ class network(object):
         self.network_type = None # This is the first palce where the network type is created.
                                  # This is to differentiate between a classifier and other
                                  # types of networks.
+                                 
         if 'classifier_layer' in kwargs.keys():
             classifier_layer = kwargs['classifier_layer']
-            self.network_type = 'classifier'
+            if classifier_layer is None:
+                self.network_type = 'value'
+            else:
+                self.network_type = 'classifier'
 
         else:
             if not self.last_classifier_created is None:
