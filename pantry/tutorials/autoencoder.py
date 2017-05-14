@@ -342,5 +342,5 @@ if __name__ == '__main__':
         data = cook_mnist (verbose = 2)
         dataset = data.dataset_location()
 
-    # autoencoder ( dataset, verbose = 2 )
-    convolutional_autoencoder ( dataset , verbose = 2 )
+    autoencoder ( dataset, verbose = 2 )
+    # convolutional_autoencoder ( dataset , verbose = 2 )

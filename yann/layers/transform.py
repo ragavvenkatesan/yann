@@ -252,5 +252,5 @@ class dropout_rotate_layer (rotate_layer):
         if verbose >=3:
             print("... Dropped out")
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

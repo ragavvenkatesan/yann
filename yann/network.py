@@ -53,6 +53,9 @@ class network(object):
     Provide any or all of the following arguments. Appropriate errors will be thrown if the
     parameters are not supplied correctly.
 
+    Todo:
+        * posteriors in a classifier layers is not really a probability. Need to fix this.
+
     Args:
         verbose             : Similar to any 3-level verbose in the toolbox.
         type                : option takes only 'classifier' for now. Will add 'encoders'
@@ -2441,6 +2444,10 @@ class network(object):
         self.layer_cost = 0
         self.dropout_cost = 0
         for lyr, weight in zip(objective_layers, objective_weights):
+            if verbose>=3:
+                print ("... Objective Layer: " + lyr.id)
+                print ("... Objective Weight: " + str(weight))
+
             self.layer_cost = self.layer_cost + weight * self.layers[lyr].output
             self.dropout_cost = self.dropout_cost + weight * self.dropout_layers[lyr].output
         self.cost = []
@@ -2499,9 +2506,13 @@ class network(object):
         self.network_type = None # This is the first palce where the network type is created.
                                  # This is to differentiate between a classifier and other
                                  # types of networks.
+                                 
         if 'classifier_layer' in kwargs.keys():
             classifier_layer = kwargs['classifier_layer']
-            self.network_type = 'classifier'
+            if classifier_layer is None:
+                self.network_type = 'value'
+            else:
+                self.network_type = 'classifier'
 
         else:
             if not self.last_classifier_created is None:

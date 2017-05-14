@@ -84,5 +84,5 @@ class random_layer (layer):
             print("... Random layer is created with output shape " + str(self.output_shape))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

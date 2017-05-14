@@ -187,5 +187,5 @@ class dropout_tensor_layer (tensor_layer):
         if verbose >= 3:
             print("... Dropped out")
 
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass
