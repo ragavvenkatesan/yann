@@ -62,6 +62,12 @@ def shallow_gan_mnist ( dataset= None, verbose = 1 ):
                      verbose = verbose 
                     ) 
 
+    
+    net.add_module ( type = 'optimizer',
+                     params = optimizer_params,
+                     verbose = verbose 
+                    ) 
+
     #z - latent space created by random layer
     net.add_layer(type = 'random',
                         id = 'z',

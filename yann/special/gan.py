@@ -34,6 +34,8 @@ class gan (network):
     Todo:
         Sumith Chintala says that its better to seperate generator and dataset when training 
         discriminator. Do that. 
+
+        in __init__ kwargs = kwargs is not a good option Check its working.
         
     Args:
         Same as the network class
