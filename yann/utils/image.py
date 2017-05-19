@@ -45,13 +45,15 @@ def gray2rgb(r, g, b, channels_dim = 3):
         rgb: Concatenated image.
     """
 
-    assert r.ndim == 2 and g.ndim == 2 and b.ndim == 2
     rgb = (r[..., numpy.newaxis], g[..., numpy.newaxis], b[..., numpy.newaxis])
     out = numpy.concatenate(rgb, axis=-1)
     if channels_dim == 3:
         return out
     elif channels_dim == 1:
-        return out.transpose((2,0,1))
+        if(out.ndim == 3):
+            return out.transpose((2,0,1))
+        elif(out.ndim == 4):
+            return out.transpose((0,3,1,2))
 
 
 def preprocessing( data, height, width, channels, args):

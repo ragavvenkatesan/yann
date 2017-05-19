@@ -5,7 +5,7 @@ try:
 except ImportError:
     from mock import Mock,patch
 import yann.utils.image as util_image
-class TestGraph(unittest.TestCase):
+class TestImage(unittest.TestCase):
 
     def setUp(self):
         self.rgb3d = np.random.rand(5,5,3)
@@ -13,6 +13,9 @@ class TestGraph(unittest.TestCase):
         self.r = np.random.rand(5,5)
         self.g = np.random.rand(5,5)
         self.b = np.random.rand(5,5)
+        self.r3d = np.random.rand(5, 5,5)
+        self.g3d = np.random.rand(5, 5,5)
+        self.b3d = np.random.rand(5, 5,5)
         self.preprocess_init_args1 = {
             "normalize": False,
             "ZCA": False,
@@ -47,6 +50,8 @@ class TestGraph(unittest.TestCase):
     def test_gray2rgb(self):
         rgb = util_image.gray2rgb(self.r,self.g,self.b, 3)
         self.assertEqual(rgb.shape[2], 3)
+        rgb = util_image.gray2rgb(self.r, self.g, self.b, 1)
+        self.assertEqual(rgb.shape[0], 3)
         rgb = util_image.gray2rgb(self.r, self.g, self.b, 1)
         self.assertEqual(rgb.shape[0], 3)
 
