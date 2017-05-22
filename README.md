@@ -13,6 +13,7 @@ version 1.0rc1
 [![Join the discussion at https://groups.google.com/forum/#!forum/yann-users](https://img.shields.io/badge/forum-google--groups-green.svg)](https://groups.google.com/forum/#!forum/yann-users)
 [![Build Status](https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master)](https://travis-ci.org/ragavvenkatesan/yann)
 [![Codecov Coverage](https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg)](https://codecov.io/gh/ragavvenkatesan/yann)
+[![Coveralls Coverage](https://coveralls.io/repos/github/ragavvenkatesan/yann/badge.svg?branch=master)](https://coveralls.io/github/ragavvenkatesan/yann?branch=master)
 [![Requirements Status](https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master)](https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master)
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)
 
