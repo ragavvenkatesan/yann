@@ -21,10 +21,6 @@ group is setup on `gitter`_ and also on `google groups`_.
     :target: https://codecov.io/gh/ragavvenkatesan/yann
     :alt: Codecov Coverage
 
-.. image:: https://coveralls.io/repos/github/ragavvenkatesan/yann/badge.svg?branch=master
-    :target: https://coveralls.io/github/ragavvenkatesan/yann?branch=master
-    :alt: Coveralls Coverage
-
 .. image:: https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master
     :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
     :alt: Requirements Status
