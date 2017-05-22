@@ -2,9 +2,7 @@ sudo: required
 language: python
 
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"  
+  - "2.7" 
 
 before_install:
   - pip install -r requirements_test.txt   
