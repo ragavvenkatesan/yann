@@ -231,5 +231,5 @@ class deconvolver_2d(object):
         if not _in_height == image_shape [2] and _in_width == image_shape [3]:
             raise Exception (" This dimensionality of th output image cannot be achieved.")
 
-if __name__ == '__main__':
+if __name__ == '__main__': #pragma: no cover
     pass

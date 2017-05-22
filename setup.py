@@ -8,7 +8,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='yann',
-    version='0.1.1a1',
+    version='1.0rc1',
     description='Toolbox for building and learning convolutional neural networks',
     long_description=long_description,
     url='https://github.com/ragavvenkatesan/yann',
@@ -20,7 +20,7 @@ setup(
         'Intended Audience :: Students, Researchers and Developers',
         'Topic :: Scientific/Engineering :: Computer Vision :: Deep Learning'
         'License :: MIT License',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 2.7 :: Python 3.x',
     ],
     keywords='convolutional neural networks deep learning',
     packages=find_packages(exclude=['docs', 'tests', 'pantry']),

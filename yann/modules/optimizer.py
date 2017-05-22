@@ -404,5 +404,5 @@ class optimizer(module):
             self._nesterov(verbose = verbose)
         
         self._constrain(verbose = verbose)
-if __name__ == '__main__':
+if __name__ == '__main__':#pragma: no cover
     pass

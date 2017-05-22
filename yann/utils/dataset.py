@@ -26,13 +26,13 @@ from yann.utils.image import check_type
 # for xrange python2 and 3 compatability
 try:
     xrange
-except NameError:
+except NameError: #pragma: no cover
     xrange = range
 
 try:
     imp.find_module('scipy')
     scipy_installed = True
-except ImportError:
+except ImportError: #pragma: no cover
     scipy_installed = False
 
 if scipy_installed is True:
@@ -43,7 +43,7 @@ from random import randint
 try:
     imp.find_module('skdata')
     skdata_installed = True
-except ImportError:
+except ImportError: #pragma: no cover
     skdata_installed = False
 
 if skdata_installed is True:
@@ -101,7 +101,7 @@ def download_data (url, location):
         print(status),
     f.close()
 
-def load_cifar100 ():
+def load_cifar100 (): #pragma: no cover
     """
     Function that downloads the cifar 100 dataset and returns the dataset in full
 
@@ -112,7 +112,7 @@ def load_cifar100 ():
 def load_data_mat(height,
                   width,
                   channels, 
-                  location = '../dataset/waldo/',
+                  location,
                   batch = 0,
                   type_set = 'train',
                   load_z = False):
@@ -141,7 +141,7 @@ def load_data_mat(height,
 
     """
     print("... Loading " + type_set + " batch number " + str(batch))
-    if scipy_installed is False:
+    if scipy_installed is False: #pragma: no cover
         raise Exception("Scipy needed for cooking this dataset. Please install")
     mat = scipy.io.loadmat(location  + '/' +  type_set + '/batch_' + str(batch) + '.mat')
     data_x = numpy.asarray(mat['x'], dtype = 'float32')
@@ -181,7 +181,7 @@ def load_skdata_mnist ():
     Returns:
         list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
     """
-    if skdata_installed is False:
+    if skdata_installed is False: #pragma: no cover
         raise Exception("This dataset cooks from skdata. Please install skdata")
     from skdata import mnist
     mn = mnist.dataset.MNIST()
@@ -199,7 +199,7 @@ def load_skdata_mnist ():
     rval = [(train_x, train_y, train_y), (valid_x, valid_y, valid_y), (test_x, test_y, test_y)]
     return rval
 
-def load_skdata_mnist_noise1():
+def load_skdata_mnist_noise1(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -226,7 +226,7 @@ def load_skdata_mnist_noise1():
     rval = [(train_x, train_y, train_y), (valid_x, valid_y, valid_y), (test_x, test_y, test_y)]
     return rval
 
-def load_skdata_mnist_noise2():
+def load_skdata_mnist_noise2(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -255,7 +255,7 @@ def load_skdata_mnist_noise2():
 
 
 
-def load_skdata_mnist_noise3():
+def load_skdata_mnist_noise3(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset
     in full
@@ -285,7 +285,7 @@ def load_skdata_mnist_noise3():
 
 
 
-def load_skdata_mnist_noise4():
+def load_skdata_mnist_noise4(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset
     in full
@@ -315,7 +315,7 @@ def load_skdata_mnist_noise4():
 
 
 
-def load_skdata_mnist_noise5():
+def load_skdata_mnist_noise5(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -344,7 +344,7 @@ def load_skdata_mnist_noise5():
     return rval
 
 
-def load_skdata_mnist_noise6():
+def load_skdata_mnist_noise6(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -373,7 +373,7 @@ def load_skdata_mnist_noise6():
     return rval
 
 
-def load_skdata_mnist_bg_images():
+def load_skdata_mnist_bg_images(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -402,7 +402,7 @@ def load_skdata_mnist_bg_images():
     return rval
 
 
-def load_skdata_mnist_bg_rand():
+def load_skdata_mnist_bg_rand(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -431,14 +431,14 @@ def load_skdata_mnist_bg_rand():
     return rval
 
 
-def load_skdata_mnist_rotated():
+def load_skdata_mnist_rotated(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
     Returns:
         list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
     """
-    if skdata_installed is False:
+    if skdata_installed is False: #pragma: no cover
         raise Exception("This dataset cooks from skdata. Please install skdata")
     from skdata import larochelle_etal_2007
     mn = larochelle_etal_2007.MNIST_Rotated()
@@ -460,7 +460,7 @@ def load_skdata_mnist_rotated():
     return rval
 
 
-def load_skdata_mnist_rotated_bg():
+def load_skdata_mnist_rotated_bg(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -490,7 +490,7 @@ def load_skdata_mnist_rotated_bg():
 
 
 # for cifar10 of skdata
-def load_skdata_cifar10():
+def load_skdata_cifar10(): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in full
 
@@ -533,7 +533,7 @@ def load_skdata_caltech101(batch_size,
                            type_set = 'train',
                            height = 256,
                            width = 256,
-                           verbose = False ):
+                           verbose = False ): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in part
 
@@ -613,7 +613,7 @@ def load_skdata_caltech256(batch_size,
                            type_set = 'train',
                            height = 256,
                            width = 256,
-                           verbose = False):
+                           verbose = False): #pragma: no cover
     """
     Function that downloads the dataset from skdata and returns the dataset in part
 
@@ -1005,7 +1005,7 @@ class setup_dataset (object):
                 "channels"              : 1 if self.preprocessor ["grayscale"] else self.channels,
                 "cache"                 : self.cache,
                 }
-                
+
         assert ( self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]) )
         f = open(self.root +  '/data_params.pkl', 'wb')
         cPickle.dump(dataset_args, f, protocol=2)
@@ -1045,7 +1045,7 @@ class setup_dataset (object):
         elif self.name == 'caltech256':
             self._create_skdata_caltech256(verbose = verbose)
 
-    def _create_skdata_mnist(self, verbose = 1):
+    def _create_skdata_mnist(self, verbose = 1): #pragma: no cover
         """
         Interal function. Use this to create mnist and cifar image datasets
         """
@@ -1159,7 +1159,7 @@ class setup_dataset (object):
         cPickle.dump(dataset_args, f, protocol=2)
         f.close()
 
-    def _create_skdata_caltech101(self, verbose = 2):
+    def _create_skdata_caltech101(self, verbose = 2): #pragma: no cover
         """
         Interal function. Use this to create mnist and caltech101 image datasets
         """
@@ -1280,7 +1280,7 @@ class setup_dataset (object):
         cPickle.dump(data_args, f, protocol=2)
         f.close()
 
-    def _create_skdata_caltech256(self, verbose = 2):
+    def _create_skdata_caltech256(self, verbose = 2): #pragma: no cover
         """
         Interal function. Use this to create mnist and caltech101 image datasets
         """
@@ -1402,4 +1402,4 @@ class setup_dataset (object):
         f.close()
 
 if __name__ == '__main__':
-    pass
+    pass #pragma: no cover
