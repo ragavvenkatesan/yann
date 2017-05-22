@@ -475,7 +475,7 @@ class deconv_layer_2d (layer):
         self.conv_out = conv_out        
         if not poolsize == (1,1):
              raise Exception (" Unpool operation not yet supported be deconv layer")
-             """
+             """ #pragma: no cover
              pooler = pooler_2d(
                                 input = conv_out,
                                 img_shp = conv_out_shp,

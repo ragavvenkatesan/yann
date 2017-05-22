@@ -231,7 +231,7 @@ def Maxout(x, maxout_size, input_size, type = 'maxout', dimension = 1):
             temp = maxing(x,i,maxout_size)
             if maxout_out is None:
                 maxout_out = temp
-            else:
+            else: #pragma: no cover
                 maxout_out = T.maximum(maxout_out, temp)
         output = maxout_out
 
@@ -241,11 +241,11 @@ def Maxout(x, maxout_size, input_size, type = 'maxout', dimension = 1):
             temp = maxing(x,i,maxout_size)
             if maxout_out is None:
                 maxout_out = temp
-            else:
+            else: #pragma: no cover
                 maxout_out = (maxout_out*(i+1)+temp)/(i+2)
         output = maxout_out
 
-    elif type == 'mixedout': # Do mixout network.
+    elif type == 'mixedout': # Do mixout network. #pragma: no cover
         maxout_out = None
         maxout_mean = None
         maxout_max  = None
@@ -255,7 +255,7 @@ def Maxout(x, maxout_size, input_size, type = 'maxout', dimension = 1):
                 maxout_mean = temp
                 maxout_max = temp
                 maxout_out = temp
-            else:
+            else: 
                 maxout_mean = (maxout_out*(i+1)+temp)/(i+2)
                 maxout_max = T.maximum(maxout_out, temp)
         lambd      = srng.uniform( maxout_mean.shape, low=0.0, high=1.0)
@@ -264,5 +264,5 @@ def Maxout(x, maxout_size, input_size, type = 'maxout', dimension = 1):
 
     return (output, output_shape)
 
-if __name__ == '__main__':
+if __name__ == '__main__': #pragma: no cover
     pass

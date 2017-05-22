@@ -271,5 +271,5 @@ class datastream(module):
             print("... dataset is initialized")
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': #pragma: no cover
     pass
