@@ -141,7 +141,7 @@ class resultor(module):
         f.write('\n')        
         f.close()    
 
-    def update_plot (self, verbose = 2):
+    def update_plot (self, verbose = 2): #pragma: no cover
         """
         TODO:
 

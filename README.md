@@ -1,5 +1,5 @@
 yann:
-version 0.0.1a1 
+version 1.0rc1
  
 * An even easier, simpler and versatile CNN tool alternative to 
     [Lasagne](https://github.com/Lasagne/Lasagne) and [Keras](https://keras.io/).

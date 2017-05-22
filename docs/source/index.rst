@@ -19,7 +19,7 @@ group is setup on `gitter`_ and also on `google groups`_.
 
 .. image:: https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/ragavvenkatesan/yann
-    :alt: Code Coverage
+    :alt: Codecov Coverage
 
 .. image:: https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master
     :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
@@ -36,10 +36,6 @@ group is setup on `gitter`_ and also on `google groups`_.
 .. image:: https://readthedocs.org/projects/yann/badge/?version=latest
     :target: http://yann.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status   
-
-.. image:: https://badges.gitter.im/yann-users/Lobby.svg
-    :target: https://gitter.im/yann-users/Lobby
-    :alt: Gitter Lobby
 
 .. image:: https://img.shields.io/badge/forum-google--groups-green.svg
     :target: https://groups.google.com/forum/#!forum/yann-users
