@@ -745,6 +745,7 @@ def load_celeba(batch_size,
 
     def _save_content(response, destination, chunk_size=32*1024):
         total_size = int(response.headers.get('content-length', 0))
+        print("... Downloading the dataset")
         with open(destination, "wb") as f:
             for chunk in tqdm(response.iter_content(chunk_size), total=total_size,
                         unit='B', unit_scale=True, desc=destination):
@@ -763,14 +764,18 @@ def load_celeba(batch_size,
         if os.path.exists(save_path):
             print('[*] {} already exists'.format(save_path))
         else:
+            os.mkdir(dirpath)
             _download_file(drive_id, save_path)
 
+        print("... Dataset downloaded")
+        print("... Extracting images")
         zip_dir = ''
         with zipfile.ZipFile(save_path) as zf:
             zip_dir = zf.namelist()[0]
             zf.extractall(dirpath)
         os.remove(save_path)
         os.rename(os.path.join(dirpath, zip_dir), os.path.join(dirpath, data_dir))
+        print("... Celeb-A extracted successfully")
 
     filepath = os.path.join(os.path.join(dirpath, data_dir), '*.jpg')
     filelist = glob.glob(filepath)
