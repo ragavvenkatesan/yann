@@ -11,13 +11,21 @@ Todo:
 import os
 import sys
 import time
+import glob
 
 import numpy
 import scipy.io
 import cPickle
+import zipfile
+import requests
 # for python3 compatability
 # import pickle as cPickle
 import imp
+
+from PIL import Image
+from tqdm import tqdm
+from imread import imread
+from six.moves import urllib
 
 from image import *
 from yann.utils.image import preprocessing
