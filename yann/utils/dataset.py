@@ -22,7 +22,6 @@ import requests
 # import pickle as cPickle
 import imp
 
-from PIL import Image
 from tqdm import tqdm
 from imread import imread
 from six.moves import urllib
