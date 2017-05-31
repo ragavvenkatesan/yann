@@ -2,11 +2,13 @@ sudo: required
 language: python
 
 python:
-  - "2.7"
+  - "2.7" 
 
 before_install:
   - pip install -r requirements_test.txt   
   - pip install travis-sphinx   
+  - pip install python-coveralls  
+  - pip install --upgrade --no-deps git+git://github.com/Theano/Theano.git
 
 install:  
   - python setup.py install
@@ -16,3 +18,4 @@ script:
 
 after_success:
   - codecov
+  - coveralls

@@ -1,12 +1,7 @@
 -r requirements.txt
-scipy>=0.18
-progressbar>=2
-skdata>=0.0.4
 pydot
 pyparsing
 pydot-ng
 pydotplus
 pygraphviz
 graphviz
-networkx
-matplotlib

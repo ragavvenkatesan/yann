@@ -10,7 +10,7 @@ def mlp ( dataset, verbose = 1 ):
     """
     optimizer_params =  {        
                 "momentum_type"       : 'polyak',             
-                "momentum_params"     : (0.9, 0.95, 30),      
+                "momentum_params"     : (0.65, 0.9, 30),      
                 "regularization"      : (0.0001, 0.0001),       
                 "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
@@ -72,7 +72,6 @@ def mlp ( dataset, verbose = 1 ):
     learning_rates = (0.05, 0.01, 0.001)  
 
     net.cook( optimizer = 'main',
-              objective_layer = 'obj',
               datastream = 'data',
               classifier = 'softmax',
               verbose = verbose

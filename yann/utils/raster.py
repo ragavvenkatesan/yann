@@ -1,10 +1,10 @@
 """
-This code is used to remove the dependency on now out-dated pylearn2 library. Yann uses pylearn2's 
+This code is used to remove the dependency on now out-dated pylearn2 library. Yann uses pylearn2's
 make_viewer to create images that are raster. Migrating to this tile_raster_images from theano
-tutorials. 
+tutorials.
 
-Obliging License, credit and conditions for Theano Deep Learning Tutorials: This entire file was 
-completely and directly reproduced from the theano deep learnign tutorials. 
+Obliging License, credit and conditions for Theano Deep Learning Tutorials: This entire file was
+completely and directly reproduced from the theano deep learnign tutorials.
 
 
 LICENSE
@@ -98,7 +98,7 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
                                     dtype='uint8')
         else:
             out_array = numpy.zeros((out_shape[0], out_shape[1], 4),
-                                    dtype=X.dtype)
+                                    dtype=X[1].dtype)
 
         #colors default to 0, alpha defaults to 1 (opaque)
         if output_pixel_vals:

@@ -13,4 +13,5 @@ their documentations.
 
    dataset
    graph
+   pickle
    raster

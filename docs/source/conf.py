@@ -27,12 +27,12 @@ except ImportError:
     from mock import Mock
 
 import theano
-import theano.sandbox.cuda
+# import theano.sandbox.cuda
 
-theano.config = Mock(device='gpu')
-theano.sandbox.cuda.cuda_enabled = True
-theano.sandbox.cuda.dnn = Mock(dnn_available=lambda: True)
-sys.modules['theano.sandbox.cuda.blas'] = Mock(GpuCorrMM=None)
+# theano.config = Mock(device='gpu')
+# theano.sandbox.cuda.cuda_enabled = True
+# theano.sandbox.cuda.dnn = Mock(dnn_available=lambda: True)
+# sys.modules['theano.sandbox.cuda.blas'] = Mock(GpuCorrMM=None)
 
 import shlex
 
@@ -67,8 +67,8 @@ master_doc = 'index'
 
 # General substitutions.
 project = u'Yann'
-copyright = u'2015-2016, Ragav Venkatesan'
-author = u'Ragav Venkatesan'
+copyright = u'2015-2017, Ragav Venkatesan and Other Yann Contributors'
+author = u'Ragav Venkatesan and Other Yann Contributors.'
 license = u'MIT License'
 
 import yann
@@ -81,9 +81,6 @@ import yann
 version = yann.__version__
 # The full version, including alpha/beta/rc tags.
 release = yann.__version__
-
-copyright = u'2015–2016, Ragav Venkatesan'
-
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:

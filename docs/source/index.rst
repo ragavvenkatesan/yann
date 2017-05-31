@@ -19,7 +19,7 @@ group is setup on `gitter`_ and also on `google groups`_.
 
 .. image:: https://codecov.io/gh/ragavvenkatesan/yann/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/ragavvenkatesan/yann
-    :alt: Code Coverage
+    :alt: Codecov Coverage
 
 .. image:: https://requires.io/github/ragavvenkatesan/yann/requirements.svg?branch=master
     :target: https://requires.io/github/ragavvenkatesan/yann/requirements/?branch=master
@@ -36,10 +36,6 @@ group is setup on `gitter`_ and also on `google groups`_.
 .. image:: https://readthedocs.org/projects/yann/badge/?version=latest
     :target: http://yann.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status   
-
-.. image:: https://badges.gitter.im/yann-users/Lobby.svg
-    :target: https://gitter.im/yann-users/Lobby
-    :alt: Gitter Lobby
 
 .. image:: https://img.shields.io/badge/forum-google--groups-green.svg
     :target: https://groups.google.com/forum/#!forum/yann-users
@@ -92,7 +88,13 @@ Quick Start
 
 The easiest way to get going with Yann is to follow this quick start guide. If you are not 
 satisfied and want a more detailed introduction to the toolbox, you may refer to the 
-:ref:`tutorial` and the :ref:`organization`.  
+:ref:`tutorial` and the :ref:`organization`.  This tutorial was also presented in CSE591 at ASU
+and the video of the presentation is available. 
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/0NFvfg8CItQ"
+     frameborder="0" allowfullscreen></iframe>
 
 To install in a quick fashion without much dependencies run the follwing command:
 
@@ -101,13 +103,27 @@ To install in a quick fashion without much dependencies run the follwing command
     pip install git+git://github.com/ragavvenkatesan/yann.git
 
 If there was an error with installing ``skdata``, you might want to install ``numpy`` and ``scipy``
-independenyly first and then run the above command. Note that this installer, does not enable a lot
-of options of the toolbox for which you need to go through the complete install described at
-:ref:`setup`.
+independently first and then run the above command. Note that this installer, does not enable a lot
+of options of the toolbox for which you need to go through the complete install described at the
+:ref:`setup` page.
+
+Verify that the installation of theano is indeed version 0.9 or greater by doing the following in 
+a python shell
+
+.. code-block:: python
+
+    import theano
+    theano.__version__ 
+
+If the version was not 0.9, you can install 0.9 by doing the following:
+
+.. code-block:: bash 
+
+    pip install --upgrade --no-deps git+git://github.com/Theano/Theano.git
 
 The start and the end of Yann toolbox is the :mod:`network` module. The :mod:`yann.network`.
 ``network`` object is where all the magic happens. Start by importing :mod:`network` and creating a
-``network`` object. 
+``network`` object in a python shell. 
 
 .. code-block:: python
 
@@ -171,7 +187,12 @@ constructed we can see that the ``net`` objects have ``layers`` populated.
 
 The keys of the dictionary such as ``'1'``, ``'0'`` and ``'2'`` are the ``id`` of the layer. We 
 could have created a layer with a custom id by supplying an ``id`` argument to the ``add_layer``
-method. 
+method. To get a better idea of how the network looks like, you can use the ``pretty_print`` mehtod
+in yann.
+
+.. code-block:: python
+
+    net.pretty_print()
 
 Now our network is finally ready to be trained. Before training, we need to build an 
 :mod:`optimizer` and other tools, but for now let us use the default ones. Once all of this is done,

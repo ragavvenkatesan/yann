@@ -3,10 +3,10 @@ Todo:
     * Something is wrong with the d3viz visualizer for html printing. The path is weird.
     * Visualizer module needs to make use of mathplotlib and print online graphs of outputs of cost
       and possibly display first layer filters for CNNs
-    * Datastream should include fuel interface and also needs interface for COCO, PASCAL and 
+    * Datastream should include fuel interface and also needs interface for COCO, PASCAL and
       IMAGENET. Also consider migrating to hd5 for larger datasets ? Should also be able to create
       datasets from images in python. Right now its a roundabout way of going via matlab.
-    
+
 """
 
 class module(object):
@@ -18,8 +18,8 @@ class module(object):
         self.type = type
         # Every layer must have these four properties.
         if verbose >= 3:
-            print "... Initializing a new module " + self.id + " of type " + self.type        
+            print("... Initializing a new module " + self.id + " of type " + self.type)
 
 
-if __name__ == '__main__':
-    pass              
+if __name__ == '__main__':#pragma: no cover
+    pass

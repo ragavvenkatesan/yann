@@ -1,9 +1,10 @@
 """
 This code is used to rotate the images given some angles between [0,1].
 
-Obliging License, credit and conditions for Lasagne: Some part of the file was 
-directly reproduced from the Lasagne code base. 
+Obliging License, credit and conditions for Lasagne: Some part of the file was
+directly reproduced from the Lasagne code base.
 
+Author: Anchit Agarwal
 
 LICENSE
 =======
@@ -51,7 +52,7 @@ class rotate_layer (layer):
 
     Args:
         input: An input ``theano.tensor`` variable. Even ``theano.shared`` will work as long as they
-               are in the following shape ``mini_batch_size, height, width, channels``
+               are in the following shape ``mini_batch_size, channels, height, width``
         verbose: similar to the rest of the toolbox.
         input_shape: ``(mini_batch_size, input_size)``
         angle: value from [0,1]
@@ -68,11 +69,11 @@ class rotate_layer (layer):
                   verbose = 2 ):
         super(rotate_layer,self).__init__(id = id, type = 'rotate', verbose = verbose)
         if verbose >= 3:
-            print "... Creating rotate layer"
+            print("... Creating rotate layer")
 
         if len(input_shape) == 4:
             if verbose >= 3:
-                print "... Creating the rotate layer"
+                print("... Creating the rotate layer")
 
             if angle is None:
                 angle = nprnd.uniform(size = (input_shape[0],1), low = 0, high = 1)
@@ -88,6 +89,7 @@ class rotate_layer (layer):
             self.output = self._transform_affine(theta, input)
             self.output_shape = input_shape
             self.angle = angle
+            self.inference = self.output
 
     def _transform_affine(self, theta, input):
         num_batch, num_channels, height, width = input.shape
@@ -204,25 +206,22 @@ class rotate_layer (layer):
 
 class dropout_rotate_layer (rotate_layer):
     """
-    This class is the typical dropout neural hidden layer and batch normalization layer. Called 
+    This class is the typical dropout neural hidden layer and batch normalization layer. Called
     by the ``add_layer`` method in network class.
 
     Args:
         input: An input ``theano.tensor`` variable. Even ``theano.shared`` will work as long as they
-               are in the following shape ``mini_batch_size, height, width, channels``
+               are in the following shape ``mini_batch_size, channels, height, width``
         verbose: similar to the rest of the toolbox.
-        num_neurons: number of neurons in the layer
         input_shape: ``(mini_batch_size, input_size)``
-        batch_norm: If provided will be used, default is ``False``. 
+        angle: value from [0,1]
+        borrow: ``theano`` borrow, typically ``True``.
         rng: typically ``numpy.random``.
-        borrow: ``theano`` borrow, typicall ``True``.    
         dropout_rate: ``0.5`` is the default.
 
     Notes:
         Use ``dropout_rotate_layer.output`` and ``dropout_rotate_layer.output_shape`` from
-        this class. ``L1`` and ``L2`` are also public and can also can be used for regularization.
-        The class also has in public ``w``, ``b`` and ``alpha``
-        which are also a list in ``params``, another property of this class.     
+        this class.
     """
     def __init__ (self,
                   input,
@@ -235,7 +234,7 @@ class dropout_rotate_layer (rotate_layer):
                   verbose = 2):
 
         if verbose >= 3:
-            print "... set up the dropout rotate layer"
+            print("... set up the dropout rotate layer")
         if rng is None:
             rng = numpy.random
         super(dropout_rotate_layer, self).__init__ (
@@ -243,15 +242,15 @@ class dropout_rotate_layer (rotate_layer):
                                         input_shape = input_shape,
                                         id = id,
                                         borrow = borrow,
-                                        verbose = verbose 
+                                        verbose = verbose
                                         )
-        if not dropout_rate == 0:            
+        if not dropout_rate == 0:
             self.output = _dropout(rng = rng,
                                 params = self.output,
-                                dropout_rate = dropout_rate)                                          
+                                dropout_rate = dropout_rate)
         self.dropout_rate = dropout_rate
-        if verbose >=3: 
-            print "... Dropped out"
+        if verbose >=3:
+            print("... Dropped out")
 
-if __name__ == '__main__':
-    pass  
+if __name__ == '__main__':#pragma: no cover
+    pass
