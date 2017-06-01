@@ -22,7 +22,6 @@ import requests
 # import pickle as cPickle
 import imp
 
-from tqdm import tqdm
 from imread import imread
 from six.moves import urllib
 
@@ -747,8 +746,7 @@ def load_celeba(batch_size,
         total_size = int(response.headers.get('content-length', 0))
         print("... Downloading the dataset")
         with open(destination, "wb") as f:
-            for chunk in tqdm(response.iter_content(chunk_size), total=total_size,
-                        unit='B', unit_scale=True, desc=destination):
+            for chunk in response.iter_content(chunk_size):
                 if chunk:
                     f.write(chunk)
 
