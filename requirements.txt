@@ -6,3 +6,8 @@ skdata>=0.0.4
 pillow>=4.0
 matplotlib
 networkx
+glob
+zipfile
+requests
+imread
+six
