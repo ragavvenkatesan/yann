@@ -1049,7 +1049,7 @@ class setup_dataset (object):
                             "normalize"     : True,
                             "ZCA"           : False,
                             "grayscale"     : True,
-                            "zero_mean"     : False,
+                            "zero_mean"		: False,
                             }
         start_time = time.clock()
         if self.source == 'skdata':
@@ -1085,7 +1085,7 @@ class setup_dataset (object):
                 batches = self.batches2test
             else:
                 batches = self.batches2validate
-            for batch in xrange(batches):       # for each batch_i file....
+            for batch in xrange(batches):		# for each batch_i file....
                 if verbose >= 3:
                     print ( "... batch " +str(batch) )
                 data_x, data_y = load_data_mat(location = self.location, 
@@ -1303,7 +1303,7 @@ class setup_dataset (object):
 
         looper = n_train_images / ( self.mini_batches_per_batch[0] * self.mini_batch_size )
 
-        for i in xrange(looper):        # for each batch_i file....
+        for i in xrange(looper):		# for each batch_i file....
             if verbose >= 3:
                 print("... Training batch " + str(i))
             data_x, data_y  = load_skdata_caltech101(
@@ -1331,7 +1331,7 @@ class setup_dataset (object):
         if verbose >=2:
             print(".. Testing data")
         looper = n_test_images / ( self.mini_batches_per_batch[1] * self.mini_batch_size )
-        for i in xrange(looper):        # for each batch_i file....
+        for i in xrange(looper):		# for each batch_i file....
             if verbose >= 3:
                 print("... Testing batch " + str(i))
             data_x, data_y  = load_skdata_caltech101(
@@ -1359,7 +1359,7 @@ class setup_dataset (object):
         if verbose >=2:
                 print(".. Validation data")
         looper = n_valid_images / ( self.mini_batches_per_batch[2] * self.mini_batch_size )
-        for i in xrange(looper):        # for each batch_i file....
+        for i in xrange(looper):		# for each batch_i file....
             if verbose >= 3:
                     print("... Validation batch " + str(i))
             data_x, data_y  = load_skdata_caltech101(
@@ -1424,7 +1424,7 @@ class setup_dataset (object):
 
         looper = n_train_images / ( self.mini_batches_per_batch[0] * self.mini_batch_size )
 
-        for i in xrange(looper):        # for each batch_i file....
+        for i in xrange(looper):		# for each batch_i file....
             if verbose >= 3:
                 print("... Training batch " + str(i))
             data_x, data_y  = load_skdata_caltech256(
@@ -1452,7 +1452,7 @@ class setup_dataset (object):
         if verbose >=2:
             print(".. Testing data")
         looper = n_test_images / ( self.mini_batches_per_batch[1] * self.mini_batch_size )
-        for i in xrange(looper):        # for each batch_i file....
+        for i in xrange(looper):		# for each batch_i file....
             if verbose >= 3:
                 print("... Testing batch " + str(i))
             data_x, data_y  = load_skdata_caltech256(
@@ -1480,7 +1480,7 @@ class setup_dataset (object):
         if verbose >=2:
                 print(".. Validation data")
         looper = n_valid_images / ( self.mini_batches_per_batch[2] * self.mini_batch_size )
-        for i in xrange(looper):        # for each batch_i file....
+        for i in xrange(looper):		# for each batch_i file....
             if verbose >= 3:
                     print("... Validation batch " + str(i))
             data_x, data_y  = load_skdata_caltech256(

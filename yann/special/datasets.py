@@ -280,7 +280,7 @@ def cook_mnist_normalized(  verbose = 1, **kwargs):
         data_params = {
                    "source"             : 'skdata',
                    "name"               : 'mnist',
-                   "location"           : '',
+                   "location"			: '',
                    "mini_batch_size"    : 500,
                    "mini_batches_per_batch" : (100, 20, 20),
                    "batches2train"      : 1,
@@ -316,7 +316,7 @@ def cook_mnist_normalized(  verbose = 1, **kwargs):
                             verbose = 3)
     return dataset
 
-def cook_mnist_normalized_zero_mean(  verbose = 1,  **kwargs):
+def cook_mnist_normalized_zero_mean(  verbose = 1,	**kwargs):
     """
     Wrapper to cook mnist dataset. Will take as input,
 
@@ -332,7 +332,7 @@ def cook_mnist_normalized_zero_mean(  verbose = 1,  **kwargs):
         data_params = {
                    "source"             : 'skdata',
                    "name"               : 'mnist',
-                   "location"           : '',
+                   "location"			: '',
                    "mini_batch_size"    : 500,
                    "mini_batches_per_batch" : (100, 20, 20),
                    "batches2train"      : 1,
@@ -389,7 +389,7 @@ def cook_mnist_multi_load(  verbose = 1, **kwargs):
         data_params = {
                    "source"             : 'skdata',
                    "name"               : 'mnist',
-                   "location"           : '',
+                   "location"			: '',
                    "mini_batch_size"    : 500,
                    "mini_batches_per_batch" : (20, 5, 5),
                    "batches2train"      : 5,
@@ -440,7 +440,7 @@ def cook_cifar10_normalized(verbose = 1, **kwargs):
         data_params = {
                    "source"             : 'skdata',
                    "name"               : 'cifar10',
-                   "location"           : '',
+                   "location"			: '',
                    "mini_batch_size"    : 500,
                    "mini_batches_per_batch" : (80, 20, 20),
                    "batches2train"      : 1,
@@ -646,7 +646,7 @@ def cook_cifar10_normalized_zero_mean(verbose = 1, **kwargs):
         data_params = {
                    "source"             : 'skdata',
                    "name"               : 'cifar10',
-                   "location"           : '',
+                   "location"			: '',
                    "mini_batch_size"    : 500,
                    "mini_batches_per_batch" : (80, 20, 20),
                    "batches2train"      : 1,
@@ -716,7 +716,7 @@ class split_all(setup_dataset):
                             "normalize"     : True,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            "zero_mean"     : True,
+                            "zero_mean"		: True,
                             }        
 
         if "split_args" in kwargs.keys():
@@ -748,7 +748,7 @@ class split_all(setup_dataset):
         
         batches = self.batches2train
         new = True
-        for batch in xrange(batches):       # for each batch_i file....
+        for batch in xrange(batches):		# for each batch_i file....
             if verbose >= 3:
                 print ( "... batch " +str(batch) )
 
@@ -803,7 +803,7 @@ class split_all(setup_dataset):
         del(data_x)
         del(data_y)
 
-        for batch in xrange(batches):       # for each batch_i file....
+        for batch in xrange(batches):		# for each batch_i file....
             if verbose >= 3:
                 print ( "... batch " +str(batch) )
 
@@ -856,7 +856,7 @@ class split_all(setup_dataset):
         del(data_x)
         del(data_y)
 
-        for batch in xrange(batches):       # for each batch_i file....
+        for batch in xrange(batches):		# for each batch_i file....
             if verbose >= 3:
                 print ( "... batch " +str(batch) )
 
@@ -1082,9 +1082,9 @@ class split_all(setup_dataset):
                 for element in xrange(len(temp)):
                     if temp[element] == True:    # numpy needs == rather than 'is'               
                         count = count + 1
-                    if count > n_shots:                                     
-                        temp[element] = False   
-                                     
+                    if count > n_shots:	                     	            
+                        temp[element] = False	
+                        		     
             locs[temp] = True
         data_x = data_x[locs]
         data_y = data_y[locs]
@@ -1125,7 +1125,7 @@ class split_only_train(setup_dataset):
                             "normalize"     : True,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            "zero_mean"     : True,
+                            "zero_mean"		: True,
                             }        
 
         if "split_args" in kwargs.keys():
