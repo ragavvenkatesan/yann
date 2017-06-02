@@ -6,3 +6,5 @@ skdata>=0.0.4
 pillow>=4.0
 matplotlib
 networkx
+requests
+six
