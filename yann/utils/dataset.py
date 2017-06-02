@@ -11,13 +11,18 @@ Todo:
 import os
 import sys
 import time
+import glob
 
 import numpy
 import scipy.io
 import cPickle
+import zipfile
+import requests
 # for python3 compatability
 # import pickle as cPickle
 import imp
+
+from six.moves import urllib
 
 from image import *
 from yann.utils.image import preprocessing
@@ -684,6 +689,118 @@ def load_skdata_caltech256(batch_size,
 
     return (data_x,data_y)
 
+# CelebA dataset
+def load_celeba(batch_size,
+                n_train_images,
+                n_test_images,
+                n_valid_images,
+                rand_perm, batch = 1,
+                type_set = 'train',
+                height = 218,
+                width = 178,
+                verbose = False):
+    """
+    Function that downloads the dataset and returns the dataset in full.
+
+    Args:
+        mini_batch_size: What is the size of the batch.
+        n_train_images: number of training images.
+        n_test_images: number of testing images.
+        n_valid_images: number of validating images.
+        rand_perm: Create a random permutation list of images to be sampled to batches.
+        type_set: What dataset you need, test, train or valid.
+        height: Height of the image
+        width: Width of the image.
+        verbose: similar to dataset.
+
+    Returns:
+        list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
+    """
+    def _download_file(id, destination):
+        """
+        Helper function to download the dataset from Google Drive.
+        """
+        URL = "https://docs.google.com/uc?export=download"
+        session = requests.Session()
+
+        response = session.get(URL, params={ 'id': id }, stream=True)
+        token = _get_token(response)
+
+        if token:
+            params = { 'id' : id, 'confirm' : token }
+            response = session.get(URL, params=params, stream=True)
+
+        _save_content(response, destination)
+
+    def _get_token(response):
+        """
+        Helper function for token confirmation.
+        """
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                return value
+        return None
+
+    def _save_content(response, destination, chunk_size=32*1024):
+        total_size = int(response.headers.get('content-length', 0))
+        print("... Downloading the dataset")
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(chunk_size):
+                if chunk:
+                    f.write(chunk)
+
+    dirpath = './data'
+    data_dir = 'celebA'
+    if os.path.exists(os.path.join(dirpath, data_dir)):
+        print('Celeb-A already downloaded')
+
+    else:
+        filename, drive_id  = "img_align_celeba.zip", "0B7EVK8r0v71pZjFTYXZWM3FlRnM"
+        save_path = os.path.join(dirpath, filename)
+
+        if os.path.exists(save_path):
+            print('[*] {} already exists'.format(save_path))
+        else:
+            os.mkdir(dirpath)
+            _download_file(drive_id, save_path)
+
+        print("... Dataset downloaded")
+        print("... Extracting images")
+        zip_dir = ''
+        with zipfile.ZipFile(save_path) as zf:
+            zip_dir = zf.namelist()[0]
+            zf.extractall(dirpath)
+        os.remove(save_path)
+        os.rename(os.path.join(dirpath, zip_dir), os.path.join(dirpath, data_dir))
+        print("... Celeb-A extracted successfully")
+
+    filepath = os.path.join(os.path.join(dirpath, data_dir), '*.jpg')
+    filelist = glob.glob(filepath)
+
+    # create batches
+    if type_set == 'train':
+        push = 0 + batch * batch_size
+    elif type_set == 'test':
+        push = n_train_images + batch * batch_size
+    elif type_set == 'valid':
+        push = n_train_images + n_test_images + batch * batch_size
+
+    if verbose is True:
+        print("Processing image:  " + str(push))
+
+    data_x = numpy.asarray(numpy.zeros((batch_size, height*width*3)), dtype = 'float32')
+
+    if scipy_installed is False:
+        raise Exception("Scipy needed for cooking this dataset. Please install")
+    from scipy.misc import imread
+
+    for i in xrange(batch_size):
+        temp_img = imread(filelist[push + i])
+        temp_img = temp_img.astype('float32')
+        data_x[i] = numpy.reshape(temp_img, [1, height*width*3])
+
+    return data_x
+
 def pickle_dataset(loc,batch,data):
     """
     Function that stores down an object as a pickle file given its filename and obj
@@ -864,6 +981,9 @@ class setup_dataset (object):
         elif self.source == 'matlab':
             self.location        = dataset_init_args [ "location" ]
 
+        elif self.source == 'images':
+            self.name = dataset_init_args["source"]
+
         if "height" in dataset_init_args.keys():
             self.height              = dataset_init_args [ "height" ]
         else:
@@ -938,6 +1058,9 @@ class setup_dataset (object):
 
         if self.source == 'matlab':
             self._mat2yann( verbose = verbose )
+
+        if self.source == 'images':
+            self._create_celeba(verbose = verbose)
 
         end_time = time.clock()
         if verbose >=1:
@@ -1395,6 +1518,131 @@ class setup_dataset (object):
             "width"                     : self.width,
             "channels"              : 1 if self.preprocessor ["grayscale"] else self.channels,
             "cache"                 : self.cache,
+            }
+
+        f = open(self.root +  '/data_params.pkl', 'wb')
+        cPickle.dump(data_args, f, protocol=2)
+        f.close()
+
+    def _create_celeba(self, verbose=1):
+        """
+        Internal function. Use this to create Celeb-A dataset.
+        """
+        # shuffle the data
+        total_images_in_dataset = 202599
+        self.rand_perm = numpy.random.permutation(total_images_in_dataset)
+        # create a constant shuffle, so that the data can be loaded in batchmode with the 
+        # same random shuffle
+
+        n_train_images = self.mini_batches_per_batch[0] * self.mini_batch_size * self.batches2train
+        n_test_images = self.mini_batches_per_batch[1] * self.mini_batch_size * self.batches2test
+        n_valid_images = self.mini_batches_per_batch[2] * self.mini_batch_size * self.batches2validate
+
+        assert n_train_images + n_test_images + n_valid_images <= total_images_in_dataset
+
+        if verbose >= 2:
+            print(".. Setting up the dataset")
+            print(".. Training data")
+
+        looper = n_train_images / (self.mini_batches_per_batch[0] * self.mini_batch_size)
+
+        for i in xrange(looper):
+            if verbose >= 3:
+                print("... Training batch " + str(i))
+            data_x = load_celeba(
+                n_train_images = n_train_images,
+                n_test_images = n_test_images,
+                n_valid_images = n_valid_images,
+                batch_size = self.mini_batches_per_batch[0] * self.mini_batch_size,
+                rand_perm = self.rand_perm,
+                batch = i,
+                type_set = 'train',
+                height = self.height,
+                width = self.width,
+                verbose = verbose)
+            data_x = preprocessing(
+                data_x,
+                self.height,
+                self.width,
+                self.channels,
+                self.preprocessor)
+
+            f = open(self.root + "/train/" + "batch_" + str(i) + ".pkl", 'wb')
+            cPickle.dump(data_x, f, protocol=2)
+            f.close()
+
+        if verbose >= 2:
+            print(".. Testing data")
+
+        looper = n_test_images / (self.mini_batches_per_batch[1] * self.mini_batch_size)
+
+        for i in xrange(looper):
+            if verbose >= 3:
+                print("... Testing batch " + str(i))
+            data_x = load_celeba(
+                n_train_images = n_train_images,
+                n_test_images = n_test_images,
+                n_valid_images = n_valid_images,
+                batch_size = self.mini_batches_per_batch[1] * self.mini_batch_size,
+                rand_perm = self.rand_perm,
+                batch = i,
+                type_set = 'test',
+                height = self.height,
+                width = self.width,
+                verbose = verbose)
+            data_x = preprocessing(
+                data_x,
+                self.height,
+                self.width,
+                self.channels,
+                self.preprocessor)
+
+            f = open(self.root + "/test/" + "batch_" + str(i) + ".pkl", 'wb')
+            cPickle.dump(data_x, f, protocol=2)
+            f.close()
+
+        if verbose >= 2:
+            print(".. Validation data")
+
+        looper = n_valid_images / (self.mini_batches_per_batch[2] * self.mini_batch_size)
+
+        for i in xrange(looper):
+            if verbose >= 3:
+                print("... Validation batch " + str(i))
+            data_x = load_celeba(
+                n_train_images = n_train_images,
+                n_test_images = n_test_images,
+                n_valid_images = n_valid_images,
+                batch_size = self.mini_batches_per_batch[2] * self.mini_batch_size,
+                rand_perm = self.rand_perm,
+                batch = i,
+                type_set = 'valid',
+                height = self.height,
+                width = self.width,
+                verbose = verbose)
+            data_x = preprocessing(
+                data_x,
+                self.height,
+                self.width,
+                self.channels,
+                self.preprocessor)
+
+            f = open(self.root + "/valid/" + "batch_" + str(i) + ".pkl", 'wb')
+            cPickle.dump(data_x, f, protocol=2)
+            f.close()
+
+        assert(self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]))
+        data_args = {
+            "location"                : self.root,
+            "mini_batch_size"          : self.mini_batch_size,
+            "cache_batches"          : self.mini_batches_per_batch,
+            "batches2train"          : self.batches2train,
+            "batches2test"            : self.batches2test,
+            "batches2validate"        : self.batches2validate,
+            "height"                    : self.height,
+            "width"                  : self.width,
+            "channels"            : 1 if self.preprocessor ["grayscale"] else self.channels,
+            "cache"              : self.cache,
             }
 
         f = open(self.root +  '/data_params.pkl', 'wb')
