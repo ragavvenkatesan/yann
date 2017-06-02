@@ -22,7 +22,6 @@ import requests
 # import pickle as cPickle
 import imp
 
-from imread import imread
 from six.moves import urllib
 
 from image import *
@@ -790,6 +789,10 @@ def load_celeba(batch_size,
         print("Processing image:  " + str(push))
 
     data_x = numpy.asarray(numpy.zeros((batch_size, height*width*3)), dtype = 'float32')
+
+    if scipy_installed is False:
+        raise Exception("Scipy needed for cooking this dataset. Please install")
+    from scipy.misc import imread
 
     for i in xrange(batch_size):
         temp_img = imread(filelist[push + i])
