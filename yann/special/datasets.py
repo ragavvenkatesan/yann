@@ -595,13 +595,13 @@ def cook_celeba(verbose = 1, **kwargs):
                     "source"             : 'images',
                     "name"               : 'celeba',
                     "location"           : '',
-                    "mini_batch_size"    : 36,
+                    "mini_batch_size"    : 500,
                     "mini_batches_per_batch" : (1, 1, 1),
-                    "batches2train"      : 1,
+                    "batches2train"      : 403,
                     "batches2test"       : 1,
                     "batches2validate"   : 1,
-                    "height"             : 218,
-                    "width"              : 178,
+                    "height"             : 32,
+                    "width"              : 32,
                     "channels"           : 3  }
 
     else:
