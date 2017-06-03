@@ -22,3 +22,5 @@ lenet5
 resultor
 clean.sh
 *.ipynb_checkpoints
+_data
+_datasets

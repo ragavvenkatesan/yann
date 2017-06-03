@@ -2,6 +2,74 @@ from yann.utils.dataset import *
 import numpy
 import os
 
+def download_celebA ( data_dir = 'celebA'):
+    """ 
+    This method downloads celebA dataset into directory _data/``data_dir``.
+
+    Args:
+        data_dir: Location to save the data.
+    """ 
+
+    def _download_file(id, destination):
+        """
+        Helper function to download the dataset from Google Drive.
+        """
+        URL = "https://docs.google.com/uc?export=download"
+        session = requests.Session()
+
+        response = session.get(URL, params={ 'id': id }, stream=True)
+        token = _get_token(response)
+
+        if token:
+            params = { 'id' : id, 'confirm' : token }
+            response = session.get(URL, params=params, stream=True)
+
+        _save_content(response, destination)
+
+    def _get_token(response):
+        """
+        Helper function for token confirmation.
+        """
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                return value
+        return None
+
+    def _save_content(response, destination, chunk_size=32*1024):
+        total_size = int(response.headers.get('content-length', 0))
+        print("... Downloading the dataset")
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(chunk_size):
+                if chunk:
+                    f.write(chunk)
+
+    dirpath = '_data/'
+    if os.path.exists(os.path.join(dirpath, data_dir)):
+        print('Celeb-A already downloaded')
+
+    else:
+        filename, drive_id  = "img_align_celeba.zip", "0B7EVK8r0v71pZjFTYXZWM3FlRnM"
+        save_path = os.path.join(dirpath, filename)
+
+        if os.path.exists(save_path):
+            print('[*] {} already exists'.format(save_path))
+        else:
+            os.mkdir(dirpath)
+            _download_file(drive_id, save_path)
+
+        print("... Dataset downloaded")
+        print("... Extracting images")
+        zip_dir = ''
+        with zipfile.ZipFile(save_path) as zf:
+            zip_dir = zf.namelist()[0]
+            zf.extractall(dirpath)
+        os.remove(save_path)
+        os.rename(os.path.join(dirpath, zip_dir), os.path.join(dirpath, data_dir))
+        print("... Celeb-A extracted successfully")
+
+    filepath = os.path.join(os.path.join(dirpath, data_dir), '*.jpg')
+    filelist = glob.glob(filepath)
+
 class combine_split_datasets_train_only (object):
     """
     This will combine two split datasets into one.
@@ -580,10 +648,13 @@ def cook_caltech256(verbose = 1, **kwargs):
                         verbose = 3)
     return dataset
 
-def cook_celeba(verbose = 1, **kwargs):
+def cook_celeba_normalized_zero_mean(verbose = 1, location = '_data/celebA', **kwargs):
     """
-    Wrapper to cook Celeb-A dataset. Will take as input,
+    Wrapper to cook Celeb-A dataset in preparation for GANs. Will take as input,
+
     Args:
+        location: Location where celebA was downloaded using 
+                    ``yann.specials.datasets.download_celebA``
         save_directory: which directory to save the cooked dataset onto.
         dataset_parms: default is the dictionary. Refer to :mod:`setup_dataset`
         preprocess_params: default is the dictionary. Refer to :mod:`setup_dataset`
@@ -592,9 +663,9 @@ def cook_celeba(verbose = 1, **kwargs):
     if not 'data_params' in kwargs.keys():
 
         data_params = {
-                    "source"             : 'images',
+                    "source"             : 'images-only',
                     "name"               : 'celeba',
-                    "location"           : '',
+                    "location"           : location,
                     "mini_batch_size"    : 500,
                     "mini_batches_per_batch" : (1, 1, 1),
                     "batches2train"      : 403,
@@ -611,10 +682,10 @@ def cook_celeba(verbose = 1, **kwargs):
 
         # parameters relating to preprocessing.
         preprocess_params = {
-                            "normalize"     : False,
+                            "normalize"     : True,
                             "ZCA"           : False,
                             "grayscale"     : False,
-                            "zero_mean"     : False,
+                            "zero_mean"     : True,
                         }
     else:
         preprocess_params = kwargs['preprocess_params']

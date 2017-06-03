@@ -28,17 +28,15 @@ from image import *
 from yann.utils.image import preprocessing
 from yann.utils.image import check_type
 
+from scipy.misc import imread
+
 # for xrange python2 and 3 compatability
 try:
     xrange
 except NameError: #pragma: no cover
     xrange = range
 
-try:
-    imp.find_module('scipy')
-    scipy_installed = True
-except ImportError: #pragma: no cover
-    scipy_installed = False
+scipy_installed = True
 
 if scipy_installed is True:
     from scipy import linalg
@@ -690,14 +688,17 @@ def load_skdata_caltech256(batch_size,
     return (data_x,data_y)
 
 # CelebA dataset
-def load_celeba(batch_size,
+def load_images_only(batch_size,
+                location,
                 n_train_images,
                 n_test_images,
                 n_valid_images,
-                rand_perm, batch = 1,
+                rand_perm, 
+                batch = 1,
                 type_set = 'train',
                 height = 218,
                 width = 178,
+                channels = 3,
                 verbose = False):
     """
     Function that downloads the dataset and returns the dataset in full.
@@ -714,69 +715,10 @@ def load_celeba(batch_size,
         verbose: similar to dataset.
 
     Returns:
-        list: ``[(train_x, train_y, train_y),(valid_x, valid_y, valid_y), (test_x, test_y, test_y)]``
+        list: ``data_x``
     """
-    def _download_file(id, destination):
-        """
-        Helper function to download the dataset from Google Drive.
-        """
-        URL = "https://docs.google.com/uc?export=download"
-        session = requests.Session()
-
-        response = session.get(URL, params={ 'id': id }, stream=True)
-        token = _get_token(response)
-
-        if token:
-            params = { 'id' : id, 'confirm' : token }
-            response = session.get(URL, params=params, stream=True)
-
-        _save_content(response, destination)
-
-    def _get_token(response):
-        """
-        Helper function for token confirmation.
-        """
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                return value
-        return None
-
-    def _save_content(response, destination, chunk_size=32*1024):
-        total_size = int(response.headers.get('content-length', 0))
-        print("... Downloading the dataset")
-        with open(destination, "wb") as f:
-            for chunk in response.iter_content(chunk_size):
-                if chunk:
-                    f.write(chunk)
-
-    dirpath = './data'
-    data_dir = 'celebA'
-    if os.path.exists(os.path.join(dirpath, data_dir)):
-        print('Celeb-A already downloaded')
-
-    else:
-        filename, drive_id  = "img_align_celeba.zip", "0B7EVK8r0v71pZjFTYXZWM3FlRnM"
-        save_path = os.path.join(dirpath, filename)
-
-        if os.path.exists(save_path):
-            print('[*] {} already exists'.format(save_path))
-        else:
-            os.mkdir(dirpath)
-            _download_file(drive_id, save_path)
-
-        print("... Dataset downloaded")
-        print("... Extracting images")
-        zip_dir = ''
-        with zipfile.ZipFile(save_path) as zf:
-            zip_dir = zf.namelist()[0]
-            zf.extractall(dirpath)
-        os.remove(save_path)
-        os.rename(os.path.join(dirpath, zip_dir), os.path.join(dirpath, data_dir))
-        print("... Celeb-A extracted successfully")
-
-    filepath = os.path.join(os.path.join(dirpath, data_dir), '*.jpg')
-    filelist = glob.glob(filepath)
-
+    filepath = os.path.join(location, '*.jpg')
+    filelist = glob.glob(filepath)    
     # create batches
     if type_set == 'train':
         push = 0 + batch * batch_size
@@ -790,15 +732,25 @@ def load_celeba(batch_size,
 
     data_x = numpy.asarray(numpy.zeros((batch_size, height*width*3)), dtype = 'float32')
 
-    if scipy_installed is False:
-        raise Exception("Scipy needed for cooking this dataset. Please install")
-    from scipy.misc import imread
-
     for i in xrange(batch_size):
         temp_img = imread(filelist[push + i])
         temp_img = temp_img.astype('float32')
-        data_x[i] = numpy.reshape(temp_img, [1, height*width*3])
-
+        #data_x[i] = numpy.reshape(temp_img, [1, height*width*3])
+        if channels == 3:
+            if temp_img.ndim != channels:
+                # This is a temporary solution.
+                # I am allocating to all channels the grayscale values...
+                temp_img = imresize(temp_img,(height,width))
+                temp_img1 = numpy.zeros((height,width,3))
+                temp_img1 [:,:,0] = temp_img
+                temp_img1 [:,:,1] = temp_img
+                temp_img1 [:,:,2] = temp_img
+                data_x[i] = numpy.reshape(temp_img1,[1,height*width*channels] )
+            else:
+                data_x[i] = numpy.reshape(imresize(temp_img,(height,width)),
+                                             [1,height*width*channels])
+        else:
+            data_x[i] = numpy.reshape(imresize(temp_img,(height,widht)),[1,height*width])
     return data_x
 
 def pickle_dataset(loc,batch,data):
@@ -881,6 +833,8 @@ class setup_dataset (object):
                                 'pkl' : A theano tutorial style 'pkl' file.
                                 'skdata' : Download and setup from skdata
                                 'matlab' : Data is created and is being used from Matlab
+                                'images-only' : Data is created from a directory of images. This
+                                        will be an unsupervised dataset with no labels. 
                     "name" : necessary only for skdata
                               supports
                                 * ``'mnist'``
@@ -897,17 +851,19 @@ class setup_dataset (object):
                                 * ``'cifar10'``
                                 * ``'caltech101'``
                                 * ``'caltech256'``
+
                         Refer to original paper by Hugo Larochelle [1] for these dataset details.
 
-                    "location"                  : #necessary for 'pkl' and 'matlab'
-                    "mini_batch_size"           : 500,
+                    "location"                  : necessary for 'pkl' and 'matlab' and 
+                                                    'images-only'
+                    "mini_batch_size"           : 500, # some batch size
                     "mini_batches_per_batch"    : (100, 20, 20), # trianing, testing, validation
-                    "batches2train"             : 1,
+                    "batches2train"             : 1, # number of files will be created.
                     "batches2test"              : 1,
                     "batches2validate"          : 1,
-                    "height"                    : 28,
+                    "height"                    : 28, # After pre-processing
                     "width"                     : 28,
-                    "channels"                  : 1 ,
+                    "channels"                  : 1 , # color (3) or grayscale (1) ... 
 
                         }
 
@@ -981,8 +937,8 @@ class setup_dataset (object):
         elif self.source == 'matlab':
             self.location        = dataset_init_args [ "location" ]
 
-        elif self.source == 'images':
-            self.name = dataset_init_args["source"]
+        elif self.source == 'images-only':
+            self.location = dataset_init_args["location"]
 
         if "height" in dataset_init_args.keys():
             self.height              = dataset_init_args [ "height" ]
@@ -1059,8 +1015,8 @@ class setup_dataset (object):
         if self.source == 'matlab':
             self._mat2yann( verbose = verbose )
 
-        if self.source == 'images':
-            self._create_celeba(verbose = verbose)
+        if self.source == 'images-only':
+            self._create_images_only(verbose = verbose)
 
         end_time = time.clock()
         if verbose >=1:
@@ -1524,19 +1480,19 @@ class setup_dataset (object):
         cPickle.dump(data_args, f, protocol=2)
         f.close()
 
-    def _create_celeba(self, verbose=1):
+    def _create_images_only(self, verbose=1):
         """
-        Internal function. Use this to create Celeb-A dataset.
+        Internal function. Use this to create images-only dataset.
         """
         # shuffle the data
-        total_images_in_dataset = 202599
+        total_images_in_dataset = len(os.listdir(self.location))
         self.rand_perm = numpy.random.permutation(total_images_in_dataset)
         # create a constant shuffle, so that the data can be loaded in batchmode with the 
         # same random shuffle
 
         n_train_images = self.mini_batches_per_batch[0] * self.mini_batch_size * self.batches2train
         n_test_images = self.mini_batches_per_batch[1] * self.mini_batch_size * self.batches2test
-        n_valid_images = self.mini_batches_per_batch[2] * self.mini_batch_size * self.batches2validate
+        n_valid_images = self.mini_batches_per_batch[2] * self.mini_batch_size*self.batches2validate
 
         assert n_train_images + n_test_images + n_valid_images <= total_images_in_dataset
 
@@ -1549,7 +1505,9 @@ class setup_dataset (object):
         for i in xrange(looper):
             if verbose >= 3:
                 print("... Training batch " + str(i))
-            data_x = load_celeba(
+            ### 
+            data_x = load_images_only(
+                location = self.location,                
                 n_train_images = n_train_images,
                 n_test_images = n_test_images,
                 n_valid_images = n_valid_images,
@@ -1559,6 +1517,7 @@ class setup_dataset (object):
                 type_set = 'train',
                 height = self.height,
                 width = self.width,
+                channels = self.channels,
                 verbose = verbose)
             data_x = preprocessing(
                 data_x,
@@ -1579,7 +1538,8 @@ class setup_dataset (object):
         for i in xrange(looper):
             if verbose >= 3:
                 print("... Testing batch " + str(i))
-            data_x = load_celeba(
+            data_x = load_images_only(
+                location = self.location,
                 n_train_images = n_train_images,
                 n_test_images = n_test_images,
                 n_valid_images = n_valid_images,
@@ -1589,6 +1549,7 @@ class setup_dataset (object):
                 type_set = 'test',
                 height = self.height,
                 width = self.width,
+                channels = self.channels,
                 verbose = verbose)
             data_x = preprocessing(
                 data_x,
@@ -1609,7 +1570,7 @@ class setup_dataset (object):
         for i in xrange(looper):
             if verbose >= 3:
                 print("... Validation batch " + str(i))
-            data_x = load_celeba(
+            data_x = load_images_only(
                 n_train_images = n_train_images,
                 n_test_images = n_test_images,
                 n_valid_images = n_valid_images,
@@ -1619,6 +1580,8 @@ class setup_dataset (object):
                 type_set = 'valid',
                 height = self.height,
                 width = self.width,
+                location = self.location,
+                channels = self.channels,
                 verbose = verbose)
             data_x = preprocessing(
                 data_x,
