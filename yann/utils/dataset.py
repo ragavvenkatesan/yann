@@ -751,10 +751,10 @@ def load_celeba(batch_size,
 
     dirpath = './data'
     data_dir = 'celebA'
-    if os.path.exists(os.path.join(dirpath, data_dir)):
-        print('Celeb-A already downloaded')
+    # if os.path.exists(os.path.join(dirpath, data_dir)):
+    #     print('Celeb-A already downloaded')
 
-    else:
+    if not os.path.exists(os.path.join(dirpath, data_dir)):
         filename, drive_id  = "img_align_celeba.zip", "0B7EVK8r0v71pZjFTYXZWM3FlRnM"
         save_path = os.path.join(dirpath, filename)
 
@@ -797,6 +797,7 @@ def load_celeba(batch_size,
     for i in xrange(batch_size):
         temp_img = imread(filelist[push + i])
         temp_img = temp_img.astype('float32')
+        temp_img = imresize(temp_img,(height,width))
         data_x[i] = numpy.reshape(temp_img, [1, height*width*3])
 
     return data_x

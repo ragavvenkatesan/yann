@@ -627,7 +627,7 @@ def cook_celeba(verbose = 1, **kwargs):
     dataset = setup_dataset(dataset_init_args = data_params,
                         save_directory = save_directory,
                         preprocess_init_args = preprocess_params,
-                        verbose = 3)
+                        verbose = 2)
     return dataset
 
 def cook_cifar10_normalized_zero_mean(verbose = 1, **kwargs):
