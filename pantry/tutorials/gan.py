@@ -839,10 +839,10 @@ def deep_deconvolutional_lsgan(dataset,
         print (".. Creating a GAN network")
 
     optimizer_params =  {        
-                "momentum_type"       : 'polyak',             
+                "momentum_type"       : 'false',             
                 "momentum_params"     : (0.55, 0.9, 20),      
                 "regularization"      : (0.00001, 0.00001),       
-                "optimizer_type"      : 'adagrad',                
+                "optimizer_type"      : 'adam',                
                 "id"                  : "main"
                         }
 
@@ -920,7 +920,7 @@ def deep_deconvolutional_lsgan(dataset,
                     id = "G3",
                     num_neurons = 32,
                     filter_size = (3,3),
-                    output_shape = (28,28,32),
+                    output_shape = (28,28,64),
                     activation = 'relu',
                     regularize = regularize,    
                     batch_norm = batch_norm,
@@ -928,14 +928,28 @@ def deep_deconvolutional_lsgan(dataset,
                     verbose = verbose
                     )
 
+
     net.add_layer ( type = "deconv",
                     origin = "G3",
+                    id = "G4",
+                    num_neurons = 64,
+                    filter_size = (3,3),
+                    output_shape = (30,30,128),
+                    activation = 'relu',
+                    regularize = regularize,    
+                    batch_norm = batch_norm,
+                    stride = (1,1),
+                    verbose = verbose
+                    )
+
+    net.add_layer ( type = "deconv",
+                    origin = "G4",
                     id = "G(z)",
-                    num_neurons = 32,
-                    filter_size = (5,5),
+                    num_neurons = 128,
+                    filter_size = (3,3),
                     output_shape = (32,32,3),
                     activation = 'tanh',
-                    # regularize = regularize,    
+                    regularize = regularize,    
                     stride = (1,1),
                     verbose = verbose
                     )
@@ -1131,13 +1145,13 @@ def deep_deconvolutional_lsgan(dataset,
     net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                 optimizer_params = optimizer_params,
                 discriminator_layers = ["D1-x", "D2-x","D3-x","D4-x"],
-                generator_layers = ["G1","G2","G3","G(z)"], 
+                generator_layers = ["G1","G2","G3", "G4", "G(z)"], 
                 classifier_layers = ["D1-x", "D2-x","D3-x","D4-x","softmax"],                                                
                 softmax_layer = "softmax",
                 game_layers = ("D(x)", "D(G(z))"),
                 verbose = verbose )
                     
-    learning_rates = (0.04, 0.001 )  
+    learning_rates = (0.04, 0.0001 )  
 
     net.train( epochs = (20), 
             k = 1, 
@@ -1173,13 +1187,13 @@ if __name__ == '__main__':
         data = c (verbose = 2)
         dataset = data.dataset_location() 
 
-    net = shallow_gan_mnist ( dataset, verbose = 2 )
+    """net = shallow_gan_mnist ( dataset, verbose = 2 )
     net = deep_gan_mnist ( dataset, verbose = 2 )           
     net = deep_deconvolutional_gan ( batch_norm = True,
                                      dropout_rate = 0.5,
                                      regularize = True,
                                      dataset = dataset,
-                                     verbose = 2 )
+                                     verbose = 2 )"""
     net = deep_deconvolutional_lsgan ( batch_norm = True,
                                      dropout_rate = 0.5,
                                      regularize = True,

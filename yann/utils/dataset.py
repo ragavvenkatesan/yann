@@ -751,7 +751,8 @@ def load_images_only(batch_size,
                                              [1,height*width*channels])
         else:
             data_x[i] = numpy.reshape(imresize(temp_img,(height,widht)),[1,height*width])
-    return data_x
+    data_y = numpy.zeros((batch_size,), dtype = theano.config.floatX)
+    return data_x, data_y
 
 def pickle_dataset(loc,batch,data):
     """
@@ -1505,8 +1506,8 @@ class setup_dataset (object):
         for i in xrange(looper):
             if verbose >= 3:
                 print("... Training batch " + str(i))
-            ### 
-            data_x = load_images_only(
+            ### data_y is a dummy.
+            data_x, data_y = load_images_only(
                 location = self.location,                
                 n_train_images = n_train_images,
                 n_test_images = n_test_images,
@@ -1527,7 +1528,8 @@ class setup_dataset (object):
                 self.preprocessor)
 
             f = open(self.root + "/train/" + "batch_" + str(i) + ".pkl", 'wb')
-            cPickle.dump(data_x, f, protocol=2)
+            obj = (data_x, data_y)
+            cPickle.dump(obj, f, protocol=2)
             f.close()
 
         if verbose >= 2:
@@ -1538,7 +1540,7 @@ class setup_dataset (object):
         for i in xrange(looper):
             if verbose >= 3:
                 print("... Testing batch " + str(i))
-            data_x = load_images_only(
+            data_x, data_y = load_images_only(
                 location = self.location,
                 n_train_images = n_train_images,
                 n_test_images = n_test_images,
@@ -1559,7 +1561,8 @@ class setup_dataset (object):
                 self.preprocessor)
 
             f = open(self.root + "/test/" + "batch_" + str(i) + ".pkl", 'wb')
-            cPickle.dump(data_x, f, protocol=2)
+            obj = (data_x, data_y)
+            cPickle.dump(obj, f, protocol=2)
             f.close()
 
         if verbose >= 2:
@@ -1570,7 +1573,7 @@ class setup_dataset (object):
         for i in xrange(looper):
             if verbose >= 3:
                 print("... Validation batch " + str(i))
-            data_x = load_images_only(
+            data_x, data_y = load_images_only(
                 n_train_images = n_train_images,
                 n_test_images = n_test_images,
                 n_valid_images = n_valid_images,
@@ -1591,7 +1594,8 @@ class setup_dataset (object):
                 self.preprocessor)
 
             f = open(self.root + "/valid/" + "batch_" + str(i) + ".pkl", 'wb')
-            cPickle.dump(data_x, f, protocol=2)
+            obj = (data_x, data_y)            
+            cPickle.dump(obj, f, protocol=2)
             f.close()
 
         assert(self.height * self.width * self.channels == numpy.prod(data_x.shape[1:]))
