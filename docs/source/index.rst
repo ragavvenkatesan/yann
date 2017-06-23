@@ -91,7 +91,7 @@ satisfied and want a more detailed introduction to the toolbox, you may refer to
 :ref:`tutorial` and the :ref:`organization`.  This tutorial was also presented in CSE591 at ASU
 and the video of the presentation is available. A more detailed Jupyter Notebook version of this 
 tutorial is available 
-[here](https://github.com/ragavvenkatesan/yann/blob/master/pantry/tutorials/notebooks/Logistic%20Regression.ipynb).
+`here <https://github.com/ragavvenkatesan/yann/blob/master/pantry/tutorials/notebooks/Logistic%20Regression.ipynb>`_.
 
 .. raw:: html
 
