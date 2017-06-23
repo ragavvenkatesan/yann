@@ -4,12 +4,18 @@ TODO:
     * Need a validation and testing thats better than just measuring rmse. Can't find something 
       great.
     
+Notes:
+    This code contains two methods. 
+        1. A shallow autoencoder with just one layer.
+        2. A Convolutional-Deconvolutional autoencoder that uses a deconv layer.
+
+    Both these methods are setup for MNIST dataset.
 """
 from yann.network import network
 
-def autoencoder ( dataset= None, verbose = 1 ):             
+def shallow_autoencoder ( dataset= None, verbose = 1 ):             
     """
-    This function is a demo example of a sparse autoencoder. 
+    This function is a demo example of a sparse shallow autoencoder. 
     This is an example code. You should study this code rather than merely run it.  
 
     Args: 
@@ -20,7 +26,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                             "dataset"   : dataset,
                             "type"      : 'x',
                             "id"        : 'data'
-                    }
+                    } # MNIST dataset.
 
     visualizer_params = {
                     "root"       : '.',
@@ -30,7 +36,7 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     "debug_functions" : False,
                     "debug_layers": True,  
                     "id"         : 'main'
-                        }  
+                        }  # A visualizer that saves as everything
                       
     # intitialize the network    
     optimizer_params =  {        
@@ -39,7 +45,8 @@ def autoencoder ( dataset= None, verbose = 1 ):
                 "regularization"      : (0.0001, 0.0001),       
                 "optimizer_type"      : 'adagrad',                
                 "id"                  : "main"
-                    }
+                    } # A typical optimizer.
+
     net = network(   borrow = True,
                      verbose = verbose )                       
 
@@ -59,14 +66,15 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     id = "input",
                     verbose = verbose, 
                     origin = 'data', # if you didnt add a dataset module, now is 
-                                                 # the time. 
+                                     # the time. 
                     mean_subtract = False )
 
     net.add_layer ( type = "flatten",
                     origin = "input",
                     id = "flatten",
                     verbose = verbose
-                    )
+                    )   # Setup for a dot product layer. This is also done 
+                        # by default if not provided.
 
     net.add_layer ( type = "dot_product",
                     origin = "flatten",
@@ -99,14 +107,14 @@ def autoencoder ( dataset= None, verbose = 1 ):
                     id = "unflatten",
                     shape = (28,28,1),
                     verbose = verbose
-                    )
+                    ) # Unflatten produces a full image.
 
     net.add_layer ( type = "merge",
                     origin = ("input","unflatten"),
                     id = "merge",
                     layer_type = "error",
                     error = "rmse",
-                    verbose = verbose)
+                    verbose = verbose)  # Create an error that is pixelwise.
 
     net.add_layer ( type = "objective",
                     id = "obj",
@@ -150,7 +158,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                             "dataset"   : dataset,
                             "type"      : 'x',
                             "id"        : 'data'
-                    }
+                    } # MNIST dataset. 
 
     visualizer_params = {
                     "root"       : '.',
@@ -160,7 +168,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     "debug_functions" : False,
                     "debug_layers": True,  
                     "id"         : 'main'
-                        }  
+                        }  # Visualizer as usual prints everything.
                       
     # intitialize the network    
     optimizer_params =  {        
@@ -169,7 +177,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                 "regularization"      : (0.0001, 0.0001),       
                 "optimizer_type"      : 'rmsprop',                
                 "id"                  : "main"
-                    }
+                    } # A differnt optimizer but one nevertheless. 
     net = network(   borrow = True,
                      verbose = verbose )                       
 
@@ -203,13 +211,14 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     regularize = True,   
                     #stride = (2,2),                          
                     verbose = verbose
-                    )
+                    ) # We add a convolutional layer
 
     net.add_layer ( type = "flatten",
                     origin = "conv",
                     id = "flatten",
                     verbose = verbose
-                    )
+                    ) # prepare for dot product layer, but can be done 
+                        # by default also. 
 
     net.add_layer ( type = "dot_product",
                     origin = "flatten",
@@ -229,7 +238,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     dropout_rate = 0.5,                        
                     regularize = True,
                     verbose = verbose
-                    )
+                    )  # this is the codeword layer effectively. 
 
     net.add_layer ( type = "dot_product",
                     origin = "encoder",
@@ -243,7 +252,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     # an optimizer, when reusing the weights, always use learnable as False   
                     dropout_rate = 0.5,                                         
                     verbose = verbose
-                    )           
+                    )   # Symmetric layers ... 
 
     net.add_layer ( type = "dot_product",
                     origin = "decoder",
@@ -257,7 +266,8 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                     # an optimizer, when reusing the weights, always use learnable as False    
                     dropout_rate = 0.5,                                        
                     verbose = verbose
-                    )                                            
+                    )  # Notice how we used the ``output_shape`` variables to
+                        # assign parameter size.                        
 
     net.add_layer ( type = "unflatten",
                     origin = "hidden-decoder",
@@ -266,7 +276,7 @@ def convolutional_autoencoder ( dataset= None, verbose = 1 ):
                              net.layers['conv'].output_shape[3],
                              20),
                     verbose = verbose
-                    )
+                    ) # Prepare for deconvolutional layers..
 
     net.add_layer ( type = "deconv",
                     origin = "unflatten",
@@ -343,4 +353,4 @@ if __name__ == '__main__':
         dataset = data.dataset_location()
 
     autoencoder ( dataset, verbose = 2 )
-    # convolutional_autoencoder ( dataset , verbose = 2 )
+    convolutional_autoencoder ( dataset , verbose = 2 )

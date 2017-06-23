@@ -1,3 +1,18 @@
+"""
+Notes:
+    This code contains three methods. 
+        1. A modern reincarnation of LeNet5 for MNIST.
+        2. The same Lenet with batchnorms
+            2.a. Batchnorm before activations.
+            2.b. Batchnorm after activations.
+
+    All these methods are setup for MNIST dataset.
+
+Todo:
+
+    Add detailed comments.
+"""
+
 from yann.network import network
 from yann.utils.graph import draw_network
 

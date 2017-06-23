@@ -207,6 +207,8 @@ def _activate (x, activation, input_size, verbose = 2, **kwargs):
             out = activations.Softmax (x=x)
         elif activation == 'squared':
             out = activations.Squared (x=x)
+        elif activation is None:
+            out = x 
         out_shp = input_size
 
     if verbose >=3:
