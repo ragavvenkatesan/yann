@@ -1,3 +1,13 @@
+"""
+Notes:
+    This code contains one method that explains how to build a 
+    logistic regression classifier for the MNIST dataset using
+    the yann toolbox.
+
+    For a more interactive tutorial refer the notebook at 
+    yann/pantry/tutorials/notebooks/Logistic Regression.ipynb
+"""
+
 from yann.network import network
 from yann.utils.graph import draw_network    
 
@@ -6,17 +16,37 @@ def log_reg ( dataset ):
     This function is a demo example of logistic regression.  
 
     """
+    # Create the yann network class with empty layers.
+    net = network()    
+
+    # Setup the datastream module and add it to network.
     dataset_params  = { "dataset"   :  dataset,
                         "svm"       :  False, 
-                        "n_classes" : 10 }
-    net = network()                       
+                        "n_classes" : 10 }                       
     net.add_module ( type = 'datastream',  params = dataset_params )
+
+    # Create an input layer that feeds from the datastream modele.
     net.add_layer ( type = "input",  datastream_origin = 'data')
+
+    # Create a logistic regression layer.
+    # Creates a softmax layer.
     net.add_layer ( type = "classifier", num_classes = 10 )
+
+    # Create an objective layer.
+    # Default is negative log likelihood.
+    # What ever the objective is, is always minimized. 
     net.add_layer ( type = "objective" )
+
+    # Cook the network.
     net.cook()
+
+    # See how the network looks like.
     net.pretty_print()
+
+    # Train the network.
     net.train()      
+
+    # Test for acccuracy.
     net.test()
 
 
