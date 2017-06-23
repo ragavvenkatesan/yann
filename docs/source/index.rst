@@ -89,7 +89,9 @@ Quick Start
 The easiest way to get going with Yann is to follow this quick start guide. If you are not 
 satisfied and want a more detailed introduction to the toolbox, you may refer to the 
 :ref:`tutorial` and the :ref:`organization`.  This tutorial was also presented in CSE591 at ASU
-and the video of the presentation is available. 
+and the video of the presentation is available. A more detailed Jupyter Notebook version of this 
+tutorial is available 
+[here](https://github.com/ragavvenkatesan/yann/blob/master/pantry/tutorials/notebooks/Logistic%20Regression.ipynb).
 
 .. raw:: html
 
