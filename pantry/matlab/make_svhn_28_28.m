@@ -70,15 +70,15 @@ clear y;
 
 x = data(  1:train_size * batch_size ,:);
 y = labels(1:train_size * batch_size);
-x = re_size(x,[28,28,1]);
+x = re_size(x,[28,28]);
 dump( 'train',10, batch_size, x, y );
 
 x = data(  train_size * batch_size + 1 : train_size * batch_size + test_size * batch_size ,:);
 y = labels(train_size * batch_size + 1 : train_size * batch_size + test_size * batch_size);
-x = re_size(x,[28,28,1]);
+x = re_size(x,[28,28]);
 dump( 'test',10, batch_size, x, y );
 
 x = data(  (train_size + test_size) * batch_size + 1 : end ,:);
 y = labels((train_size + test_size) * batch_size + 1 : end);
-x = re_size(x,[28,28,1]);
+x = re_size(x,[28,28]);
 dump( 'valid',10, batch_size, x, y );
