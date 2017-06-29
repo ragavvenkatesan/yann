@@ -70,7 +70,7 @@ def download_celebA ( data_dir = 'celebA'):
     filepath = os.path.join(os.path.join(dirpath, data_dir), '*.jpg')
     filelist = glob.glob(filepath)
 
-class combine_split_datasets_train_only (object):
+class combine_split_datasets(object):
     """
     This will combine two split datasets into one.
 
@@ -86,6 +86,8 @@ class combine_split_datasets_train_only (object):
         same.
         This only splits the train data with shot. The test and valid hold both. 
         This is designed for the incremental learning.
+        New labels are created in one shot labels for the second datasets. This does not assume
+        that labels are shared between the two datasets.
     """     
     def __init__(self, loc, verbose = 1, **kwargs):
         """
@@ -174,7 +176,13 @@ class combine_split_datasets_train_only (object):
                                        self.mini_batches_per_batch_2[1] * 2,
                                        self.mini_batches_per_batch_2[2] * 2)
         self.combine ( verbose = verbose )  
-        print ("Dataset " + self.id + " is combined and makde")
+        print ("Dataset " + self.id + " is combined and made")
+        
+    def dataset_location (self):
+        """
+        Use this function that return the location of dataset.
+        """
+        return self.root
         
     def combine(self, verbose = 1):
         """
@@ -295,7 +303,7 @@ class combine_split_datasets_train_only (object):
             numpy.ndarray: ``data_x, data_y``
         """
         batch_load = batch % n_batches_1        
-        if verbose >= 1:
+        if verbose >= 3:
             print("... loading " + type + " data batch " + str(batch_load))
         
         f = open(self.loc1 + '/' + type + '/batch_' + str(batch_load) +'.pkl', 'rb')
@@ -312,7 +320,7 @@ class combine_split_datasets_train_only (object):
             print("... data from set 1 is loaded")
 
         batch_load = batch % n_batches_2
-        if verbose >= 1:
+        if verbose >= 3:
             print("... loading " + type + " data batch " + str(batch_load))
 
         f = open(self.loc2+ '/' + type + '/batch_' + str(batch_load) +'.pkl', 'rb')
@@ -328,6 +336,17 @@ class combine_split_datasets_train_only (object):
             print("... data from set 2 is loaded")
 
         return (data_x_1, data_y_1, data_x_2, data_y_2)
+
+class mix_split_datasets(combine_split_datasets):
+    """
+    Everything is the same, except, labels are mixed.
+    """
+    def _convert_labels (self, labels, verbose =1):
+        """
+        The same as the previous inheret mother class,
+        but we do not add the n_classes_1
+        """
+        return labels
 
 def cook_mnist_normalized(  verbose = 1, **kwargs):
     """
