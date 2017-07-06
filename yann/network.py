@@ -2445,7 +2445,7 @@ class network(object):
         self.dropout_cost = 0
         for lyr, weight in zip(objective_layers, objective_weights):
             if verbose>=3:
-                print ("... Objective Layer: " + lyr.id)
+                print ("... Objective Layer: " + lyr)
                 print ("... Objective Weight: " + str(weight))
 
             self.layer_cost = self.layer_cost + weight * self.layers[lyr].output

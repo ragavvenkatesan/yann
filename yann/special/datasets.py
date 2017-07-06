@@ -1660,7 +1660,7 @@ class split_continual(setup_dataset):
             print(".. setting up dataset")
             print(".. training data")
 
-        data_x, data_y, data_y1 = self._split_data (data = data[0], keep = self.split["train"])
+        data_x, data_y, data_y1 = self._split_data (data = data[0], keep = self.splits["train"])
 
         data_x = preprocessing ( data = data_x,
                                  height = self.height,
@@ -1696,7 +1696,7 @@ class split_continual(setup_dataset):
         if verbose >=2:
             print(".. validation data ")
 
-        data_x, data_y, data_y1 = self._split_data (data = data[1], keep = self.splits["valid"])
+        data_x, data_y, data_y1 = self._split_data (data = data[1], keep = self.splits["test"])
         data_x = preprocessing ( data = data_x,
                                  height = self.height,
                                  width = self.width,
