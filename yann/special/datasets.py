@@ -1872,7 +1872,7 @@ class split_continual(setup_dataset):
                 data_y = numpy.concatenate( (data_y, data_y_batch) , axis = 0)
 
         data_x, data_y  = self._split_data (( data_x, data_y ), y1 = False 
-                                                                , keep = self.splits["valid"] )
+                                                                , keep = self.splits["test"] )
         data_x = preprocessing ( data = data_x,
                                 height = self.height,
                                 width = self.width,
