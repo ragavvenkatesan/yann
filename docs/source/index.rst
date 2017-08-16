@@ -12,6 +12,7 @@ refer the :ref:`setup` guide. Once setup, you may start with the :ref:`quick_sta
 your hand at the :ref:`tutorial` and the guide to :ref:`getting_started`. A user base discussion 
 group is setup on `gitter`_ and also on `google groups`_.
 
+If you are here for the theano-tensorflow migration tool, click [here](http:://www.tf-lenet.readthedocs.io).
 
 .. image:: https://travis-ci.org/ragavvenkatesan/yann.svg?branch=master
     :target: https://travis-ci.org/ragavvenkatesan/yann
